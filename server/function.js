@@ -1,8 +1,10 @@
 const config = require("./config");
 
+const PathToPythonSrc = "../src/"
+
 function getEVQL(queryType){
     var spawnSync = require("child_process").spawnSync;
-    var process = spawnSync("python3", ["../translation_module/VQL/example_queries.py", "--query_type", queryType]);
+    var process = spawnSync("python3", [`${PathToPythonSrc}/VQL/example_queries.py`, "--query_type", queryType]);
     var json_dumped_evql = process.stdout.toString();
     
     // Try to parse string into JSON
