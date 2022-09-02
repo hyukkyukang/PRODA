@@ -1,13 +1,11 @@
+import classNames from "classnames";
 import React, { useEffect, useState, useRef } from "react";
 import { Spreadsheet, DataViewerComponent, Matrix, CellBase, ColumnIndicatorComponent, Point } from "react-spreadsheet-custom";
 import { AiOutlinePlusSquare, AiOutlineMinusSquare } from "react-icons/ai";
 
-import { EVQLTree, EVQLNode, parseExpressions, aggFunctions, Function, Clause } from "./EVQL";
-import { getNode, EVQLNodeToEVQLTable, getTreeTraversingPaths } from "./utils";
+import { EVQLTree, EVQLNode, aggFunctions, Function, Clause } from "./EVQL";
+import { getNode, EVQLNodeToEVQLTable, getTreeTraversingPaths, parseExpressions } from "./utils";
 import { isEmptyObject } from "../../utils";
-import classNames from "classnames";
-
-import { Box, Input } from "@mui/material";
 
 // This is from react-spreadsheet-custom/src/selection.ts
 export enum EntireType {
@@ -178,7 +176,6 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
             newCoordinate["colIdx"] = points[0].column;
         }
         else if (isEntireRows(selection)){
-            console.log(`Entire rows selected`);
             newCoordinate["rowIdx"] = points[0].row;
         }
         else {
@@ -196,7 +193,6 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     };
 
     const removeRowHandler: React.MouseEventHandler = (event) => {
-        console.log(`Clicked on remove row button: ${JSON.stringify(event.currentTarget.id)}`);
         const idx: number = parseInt(event?.currentTarget?.id);
         if (editable){
             evqlNode.predicate.clauses.splice(idx, 1);

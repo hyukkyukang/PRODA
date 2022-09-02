@@ -1,5 +1,5 @@
-import { useState, MouseEventHandler, useEffect } from "react";
-import { Divider, Box, Grid, Button } from "@mui/material";
+import { useState, useEffect } from "react";
+import { Grid, Button } from "@mui/material";
 
 import { demoDBName } from "../config";
 import { isEmptyObject } from "../utils";
@@ -47,7 +47,7 @@ const HandsOnEVQL = (props: any) => {
         setQueryResult(tmpQueryResult['result']);
     };
 
-    const executeQuery: MouseEventHandler = (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
+    const executeQuery: React.MouseEventHandler = (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
         runEVQL({evqlStr: JSON.stringify(evql), dbName:demoDBName})
         .then(data => {
             setSQL(data["sql"]);

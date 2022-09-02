@@ -1,8 +1,8 @@
 import React, { useState, MouseEventHandler } from "react";
 import ListItem from "@mui/material/ListItem";
 
-import {allTutorialSections} from "./sections/allSections";
-import {ITutorialSection} from "./sections/abstractSection";
+import { allTutorialSections } from "./sections/allSections";
+import { ITutorialSection } from "./sections/abstractSection";
 
 interface ISelectedSection {
     selectedSection: ITutorialSection;

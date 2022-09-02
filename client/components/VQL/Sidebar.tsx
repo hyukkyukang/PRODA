@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo } from 'react';
-import { Container, Button, TextField, Select, MenuItem, Grid, SelectChangeEvent, FormControl, InputAdornment, InputLabel, OutlinedInput } from '@mui/material';
-
-import { EVQLTree, EVQLNode, Function, Header, parseExpression, conditionToExpression } from "./EVQL";
-import { Coordinate } from "./EVQLTable";
-import { getNode } from "./utils";
-import { isEmptyObject } from "../../utils";
-
+import { Container, Button, Select, MenuItem, Grid, SelectChangeEvent, FormControl, OutlinedInput } from '@mui/material';
 import { AiFillPlusSquare, AiFillCloseCircle } from "react-icons/ai";
 import { IoMdRemoveCircleOutline } from "react-icons/io";
+
+import { EVQLTree, EVQLNode, Header } from "./EVQL";
+import { Coordinate } from "./EVQLTable";
+import { getNode, parseExpression, conditionToExpression } from "./utils";
+import { isEmptyObject } from "../../utils";
+
 
 export interface ISideBar {
     evqlRoot: EVQLTree;
