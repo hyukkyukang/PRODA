@@ -1,6 +1,6 @@
 const config = require("./config");
 
-const PathToPythonSrc = "../src/"
+const PathToPythonSrc = "../src/";
 
 function getEVQL(queryType){
     var spawnSync = require("child_process").spawnSync;
@@ -22,11 +22,7 @@ function getEVQL(queryType){
 
 function EVQLToSQL(evql){
     var spawnSync = require("child_process").spawnSync;
-    var process = spawnSync("python3", [
-        "../translation_module/VQL/EVQL_to_SQL.py",
-        "--evql_in_json_str", 
-        evql
-    ]);
+    var process = spawnSync("python3", [`${PathToPythonSrc}/VQL/EVQL_to_SQL.py`, "--evql_in_json_str", evql]);
     var result = process.stdout.toString();
     console.log("Translation result: " + result);
     return result;
