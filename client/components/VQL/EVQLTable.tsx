@@ -224,11 +224,11 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                 {/* <Box ref={addRowRef}> */}
                 <div style={{display:"inline-block"}}>
                 {evqlNode?.predicate?.clauses.map((clause, idx) => (
-                    <>
-                    {evqlNode?.predicate?.clauses.length > 1 && editable ? <AiOutlineMinusSquare size={27} id={String(idx)} onClick={removeRowHandler}/> : null}
-                    {(idx == evqlNode?.predicate?.clauses.length-1 && editable) ? <AiOutlinePlusSquare size={27} onClick={addRowHandler}/>: null}
-                    <br/>
-                    </>
+                    <div key={idx}>
+                        {evqlNode?.predicate?.clauses.length > 1 && editable ? <AiOutlineMinusSquare size={27} id={String(idx)} onClick={removeRowHandler}/> : null}
+                        {(idx == evqlNode?.predicate?.clauses.length-1 && editable) ? <AiOutlinePlusSquare size={27} onClick={addRowHandler}/>: null}
+                        <br/>
+                    </div>
                 ))}
                 </div>
             </div>

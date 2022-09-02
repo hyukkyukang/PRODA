@@ -78,7 +78,7 @@ const HandsOnEVQL = (props: any) => {
                         <ResultTable queryResult={sampledDBRows}/>
                     </div>
                     <div>
-                        <h2>EVQL Query:</h2>
+                        <h2>EVQL Query</h2>
                         <p>Edit the EVQL table, and click "Run EVQL" to see the result. </p>
                         <EVQLTables evqlRoot={evql} setEVQLRoot={setEVQL} setSelectedCoordinate={setSelectedCoordinate}/>
                         <br/>
