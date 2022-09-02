@@ -135,13 +135,16 @@ class Selecting(Function):
 
 class Predicate():
     def __init__(self, clauses=None):
-        self.clauses = clauses if clauses else [Clause()]
+        self.clauses = clauses if clauses else []
 
     def add(self, clause):
         self.clauses.append(clause)
 
     def dump_json(self):
-        return {"clauses":[clause.dump_json() for clause in self.clauses]}
+        if self.clauses:
+            return {"clauses": [clause.dump_json() for clause in self.clauses]}
+        else:
+            return {"clauses": [Clause().dump_json()]}
 
     @staticmethod
     def load_json(json_obj):
