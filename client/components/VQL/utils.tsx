@@ -1,7 +1,7 @@
 import { EVQLTree, EVQLNode, Header, Function, operators, unaryOperators, binaryOperators } from "./EVQL";
 import { createEmptyMatrix, Matrix, CellBase } from "react-spreadsheet-custom";
 import { IEVQLTable, IEVQLTableHeader } from "./EVQLTable";
-import { isEmptyObject, removeMultipleSpaces } from "../../utils";
+import { isEmptyObject, removeMultipleSpaces, isNumber, stripQutations } from "../../utils";
 
 export const createEmptyValueMatrix = (numOfRow: number, numOfCol: number, readOnly?:boolean): Matrix<CellBase> => {
     var rows = createEmptyMatrix<CellBase>(numOfRow, numOfCol);
@@ -98,7 +98,7 @@ export const parseExpression = (expression: string, header_names: string[], igno
             return null;
         }
         tmpCondition.header_id = headerId;
-        tmpCondition.r_operand = literals[2];
+        tmpCondition.r_operand = stripQutations(literals[2]);
         tmpCondition.func_type = "Selecting";
         tmpCondition.op_type = operators.indexOf(literals[1])+1;
     }
@@ -164,7 +164,9 @@ export const conditionToExpression = (condition: Function, names: string[]): str
         }
         const op = operators[condition.op_type-1];
         if (binaryOperators.includes(op)){
-            return `\$${l_op} ${op} ${condition.r_operand}`;
+            const tmp = condition?.r_operand;
+            const r_op = isNumber(tmp) ? tmp : `"${tmp}"`;
+            return `\$${l_op} ${op} ${r_op}`;
         }
         else{
             return `\$${op}(${l_op})`;

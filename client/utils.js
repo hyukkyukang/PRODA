@@ -11,10 +11,15 @@ function removeMultipleSpaces(inputString){
 function isNumber(inputString){
     if (typeof inputString != "string") return false // we only process strings!  
     return !isNaN(inputString) && !isNaN(parseFloat(inputString))
-  };
+};
+
+function stripQutations(inputString){
+    return inputString.replace(/['"]+/g, '');
+};
 
 module.exports = {
     isEmptyObject: isEmptyObject,
     removeMultipleSpaces: removeMultipleSpaces, 
-    isNumber: isNumber
+    isNumber: isNumber,
+    stripQutations: stripQutations
 };
