@@ -4,7 +4,7 @@ import { Spreadsheet, DataViewerComponent, Matrix, CellBase, ColumnIndicatorComp
 import { AiOutlinePlusSquare, AiOutlineMinusSquare } from "react-icons/ai";
 
 import { EVQLTree, EVQLNode, aggFunctions, Function, Clause } from "./EVQL";
-import { getNode, EVQLNodeToEVQLTable, getTreeTraversingPaths, parseExpressions } from "./utils";
+import { getNode, EVQLNodeToEVQLTable, getTreeTraversingPaths, parseExpressions, getProjectedNames, addEVQLNode } from "./utils";
 import { isEmptyObject } from "../../utils";
 
 // This is from react-spreadsheet-custom/src/selection.ts
@@ -86,7 +86,6 @@ export const EVQLColumnIndicator: ColumnIndicatorComponent = ({
     </th>);
 };
 
-
 export const EVQLTable = (props: IEVQLVisualizationContext) => {
     const {evqlRoot, setEVQLRoot, setSelectedCoordinate, childListPath, editable} = props;
     
@@ -95,9 +94,6 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     const [isFocus, setIsFocus] = useState<boolean>(true);
     const [rowLabels, setRowLabels] = useState<string[]>(["1"]);
     const [tableContext, setTableContext] = useState<IEVQLTable>({} as IEVQLTable);
-    // Local context for add Row button
-    const [isHoveringAddRow, setIsHoveringAddRow] = useState<boolean>(false);
-    const addRowRef = useRef<HTMLButtonElement>(null);
 
     const dataViewer: DataViewerComponent<CellBase<any>> = (cellData) => {
         if (cellData.cell){
@@ -216,12 +212,11 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
             <div style={{display: "inline-block"}}>
                 <Spreadsheet className="table_sketch" data={tableContext.rows}
                  columnLabels={tableContext.headers} rowLabels={rowLabels}
-                 onChange={onChangeHandler}
-                 onKeyDown={event => {if (event.key == "Enter") setEVQLRoot(Object.assign({}, evqlRoot))}}
-                 onSelect={onSelectHandler}
+                 onChange={editable ? onChangeHandler : undefined}
+                 onKeyDown={editable ? event => {if (event.key == "Enter") setEVQLRoot(Object.assign({}, evqlRoot))} : undefined}
+                 onSelect={editable ? onSelectHandler : undefined}
                  ColumnIndicator={EVQLColumnIndicator}
                  DataViewer={e => dataViewer(e)}/>
-                {/* <Box ref={addRowRef}> */}
                 <div style={{display:"inline-block"}}>
                 {evqlNode?.predicate?.clauses.map((clause, idx) => (
                     <div key={idx}>
@@ -239,11 +234,55 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
 
 export const EVQLTables = (props: EVQLTreeWrapperProps) => {
     const {evqlRoot, setEVQLRoot, setSelectedCoordinate, editable = true} = props;
+    // const childPathLists = isEmptyObject(evqlRoot) ? [] : getTreeTraversingPaths(evqlRoot);
+    const childPathLists = getTreeTraversingPaths(evqlRoot);
+
+    // Add & remove buttons
+    const addTableHandler: React.MouseEventHandler = () => {
+        // Check projection exists in the most outer node
+        if (evqlRoot.node.projection.headers.length === 0) {
+            alert("Please add projection first");
+            return;
+        }
+        // Get names of projection to add to header of new node
+        const newlyprojectNames = getProjectedNames(evqlRoot, []);
+        // Create new node
+        const newTree = addEVQLNode(evqlRoot, [...evqlRoot.node.header_names].concat(newlyprojectNames));
+        setEVQLRoot(newTree);
+    };
+
+    const removeTableHandler: React.MouseEventHandler = (event) => {
+        if (evqlRoot.children.length === 0)
+        {
+            alert("Cannot remove the last table");
+            return;
+        }
+        // Check if any predicates or projections. If so, ask for confirmation
+        if (evqlRoot.node.projection.headers.length > 0 || (evqlRoot.node.predicate.clauses.length > 0 &&
+                evqlRoot.node.predicate.clauses[0].conditions.length > 0)){
+            if (!window.confirm("Are you sure you want to delete this table?")){
+                return;
+            }
+        }
+
+        // TODO: need to change data structure of EVQL. 
+        const subTree = evqlRoot.children[0];
+        setEVQLRoot(subTree);
+};
+
     return (
         <div style={{overflow: "scroll"}}>
-            {isEmptyObject(evqlRoot) ? null : getTreeTraversingPaths(evqlRoot).map((path: number[], index: number) => (
+            {isEmptyObject(evqlRoot) ? null : childPathLists.map((path: number[], index: number) => (
             <div key={index}>
-                <EVQLTable evqlRoot={evqlRoot} setEVQLRoot={setEVQLRoot} setSelectedCoordinate={setSelectedCoordinate} childListPath={path} editable={editable}/>
+                {index+ 1 == childPathLists.length ? 
+                    <div style={{display: "inline-block"}}>
+                        <button onClick={addTableHandler}>Add table</button>
+                        {index === 0 ? null : <button onClick={removeTableHandler} style={{marginLeft: "2px"}}>Remove table</button>}
+                    </div> 
+                    : null}
+                <br/>
+                <EVQLTable evqlRoot={evqlRoot} setEVQLRoot={setEVQLRoot} setSelectedCoordinate={setSelectedCoordinate} childListPath={path} editable={editable && index+1 == childPathLists.length}/>
+                <br/>
                 <br/>
             </div>))}
         </div>);

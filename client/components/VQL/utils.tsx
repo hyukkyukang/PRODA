@@ -1,7 +1,7 @@
-import { EVQLTree, EVQLNode, Header, Function, operators, unaryOperators, binaryOperators } from "./EVQL";
+import { EVQLTree, EVQLNode, Header, Function, operators, unaryOperators, binaryOperators, aggFunctions } from "./EVQL";
 import { createEmptyMatrix, Matrix, CellBase } from "react-spreadsheet-custom";
 import { IEVQLTable, IEVQLTableHeader } from "./EVQLTable";
-import { isEmptyObject, removeMultipleSpaces, isNumber, stripQutations } from "../../utils";
+import { isEmptyObject, removeMultipleSpaces, isNumber, stripQutations, isArrayEqual } from "../../utils";
 
 export const createEmptyValueMatrix = (numOfRow: number, numOfCol: number, readOnly?:boolean): Matrix<CellBase> => {
     var rows = createEmptyMatrix<CellBase>(numOfRow, numOfCol);
@@ -69,6 +69,7 @@ export const getNode = (evqlTree: EVQLTree, childListIndices: number[] | undefin
 
 export const getTreeTraversingPaths = (evqlTree: EVQLTree, prevPath?: number[]): number[][] => {
     // return paths for every node in the tree (in Post-order)
+    if (isEmptyObject(evqlTree)) return [];
     if (prevPath == undefined) prevPath = [];
 
     const pathsToReturn: number[][] = [];
@@ -169,16 +170,87 @@ export const conditionToExpression = (condition: Function, names: string[]): str
             return `\$${l_op} ${op} ${r_op}`;
         }
         else{
-            return `\$${op}(${l_op})`;
+            return `${op}($${l_op})`;
         }
     }
     else if (condition.func_type == "Grouping") {
-        return `Group(\$${l_op})`;
+        return `Group($${l_op})`;
     }
     else if (condition.func_type == "Ordering") {
-        return `${condition.is_ascending ? "Asc" : "Des"}(${l_op})`;
+        return `${condition.is_ascending ? "Asc" : "Des"}($${l_op})`;
     }
     else {
-        return `${condition.func_type}(\$${l_op})`;
+        return `${condition.func_type}($${l_op})`;
     }
+};
+
+export const addEVQLNode = (evqlTree: EVQLTree, newHeaders: string[]): EVQLTree => {
+
+    // Create new evql node
+    // TODO: modify header_names if necessary in the parent node
+    const newNode: EVQLNode = {
+        header_names: [...newHeaders],
+        header_aliases: [...newHeaders],
+        foreach: null,
+        projection: {
+            headers: []
+        },
+        predicate: {
+            clauses: []
+        }
+    };
+
+    // Add new node to the tree
+    const newTree: EVQLTree = {
+        node: newNode,
+        children: [evqlTree],
+        enforce_t_alias: false
+    };
+
+    return newTree;
+};
+
+export const getProjectedNames = (evqlTree: EVQLTree, childListPath: number[]): string[] => {
+    const evql: EVQLNode = getNode(evqlTree, [...childListPath]);
+    const projectedNames: string[] = [];
+    
+    // Get all childListPaths
+    const childListPaths = getTreeTraversingPaths(evqlTree);
+    
+    // Find queryStep
+    var queryStep = -1;
+    for(var i=0; i < childListPaths.length; i++){
+        if (isArrayEqual(childListPaths[i], childListPath)){
+        queryStep = i;
+        }
+    }
+    // Handle error
+    if (queryStep == -1){
+        console.error("Can not find queryStep");
+        return [];
+    }
+
+    const prefix = `step${queryStep+1}_`;
+    evql.projection.headers.forEach((header) => {
+        const newColName = prefix + evql.header_names[header.id];
+        if (header.agg_type === aggFunctions.indexOf('count')){
+            projectedNames.push(`${newColName}_count`);
+        }
+        else if (header.agg_type === aggFunctions.indexOf('sum')){
+            projectedNames.push(`${newColName}_sum`);
+        }
+        else if (header.agg_type === aggFunctions.indexOf('avg')){
+            projectedNames.push(`${newColName}_avg`);
+        }
+        else if (header.agg_type === aggFunctions.indexOf('min')){
+            projectedNames.push(`${newColName}_min`);
+        }
+        else if (header.agg_type === aggFunctions.indexOf('max')){
+            projectedNames.push(`${newColName}_max`);
+        }
+        else {
+            projectedNames.push(newColName);
+        }
+    });
+    return projectedNames;
 };

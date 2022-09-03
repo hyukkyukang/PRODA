@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo } from 'react';
-import { Container, Button, Select, MenuItem, Grid, SelectChangeEvent, FormControl, OutlinedInput } from '@mui/material';
+import { Container, Button, Select, MenuItem, Grid, SelectChangeEvent, FormControl, OutlinedInput, Input, TextField } from '@mui/material';
 import { AiFillPlusSquare, AiFillCloseCircle } from "react-icons/ai";
 import { IoMdRemoveCircleOutline } from "react-icons/io";
 
 import { EVQLTree, EVQLNode, Header } from "./EVQL";
 import { Coordinate } from "./EVQLTable";
 import { getNode, parseExpression, conditionToExpression } from "./utils";
-import { isEmptyObject } from "../../utils";
+import { isEmptyObject, removeMultipleSpaces } from "../../utils";
 
 
 export interface ISideBar {
@@ -66,7 +66,6 @@ export const SideBar = (props: ISideBar) => {
     const selectedClauses = useMemo(() => selectedEVQLNode?.predicate.clauses, [selectedEVQLNode, evqlRoot]);
     const selectedConditions = useMemo(() => !isEmptyObject(selectedClauses) && selectedCoordinate && isCellSelected(selectedCoordinate) ? selectedClauses[selectedCoordinate.rowIdx].conditions : null, [selectedClauses, selectedCoordinate]);
     const selectedHeaderName = useMemo(() => selectedEVQLNode && selectedCoordinate ? selectedEVQLNode.header_names[selectedCoordinate.colIdx] : "", [selectedCoordinate, selectedEVQLNode, evqlRoot]);
-    const startAdornment = useMemo(() => `\$${selectedHeaderName} `, [selectedHeaderName]);
     const [selectedExpressions, setSelectedExpressions] = React.useState<IExpressionData[]>([]);
     
     // Helper functions
@@ -105,7 +104,8 @@ export const SideBar = (props: ISideBar) => {
     };
 
     const modifyExpressionHandler = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, idx: number) => {
-        selectedExpressions[idx].expression = `${startAdornment} ${event.target.value.replace("  ", " ")}`;
+        const beautifiedExpression: string = removeMultipleSpaces(event.target.value);
+        selectedExpressions[idx].expression = `${beautifiedExpression}`;
         setSelectedExpressions([...selectedExpressions]);
     };
 
@@ -178,8 +178,8 @@ export const SideBar = (props: ISideBar) => {
                         <IoMdRemoveCircleOutline size={20} onClick={e => removeConditionHandler(idx)}/>
                     </button>
                     <FormControl>
-                        <OutlinedInput id="outlined-adornment-amount" value={expressionData.expression.replace(startAdornment, "")} 
-                            startAdornment={<div style={{color: "blue"}}>{startAdornment}</div>}
+
+                        <TextField value={expressionData.expression}
                             onChange={e => modifyExpressionHandler(e, idx)}
                             onKeyDown={e => {if(e.key == "Enter") closeConditionBuilderHandler()}}/>
                     </FormControl>
@@ -217,7 +217,6 @@ export const SideBar = (props: ISideBar) => {
         }
         // TODO: check whether entire row is selected
         // TODO: If so, ask whether to remove the entire row (via popup screen?)
-        
     }, [selectedCoordinate]);
 
     // Return appropriate Element

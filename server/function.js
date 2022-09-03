@@ -24,7 +24,6 @@ function EVQLToSQL(evql){
     var spawnSync = require("child_process").spawnSync;
     var process = spawnSync("python3", [`${PathToPythonSrc}/VQL/EVQL_to_SQL.py`, "--evql_in_json_str", evql]);
     var result = process.stdout.toString();
-    console.log("Translation result: " + result);
     return result;
 };
 
@@ -33,7 +32,6 @@ function queryDB(sql, dbName){
     const client = new pg();
     client.connectSync(`user=${config.demoDBUserID} password=${config.demoDBUserPW} port=${config.demoDBPort} host=${config.demoDBIP} dbname=${dbName}`);
     result = client.querySync(sql);
-    console.log(`result:${result}`);
     client.end();
     return result;
 };

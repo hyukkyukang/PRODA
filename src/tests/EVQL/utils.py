@@ -239,12 +239,12 @@ class HavingQuery(TestQuery):
             node_1.add_predicate(clause)
 
             # Create tree node 2
-            next_headers = CARS_TABLE_HEADERS+["step1_avg_max_speed"]
+            next_headers = CARS_TABLE_HEADERS+["step1_max_speed_avg"]
             # TODO: Need to discuss about how to name variables from previous step
             node_2 = EVQLNode(next_headers)
             node_2.add_projection(Header(next_headers.index("model")))
             
-            cond2 = Selecting(next_headers.index("step1_avg_max_speed"),
+            cond2 = Selecting(next_headers.index("step1_max_speed_avg"),
                               Operator.greaterThan, "2000")
             node_2.add_predicate(Clause([cond2]))
             self._evql = EVQLTree(node_2, [EVQLTree(node_1)])
@@ -267,11 +267,11 @@ class NestedQuery(TestQuery):
             node_1.add_predicate(Clause([cond1_1]))
 
             # Create tree node 2
-            next_headers = CARS_TABLE_HEADERS+["step1_avg_max_speed"]
+            next_headers = CARS_TABLE_HEADERS+["step1_max_speed_avg"]
             node_2 = EVQLNode(next_headers)
             node_2.add_projection(Header(next_headers.index("id")))
             cond2 = Selecting(next_headers.index("max_speed"), Operator.greaterThan, 
-                            next_headers.index("step1_avg_max_speed"))
+                            next_headers.index("step1_max_speed_avg"))
             node_2.add_predicate(Clause([cond2]))
             self._evql = EVQLTree(node_2, [EVQLTree(node_1)])
         return self._evql
@@ -294,11 +294,11 @@ class CorrelatedNestedQuery(TestQuery):
             node_1.add_predicate(Clause([cond1_1]))
 
             # Create tree node 2
-            next_headers = CARS_TABLE_HEADERS+["step1_count_cars"]
+            next_headers = CARS_TABLE_HEADERS+["step1_cars_count"]
             node_2 = EVQLNode(next_headers,foreach_col_id=next_headers.index("model"))
             node_2.add_projection(Header(next_headers.index("model")))
             # Create conditions for the node
-            cond2 = Selecting(next_headers.index("step1_count_cars"), Operator.greaterThan, "2")
+            cond2 = Selecting(next_headers.index("step1_cars_count"), Operator.greaterThan, "2")
             node_2.add_predicate(Clause([cond2]))
 
             # Create tree node 3

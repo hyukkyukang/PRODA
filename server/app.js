@@ -24,7 +24,6 @@ app.post("/runEVQL", function(req, res){
     console.log("app.post./runEVQL")
     const evqlStr = req.body.params.evqlStr;
     const dbName = req.body.params.dbName;
-    console.log(`params:${JSON.stringify(req.body.params)}`);
     const sql = func.EVQLToSQL(evqlStr);
     const queryResult = func.queryDB(sql, dbName);
     console.log("evql:" + evqlStr);
