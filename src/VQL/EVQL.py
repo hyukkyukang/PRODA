@@ -304,6 +304,7 @@ def evql_tree_to_SQL(evql_tree):
         return f"SELECT {', '.join(att_str_list)}"
     def get_formatted_selection(tree):
         """ Assumption: following disjunctive normal form"""
+        """ return: List of List of triple of (left_operand_str, operator, right_operand_str)"""
         formatted_clause_list= []
         for clause in tree.node.predicate.clauses:
             formatted_cond_list = []
@@ -311,7 +312,7 @@ def evql_tree_to_SQL(evql_tree):
                 # Format operation
                 l_op_str = tree.get_var_name(sel_cond.header_id)
                 op_str = sel_cond.op_type
-                r_op_str = tree.get_var_name(sel_cond.r_operand) if isinstance(sel_cond.r_operand, int) else sel_cond.r_operand
+                r_op_str = sel_cond.r_operand
                 # Append to list
                 formatted_cond_list.append((l_op_str, op_str, r_op_str))
             if formatted_cond_list:
@@ -320,7 +321,7 @@ def evql_tree_to_SQL(evql_tree):
     def create_where_clause(tree, tree_for_correlation):
         def create_clause_str(formatted_conditions):
             def to_value(operand):
-                if operand and (operand.startswith("step") or ".step" in operand) and operand.count("_"):
+                if operand and (operand.startswith("$step") or ".step" in operand) and operand.count("_"):
                     assert len(tree.children) == 1, "Assumption: only one child"
                     operand = f"({evql_tree_to_SQL(tree.first_child)})"
                 return operand
@@ -377,9 +378,9 @@ def evql_tree_to_SQL(evql_tree):
             for l_op, op, r_op in formatted_conditions:
                 assert l_op.count("_") > 1, "Having clause should have aggregated values"
                 l_op_split = l_op.split("_")
-                l_op_att_str = '_'.join(l_op_split[2:])
+                l_op_att_str = '_'.join(l_op_split[1:-1])
                 l_op_att_str = "*" if tree.node.header_names.index(l_op_att_str) == 0 else l_op_att_str
-                l_op_att_str = f"{l_op_split[1]}({l_op_att_str})"
+                l_op_att_str = f"{l_op_split[-1]}({l_op_att_str})"
                 formatted_cond_str_list.append(Operator.format_expression(l_op_att_str, op, r_op))
             return " AND ".join(formatted_cond_str_list)
         formatted_clause_list = get_formatted_selection(tree)

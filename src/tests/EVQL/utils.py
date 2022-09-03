@@ -270,8 +270,7 @@ class NestedQuery(TestQuery):
             next_headers = CARS_TABLE_HEADERS+["step1_max_speed_avg"]
             node_2 = EVQLNode(next_headers)
             node_2.add_projection(Header(next_headers.index("id")))
-            cond2 = Selecting(next_headers.index("max_speed"), Operator.greaterThan, 
-                            next_headers.index("step1_max_speed_avg"))
+            cond2 = Selecting(next_headers.index("max_speed"), Operator.greaterThan, "$step1_max_speed_avg")
             node_2.add_predicate(Clause([cond2]))
             self._evql = EVQLTree(node_2, [EVQLTree(node_1)])
         return self._evql
