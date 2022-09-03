@@ -1,4 +1,4 @@
-import {IEVQLTable} from "../../VQL/EVQLTable";
+import { IEVQLTable } from "../../VQL/EVQLTable";
 
 export interface ITutorialSection {
     title: string;
@@ -8,6 +8,6 @@ export interface ITutorialSection {
     demoDBName: string;
     syntaxExamples: IEVQLTable[];
     syntaxDescription: string;
-};
+}
 
 export default ITutorialSection;

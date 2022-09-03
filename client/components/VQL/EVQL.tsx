@@ -8,13 +8,13 @@ export const aggFunctions = ["none", "count", "sum", "avg", "min", "max"];
 export interface Header {
     id: number;
     agg_type: number | null;
-};
+}
 
-export interface Projection{
+export interface Projection {
     headers: Header[];
-};
+}
 
-export interface Function{
+export interface Function {
     header_id: number;
     // To identify functions
     func_type: string;
@@ -23,15 +23,15 @@ export interface Function{
     // For Selection
     op_type?: number;
     r_operand?: string;
-};
+}
 
-export interface Clause{
+export interface Clause {
     conditions: Function[];
-};
+}
 
-export interface Predicate{
+export interface Predicate {
     clauses: Clause[];
-};
+}
 
 export interface EVQLNode {
     header_names: string[];
@@ -39,15 +39,15 @@ export interface EVQLNode {
     foreach: number | null;
     projection: Projection;
     predicate: Predicate;
-};
+}
 
 export interface EVQLTree {
     node: EVQLNode;
     children: EVQLTree[];
     enforce_t_alias: boolean;
-};
+}
 
 export interface IEVQLContext {
     evql: EVQLTree;
     setEVQL: React.Dispatch<React.SetStateAction<EVQLTree>>;
-};
+}

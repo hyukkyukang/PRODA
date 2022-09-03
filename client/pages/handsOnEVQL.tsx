@@ -23,77 +23,82 @@ const HandsOnEVQL = (props: any) => {
     // Get more global varibles
     let queryParams = typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
     const exampleQueryName = queryParams && Boolean(queryParams) ? queryParams.get("queryName") : "";
-    
+
     // get sampled DB Rows
     const getRowsOfDemoDB = async () => {
         // Handle data fetching
-        runSQL({sql: `SELECT * FROM cars LIMIT 5`, dbName: demoDBName})
-        .then(data => {
-            setSampledDBRows(data['result']);
-        })
-        .catch((e) => {console.warn(`error:${e}`)});
+        runSQL({ sql: `SELECT * FROM cars LIMIT 5`, dbName: demoDBName })
+            .then((data) => {
+                setSampledDBRows(data["result"]);
+            })
+            .catch((e) => {
+                console.warn(`error:${e}`);
+            });
     };
 
     // Visualize EVQL
     const doInitSetting = async (queryName: string) => {
         // Fetch example EVQL
-        const tmpFetchResult = await fetchEVQL({queryType: queryName, dbName: demoDBName});
-        const tmpEVQL = tmpFetchResult['evql'];
+        const tmpFetchResult = await fetchEVQL({ queryType: queryName, dbName: demoDBName });
+        const tmpEVQL = tmpFetchResult["evql"];
         // Execute EVQL
-        const tmpQueryResult = await runEVQL({evqlStr: JSON.stringify(tmpEVQL), dbName: demoDBName});
+        const tmpQueryResult = await runEVQL({ evqlStr: JSON.stringify(tmpEVQL), dbName: demoDBName });
         // Set values
         setEVQL(tmpEVQL);
-        setSQL(tmpQueryResult['sql']);
-        setQueryResult(tmpQueryResult['result']);
+        setSQL(tmpQueryResult["sql"]);
+        setQueryResult(tmpQueryResult["result"]);
     };
 
     const executeQuery: React.MouseEventHandler = (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
-        runEVQL({evqlStr: JSON.stringify(evql), dbName:demoDBName})
-        .then(data => {
-            setSQL(data["sql"]);
-            setQueryResult(data["result"]);
-        })
-        .catch((e) => {
-            console.warn(`error:${e}`);
-            setSQL(undefined);
-            setQueryResult(undefined);
-        });
+        runEVQL({ evqlStr: JSON.stringify(evql), dbName: demoDBName })
+            .then((data) => {
+                setSQL(data["sql"]);
+                setQueryResult(data["result"]);
+            })
+            .catch((e) => {
+                console.warn(`error:${e}`);
+                setSQL(undefined);
+                setQueryResult(undefined);
+            });
     };
 
     useEffect(() => {
-        if (isEmptyObject(sampledDBRows)){
+        if (isEmptyObject(sampledDBRows)) {
             getRowsOfDemoDB();
         }
         if (exampleQueryName) doInitSetting(exampleQueryName);
     }, []);
 
     return (
-        <Grid container style={{background: "white", color:"black"}}>
+        <Grid container style={{ background: "white", color: "black" }}>
             <Grid item xs={showSideBar ? 9 : 12}>
                 <h1> Hands-On EVQL</h1>
-                <div style={{marginLeft: "10px"}}>
+                <div style={{ marginLeft: "10px" }}>
                     <div>
                         <h2> Demo Database </h2>
                         <p> Below is the "cars" table in our demo database: </p>
-                        <ResultTable queryResult={sampledDBRows}/>
+                        <ResultTable queryResult={sampledDBRows} />
                     </div>
                     <div>
                         <h2>EVQL Query</h2>
                         <p>Edit the EVQL table, and click "Run EVQL" to see the result. </p>
-                        <EVQLTables evqlRoot={evql} setEVQLRoot={setEVQL} setSelectedCoordinate={setSelectedCoordinate}/>
-                        <br/>
-                        <Button variant="contained" color="success" size="medium" onClick={executeQuery}>{"Run EVQL"} </Button>
+                        <EVQLTables evqlRoot={evql} setEVQLRoot={setEVQL} setSelectedCoordinate={setSelectedCoordinate} />
+                        <br />
+                        <Button variant="contained" color="success" size="medium" onClick={executeQuery}>
+                            {"Run EVQL"}{" "}
+                        </Button>
                         <h3>Results:</h3>
-                        <ResultTable queryResult={queryResult}/>
-                        <br/>
+                        <ResultTable queryResult={queryResult} />
+                        <br />
                         {/* TODO: Remove debugging print below */}
                         SQL (for debug): {sql}
-                        <br/><br/>
+                        <br />
+                        <br />
                     </div>
                 </div>
             </Grid>
-            <Grid item xs={3} style={{background: "#f5f6f7", boxShadow: "-2px 0px 0px #e6e9ed"}}>
-                <SideBar evqlRoot={evql} setEVQL={setEVQL} selectedCoordinate={selectedCoordinate} showSideBar={showSideBar} setShowSideBar={setShowSideBar}/>
+            <Grid item xs={3} style={{ background: "#f5f6f7", boxShadow: "-2px 0px 0px #e6e9ed" }}>
+                <SideBar evqlRoot={evql} setEVQL={setEVQL} selectedCoordinate={selectedCoordinate} showSideBar={showSideBar} setShowSideBar={setShowSideBar} />
             </Grid>
         </Grid>
     );
