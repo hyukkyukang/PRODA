@@ -1,24 +1,10 @@
 import classNames from "classnames";
 import React, { useEffect, useState, useRef } from "react";
-import {
-    Spreadsheet,
-    DataViewerComponent,
-    Matrix,
-    CellBase,
-    ColumnIndicatorComponent,
-    Point,
-} from "react-spreadsheet-custom";
+import { Spreadsheet, DataViewerComponent, Matrix, CellBase, ColumnIndicatorComponent, Point } from "react-spreadsheet-custom";
 import { AiOutlinePlusSquare, AiOutlineMinusSquare } from "react-icons/ai";
 
 import { EVQLTree, EVQLNode, aggFunctions, Function, Clause } from "./EVQL";
-import {
-    getNode,
-    EVQLNodeToEVQLTable,
-    getTreeTraversingPaths,
-    parseExpressions,
-    getProjectedNames,
-    addEVQLNode,
-} from "./utils";
+import { getNode, EVQLNodeToEVQLTable, getTreeTraversingPaths, parseExpressions, getProjectedNames, addEVQLNode } from "./utils";
 import { isEmptyObject } from "../../utils";
 
 // This is from react-spreadsheet-custom/src/selection.ts
@@ -48,9 +34,7 @@ export interface IEVQLTable {
 export interface IEVQLVisualizationContext {
     evqlRoot: EVQLTree;
     setEVQLRoot: React.Dispatch<React.SetStateAction<EVQLTree>>;
-    setSelectedCoordinate?: React.Dispatch<
-        React.SetStateAction<Coordinate | undefined>
-    >;
+    setSelectedCoordinate?: React.Dispatch<React.SetStateAction<Coordinate | undefined>>;
     childListPath: number[];
     editable: boolean;
 }
@@ -58,18 +42,11 @@ export interface IEVQLVisualizationContext {
 export interface EVQLTreeWrapperProps {
     evqlRoot: EVQLTree;
     setEVQLRoot: React.Dispatch<React.SetStateAction<EVQLTree>>;
-    setSelectedCoordinate?: React.Dispatch<
-        React.SetStateAction<Coordinate | undefined>
-    >;
+    setSelectedCoordinate?: React.Dispatch<React.SetStateAction<Coordinate | undefined>>;
     editable?: boolean;
 }
 
-export const EVQLColumnIndicator: ColumnIndicatorComponent = ({
-    column,
-    label,
-    selected,
-    onSelect,
-}) => {
+export const EVQLColumnIndicator: ColumnIndicatorComponent = ({ column, label, selected, onSelect }) => {
     // column is the id
     const handleClick = React.useCallback(
         (event: React.MouseEvent) => {
@@ -81,27 +58,17 @@ export const EVQLColumnIndicator: ColumnIndicatorComponent = ({
 
     // If isToProject,
     var headerStyle = {};
-    var componentToDisplay: React.ReactElement = isEmptyObject(
-        evqlTableHeader
-    ) ? (
-        <>{String(column)}</>
-    ) : (
-        <>{evqlTableHeader.name}</>
-    );
+    var componentToDisplay: React.ReactElement = isEmptyObject(evqlTableHeader) ? <>{String(column)}</> : <>{evqlTableHeader.name}</>;
     if (!isEmptyObject(evqlTableHeader) && evqlTableHeader.isToProject) {
         // Highlight the header background
         headerStyle = { background: "#FFDDA7", color: "black" };
         // Get all aggregation functions applied to this column
-        const aggFuncs = evqlTableHeader.aggFuncs.map(
-            (aggFuncId) => aggFunctions[aggFuncId]
-        );
+        const aggFuncs = evqlTableHeader.aggFuncs.map((aggFuncId) => aggFunctions[aggFuncId]);
         componentToDisplay = (
             <>
                 <>{evqlTableHeader.name}</>
                 <br />
-                <div style={{ fontSize: "14px" }}>
-                    {"(" + aggFuncs.join(", ") + ")"}
-                </div>
+                <div style={{ fontSize: "14px" }}>{"(" + aggFuncs.join(", ") + ")"}</div>
             </>
         );
     }
@@ -121,21 +88,13 @@ export const EVQLColumnIndicator: ColumnIndicatorComponent = ({
 };
 
 export const EVQLTable = (props: IEVQLVisualizationContext) => {
-    const {
-        evqlRoot,
-        setEVQLRoot,
-        setSelectedCoordinate,
-        childListPath,
-        editable,
-    } = props;
+    const { evqlRoot, setEVQLRoot, setSelectedCoordinate, childListPath, editable } = props;
 
     // Local context to visualize table
     const [evqlNode, setEVQLNode] = useState({} as EVQLNode);
     const [isFocus, setIsFocus] = useState<boolean>(true);
     const [rowLabels, setRowLabels] = useState<string[]>(["1"]);
-    const [tableContext, setTableContext] = useState<IEVQLTable>(
-        {} as IEVQLTable
-    );
+    const [tableContext, setTableContext] = useState<IEVQLTable>({} as IEVQLTable);
 
     const dataViewer: DataViewerComponent<CellBase<any>> = (cellData) => {
         if (cellData.cell) {
@@ -155,16 +114,10 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                 if (tmp && tmp.value != null) {
                     try {
                         // Create a condition
-                        const conditions: Function[] = parseExpressions(
-                            tmp.value,
-                            evqlNode.header_names
-                        );
-                        if (!isEmptyObject(conditions))
-                            newClause.conditions.push(...conditions);
+                        const conditions: Function[] = parseExpressions(tmp.value, evqlNode.header_names);
+                        if (!isEmptyObject(conditions)) newClause.conditions.push(...conditions);
                     } catch {
-                        console.warn(
-                            `Not a complete expression yet: ${tmp.value}`
-                        );
+                        console.warn(`Not a complete expression yet: ${tmp.value}`);
                     }
                 }
             }
@@ -186,27 +139,15 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
         };
 
         const isEntireTable = (selection: any) => {
-            return (
-                selection !== null &&
-                "type" in selection &&
-                selection.type === EntireType.Table
-            );
+            return selection !== null && "type" in selection && selection.type === EntireType.Table;
         };
 
         const isEntireColumns = (selection: any) => {
-            return (
-                selection !== null &&
-                "type" in selection &&
-                selection.type === EntireType.Column
-            );
+            return selection !== null && "type" in selection && selection.type === EntireType.Column;
         };
 
         const isEntireRows = (selection: any) => {
-            return (
-                selection !== null &&
-                "type" in selection &&
-                selection.type === EntireType.Row
-            );
+            return selection !== null && "type" in selection && selection.type === EntireType.Row;
         };
         var newCoordinate = { tableIndices: [], rowIdx: -1, colIdx: -1 };
         if (isPointRange(selection)) {
@@ -242,10 +183,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
         if (evqlRoot) {
             const node = getNode(evqlRoot, [...childListPath]);
             const tmpTableContext = EVQLNodeToEVQLTable(node, editable);
-            const tmpRowLabels = Array.from(
-                { length: tmpTableContext.rows.length },
-                (x, i) => i + 1
-            ).map((x) => x.toString());
+            const tmpRowLabels = Array.from({ length: tmpTableContext.rows.length }, (x, i) => i + 1).map((x) => x.toString());
             setEVQLNode(node);
             setTableContext(tmpTableContext);
             setRowLabels(tmpRowLabels);
@@ -264,8 +202,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                     onKeyDown={
                         editable
                             ? (event) => {
-                                  if (event.key == "Enter")
-                                      setEVQLRoot(Object.assign({}, evqlRoot));
+                                  if (event.key == "Enter") setEVQLRoot(Object.assign({}, evqlRoot));
                               }
                             : undefined
                     }
@@ -276,21 +213,10 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                 <div style={{ display: "inline-block" }}>
                     {evqlNode?.predicate?.clauses.map((clause, idx) => (
                         <div key={idx}>
-                            {evqlNode?.predicate?.clauses.length > 1 &&
-                            editable ? (
-                                <AiOutlineMinusSquare
-                                    size={27}
-                                    id={String(idx)}
-                                    onClick={removeRowHandler}
-                                />
+                            {evqlNode?.predicate?.clauses.length > 1 && editable ? (
+                                <AiOutlineMinusSquare size={27} id={String(idx)} onClick={removeRowHandler} />
                             ) : null}
-                            {idx == evqlNode?.predicate?.clauses.length - 1 &&
-                            editable ? (
-                                <AiOutlinePlusSquare
-                                    size={27}
-                                    onClick={addRowHandler}
-                                />
-                            ) : null}
+                            {idx == evqlNode?.predicate?.clauses.length - 1 && editable ? <AiOutlinePlusSquare size={27} onClick={addRowHandler} /> : null}
                             <br />
                         </div>
                     ))}
@@ -302,12 +228,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
 };
 
 export const EVQLTables = (props: EVQLTreeWrapperProps) => {
-    const {
-        evqlRoot,
-        setEVQLRoot,
-        setSelectedCoordinate,
-        editable = true,
-    } = props;
+    const { evqlRoot, setEVQLRoot, setSelectedCoordinate, editable = true } = props;
     // const childPathLists = isEmptyObject(evqlRoot) ? [] : getTreeTraversingPaths(evqlRoot);
     const childPathLists = getTreeTraversingPaths(evqlRoot);
 
@@ -321,10 +242,7 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
         // Get names of projection to add to header of new node
         const newlyprojectNames = getProjectedNames(evqlRoot, []);
         // Create new node
-        const newTree = addEVQLNode(
-            evqlRoot,
-            [...evqlRoot.node.header_names].concat(newlyprojectNames)
-        );
+        const newTree = addEVQLNode(evqlRoot, [...evqlRoot.node.header_names].concat(newlyprojectNames));
         setEVQLRoot(newTree);
     };
 
@@ -336,12 +254,9 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
         // Check if any predicates or projections. If so, ask for confirmation
         if (
             evqlRoot.node.projection.headers.length > 0 ||
-            (evqlRoot.node.predicate.clauses.length > 0 &&
-                evqlRoot.node.predicate.clauses[0].conditions.length > 0)
+            (evqlRoot.node.predicate.clauses.length > 0 && evqlRoot.node.predicate.clauses[0].conditions.length > 0)
         ) {
-            if (
-                !window.confirm("Are you sure you want to delete this table?")
-            ) {
+            if (!window.confirm("Are you sure you want to delete this table?")) {
                 return;
             }
         }
@@ -359,14 +274,9 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
                       <div key={index}>
                           {index + 1 == childPathLists.length ? (
                               <div style={{ display: "inline-block" }}>
-                                  <button onClick={addTableHandler}>
-                                      Add table
-                                  </button>
+                                  <button onClick={editable ? addTableHandler : undefined}>Add table</button>
                                   {index === 0 ? null : (
-                                      <button
-                                          onClick={removeTableHandler}
-                                          style={{ marginLeft: "2px" }}
-                                      >
+                                      <button onClick={editable ? removeTableHandler : undefined} style={{ marginLeft: "2px" }}>
                                           Remove table
                                       </button>
                                   )}
@@ -378,9 +288,7 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
                               setEVQLRoot={setEVQLRoot}
                               setSelectedCoordinate={setSelectedCoordinate}
                               childListPath={path}
-                              editable={
-                                  editable && index + 1 == childPathLists.length
-                              }
+                              editable={editable && index + 1 == childPathLists.length}
                           />
                           <br />
                           <br />
