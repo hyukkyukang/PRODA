@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Spreadsheet, DataViewerComponent, Matrix, CellBase, ColumnIndicatorComponent, Point } from "react-spreadsheet-custom";
 import { AiOutlinePlusSquare, AiOutlineMinusSquare } from "react-icons/ai";
 

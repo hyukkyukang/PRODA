@@ -8,7 +8,7 @@ export const Sidebar = (props: any) => {
 
     return (
         <>
-            <h1 style={{ marginLeft: "15px" }}>PRODA</h1>
+            <h1 style={{ marginLeft: "25px" }}>PRODA</h1>
             <List sx={{ width: "100%", maxWidth: 360 }}>
                 <ListItemButton onClick={(_) => setSelectedMenu(summaryMenuName)}>
                     <ListItemIcon>

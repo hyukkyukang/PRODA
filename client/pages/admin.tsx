@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Grid } from "@mui/material";
 
 import { Sidebar } from "../components/Dashboard/Sidebar";
-import { Summary } from "../components/Dashboard/Summary";
+import { Summary } from "../components/Dashboard/Summary/Summary";
 import { Users } from "../components/Dashboard/Users";
 import { Settings } from "../components/Dashboard/Settings";
+
+import { dummyUsers } from "../components/User/User";
 
 export const summaryMenuName = "Summary";
 export const usersMenuName = "Users";
@@ -17,7 +19,7 @@ export const Admin = (props: any) => {
         if (selectedMenu === summaryMenuName) {
             return <Summary />;
         } else if (selectedMenu === usersMenuName) {
-            return <Users />;
+            return <Users userData={dummyUsers} />;
         } else if (selectedMenu === settingsMenuName) {
             return <Settings />;
         } else {
@@ -27,16 +29,16 @@ export const Admin = (props: any) => {
     };
 
     return (
-        <>
+        <div>
             <Grid container spacing={2} style={{ whiteSpace: "pre-wrap", lineHeight: "1.5" }}>
                 <Grid item xs={2} sx={{ background: "#262b3f", color: "white", overflow: "auto" }}>
                     <Sidebar selectedMenu={selectedMenu} setSelectedMenu={setSelectedMenu} />
                 </Grid>
-                <Grid item xs={10} sx={{ background: "white", color: "black" }}>
+                <Grid item xs={10} sx={{ background: "#f3f6fa", color: "black" }}>
                     {getComponentOfSelectedMenu()}
                 </Grid>
             </Grid>
-        </>
+        </div>
     );
 };
 
