@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { TextField, InputAdornment, Grid } from "@mui/material";
-import { QueryType } from "../PairData/PairData";
+import { QueryType } from "../Dataset/PairData";
 
 const goalSettings = (querTypeName: string) => {
     const [goalNumOfQueries, setGoalNumOfQueries] = useState<number>(10);
