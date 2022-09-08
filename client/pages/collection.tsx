@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Container, Box, Paper, Button, Step, Stepper, StepLabel, Grid } from "@mui/material";
 
-import { Instruction, TaskTypes } from "../components/Collection/instruction";
+import { Instruction } from "../components/Collection/instruction";
 import { Task } from "../components/Collection/task";
 import { ResultTable } from "../components/ResultTable/resultTable";
 import { EVQLTable } from "../components/VQL/EVQLTable";
-import { AnswerSheet } from "../components/Collection/answerSheet";
-import { getTask } from "../api/connect";
+import { Answer, AnswerSheet } from "../components/Collection/answerSheet";
+import { fetchTask, sendWorkerAnswer } from "../api/connect";
 
 export const Collection = (props: any) => {
+    // Global state variables
+    const [answer, setAnswer] = useState<Answer>({ nl: "", type: 0 });
+
+    // Local state variables
     const [currentStep, setCurrentStep] = useState(0);
     const [currentTask, setCurrentTask] = useState<Task>();
     const currentSubTask = useMemo(() => (currentTask && currentTask.subTasks ? currentTask.subTasks[currentStep] : null), [currentTask, currentStep]);
@@ -34,18 +38,21 @@ export const Collection = (props: any) => {
     );
 
     const onSubmitHandler = () => {
+        // Send current step's info to the server
+        sendWorkerAnswer(answer);
+        // Change state
         setCurrentStep(currentStep + 1);
+        setAnswer({ ...answer, nl: "" });
     };
 
-    const getTaskHandler = async () => {
-        const result = await getTask();
+    const fetchTaskHandler = async () => {
+        const result = await fetchTask();
         const task = result["taskData"];
-        // console.log(`task: ${JSON.stringify(task)}`);
         setCurrentTask(task);
     };
 
     useEffect(() => {
-        getTaskHandler();
+        fetchTaskHandler();
     }, []);
 
     return (
@@ -89,7 +96,7 @@ export const Collection = (props: any) => {
                             ) : null}
                         </Paper>
                         <br />
-                        <AnswerSheet taskType={currentTask?.taskType} />
+                        <AnswerSheet taskType={currentTask?.taskType} answer={answer} setAnswer={setAnswer} />
                         <br />
                         <Button variant="contained" color="success" onClick={onSubmitHandler}>
                             Submit
