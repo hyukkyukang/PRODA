@@ -55,7 +55,7 @@ export const EVQLColumnIndicator: ColumnIndicatorComponent = ({ column, label, s
         },
         [onSelect, column]
     );
-    const evqlTableHeader = label as IEVQLTableHeader;
+    const evqlTableHeader = label as unknown as IEVQLTableHeader;
 
     // If isToProject,
     var headerStyle = {};
