@@ -1,35 +1,35 @@
-- name: Vercel Action
-  # You may pin to the exact commit or the version.
-  # uses: amondnet/vercel-action@9001bb7086d6c5414c4f8e500a89e8fa632eaefe
-  uses: amondnet/vercel-action@v25.1.0
-  with:
-    # Vercel token
-    vercel-token: 
-    # 
-    vercel-args: # optional, default is 
-    # if you want to comment on pr and commit, set true, default: true
-    github-comment: # optional, default is true
-    # if you want to comment on pr and commit, set token
-    github-token: # optional
-    # if you want to create github deployment, set true, default: false
-    github-deployment: # optional, default is false
-    # the working directory
-    working-directory: # optional
-    # Vercel CLI 17+, ❗️  The `name` property in vercel.json is deprecated (https://zeit.ink/5F)
-    vercel-project-id: # optional
-    # Vercel CLI 17+, ❗️  The `name` property in vercel.json is deprecated (https://zeit.ink/5F)
-    vercel-org-id: # optional
-    # The name of the project; if absent we'll use the `vercel inspect` command to determine.
-    vercel-project-name: # optional
-    # If you are work in team scope, you should set this value to your team id.
-    scope: # optional
-    # zeit.co token
-    zeit-token: 
-    # 
-    now-args: # optional, default is 
-    # Vercel CLI 17+, ❗️  The `name` property in vercel.json is deprecated (https://zeit.ink/5F)
-    now-project-id: # optional
-    # Vercel CLI 17+, ❗️  The `name` property in vercel.json is deprecated (https://zeit.ink/5F)
-    now-org-id: # optional
-    # You can assign a domain to this deployment. Please note that this domain must have been configured in the project. You can use pull request number via `{{PR_NUMBER}}` and branch via `{{BRANCH}}`
-    alias-domains: # optional, default is 
+name: Vercel Action
+# You may pin to the exact commit or the version.
+# uses: amondnet/vercel-action@9001bb7086d6c5414c4f8e500a89e8fa632eaefe
+uses: amondnet/vercel-action@v25.1.0
+with:
+  # Vercel token
+  vercel-token: 
+  # 
+  vercel-args: # optional, default is 
+  # if you want to comment on pr and commit, set true, default: true
+  github-comment: # optional, default is true
+  # if you want to comment on pr and commit, set token
+  github-token: # optional
+  # if you want to create github deployment, set true, default: false
+  github-deployment: # optional, default is false
+  # the working directory
+  working-directory: # optional
+  # Vercel CLI 17+, ❗️  The `name` property in vercel.json is deprecated (https://zeit.ink/5F)
+  vercel-project-id: # optional
+  # Vercel CLI 17+, ❗️  The `name` property in vercel.json is deprecated (https://zeit.ink/5F)
+  vercel-org-id: # optional
+  # The name of the project; if absent we'll use the `vercel inspect` command to determine.
+  vercel-project-name: # optional
+  # If you are work in team scope, you should set this value to your team id.
+  scope: # optional
+  # zeit.co token
+  zeit-token: 
+  # 
+  now-args: # optional, default is 
+  # Vercel CLI 17+, ❗️  The `name` property in vercel.json is deprecated (https://zeit.ink/5F)
+  now-project-id: # optional
+  # Vercel CLI 17+, ❗️  The `name` property in vercel.json is deprecated (https://zeit.ink/5F)
+  now-org-id: # optional
+  # You can assign a domain to this deployment. Please note that this domain must have been configured in the project. You can use pull request number via `{{PR_NUMBER}}` and branch via `{{BRANCH}}`
+  alias-domains: # optional, default is 
