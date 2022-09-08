@@ -2,6 +2,7 @@ import classNames from "classnames";
 import React, { useEffect, useState } from "react";
 import { Spreadsheet, DataViewerComponent, Matrix, CellBase, ColumnIndicatorComponent, Point } from "react-spreadsheet-custom";
 import { AiOutlinePlusSquare, AiOutlineMinusSquare } from "react-icons/ai";
+import { Typography } from "@mui/material";
 
 import { EVQLTree, EVQLNode, aggFunctions, Function, Clause } from "./EVQL";
 import { getNode, EVQLNodeToEVQLTable, getTreeTraversingPaths, parseExpressions, getProjectedNames, addEVQLNode } from "./utils";
@@ -33,7 +34,7 @@ export interface IEVQLTable {
 
 export interface IEVQLVisualizationContext {
     evqlRoot: EVQLTree;
-    setEVQLRoot: React.Dispatch<React.SetStateAction<EVQLTree>>;
+    setEVQLRoot?: React.Dispatch<React.SetStateAction<EVQLTree>>;
     setSelectedCoordinate?: React.Dispatch<React.SetStateAction<Coordinate | undefined>>;
     childListPath: number[];
     editable: boolean;
@@ -41,7 +42,7 @@ export interface IEVQLVisualizationContext {
 
 export interface EVQLTreeWrapperProps {
     evqlRoot: EVQLTree;
-    setEVQLRoot: React.Dispatch<React.SetStateAction<EVQLTree>>;
+    setEVQLRoot?: React.Dispatch<React.SetStateAction<EVQLTree>>;
     setSelectedCoordinate?: React.Dispatch<React.SetStateAction<Coordinate | undefined>>;
     editable?: boolean;
 }
@@ -54,7 +55,7 @@ export const EVQLColumnIndicator: ColumnIndicatorComponent = ({ column, label, s
         },
         [onSelect, column]
     );
-    const evqlTableHeader = label as IEVQLTableHeader;
+    const evqlTableHeader = label as unknown as IEVQLTableHeader;
 
     // If isToProject,
     var headerStyle = {};
@@ -161,11 +162,11 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
         } else {
             return;
         }
-        if (setSelectedCoordinate) setSelectedCoordinate(newCoordinate);
+        if (editable && setSelectedCoordinate) setSelectedCoordinate(newCoordinate);
     };
 
     const addRowHandler: React.MouseEventHandler = () => {
-        if (editable) {
+        if (editable && setEVQLRoot) {
             evqlNode.predicate.clauses.push({ conditions: [] });
             setEVQLRoot(Object.assign({}, evqlRoot));
         }
@@ -173,7 +174,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
 
     const removeRowHandler: React.MouseEventHandler = (event) => {
         const idx: number = parseInt(event?.currentTarget?.id);
-        if (editable) {
+        if (editable && setEVQLRoot) {
             evqlNode.predicate.clauses.splice(idx, 1);
             setEVQLRoot(Object.assign({}, evqlRoot));
         }
@@ -192,34 +193,36 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
 
     if (!isEmptyObject(tableContext)) {
         return (
-            <div style={{ display: "inline-block" }}>
-                <Spreadsheet
-                    className="table_sketch"
-                    data={tableContext.rows}
-                    columnLabels={tableContext.headers}
-                    rowLabels={rowLabels}
-                    onChange={editable ? onChangeHandler : undefined}
-                    onKeyDown={
-                        editable
-                            ? (event) => {
-                                  if (event.key == "Enter") setEVQLRoot(Object.assign({}, evqlRoot));
-                              }
-                            : undefined
-                    }
-                    onSelect={editable ? onSelectHandler : undefined}
-                    ColumnIndicator={EVQLColumnIndicator}
-                    DataViewer={(e) => dataViewer(e)}
-                />
+            <div style={{ overflow: "scroll" }}>
                 <div style={{ display: "inline-block" }}>
-                    {evqlNode?.predicate?.clauses.map((clause, idx) => (
-                        <div key={idx}>
-                            {evqlNode?.predicate?.clauses.length > 1 && editable ? (
-                                <AiOutlineMinusSquare size={27} id={String(idx)} onClick={removeRowHandler} />
-                            ) : null}
-                            {idx == evqlNode?.predicate?.clauses.length - 1 && editable ? <AiOutlinePlusSquare size={27} onClick={addRowHandler} /> : null}
-                            <br />
-                        </div>
-                    ))}
+                    <Spreadsheet
+                        className="table_sketch"
+                        data={tableContext.rows}
+                        columnLabels={tableContext.headers}
+                        rowLabels={rowLabels}
+                        onChange={editable ? onChangeHandler : undefined}
+                        onKeyDown={
+                            editable
+                                ? (event) => {
+                                      if (event.key == "Enter" && setEVQLRoot) setEVQLRoot(Object.assign({}, evqlRoot));
+                                  }
+                                : undefined
+                        }
+                        onSelect={editable ? onSelectHandler : undefined}
+                        ColumnIndicator={EVQLColumnIndicator}
+                        DataViewer={(e) => dataViewer(e)}
+                    />
+                    <div style={{ display: "inline-block" }}>
+                        {evqlNode?.predicate?.clauses.map((clause, idx) => (
+                            <div key={idx}>
+                                {evqlNode?.predicate?.clauses.length > 1 && editable ? (
+                                    <AiOutlineMinusSquare size={27} id={String(idx)} onClick={removeRowHandler} />
+                                ) : null}
+                                {idx == evqlNode?.predicate?.clauses.length - 1 && editable ? <AiOutlinePlusSquare size={27} onClick={addRowHandler} /> : null}
+                                <br />
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         );
@@ -228,7 +231,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
 };
 
 export const EVQLTables = (props: EVQLTreeWrapperProps) => {
-    const { evqlRoot, setEVQLRoot, setSelectedCoordinate, editable = true } = props;
+    const { evqlRoot, setEVQLRoot = undefined, setSelectedCoordinate = undefined, editable = true } = props;
     // const childPathLists = isEmptyObject(evqlRoot) ? [] : getTreeTraversingPaths(evqlRoot);
     const childPathLists = getTreeTraversingPaths(evqlRoot);
 
@@ -243,7 +246,7 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
         const newlyprojectNames = getProjectedNames(evqlRoot, []);
         // Create new node
         const newTree = addEVQLNode(evqlRoot, [...evqlRoot.node.header_names].concat(newlyprojectNames));
-        setEVQLRoot(newTree);
+        if (setEVQLRoot) setEVQLRoot(newTree);
     };
 
     const removeTableHandler: React.MouseEventHandler = (event) => {
@@ -263,20 +266,22 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
 
         // TODO: need to change data structure of EVQL.
         const subTree = evqlRoot.children[0];
-        setEVQLRoot(subTree);
+        if (setEVQLRoot) setEVQLRoot(subTree);
     };
 
     return (
-        <div style={{ overflow: "scroll" }}>
+        <React.Fragment>
             {isEmptyObject(evqlRoot)
                 ? null
                 : childPathLists.map((path: number[], index: number) => (
                       <div key={index}>
-                          {index + 1 == childPathLists.length ? (
+                          {/* <Typography>Step: {index + 1}</Typography> */}
+                          {childPathLists.length > 1 ? `Step: ${index + 1}` : null}
+                          {editable && index + 1 == childPathLists.length ? (
                               <div style={{ display: "inline-block" }}>
-                                  <button onClick={editable ? addTableHandler : undefined}>Add table</button>
+                                  <button onClick={addTableHandler}>Add table</button>
                                   {index === 0 ? null : (
-                                      <button onClick={editable ? removeTableHandler : undefined} style={{ marginLeft: "2px" }}>
+                                      <button onClick={removeTableHandler} style={{ marginLeft: "2px" }}>
                                           Remove table
                                       </button>
                                   )}
@@ -294,7 +299,7 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
                           <br />
                       </div>
                   ))}
-        </div>
+        </React.Fragment>
     );
 };
 

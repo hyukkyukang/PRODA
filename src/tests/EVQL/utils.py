@@ -1,13 +1,6 @@
-import os
-import sys
 import abc
 
-IMPORT_VIA_RELATIVE_PATH = True
-if IMPORT_VIA_RELATIVE_PATH:
-    sys.path.append(os.path.join(os.path.dirname(sys.path[0]), 'VQL'))
-    from EVQL import EVQLTree, EVQLNode, Selecting, Ordering, Grouping, Operator, Aggregator, Header, Clause
-else:
-    from VQL.EVQL import EVQLTree , EVQLNode, Selecting, Ordering, Grouping, Operator, Aggregator, Header, Clause
+from VQL.EVQL import EVQLTree , EVQLNode, Selecting, Ordering, Grouping, Operator, Aggregator, Header, Clause
 
 CARS_TABLE_HEADERS = ["cars", "id", "model", "horsepower", "max_speed", "year", "price"]
 
@@ -239,10 +232,10 @@ class HavingQuery(TestQuery):
             node_1.add_predicate(clause)
 
             # Create tree node 2
-            next_headers = CARS_TABLE_HEADERS+["step1_max_speed_avg"]
+            next_headers = [CARS_TABLE_HEADERS[0], "step1_model","step1_max_speed_avg"]
             # TODO: Need to discuss about how to name variables from previous step
             node_2 = EVQLNode(next_headers)
-            node_2.add_projection(Header(next_headers.index("model")))
+            node_2.add_projection(Header(next_headers.index("step1_model")))
             
             cond2 = Selecting(next_headers.index("step1_max_speed_avg"),
                               Operator.greaterThan, "2000")

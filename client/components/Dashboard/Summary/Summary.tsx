@@ -4,7 +4,7 @@ import { LinearProgress, linearProgressClasses, styled } from "@mui/material";
 
 import { IUser, UserTable, dummyUsers } from "../../User/User";
 import { SummaryChart } from "./Chart";
-import { IPairData, dummyPairData, QueryType, dummyGoalNumOfQueries } from "../../PairData/PairData";
+import { ILogData, dummyLogData, QueryType, dummyGoalNumOfQueries } from "../../Dataset/PairData";
 
 const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
     height: 6,
@@ -18,15 +18,15 @@ const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
     },
 }));
 
-const calculateStatByQueryTypes = (pairData: IPairData[]) => {
+const calculateStatByQueryTypes = (logData: ILogData[]) => {
     var countTypes: { [key: string]: number } = {};
     // Create a map of query types to count
     Object.values(QueryType).forEach((value: string) => {
         countTypes[value] = 0;
     });
     // Count the number of each query type
-    pairData.forEach((pairDatum) => {
-        countTypes[pairDatum.queryType]++;
+    logData.forEach((logDatum) => {
+        countTypes[logDatum.queryType]++;
     });
     return countTypes;
 };
@@ -34,8 +34,8 @@ const calculateStatByQueryTypes = (pairData: IPairData[]) => {
 export const Summary = (props: any) => {
     const [remainingBlanace, setRemainingBlanace] = useState<number>(300);
     const [users, setUsers] = useState<IUser[]>(dummyUsers);
-    const [collectedPairData, setCollectedPairData] = useState<IPairData[]>(dummyPairData);
-    const dataStatByQueryType = useMemo(() => calculateStatByQueryTypes(collectedPairData), [collectedPairData]);
+    const [collectedLogData, setCollectedLogData] = useState<ILogData[]>(dummyLogData);
+    const dataStatByQueryType = useMemo(() => calculateStatByQueryTypes(collectedLogData), [collectedLogData]);
     const totalGoalNumOfQueries = Object.values(dummyGoalNumOfQueries).reduce((acc, value) => acc + value, 0);
 
     // TODO: Retrieve original balance from backend
@@ -66,9 +66,9 @@ export const Summary = (props: any) => {
                                 Collected Queries
                             </Typography>
                             <Typography fontWeight={"bold"} fontFamily={"Roboto"} fontSize={60} align={"center"}>
-                                {collectedPairData.length}
+                                {collectedLogData.length}
                             </Typography>
-                            <BorderLinearProgress variant="determinate" value={(collectedPairData.length * 100) / totalGoalNumOfQueries} />
+                            <BorderLinearProgress variant="determinate" value={(collectedLogData.length * 100) / totalGoalNumOfQueries} />
                         </CardContent>
                     </Card>
                 </Grid>

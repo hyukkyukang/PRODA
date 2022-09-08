@@ -31,20 +31,31 @@ export const dummyGoalNumOfQueries: { [key: string]: number } = Object.values(Qu
     return { ...acc, [value]: 5 };
 }, {});
 
+// Change the name. PairData may be misleading
 export interface IPairData {
     nl: string;
     evql: EVQLTree;
     sql: string;
     queryType: string;
-    date: IDate;
+    dbName: string;
+    tableExcerpt: any[];
+}
+
+export interface ILogData {
     userName: string;
+    dbName: string;
+    nl: string;
+    sql: string;
+    evql: EVQLTree;
+    queryType: string;
+    date: IDate;
 }
 
 export const dateToString = (date: IDate) => {
     return `${date.year}.${date.month}.${date.day}`;
 };
 
-export const dummyPairData: IPairData[] = [
+export const dummyLogData: ILogData[] = [
     {
         nl: "Show all cars",
         evql: {
@@ -56,6 +67,7 @@ export const dummyPairData: IPairData[] = [
         queryType: QueryType.WHEREScalarComparison,
         date: { year: 2022, month: 9, day: 1 },
         userName: "John",
+        dbName: "cars",
     },
     {
         nl: "Count all cars",
@@ -68,6 +80,7 @@ export const dummyPairData: IPairData[] = [
         queryType: QueryType.WHEREScalarComparison,
         date: { year: 2022, month: 9, day: 1 },
         userName: "John",
+        dbName: "cars",
     },
     {
         nl: "Count all cars produced in year 2022",
@@ -80,6 +93,7 @@ export const dummyPairData: IPairData[] = [
         queryType: QueryType.WHEREQuantifiedScalarComparison,
         date: { year: 2022, month: 9, day: 3 },
         userName: "John",
+        dbName: "cars",
     },
     {
         nl: "Show all models",
@@ -92,6 +106,7 @@ export const dummyPairData: IPairData[] = [
         queryType: QueryType.WHEREAttAggComparison,
         date: { year: 2022, month: 9, day: 4 },
         userName: "John",
+        dbName: "cars",
     },
     {
         nl: "Show all models produced in year 2022",
@@ -104,6 +119,7 @@ export const dummyPairData: IPairData[] = [
         queryType: QueryType.WHEREConstAggComparison,
         date: { year: 2022, month: 9, day: 5 },
         userName: "John",
+        dbName: "cars",
     },
     // By Jane
     {
@@ -117,6 +133,7 @@ export const dummyPairData: IPairData[] = [
         queryType: QueryType.WHEREScalarComparison,
         date: { year: 2022, month: 8, day: 1 },
         userName: "Jane",
+        dbName: "cars",
     },
     {
         nl: "Count all model",
@@ -129,6 +146,7 @@ export const dummyPairData: IPairData[] = [
         queryType: QueryType.WHEREScalarComparison,
         date: { year: 2022, month: 8, day: 1 },
         userName: "Jane",
+        dbName: "cars",
     },
     {
         nl: "Show max_speed of all cars produced in year 2012",
@@ -141,6 +159,7 @@ export const dummyPairData: IPairData[] = [
         queryType: QueryType.WHEREQuantifiedScalarComparison,
         date: { year: 2022, month: 8, day: 3 },
         userName: "Jane",
+        dbName: "cars",
     },
     {
         nl: "Show all models order by horsepower",
@@ -153,6 +172,7 @@ export const dummyPairData: IPairData[] = [
         queryType: QueryType.WHEREAttAggComparison,
         date: { year: 2022, month: 8, day: 4 },
         userName: "Jane",
+        dbName: "cars",
     },
     {
         nl: "Count all models produced in year 2012",
@@ -165,6 +185,7 @@ export const dummyPairData: IPairData[] = [
         queryType: QueryType.WHEREConstAggComparison,
         date: { year: 2022, month: 8, day: 5 },
         userName: "Jane",
+        dbName: "cars",
     },
     // BY Jack
     {
@@ -178,5 +199,6 @@ export const dummyPairData: IPairData[] = [
         queryType: QueryType.WHEREScalarComparison,
         date: { year: 2022, month: 7, day: 1 },
         userName: "Jack",
+        dbName: "cars",
     },
 ];

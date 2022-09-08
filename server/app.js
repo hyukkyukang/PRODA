@@ -1,43 +1,58 @@
-console.log("Begin server")
+console.log("Begin server");
 
 const config = require("./config");
 const func = require("./function.js");
 var express = require("express");
-var cors = require('cors');
+var cors = require("cors");
 
 var app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/", function(req, res){
+app.get("/", function (req, res) {
     console.log("app.get./");
 });
 
-app.post("/fetchEVQL", function(req, res){
-    console.log("app.post./fetchEVQL")
+/* Handling Request */
+app.post("/fetchEVQL", function (req, res) {
+    console.log("app.post./fetchEVQL");
     const queryType = req.body.params.queryType;
     const evql = func.getEVQL(queryType);
-    res.send({evql: evql});
+    res.send({ evql: evql });
 });
 
-app.post("/runEVQL", function(req, res){
-    console.log("app.post./runEVQL")
+app.post("/runEVQL", function (req, res) {
+    console.log("app.post./runEVQL");
     const evqlStr = req.body.params.evqlStr;
     const dbName = req.body.params.dbName;
     const sql = func.EVQLToSQL(evqlStr);
     const queryResult = func.queryDB(sql, dbName);
     console.log("evql:" + evqlStr);
     console.log("sql: " + sql);
-    res.send({sql: sql, result: queryResult});
+    res.send({ sql: sql, result: queryResult });
 });
 
-app.post("/runSQL", function(req, res){
+app.post("/runSQL", function (req, res) {
     console.log("app.posts.runSQL");
     const sql = req.body.params.sql;
     const dbName = req.body.params.dbName;
     const queryResult = func.queryDB(sql, dbName);
     console.log(`SQL:${JSON.stringify(sql)} on ${dbName}`);
-    res.send({result: queryResult});
+    res.send({ result: queryResult });
+});
+
+app.post("/fetchTask", function (req, res) {
+    console.log("app.post./fetchask");
+    const taskData = func.getTask();
+    console.log(`task data: ${JSON.stringify(taskData)}`);
+    res.send({ taskData: taskData });
+});
+
+/* Handling Response */
+app.post("/sendAnswer", function (req, res) {
+    console.log(`app.post./sendAnswer`);
+    console.log(`Received answer: ${JSON.stringify(req.body.params)}`);
+    // TODO: Save received data in the Database
 });
 
 app.listen(config.serverPort);
