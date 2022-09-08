@@ -42,7 +42,7 @@ app.post("/runSQL", function (req, res) {
 
 app.post("/getTask", function (req, res) {
     console.log("app.post./getTask");
-    const taskData = func.getCollectionTask();
+    const taskData = func.getTask();
     console.log(`task data: ${JSON.stringify(taskData)}`);
     res.send({ taskData: taskData });
 });

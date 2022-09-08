@@ -1,6 +1,8 @@
 import React from "react";
 import { Typography, Input, Paper, Switch, FormGroup, FormControlLabel, createTheme, ThemeProvider } from "@mui/material";
 
+import { TaskTypes } from "./instruction";
+
 const theme = createTheme({
     components: {
         MuiSwitch: {
@@ -87,4 +89,15 @@ export const AugmentationAnswerSheet = () => {
             </Paper>
         </React.Fragment>
     );
+};
+
+export const AnswerSheet = (props: { taskType: number | undefined }) => {
+    const { taskType } = props;
+    if (taskType === TaskTypes.YesNo) {
+        return <YesNoAnswerSheet />;
+    } else if (taskType === TaskTypes.NLAugmentation) {
+        return <AugmentationAnswerSheet />;
+    } else {
+        return <></>;
+    }
 };
