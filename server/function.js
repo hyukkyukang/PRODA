@@ -34,9 +34,9 @@ function queryDB(sql, dbName) {
     return result;
 }
 
-function getCollectionTask() {
+function getTask() {
     var spawnSync = require("child_process").spawnSync;
-    var process = spawnSync("python3", [`${PathToPythonSrc}/create_task.py`]);
+    var process = spawnSync("python3", [`${PathToPythonSrc}/task/task.py`]);
     var result = process.stdout.toString();
     // Parse JSON string
     var taskData = null;
@@ -53,5 +53,5 @@ module.exports = {
     EVQLToSQL: EVQLToSQL,
     getEVQL: getEVQL,
     queryDB: queryDB,
-    getCollectionTask: getCollectionTask,
+    getTask: getTask,
 };
