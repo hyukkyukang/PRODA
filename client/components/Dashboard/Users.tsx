@@ -3,9 +3,9 @@ import { IconButton, Table, TableBody, TableCell, TableContainer, TableHead, Tab
 import { Box, Collapse, Typography, Paper } from "@mui/material";
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 
-import { IPairData, dateToString } from "../PairData/PairData";
+import { ILogData, dateToString } from "../Dataset/PairData";
 import { IUser } from "../User/User";
-import { getPairDataOfUser } from "../User/utils";
+import { getLogDataOfUser } from "../User/utils";
 
 interface IUserContext {
     userData: IUser[];
@@ -13,7 +13,6 @@ interface IUserContext {
 
 export const Users = (props: IUserContext) => {
     const { userData } = props;
-    const [selectedUserName, setSelectedUserName] = useState<string>("");
     return (
         <>
             <h1>Worker Log</h1>
@@ -58,7 +57,7 @@ interface IRowContext {
 const Row = (props: IRowContext) => {
     const { data } = props;
     const [isOpen, setIsOpen] = useState<boolean>(false);
-    const [pairDataOfSelectedUser, setPairDataOfSelectedUser] = useState<IPairData[]>([]);
+    const [logDataOfSelectedUser, setLogDataOfSelectedUser] = useState<ILogData[]>([]);
 
     const toggleClickHandler: React.MouseEventHandler<HTMLButtonElement> = () => {
         setIsOpen(!isOpen);
@@ -66,8 +65,8 @@ const Row = (props: IRowContext) => {
 
     useEffect(() => {
         if (data?.name) {
-            getPairDataOfUser(data.name).then((data) => {
-                setPairDataOfSelectedUser(data);
+            getLogDataOfUser(data.name).then((data) => {
+                setLogDataOfSelectedUser(data);
             });
         }
     }, []);
@@ -108,14 +107,14 @@ const Row = (props: IRowContext) => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {pairDataOfSelectedUser.map((pairDatum: IPairData, idx: number) => (
+                                {logDataOfSelectedUser.map((logDatum: ILogData, idx: number) => (
                                     <TableRow key={idx}>
                                         <TableCell component="th" scope="row">
-                                            {dateToString(pairDatum.date)}
+                                            {dateToString(logDatum.date)}
                                         </TableCell>
-                                        <TableCell>{pairDatum.nl}</TableCell>
-                                        <TableCell align="left">{pairDatum.sql}</TableCell>
-                                        <TableCell align="left">{pairDatum.queryType}</TableCell>
+                                        <TableCell>{logDatum.nl}</TableCell>
+                                        <TableCell align="left">{logDatum.sql}</TableCell>
+                                        <TableCell align="left">{logDatum.queryType}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

@@ -1,6 +1,6 @@
-import { IPairData, dummyPairData } from "../PairData/PairData";
+import { ILogData, dummyLogData } from "../Dataset/PairData";
 
 // TODO: Change to async and get info. from server
-export const getPairDataOfUser = async (userName: string): Promise<IPairData[]> => {
-    return dummyPairData.filter((pairData) => pairData.userName === userName);
+export const getLogDataOfUser = async (userName: string): Promise<ILogData[]> => {
+    return dummyLogData.filter((logData) => logData.userName === userName);
 };

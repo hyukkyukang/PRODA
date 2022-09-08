@@ -1,5 +1,5 @@
 import { Paper, TableContainer, Table, TableHead, TableBody, TableRow, TableCell } from "@mui/material";
-import { IDate, dateToString } from "../PairData/PairData";
+import { IDate, dateToString } from "../Dataset/PairData";
 
 export interface IUser {
     name: string;
