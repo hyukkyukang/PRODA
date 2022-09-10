@@ -239,10 +239,10 @@ class HavingQuery(TestQuery):
             node_1.add_predicate(clause)
 
             # Create tree node 2
-            next_headers = CARS_TABLE_HEADERS+["step1_max_speed_avg"]
+            next_headers = [CARS_TABLE_HEADERS[0], "step1_model","step1_max_speed_avg"]
             # TODO: Need to discuss about how to name variables from previous step
             node_2 = EVQLNode(next_headers)
-            node_2.add_projection(Header(next_headers.index("model")))
+            node_2.add_projection(Header(next_headers.index("step1_model")))
             
             cond2 = Selecting(next_headers.index("step1_max_speed_avg"),
                               Operator.greaterThan, "2000")

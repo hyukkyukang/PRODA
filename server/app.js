@@ -13,6 +13,7 @@ app.get("/", function (req, res) {
     console.log("app.get./");
 });
 
+/* Handling Request */
 app.post("/fetchEVQL", function (req, res) {
     console.log("app.post./fetchEVQL");
     const queryType = req.body.params.queryType;
@@ -40,11 +41,18 @@ app.post("/runSQL", function (req, res) {
     res.send({ result: queryResult });
 });
 
-app.post("/getTask", function (req, res) {
-    console.log("app.post./getTask");
-    const taskData = func.getCollectionTask();
+app.post("/fetchTask", function (req, res) {
+    console.log("app.post./fetchask");
+    const taskData = func.getTask();
     console.log(`task data: ${JSON.stringify(taskData)}`);
     res.send({ taskData: taskData });
+});
+
+/* Handling Response */
+app.post("/sendAnswer", function (req, res) {
+    console.log(`app.post./sendAnswer`);
+    console.log(`Received answer: ${JSON.stringify(req.body.params)}`);
+    // TODO: Save received data in the Database
 });
 
 app.listen(config.serverPort);

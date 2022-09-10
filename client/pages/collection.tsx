@@ -1,53 +1,58 @@
-import React, { useState, useEffect } from "react";
-import { Switch, Box, Paper, Button, Step, Stepper, StepLabel, Grid } from "@mui/material";
+import React, { useState, useEffect, useMemo } from "react";
+import { Container, Box, Paper, Button, Step, Stepper, StepLabel, Grid } from "@mui/material";
 
 import { Instruction } from "../components/Collection/instruction";
-import { TaskTypes, CollectionData, dummyCollectionData1, dummyCollectionData2 } from "../components/Collection/collectionData";
+import { Task } from "../components/Collection/task";
 import { ResultTable } from "../components/ResultTable/resultTable";
 import { EVQLTable } from "../components/VQL/EVQLTable";
-import { YesNoAnswerSheet, AugmentationAnswerSheet } from "../components/Collection/answerSheet";
-import { getTask } from "../api/connect";
-
-const steps = ["Step 1", "Step 2", "Step 3"];
+import { Answer, AnswerSheet } from "../components/Collection/answerSheet";
+import { fetchTask, sendWorkerAnswer } from "../api/connect";
 
 export const Collection = (props: any) => {
+    // Global state variables
+    const [answer, setAnswer] = useState<Answer>({ nl: "", type: 0 });
+
+    // Local state variables
     const [currentStep, setCurrentStep] = useState(0);
-    const [collectionData, setCollectionData] = useState<CollectionData>(dummyCollectionData1);
+    const [currentTask, setCurrentTask] = useState<Task>();
+    const currentSubTask = useMemo(() => (currentTask && currentTask.subTasks ? currentTask.subTasks[currentStep] : null), [currentTask, currentStep]);
 
     const MyStepper: JSX.Element = (
         <React.Fragment>
             <br />
-            <Stepper nonLinear activeStep={currentStep}>
-                {steps.map((label, idx) => (
-                    <Step key={label}>
-                        <StepLabel>{label}</StepLabel>
-                    </Step>
-                ))}
-            </Stepper>
+            {currentTask && currentTask.subTasks ? (
+                <Container maxWidth="xl">
+                    <Stepper nonLinear activeStep={currentStep}>
+                        {Array(currentTask.subTasks.length)
+                            .fill(0)
+                            .map((_, idx) => (
+                                <Step key={idx + 1}>
+                                    <StepLabel>Step{idx + 1}</StepLabel>
+                                </Step>
+                            ))}
+                    </Stepper>
+                </Container>
+            ) : null}
             <br />
         </React.Fragment>
     );
 
     const onSubmitHandler = () => {
-        setCollectionData(dummyCollectionData2);
-        setCurrentStep(1);
+        // Send current step's info to the server
+        sendWorkerAnswer(answer);
+        // Change state
+        setCurrentStep(currentStep + 1);
+        setAnswer({ ...answer, nl: "" });
     };
 
-    const answerSheet = () => {
-        if (collectionData.taskType === TaskTypes.YesNo) {
-            return <YesNoAnswerSheet />;
-        } else {
-            return <AugmentationAnswerSheet />;
-        }
-    };
-
-    const getTaskHandler = async () => {
-        const task = await getTask();
-        console.log(`task:${JSON.stringify(task)}`);
+    const fetchTaskHandler = async () => {
+        const result = await fetchTask();
+        const task = result["taskData"];
+        setCurrentTask(task);
     };
 
     useEffect(() => {
-        getTaskHandler();
+        fetchTaskHandler();
     }, []);
 
     return (
@@ -57,35 +62,41 @@ export const Collection = (props: any) => {
                     <h1 style={{ marginLeft: "10px" }}>Data Collection</h1>
                     {MyStepper}
                     <div style={{ marginLeft: "1%", width: "98%" }}>
-                        <Instruction taskType={collectionData.taskType} />
+                        <Instruction taskType={currentTask?.taskType} />
                         <br />
                         <Paper elevation={2}>
-                            <Box style={{ marginLeft: "15px" }}>
-                                <br />
-                                <b>Natural Language Query</b>
-                                <br />
-                                <span>{collectionData.nl}</span>
-                                <br />
-                                <br />
-                                <Grid container spacing={2}>
-                                    <Grid item xs={12} sm={6}>
-                                        <b>EVQL</b>
-                                        <br />
-                                        <EVQLTable evqlRoot={collectionData.evql} childListPath={collectionData.evqlTreePath} editable={false} />
+                            {currentTask && currentSubTask ? (
+                                <Box style={{ marginLeft: "15px" }}>
+                                    <br />
+                                    <b>Natural Language Query</b>
+                                    <br />
+                                    <span>{currentSubTask?.nl}</span>
+                                    <br />
+                                    <br />
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12} sm={6}>
+                                            <b>EVQL</b>
+                                            <br />
+                                            <EVQLTable
+                                                evqlRoot={{ node: currentSubTask.evql, children: [], enforce_t_alias: false }}
+                                                childListPath={[]}
+                                                editable={false}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <b>Table Excerpt</b>
+                                            <ResultTable queryResult={currentSubTask.tableExcerpt} />
+                                            <br />
+                                            <b>Query Result</b>
+                                            <ResultTable queryResult={currentSubTask.resultTable} />
+                                        </Grid>
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                        <b>Table Excerpt</b>
-                                        <ResultTable queryResult={collectionData.tableExcerpt} />
-                                        <br />
-                                        <b>Query Result</b>
-                                        <ResultTable queryResult={collectionData.queryResult} />
-                                    </Grid>
-                                </Grid>
-                                <br />
-                            </Box>
+                                    <br />
+                                </Box>
+                            ) : null}
                         </Paper>
                         <br />
-                        {answerSheet()}
+                        <AnswerSheet taskType={currentTask?.taskType} answer={answer} setAnswer={setAnswer} />
                         <br />
                         <Button variant="contained" color="success" onClick={onSubmitHandler}>
                             Submit

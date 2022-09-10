@@ -1,5 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Typography, Input, Paper, Switch, FormGroup, FormControlLabel, createTheme, ThemeProvider } from "@mui/material";
+
+import { TaskTypes } from "./instruction";
+
+export interface Answer {
+    type: TaskTypes;
+    nl: string;
+    isCorrect?: boolean;
+}
+
+export interface AnswerSheetProps {
+    taskType: TaskTypes | undefined;
+    answer: Answer;
+    setAnswer: React.Dispatch<React.SetStateAction<Answer>>;
+}
 
 const theme = createTheme({
     components: {
@@ -30,12 +44,22 @@ const theme = createTheme({
     },
 });
 
-export const YesNoAnswerSheet = () => {
+export const YesNoAnswerSheet = (props: { answer: Answer; setAnswer: React.Dispatch<React.SetStateAction<Answer>> }) => {
+    const { answer, setAnswer } = props;
     const [ischecked, setIsChecked] = React.useState<boolean>(false);
 
     const handleSwitchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setIsChecked(event.target.checked);
+        setAnswer({ ...answer, isCorrect: event.target.checked });
     };
+
+    const inputHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAnswer({ ...answer, nl: event.target.value });
+    };
+
+    useEffect(() => {
+        setAnswer({ ...answer, type: TaskTypes.NLAugmentation });
+    }, []);
 
     const Button = (
         <ThemeProvider theme={theme}>
@@ -62,7 +86,7 @@ export const YesNoAnswerSheet = () => {
                         <Typography sx={{ paddingTop: "10px" }} variant="h6">
                             What is the correct natural language query?
                         </Typography>
-                        <Input placeholder="Type correct natural language query" sx={{ width: "98%" }} />
+                        <Input value={answer.nl} placeholder="Type correct natural language query" sx={{ width: "98%" }} onChange={inputHandler} />
                         <br />
                         <br />
                     </div>
@@ -72,7 +96,17 @@ export const YesNoAnswerSheet = () => {
     );
 };
 
-export const AugmentationAnswerSheet = () => {
+export const AugmentationAnswerSheet = (props: { answer: Answer; setAnswer: React.Dispatch<React.SetStateAction<Answer>> }) => {
+    const { answer, setAnswer } = props;
+
+    const inputHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAnswer({ ...answer, nl: event.target.value });
+    };
+
+    useEffect(() => {
+        setAnswer({ ...answer, type: TaskTypes.NLAugmentation });
+    }, []);
+
     return (
         <React.Fragment>
             <Paper elevation={2}>
@@ -80,11 +114,22 @@ export const AugmentationAnswerSheet = () => {
                     <Typography sx={{ paddingTop: "10px" }} variant="h6">
                         Please rephrase the given natural language query
                     </Typography>
-                    <Input placeholder="Type rephrased natural language query" sx={{ width: "98%" }} />
+                    <Input defaultValue={answer.nl} placeholder="Type rephrased natural language query" sx={{ width: "98%" }} onChange={inputHandler} />
                     <br />
                     <br />
                 </div>
             </Paper>
         </React.Fragment>
     );
+};
+
+export const AnswerSheet = (props: AnswerSheetProps) => {
+    const { taskType, answer, setAnswer } = props;
+    if (taskType === TaskTypes.YesNo) {
+        return <YesNoAnswerSheet answer={answer} setAnswer={setAnswer} />;
+    } else if (taskType === TaskTypes.NLAugmentation) {
+        return <AugmentationAnswerSheet answer={answer} setAnswer={setAnswer} />;
+    } else {
+        return <></>;
+    }
 };
