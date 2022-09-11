@@ -1,13 +1,6 @@
 import json
 
-IMPORT_VIA_RELATIVE_PATH = True
-if IMPORT_VIA_RELATIVE_PATH:
-    import os, sys
-    sys.path.append(os.path.join(os.path.dirname(sys.path[0]), 'tests/EVQL'))
-    from utils import HavingQuery
-else:
-    from tests.EVQL.utils import HavingQuery
-
+from tests.EVQL.utils import HavingQuery
 
 class Task:
     def __init__(self, nl, sql, evql, query_type, db_name, task_type, sub_tasks=None):

@@ -1,14 +1,7 @@
 import json
 import argparse
 
-
-IMPORT_VIA_RELATIVE_PATH = True
-if IMPORT_VIA_RELATIVE_PATH:
-    import os, sys
-    sys.path.append(os.path.join(os.path.dirname(sys.path[0]), 'tests/EVQL'))
-    from utils import ProjectionQuery, MinMaxQuery, CountAvgSumQuery, SelectionQuery, AndOrQuery, SelectionQueryWithOr, SelectionQueryWithAnd, OrderByQuery, GroupByQuery, HavingQuery, NestedQuery, CorrelatedNestedQuery
-else:
-    from tests.EVQL.utils import ProjectionQuery, MinMaxQuery, CountAvgSumQuery, SelectionQuery, AndOrQuery, SelectionQueryWithAnd, SelectionQueryWithOr, OrderByQuery, GroupByQuery, HavingQuery, NestedQuery, CorrelatedNestedQuery
+from tests.EVQL.utils import ProjectionQuery, MinMaxQuery, CountAvgSumQuery, SelectionQuery, AndOrQuery, SelectionQueryWithAnd, SelectionQueryWithOr, OrderByQuery, GroupByQuery, HavingQuery, NestedQuery, CorrelatedNestedQuery
 
 QUERY_TYPE_TO_CLASS_MAPPING = {
         "projection": ProjectionQuery,
