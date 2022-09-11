@@ -1,13 +1,6 @@
-import os
-import sys
 import abc
 
-IMPORT_VIA_RELATIVE_PATH = True
-if IMPORT_VIA_RELATIVE_PATH:
-    sys.path.append(os.path.join(os.path.dirname(sys.path[0]), 'VQL'))
-    from EVQL import EVQLTree, EVQLNode, Selecting, Ordering, Grouping, Operator, Aggregator, Header, Clause
-else:
-    from VQL.EVQL import EVQLTree , EVQLNode, Selecting, Ordering, Grouping, Operator, Aggregator, Header, Clause
+from VQL.EVQL import EVQLTree , EVQLNode, Selecting, Ordering, Grouping, Operator, Aggregator, Header, Clause
 
 CARS_TABLE_HEADERS = ["cars", "id", "model", "horsepower", "max_speed", "year", "price"]
 

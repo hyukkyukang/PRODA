@@ -2,10 +2,13 @@ const config = require("./config");
 
 const PathToPythonSrc = "../src/";
 
+// Add environment variable to Python path
+process.env["PYTHONPATH"] = PathToPythonSrc;
+
 function getEVQL(queryType) {
     var spawnSync = require("child_process").spawnSync;
-    var process = spawnSync("python3", [`${PathToPythonSrc}/VQL/example_queries.py`, "--query_type", queryType]);
-    var json_dumped_evql = process.stdout.toString();
+    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/VQL/example_queries.py`, "--query_type", queryType]);
+    var json_dumped_evql = spawnedProcess.stdout.toString();
 
     // Try to parse string into JSON
     var evql = null;
@@ -20,8 +23,8 @@ function getEVQL(queryType) {
 
 function EVQLToSQL(evql) {
     var spawnSync = require("child_process").spawnSync;
-    var process = spawnSync("python3", [`${PathToPythonSrc}/VQL/EVQL_to_SQL.py`, "--evql_in_json_str", evql]);
-    var result = process.stdout.toString();
+    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/VQL/EVQL_to_SQL.py`, "--evql_in_json_str", evql]);
+    var result = spawnedProcess.stdout.toString();
     return result;
 }
 
@@ -36,8 +39,8 @@ function queryDB(sql, dbName) {
 
 function getTask() {
     var spawnSync = require("child_process").spawnSync;
-    var process = spawnSync("python3", [`${PathToPythonSrc}/task/task.py`]);
-    var result = process.stdout.toString();
+    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/task/task.py`]);
+    var result = spawnedProcess.stdout.toString();
     // Parse JSON string
     var taskData = null;
     try {
