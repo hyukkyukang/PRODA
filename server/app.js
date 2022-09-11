@@ -49,8 +49,8 @@ app.post("/fetchTask", function (req, res) {
 });
 
 /* Handling Response */
-app.post("/sendAnswer", function (req, res) {
-    console.log(`app.post./sendAnswer`);
+app.post("/logWorkerAnswer", function (req, res) {
+    console.log(`app.post./logWorkerAnswer`);
     console.log(`Received answer: ${JSON.stringify(req.body.params)}`);
     // TODO: Save received data in the Database
 });

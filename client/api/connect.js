@@ -14,7 +14,7 @@ export const fetchTask = async (params) => {
 
 /* Send data*/
 export const sendWorkerAnswer = async (params) => {
-    return (await axios.post(`http://${ip}:${serverPort}/sendAnswer`, { params: params }, config)).data;
+    return (await axios.post(`http://${ip}:${serverPort}/logWorkerAnswer`, { params: params }, config)).data;
 };
 
 /* Send and request data */
