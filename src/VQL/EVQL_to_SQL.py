@@ -1,14 +1,7 @@
-import os
-import sys
 import json
 import argparse
 
-IMPORT_VIA_RELATIVE_PATH = True
-if IMPORT_VIA_RELATIVE_PATH:
-    sys.path.append(os.path.join(os.path.dirname(sys.path[0]), 'VQL'))
-    from EVQL import EVQLTree
-else:
-    from VQL.EVQL import EVQLTree
+from VQL.EVQL import EVQLTree
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Translate EVQL to SQL")
