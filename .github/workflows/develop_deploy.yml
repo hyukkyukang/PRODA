@@ -13,7 +13,7 @@ jobs:
   vercel: 
     runs-on: ubuntu-latest
     name: "Deploy front-end"
-    environment: Production
+    environment: Preview
     
     steps:
       - uses: actions/checkout@v2
