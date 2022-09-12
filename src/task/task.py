@@ -1,6 +1,6 @@
 import json
 
-from tests.EVQL.utils import HavingQuery
+from VQL.example_queries import HavingQuery
 
 class Task:
     def __init__(self, nl, sql, evql, query_type, db_name, task_type, sub_tasks=None):
