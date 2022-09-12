@@ -95,7 +95,7 @@ function logWorkerAnswer(logData) {
     const given_db_name = logData.task.dbName;
     const given_task_type = logData.answer.type;
     const given_query_type = logData.answer.queryType;
-    const answer_is_correct = logData.answer.isCorrect;
+    const answer_is_correct = logData.answer.isCorrect ?? null;
     const answer_nl = logData.answer.nl.replace(/'/g, "\\'");
     const user_id = logData.userId;
 
@@ -106,7 +106,7 @@ function logWorkerAnswer(logData) {
     );
     // Insert new log
     result = client.querySync(
-        `INSERT INTO ${config.collectionDBTableName} VALUES(DEFAULT, E'${given_nl}', E'${given_sql}', E'${given_evql}', '${given_query_type}', E'${given_table_excerpt}', E'${given_result_table}', '${given_db_name}', ${given_task_type}, ${answer_is_correct}, E'${answer_nl}', '${user_id}');`
+        `INSERT INTO ${config.collectionDBTableName} VALUES(DEFAULT, E'${given_nl}', E'${given_sql}', E'${given_evql}', '${given_query_type}', E'${given_table_excerpt}', E'${given_result_table}', '${given_db_name}', ${given_task_type}, ${answer_is_correct}, E'${answer_nl}', '${user_id}', DEFAULT);`
     );
     client.end();
     return result;

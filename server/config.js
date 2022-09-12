@@ -13,14 +13,3 @@ exports.collectionDBName = "collection";
 exports.collectionDBTableName = "workerlog";
 exports.collectionDBUserID = "collection_user";
 exports.collectionDBUserPW = "collection_user_pw";
-
-// exports.SystemDBIp = "localhost";
-// exports.SystemDBName = "sqlbot";
-// exports.SystemDBUsername = "hkkang";
-// exports.SystemDBPassword = "hkkang_password";
-// exports.SystemDBPort = 5433;
-
-// exports.DataDBIP = "localhost";
-// exports.DataDBUsername = "read_user";
-// exports.DataDBPassword = "read_password";
-// exports.DataDBPort = 5435;

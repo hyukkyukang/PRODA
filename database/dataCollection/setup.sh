@@ -6,7 +6,6 @@ set -e
 set -u
 
 # Create database
-psql -c "drop database collection"
 psql -c "CREATE DATABASE collection"
 psql -d collection -f collection.sql
 
