@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS tasklog (
     user_id VARCHAR(32) NOT NULL
 );
 
-INSERT INTO tasklog (given_nl, given_sql, given_evql, given_query_type, given_table_excerpt, given_result_table, given_db_name, given_task_type, answer_is_correct, answer_nl) VALUES
+INSERT INTO tasklog (given_nl, given_sql, given_evql, given_query_type, given_table_excerpt, given_result_table, given_db_name, given_task_type, answer_is_correct, answer_nl, user_id) VALUES
 ('Show average max speed of each model whose production year is greater than 2010.', 'SELECT model, avg(max_speed) FROM cars WHERE year > 2010 GROUP BY model', '{
             "header_names": [
                 "cars",
@@ -152,7 +152,7 @@ INSERT INTO tasklog (given_nl, given_sql, given_evql, given_query_type, given_ta
                 "model": "E",
                 "max_speed_avg": 600
             }
-        ]', 'cars', 1, true, 'For each model produced after 2010, show average max speed', "dummyUser");
+        ]', 'cars', 1, true, 'For each model produced after 2010, show average max speed', 'dummyUser');
 
 
 COMMIT;
