@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS tasklog (
     given_nl VARCHAR(512) NOT NULL,
     given_sql VARCHAR(512) NOT NULL,
     given_evql VARCHAR(4096) NOT NULL,
+    given_query_type VARCHAR(64) NOT NULL,
     given_table_excerpt VARCHAR(4096) DEFAULT NULL,
     given_result_table VARCHAR(4096) DEFAULT NULL,
     given_db_name VARCHAR(32) NOT NULL,
@@ -13,7 +14,7 @@ CREATE TABLE IF NOT EXISTS tasklog (
     answer_nl VARCHAR(512) DEFAULT NULL
 );
 
-INSERT INTO tasklog (given_nl, given_sql, given_evql, given_table_excerpt, given_result_table, given_db_name, given_task_type, answer_is_correct, answer_nl) VALUES
+INSERT INTO tasklog (given_nl, given_sql, given_evql, given_query_type, given_table_excerpt, given_result_table, given_db_name, given_task_type, answer_is_correct, answer_nl) VALUES
 ('Show average max speed of each model whose production year is greater than 2010.', 'SELECT model, avg(max_speed) FROM cars WHERE year > 2010 GROUP BY model', '{
             "header_names": [
                 "cars",
@@ -64,7 +65,7 @@ INSERT INTO tasklog (given_nl, given_sql, given_evql, given_table_excerpt, given
                     }
                 ]
             }
-        }', '[
+        }', 'WHERE: scalar comparison', '[
             {
                 "id": 1,
                 "model": "A",
