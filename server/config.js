@@ -9,9 +9,10 @@ exports.demoDBUserPW = "demo_user_password";
 // DB for data collection
 exports.collectionDBIP = "localhost";
 exports.collectionDBPort = "5432";
-exports.collectionDBName = "datalog";
-exports.collectionDBUserID = "datalog_user";
-exports.collectionDBUserPW = "datalog_user_password";
+exports.collectionDBName = "collection";
+exports.collectionDBTableName = "workerlog";
+exports.collectionDBUserID = "collection_user";
+exports.collectionDBUserPW = "collection_user_pw";
 
 // exports.SystemDBIp = "localhost";
 // exports.SystemDBName = "sqlbot";
