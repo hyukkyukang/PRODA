@@ -52,9 +52,39 @@ function getTask() {
     return taskData;
 }
 
+function logWorkerAnswer(logData) {
+    // Get values from answer
+
+    const given_nl = logData.task.nl.replace(/'/g, "\\'");
+    const given_sql = logData.task.sql.replace(/'/g, "\\'");
+    const given_evql = JSON.stringify(logData.task.evql).replace(/'/g, "\\'");
+    const given_table_excerpt = JSON.stringify(logData.task.tableExcerpt).replace(/'/g, "\\'");
+    const given_result_table = JSON.stringify(logData.task.resultTable).replace(/'/g, "\\'");
+    const given_db_name = logData.task.dbName;
+    const given_task_type = logData.answer.type;
+    const given_query_type = logData.answer.queryType;
+    const answer_is_correct = logData.answer.isCorrect;
+    const answer_nl = logData.answer.nl.replace(/'/g, "\\'");
+    const user_id = logData.userID;
+
+    const pg = require("pg-native");
+    const client = new pg();
+    client.connectSync(
+        `user=${config.collectionDBUserID} password=${config.collectionDBUserPW} port=${config.collectionDBPort} host=${config.collectionDBIP} dbname=${config.collectionDBName}`
+    );
+    // Insert new log
+    result = client.querySync(
+        `INSERT INTO tasklog VALUES(DEFAULT, E'${given_nl}', E'${given_sql}', E'${given_evql}', '${given_query_type}', E'${given_table_excerpt}', E'${given_result_table}', '${given_db_name}', ${given_task_type}, ${answer_is_correct}, E'${answer_nl}', ${user_id});`
+    );
+    client.end();
+    console.log(`result: ${result}`);
+    return result;
+}
+
 module.exports = {
     EVQLToSQL: EVQLToSQL,
     getEVQL: getEVQL,
     queryDB: queryDB,
     getTask: getTask,
+    logWorkerAnswer: logWorkerAnswer,
 };

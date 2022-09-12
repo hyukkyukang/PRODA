@@ -39,7 +39,7 @@ export const Collection = (props: any) => {
 
     const onSubmitHandler = () => {
         // Send current step's info to the server
-        sendWorkerAnswer({ task: currentSubTask, answer: answer });
+        sendWorkerAnswer({ task: { ...currentSubTask, queryType: currentTask?.queryType, dbName: currentTask?.dbName }, answer: answer, userId: "dummyUser" });
         // Change state
         setCurrentStep(currentStep + 1);
         setAnswer({ ...answer, nl: "" });

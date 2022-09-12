@@ -53,6 +53,8 @@ app.post("/logWorkerAnswer", function (req, res) {
     console.log(`app.post./logWorkerAnswer`);
     console.log(`Received answer: ${JSON.stringify(req.body.params)}`);
     // TODO: Save received data in the Database
+    func.logWorkerAnswer(req.body.params);
+    res.send({ status: "success" });
 });
 
 app.listen(config.serverPort);

@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS tasklog (
     given_db_name VARCHAR(32) NOT NULL,
     given_task_type INTEGER NOT NULL,
     answer_is_correct BOOLEAN NOT NULL,
-    answer_nl VARCHAR(512) DEFAULT NULL
+    answer_nl VARCHAR(512) DEFAULT NULL,
+    user_id VARCHAR(32) NOT NULL
 );
 
 INSERT INTO tasklog (given_nl, given_sql, given_evql, given_query_type, given_table_excerpt, given_result_table, given_db_name, given_task_type, answer_is_correct, answer_nl) VALUES
@@ -151,7 +152,7 @@ INSERT INTO tasklog (given_nl, given_sql, given_evql, given_query_type, given_ta
                 "model": "E",
                 "max_speed_avg": 600
             }
-        ]', 'cars', 1, true, 'For each model produced after 2010, show average max speed');
+        ]', 'cars', 1, true, 'For each model produced after 2010, show average max speed', "dummyUser");
 
 
 COMMIT;
