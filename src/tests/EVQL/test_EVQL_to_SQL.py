@@ -1,5 +1,5 @@
 import unittest
-from tests.EVQL.utils import ProjectionQuery, MinMaxQuery, CountAvgSumQuery, SelectionQuery, AndOrQuery, SelectionQueryWithAnd, SelectionQueryWithOr, OrderByQuery, GroupByQuery, HavingQuery, NestedQuery, CorrelatedNestedQuery
+from VQL.example_queries import ProjectionQuery, MinMaxQuery, CountAvgSumQuery, SelectionQuery, AndOrQuery, SelectionQueryWithAnd, SelectionQueryWithOr, OrderByQuery, GroupByQuery, HavingQuery, NestedQuery, CorrelatedNestedQuery
 
 class Test_EVQL_to_SQL(unittest.TestCase):
     def _test_translation(self, query):

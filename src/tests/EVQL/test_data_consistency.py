@@ -1,5 +1,5 @@
 import unittest
-from tests.EVQL.utils import SelectionQueryWithAnd, SelectionQueryWithOr, OrderByQuery, GroupByQuery, HavingQuery, NestedQuery, CorrelatedNestedQuery
+from VQL.example_queries import SelectionQueryWithAnd, SelectionQueryWithOr, OrderByQuery, GroupByQuery, HavingQuery, NestedQuery, CorrelatedNestedQuery
 from VQL.EVQL import EVQLTree
 
 class Test_data_consistency(unittest.TestCase):
