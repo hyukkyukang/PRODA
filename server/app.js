@@ -48,6 +48,13 @@ app.post("/fetchTask", function (req, res) {
     res.send({ taskData: taskData });
 });
 
+app.post("/fetchLogData", function (req, res) {
+    console.log("app.post./fetchLogData");
+    const logData = func.getLogData();
+    console.log(`log data: ${JSON.stringify(logData)}`);
+    res.send({ logData: logData });
+});
+
 /* Handling Response */
 app.post("/logWorkerAnswer", function (req, res) {
     console.log(`app.post./logWorkerAnswer`);

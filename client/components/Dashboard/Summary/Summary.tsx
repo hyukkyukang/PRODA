@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Grid, Card, CardContent, Typography } from "@mui/material";
 import { LinearProgress, linearProgressClasses, styled } from "@mui/material";
 
 import { IUser, UserTable, dummyUsers } from "../../User/User";
 import { SummaryChart } from "./Chart";
 import { ILogData, dummyLogData, QueryType, dummyGoalNumOfQueries } from "../../Dataset/PairData";
+import { fetchLogData } from "../../../api/connect";
 
 const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
     height: 6,
@@ -31,15 +32,70 @@ const calculateStatByQueryTypes = (logData: ILogData[]) => {
     return countTypes;
 };
 
+export const getUsersFromLogData = (logData: ILogData[]): IUser[] => {
+    // TODO: add type to users variable
+    const users = {};
+    const dollarPerQuery = 10;
+    logData.forEach((logDatum) => {
+        const userName = logDatum.userName;
+        if (Object.keys(users).includes(userName)) {
+            users[userName]["profit"] += dollarPerQuery;
+            users[userName]["collected"]++;
+            // TODO: compare and find latest date
+            users[userName]["lastActive"] = logDatum.date;
+        } else {
+            users[userName] = {
+                name: userName,
+                profit: dollarPerQuery,
+                collected: 1,
+                lastActive: logDatum.date,
+            };
+        }
+    });
+    return Object.values(users);
+};
+
 export const Summary = (props: any) => {
     const [remainingBlanace, setRemainingBlanace] = useState<number>(300);
-    const [users, setUsers] = useState<IUser[]>(dummyUsers);
+    const [users, setUsers] = useState<IUser[]>([]);
     const [collectedLogData, setCollectedLogData] = useState<ILogData[]>(dummyLogData);
     const dataStatByQueryType = useMemo(() => calculateStatByQueryTypes(collectedLogData), [collectedLogData]);
     const totalGoalNumOfQueries = Object.values(dummyGoalNumOfQueries).reduce((acc, value) => acc + value, 0);
 
     // TODO: Retrieve original balance from backend
     const OriginalBalance = 1000;
+
+    const getCollectedLogData = async () => {
+        const fetchedData = await fetchLogData();
+        const logData = fetchedData["logData"];
+        // Get only desired data
+        const selectedLogData: ILogData[] = [];
+        for (let i = 0; i < logData.length; i++) {
+            selectedLogData.push({
+                userName: logData[i]["user_id"],
+                dbName: logData[i]["given_dbName"],
+                nl: logData[i]["given_nl"],
+                sql: logData[i]["given_sql"],
+                evql: logData[i]["given_evql"],
+                queryType: logData[i]["queryType"],
+                date: { year: 2022, month: 9, day: 12 },
+            });
+        }
+        // Append with dummyLogData and save
+        setCollectedLogData([...selectedLogData, ...dummyLogData]);
+    };
+
+    useEffect(() => {
+        // Fetch log data from backend
+        getCollectedLogData();
+    }, []);
+
+    useEffect(() => {
+        if (collectedLogData) {
+            const fetchedUsers = getUsersFromLogData(collectedLogData);
+            setUsers(fetchedUsers);
+        }
+    }, [collectedLogData]);
 
     return (
         <>

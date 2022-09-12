@@ -6,8 +6,6 @@ import { Summary } from "../components/Dashboard/Summary/Summary";
 import { Users } from "../components/Dashboard/Users";
 import { Settings } from "../components/Dashboard/Settings";
 
-import { dummyUsers } from "../components/User/User";
-
 export const summaryMenuName = "Summary";
 export const usersMenuName = "Users";
 export const settingsMenuName = "Settings";
@@ -19,7 +17,7 @@ export const Admin = (props: any) => {
         if (selectedMenu === summaryMenuName) {
             return <Summary />;
         } else if (selectedMenu === usersMenuName) {
-            return <Users userData={dummyUsers} />;
+            return <Users />;
         } else if (selectedMenu === settingsMenuName) {
             return <Settings />;
         } else {

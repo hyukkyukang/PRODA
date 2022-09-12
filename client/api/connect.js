@@ -12,6 +12,10 @@ export const fetchTask = async (params) => {
     return (await axios.post(`http://${ip}:${serverPort}/fetchTask`, { params: params }, config)).data;
 };
 
+export const fetchLogData = async (params) => {
+    return (await axios.post(`http://${ip}:${serverPort}/fetchLogData`, { params: params }, config)).data;
+};
+
 /* Send data*/
 export const sendWorkerAnswer = async (params) => {
     return (await axios.post(`http://${ip}:${serverPort}/logWorkerAnswer`, { params: params }, config)).data;

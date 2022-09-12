@@ -3,16 +3,48 @@ import { IconButton, Table, TableBody, TableCell, TableContainer, TableHead, Tab
 import { Box, Collapse, Typography, Paper } from "@mui/material";
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 
-import { ILogData, dateToString } from "../Dataset/PairData";
+import { ILogData, dateToString, dummyLogData } from "../Dataset/PairData";
 import { IUser } from "../User/User";
-import { getLogDataOfUser } from "../User/utils";
+import { getUsersFromLogData } from "./Summary/Summary";
+import { fetchLogData } from "../../api/connect";
 
-interface IUserContext {
-    userData: IUser[];
-}
+export const Users = (props: any) => {
+    // Fetch user data
+    const [users, setUsers] = useState<IUser[]>([]);
+    const [logData, setLogData] = useState<ILogData[]>(dummyLogData);
 
-export const Users = (props: IUserContext) => {
-    const { userData } = props;
+    const getCollectedLogData = async () => {
+        const fetchedData = await fetchLogData();
+        const logData = fetchedData["logData"];
+        // Get only desired data
+        const selectedLogData: ILogData[] = [];
+        for (let i = 0; i < logData.length; i++) {
+            selectedLogData.push({
+                userName: logData[i]["user_id"],
+                dbName: logData[i]["given_dbName"],
+                nl: logData[i]["given_nl"],
+                sql: logData[i]["given_sql"],
+                evql: logData[i]["given_evql"],
+                queryType: logData[i]["queryType"],
+                date: { year: 2022, month: 9, day: 12 },
+            });
+        }
+        // Append with dummyLogData and save
+        setLogData([...selectedLogData, ...dummyLogData]);
+    };
+
+    useEffect(() => {
+        // Fetch log data from backend
+        getCollectedLogData();
+    }, []);
+
+    useEffect(() => {
+        if (logData) {
+            const fetchedUsers = getUsersFromLogData(logData);
+            setUsers(fetchedUsers);
+        }
+    }, [logData]);
+
     return (
         <>
             <h1>Worker Log</h1>
@@ -36,8 +68,8 @@ export const Users = (props: IUserContext) => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {userData.map((userDatum: any, idx: number) => (
-                                <Row key={idx} data={userDatum} />
+                            {users.map((userDatum: any, idx: number) => (
+                                <Row key={idx} userData={userDatum} logData={logData} />
                             ))}
                         </TableBody>
                     </Table>
@@ -51,11 +83,12 @@ export const Users = (props: IUserContext) => {
 export default Users;
 
 interface IRowContext {
-    data: IUser;
+    userData: IUser;
+    logData: ILogData[];
 }
 
 const Row = (props: IRowContext) => {
-    const { data } = props;
+    const { userData, logData } = props;
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [logDataOfSelectedUser, setLogDataOfSelectedUser] = useState<ILogData[]>([]);
 
@@ -64,12 +97,12 @@ const Row = (props: IRowContext) => {
     };
 
     useEffect(() => {
-        if (data?.name) {
-            getLogDataOfUser(data.name).then((data) => {
-                setLogDataOfSelectedUser(data);
-            });
+        if (userData?.name) {
+            const filteredData = logData.filter((logData) => logData.userName === userData.name);
+            console.log(`name: ${userData.name}, filteredData: ${JSON.stringify(filteredData)}`);
+            setLogDataOfSelectedUser(filteredData);
         }
-    }, []);
+    }, [userData, logData]);
 
     return (
         <React.Fragment>
@@ -80,18 +113,18 @@ const Row = (props: IRowContext) => {
                     </IconButton>
                 </TableCell>
                 <TableCell component="th" scope="row">
-                    {data.name}
+                    {userData.name}
                 </TableCell>
-                <TableCell align="right">${data.profit}</TableCell>
-                <TableCell align="right">{data.collected}</TableCell>
-                <TableCell align="right">{dateToString(data.lastActive)}</TableCell>
+                <TableCell align="right">${userData.profit}</TableCell>
+                <TableCell align="right">{userData.collected}</TableCell>
+                <TableCell align="right">{dateToString(userData.lastActive)}</TableCell>
             </TableRow>
             {/* Collapsed Info */}
             <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
                 <Collapse in={isOpen} timeout="auto" unmountOnExit>
                     <Box sx={{ margin: 1 }}>
                         <Typography variant="h6" gutterBottom component="div">
-                            Data Collected by {data.name}
+                            Data Collected by {userData.name}
                         </Typography>
                         <Table size="small" aria-label="purchases">
                             <TableHead>
