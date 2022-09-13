@@ -40,4 +40,8 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Run unittest
         working-directory: ${{ env.working-directory }}
-        run: python -m unittest tests/EVQL/*
+        run: python -m xmlrunner tests/EVQL/*
+        
+      - name: show directory
+        working-directory: ${{ env.working-directory }}
+        run: ls -al
