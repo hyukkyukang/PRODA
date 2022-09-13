@@ -50,12 +50,11 @@ const Tutorial = () => {
     // Perform example settings
     const doExampleSettings = async (exampleQueryName: String) => {
         // Get sample EVQL
-        const tmpFetchResult = await fetchEVQL({ queryType: exampleQueryName, dbName: demoDBName });
-        const tmpEVQL = tmpFetchResult["evql"];
+        const fetchedEVQL = await fetchEVQL({ queryType: exampleQueryName, dbName: demoDBName });
         // Execute EVQL
-        const tmpQueryResult = await runEVQL({ evqlStr: JSON.stringify(tmpEVQL), dbName: demoDBName });
+        const tmpQueryResult = await runEVQL({ evqlStr: JSON.stringify(fetchedEVQL), dbName: demoDBName });
         // Set values
-        setEVQL(tmpEVQL);
+        setEVQL(fetchedEVQL);
         setSQL(tmpQueryResult["sql"]);
         setQueryResult(tmpQueryResult["result"]);
     };

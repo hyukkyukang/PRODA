@@ -5,12 +5,12 @@ import { Instruction } from "../components/Collection/instruction";
 import { Task } from "../components/Collection/task";
 import { ResultTable } from "../components/ResultTable/resultTable";
 import { EVQLTable } from "../components/VQL/EVQLTable";
-import { Answer, AnswerSheet } from "../components/Collection/answerSheet";
+import { UserAnswer, AnswerSheet } from "../components/Collection/answerSheet";
 import { fetchTask, sendWorkerAnswer } from "../api/connect";
 
 export const Collection = (props: any) => {
     // Global state variables
-    const [answer, setAnswer] = useState<Answer>({ nl: "", type: 0 });
+    const [answer, setAnswer] = useState<UserAnswer>({ nl: "", type: 0 });
 
     // Local state variables
     const [currentStep, setCurrentStep] = useState(0);
@@ -39,16 +39,15 @@ export const Collection = (props: any) => {
 
     const onSubmitHandler = () => {
         // Send current step's info to the server
-        sendWorkerAnswer(answer);
+        sendWorkerAnswer({ task: { ...currentSubTask, queryType: currentTask?.queryType, dbName: currentTask?.dbName }, answer: answer, userId: "dummyUser" });
         // Change state
         setCurrentStep(currentStep + 1);
         setAnswer({ ...answer, nl: "" });
     };
 
     const fetchTaskHandler = async () => {
-        const result = await fetchTask();
-        const task = result["taskData"];
-        setCurrentTask(task);
+        const fetchedTask = await fetchTask();
+        setCurrentTask(fetchedTask);
     };
 
     useEffect(() => {

@@ -6,7 +6,7 @@ export interface IDate {
     day: number;
 }
 
-export const QueryType = {
+export const queryTypeNames: { [key: string]: string } = {
     WHEREScalarComparison: "WHERE: scalar comparison",
     WHEREQuantifiedScalarComparison: "WHERE: Quantified scalar comparison",
     WHEREAttAggComparison: "WHERE: Attribute-aggregation comparison",
@@ -27,10 +27,6 @@ export const QueryType = {
     FROMNotScalarNotAggSubQuery: "FROM: Not scalar and without aggregation",
 };
 
-export const dummyGoalNumOfQueries: { [key: string]: number } = Object.values(QueryType).reduce((acc, value) => {
-    return { ...acc, [value]: 5 };
-}, {});
-
 // Change the name. PairData may be misleading
 export interface IPairData {
     nl: string;
@@ -49,156 +45,25 @@ export interface ILogData {
     evql: EVQLTree;
     queryType: string;
     date: IDate;
+    user_nl: string;
+    user_isCorrect: boolean;
 }
 
-export const dateToString = (date: IDate) => {
+export const dateToString = (date: IDate): string => {
     return `${date.year}.${date.month}.${date.day}`;
 };
 
-export const dummyLogData: ILogData[] = [
-    {
-        nl: "Show all cars",
-        evql: {
-            node: { header_names: [], header_aliases: [], foreach: null, projection: { headers: [] }, predicate: { clauses: [] } },
-            children: [],
-            enforce_t_alias: false,
-        },
-        sql: "SELECT * FROM cars",
-        queryType: QueryType.WHEREScalarComparison,
-        date: { year: 2022, month: 9, day: 1 },
-        userName: "John",
-        dbName: "cars",
-    },
-    {
-        nl: "Count all cars",
-        evql: {
-            node: { header_names: [], header_aliases: [], foreach: null, projection: { headers: [] }, predicate: { clauses: [] } },
-            children: [],
-            enforce_t_alias: false,
-        },
-        sql: "SELECT COUNT(*) FROM cars",
-        queryType: QueryType.WHEREScalarComparison,
-        date: { year: 2022, month: 9, day: 1 },
-        userName: "John",
-        dbName: "cars",
-    },
-    {
-        nl: "Count all cars produced in year 2022",
-        evql: {
-            node: { header_names: [], header_aliases: [], foreach: null, projection: { headers: [] }, predicate: { clauses: [] } },
-            children: [],
-            enforce_t_alias: false,
-        },
-        sql: "SELECT COUNT(*) FROM cars WHERE year = 2022",
-        queryType: QueryType.WHEREQuantifiedScalarComparison,
-        date: { year: 2022, month: 9, day: 3 },
-        userName: "John",
-        dbName: "cars",
-    },
-    {
-        nl: "Show all models",
-        evql: {
-            node: { header_names: [], header_aliases: [], foreach: null, projection: { headers: [] }, predicate: { clauses: [] } },
-            children: [],
-            enforce_t_alias: false,
-        },
-        sql: "SELECT COUNT(model) FROM cars",
-        queryType: QueryType.WHEREAttAggComparison,
-        date: { year: 2022, month: 9, day: 4 },
-        userName: "John",
-        dbName: "cars",
-    },
-    {
-        nl: "Show all models produced in year 2022",
-        evql: {
-            node: { header_names: [], header_aliases: [], foreach: null, projection: { headers: [] }, predicate: { clauses: [] } },
-            children: [],
-            enforce_t_alias: false,
-        },
-        sql: "SELECT COUNT(model) FROM cars WHERE year = 2022",
-        queryType: QueryType.WHEREConstAggComparison,
-        date: { year: 2022, month: 9, day: 5 },
-        userName: "John",
-        dbName: "cars",
-    },
-    // By Jane
-    {
-        nl: "Show all model in year 2012",
-        evql: {
-            node: { header_names: [], header_aliases: [], foreach: null, projection: { headers: [] }, predicate: { clauses: [] } },
-            children: [],
-            enforce_t_alias: false,
-        },
-        sql: "SELECT model FROM cars WHERE year = 2012",
-        queryType: QueryType.WHEREScalarComparison,
-        date: { year: 2022, month: 8, day: 1 },
-        userName: "Jane",
-        dbName: "cars",
-    },
-    {
-        nl: "Count all model",
-        evql: {
-            node: { header_names: [], header_aliases: [], foreach: null, projection: { headers: [] }, predicate: { clauses: [] } },
-            children: [],
-            enforce_t_alias: false,
-        },
-        sql: "SELECT COUNT(model) FROM cars",
-        queryType: QueryType.WHEREScalarComparison,
-        date: { year: 2022, month: 8, day: 1 },
-        userName: "Jane",
-        dbName: "cars",
-    },
-    {
-        nl: "Show max_speed of all cars produced in year 2012",
-        evql: {
-            node: { header_names: [], header_aliases: [], foreach: null, projection: { headers: [] }, predicate: { clauses: [] } },
-            children: [],
-            enforce_t_alias: false,
-        },
-        sql: "SELECT id, max_speed FROM cars WHERE year = 2012",
-        queryType: QueryType.WHEREQuantifiedScalarComparison,
-        date: { year: 2022, month: 8, day: 3 },
-        userName: "Jane",
-        dbName: "cars",
-    },
-    {
-        nl: "Show all models order by horsepower",
-        evql: {
-            node: { header_names: [], header_aliases: [], foreach: null, projection: { headers: [] }, predicate: { clauses: [] } },
-            children: [],
-            enforce_t_alias: false,
-        },
-        sql: "SELECT id, horsepower FROM cars ORDER BY horsepower",
-        queryType: QueryType.WHEREAttAggComparison,
-        date: { year: 2022, month: 8, day: 4 },
-        userName: "Jane",
-        dbName: "cars",
-    },
-    {
-        nl: "Count all models produced in year 2012",
-        evql: {
-            node: { header_names: [], header_aliases: [], foreach: null, projection: { headers: [] }, predicate: { clauses: [] } },
-            children: [],
-            enforce_t_alias: false,
-        },
-        sql: "SELECT COUNT(model) FROM cars WHERE year = 2012",
-        queryType: QueryType.WHEREConstAggComparison,
-        date: { year: 2022, month: 8, day: 5 },
-        userName: "Jane",
-        dbName: "cars",
-    },
-    // BY Jack
-    {
-        nl: "Show all model names of cars produced in year 2020",
-        evql: {
-            node: { header_names: [], header_aliases: [], foreach: null, projection: { headers: [] }, predicate: { clauses: [] } },
-            children: [],
-            enforce_t_alias: false,
-        },
-        sql: "SELECT model FROM cars WHERE year = 2020",
-        queryType: QueryType.WHEREScalarComparison,
-        date: { year: 2022, month: 7, day: 1 },
-        userName: "Jack",
-        dbName: "cars",
-    },
-];
+export const stringToDate = (dateString: string): IDate => {
+    const [year, month, day] = dateString.split(".");
+    return { year: parseInt(year), month: parseInt(month), day: parseInt(day) };
+};
+
+export const isGreaterThan = (date1: IDate, date2: IDate): boolean => {
+    if (date1.year > date2.year) return true;
+    if (date1.year < date2.year) return false;
+    if (date1.month > date2.month) return true;
+    if (date1.month < date2.month) return false;
+    if (date1.day > date2.day) return true;
+    if (date1.day < date2.day) return false;
+    return false;
+};

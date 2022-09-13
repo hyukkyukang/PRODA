@@ -9,11 +9,11 @@ export enum TaskTypes {
 export const taskTypeToInstruction = (taskType: number | undefined): string => {
     switch (taskType) {
         case TaskTypes.YesNo:
-            return "Below is a natural language query with its corresponding EVQL query. We show the query execution result on a given table excerpt.";
+            return "A natural language query, corrsponding EVQL query, table excerpt, and query execution result is given below. Please understand them and answer the question below.";
         case TaskTypes.NLAugmentation:
-            return "augmentation";
+            return "A natural language query, corrsponding EVQL query, table excerpt, and query execution result is given below. Please understand them and answer the question below.";
         default:
-            return "Default instrunction goes here...";
+            return "Instrunction goes here...";
     }
 };
 
@@ -23,7 +23,7 @@ export const Instruction = (props: { taskType: number | undefined }) => {
         <React.Fragment>
             <Paper elevation={2}>
                 <Box sx={{ marginLeft: "15px" }}>
-                    <Typography variant="h5">Instruction</Typography>
+                    {/* <Typography variant="h5">Instruction</Typography> */}
                     <Typography variant="h6">{taskTypeToInstruction(taskType)}</Typography>
                 </Box>
             </Paper>

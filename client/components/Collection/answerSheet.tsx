@@ -3,7 +3,7 @@ import { Typography, Input, Paper, Switch, FormGroup, FormControlLabel, createTh
 
 import { TaskTypes } from "./instruction";
 
-export interface Answer {
+export interface UserAnswer {
     type: TaskTypes;
     nl: string;
     isCorrect?: boolean;
@@ -11,8 +11,8 @@ export interface Answer {
 
 export interface AnswerSheetProps {
     taskType: TaskTypes | undefined;
-    answer: Answer;
-    setAnswer: React.Dispatch<React.SetStateAction<Answer>>;
+    answer: UserAnswer;
+    setAnswer: React.Dispatch<React.SetStateAction<UserAnswer>>;
 }
 
 const theme = createTheme({
@@ -44,7 +44,7 @@ const theme = createTheme({
     },
 });
 
-export const YesNoAnswerSheet = (props: { answer: Answer; setAnswer: React.Dispatch<React.SetStateAction<Answer>> }) => {
+export const YesNoAnswerSheet = (props: { answer: UserAnswer; setAnswer: React.Dispatch<React.SetStateAction<UserAnswer>> }) => {
     const { answer, setAnswer } = props;
     const [ischecked, setIsChecked] = React.useState<boolean>(false);
 
@@ -96,7 +96,7 @@ export const YesNoAnswerSheet = (props: { answer: Answer; setAnswer: React.Dispa
     );
 };
 
-export const AugmentationAnswerSheet = (props: { answer: Answer; setAnswer: React.Dispatch<React.SetStateAction<Answer>> }) => {
+export const AugmentationAnswerSheet = (props: { answer: UserAnswer; setAnswer: React.Dispatch<React.SetStateAction<UserAnswer>> }) => {
     const { answer, setAnswer } = props;
 
     const inputHandler = (event: React.ChangeEvent<HTMLInputElement>) => {

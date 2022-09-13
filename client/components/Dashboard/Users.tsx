@@ -1,18 +1,114 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { Box, Collapse, Typography, Paper } from "@mui/material";
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 
-import { ILogData, dateToString } from "../Dataset/PairData";
+import { ILogData, dateToString, stringToDate } from "../Dataset/PairData";
+import { fetchLogData } from "../../api/connect";
+import { getUsersFromLogData } from "./utils";
 import { IUser } from "../User/User";
-import { getLogDataOfUser } from "../User/utils";
 
-interface IUserContext {
-    userData: IUser[];
-}
+const Row = (props: { userData: IUser; logData: ILogData[] }) => {
+    const { userData, logData } = props;
+    const [isOpen, setIsOpen] = useState<boolean>(false);
+    const logDataOfSelectedUser = useMemo(() => logData.filter((logDatum) => logDatum.userName === userData.name), [logData, userData.name]);
 
-export const Users = (props: IUserContext) => {
-    const { userData } = props;
+    const toggleClickHandler: React.MouseEventHandler<HTMLButtonElement> = () => {
+        setIsOpen(!isOpen);
+    };
+
+    const toDashIfNullOrEmpty = (value: any | null) => {
+        return value === null || value === "" ? "-" : value;
+    };
+
+    return (
+        <React.Fragment>
+            <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
+                <TableCell>
+                    <IconButton aria-label="expand row" size="small" onClick={toggleClickHandler}>
+                        {isOpen ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                    </IconButton>
+                </TableCell>
+                <TableCell component="th" scope="row">
+                    {userData.name}
+                </TableCell>
+                <TableCell align="right">${userData.profit}</TableCell>
+                <TableCell align="right">{userData.collected}</TableCell>
+                <TableCell align="right">{dateToString(userData.lastActive)}</TableCell>
+            </TableRow>
+            {/* Collapsed Info */}
+            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+                <Collapse in={isOpen} timeout="auto" unmountOnExit>
+                    <Box sx={{ margin: 1 }}>
+                        <Typography variant="h6" gutterBottom component="div">
+                            Data Collected by {userData.name}
+                        </Typography>
+                        <Table size="small" aria-label="purchases">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell sx={{ fontWeight: "bold" }}>Date</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold" }} align="left">
+                                        Query Type
+                                    </TableCell>
+                                    <TableCell sx={{ fontWeight: "bold" }} align="left">
+                                        SQL
+                                    </TableCell>
+                                    <TableCell sx={{ fontWeight: "bold" }}>System's Natural Language</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold" }}>User's Natural Language</TableCell>
+                                    <TableCell sx={{ fontWeight: "bold" }}>User's correctness mark</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {logDataOfSelectedUser.map((logDatum: ILogData, idx: number) => (
+                                    <TableRow key={idx}>
+                                        <TableCell component="th" scope="row">
+                                            {dateToString(logDatum.date)}
+                                        </TableCell>
+                                        <TableCell align="left">{toDashIfNullOrEmpty(logDatum.queryType)}</TableCell>
+                                        <TableCell align="left">{toDashIfNullOrEmpty(logDatum.sql)}</TableCell>
+                                        <TableCell>{logDatum.nl}</TableCell>
+                                        <TableCell align="left">{toDashIfNullOrEmpty(logDatum.user_nl)}</TableCell>
+                                        <TableCell align="left">{String(toDashIfNullOrEmpty(logDatum.user_isCorrect))}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </Box>
+                </Collapse>
+            </TableCell>
+        </React.Fragment>
+    );
+};
+
+export const Users = (props: {}) => {
+    const [logData, setLogData] = useState<ILogData[]>();
+    const users = useMemo(() => (logData ? getUsersFromLogData(logData) : null), [logData]);
+
+    const getCollectedLogData = async () => {
+        const logData = await fetchLogData();
+        // Get only desired data
+        const selectedLogData: ILogData[] = [];
+        for (let i = 0; i < logData.length; i++) {
+            selectedLogData.push({
+                userName: logData[i]["user_id"],
+                dbName: logData[i]["given_dbName"],
+                nl: logData[i]["given_nl"],
+                sql: logData[i]["given_sql"],
+                evql: logData[i]["given_evql"],
+                queryType: logData[i]["given_queryType"],
+                date: stringToDate(logData[i]["date"]),
+                user_isCorrect: logData[i]["user_isCorrect"],
+                user_nl: logData[i]["user_nl"],
+            });
+        }
+        setLogData([...selectedLogData]);
+    };
+
+    useEffect(() => {
+        // Fetch log data from backend
+        getCollectedLogData();
+    }, []);
+
     return (
         <>
             <h1>Worker Log</h1>
@@ -36,8 +132,8 @@ export const Users = (props: IUserContext) => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {userData.map((userDatum: any, idx: number) => (
-                                <Row key={idx} data={userDatum} />
+                            {users?.map((userDatum: any, idx: number) => (
+                                <Row key={idx} userData={userDatum} logData={logData ?? []} />
                             ))}
                         </TableBody>
                     </Table>
@@ -49,79 +145,3 @@ export const Users = (props: IUserContext) => {
 };
 
 export default Users;
-
-interface IRowContext {
-    data: IUser;
-}
-
-const Row = (props: IRowContext) => {
-    const { data } = props;
-    const [isOpen, setIsOpen] = useState<boolean>(false);
-    const [logDataOfSelectedUser, setLogDataOfSelectedUser] = useState<ILogData[]>([]);
-
-    const toggleClickHandler: React.MouseEventHandler<HTMLButtonElement> = () => {
-        setIsOpen(!isOpen);
-    };
-
-    useEffect(() => {
-        if (data?.name) {
-            getLogDataOfUser(data.name).then((data) => {
-                setLogDataOfSelectedUser(data);
-            });
-        }
-    }, []);
-
-    return (
-        <React.Fragment>
-            <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
-                <TableCell>
-                    <IconButton aria-label="expand row" size="small" onClick={toggleClickHandler}>
-                        {isOpen ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-                    </IconButton>
-                </TableCell>
-                <TableCell component="th" scope="row">
-                    {data.name}
-                </TableCell>
-                <TableCell align="right">${data.profit}</TableCell>
-                <TableCell align="right">{data.collected}</TableCell>
-                <TableCell align="right">{dateToString(data.lastActive)}</TableCell>
-            </TableRow>
-            {/* Collapsed Info */}
-            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-                <Collapse in={isOpen} timeout="auto" unmountOnExit>
-                    <Box sx={{ margin: 1 }}>
-                        <Typography variant="h6" gutterBottom component="div">
-                            Data Collected by {data.name}
-                        </Typography>
-                        <Table size="small" aria-label="purchases">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell sx={{ fontWeight: "bold" }}>Date</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold" }}>Natural Language</TableCell>
-                                    <TableCell sx={{ fontWeight: "bold" }} align="left">
-                                        SQL
-                                    </TableCell>
-                                    <TableCell sx={{ fontWeight: "bold" }} align="left">
-                                        Query Type
-                                    </TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {logDataOfSelectedUser.map((logDatum: ILogData, idx: number) => (
-                                    <TableRow key={idx}>
-                                        <TableCell component="th" scope="row">
-                                            {dateToString(logDatum.date)}
-                                        </TableCell>
-                                        <TableCell>{logDatum.nl}</TableCell>
-                                        <TableCell align="left">{logDatum.sql}</TableCell>
-                                        <TableCell align="left">{logDatum.queryType}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </Box>
-                </Collapse>
-            </TableCell>
-        </React.Fragment>
-    );
-};
