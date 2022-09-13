@@ -3,6 +3,11 @@ import { ip, serverPort } from "../config";
 
 const config = { headers: { "content-type": "application/json" } };
 
+/* Fetch configs */
+export const fetchConfig = async (params) => {
+    return (await axios.post(`http://${ip}:${serverPort}/fetchConfig`, { params: params }, config)).data;
+};
+
 /* Fetch data */
 export const fetchEVQL = async (params) => {
     return (await axios.post(`http://${ip}:${serverPort}/fetchEVQL`, { params: params }, config)).data;
@@ -19,6 +24,10 @@ export const fetchLogData = async (params) => {
 /* Send data*/
 export const sendWorkerAnswer = async (params) => {
     return (await axios.post(`http://${ip}:${serverPort}/logWorkerAnswer`, { params: params }, config)).data;
+};
+
+export const updateConfig = async (params) => {
+    return (await axios.post(`http://${ip}:${serverPort}/updateConfig`, { params: params }, config)).data;
 };
 
 /* Send and request data */

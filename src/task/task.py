@@ -84,7 +84,7 @@ def create_dummy_task():
         nl="For cars whose production year is 2010, show models whose average max speed is greater than 2000.",
         sql="SELECT model FROM cars WHERE year = 2010 GROUP BY model HAVING AVG(max_speed) > 2000",
         evql=HavingQuery().evql,
-        query_type = None,
+        query_type = "WHERE: scalar comparison",
         db_name = "cars",
         task_type= 1,
         sub_tasks=[sub_task1, sub_task2]

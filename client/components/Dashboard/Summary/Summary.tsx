@@ -2,10 +2,11 @@ import { useState, useMemo, useEffect } from "react";
 import { Grid, Card, CardContent, Typography } from "@mui/material";
 import { LinearProgress, linearProgressClasses, styled } from "@mui/material";
 
-import { IUser, UserTable, dummyUsers } from "../../User/User";
+import { ILogData, queryTypeNames, stringToDate } from "../../Dataset/PairData";
+import { fetchLogData, fetchConfig } from "../../../api/connect";
+import { IUser, UserTable } from "../../User/User";
+import { getUsersFromLogData } from "../utils";
 import { SummaryChart } from "./Chart";
-import { ILogData, dummyLogData, QueryType, dummyGoalNumOfQueries } from "../../Dataset/PairData";
-import { fetchLogData } from "../../../api/connect";
 
 const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
     height: 6,
@@ -19,10 +20,10 @@ const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
     },
 }));
 
-const calculateStatByQueryTypes = (logData: ILogData[]) => {
+const calculateStatByQueryTypes = (logData: ILogData[]): { [key: string]: number } => {
     var countTypes: { [key: string]: number } = {};
     // Create a map of query types to count
-    Object.values(QueryType).forEach((value: string) => {
+    Object.values(queryTypeNames).forEach((value: string) => {
         countTypes[value] = 0;
     });
     // Count the number of each query type
@@ -32,43 +33,20 @@ const calculateStatByQueryTypes = (logData: ILogData[]) => {
     return countTypes;
 };
 
-export const getUsersFromLogData = (logData: ILogData[]): IUser[] => {
-    // TODO: add type to users variable
-    const users = {};
-    const dollarPerQuery = 10;
-    logData.forEach((logDatum) => {
-        const userName = logDatum.userName;
-        if (Object.keys(users).includes(userName)) {
-            users[userName]["profit"] += dollarPerQuery;
-            users[userName]["collected"]++;
-            // TODO: compare and find latest date
-            users[userName]["lastActive"] = logDatum.date;
-        } else {
-            users[userName] = {
-                name: userName,
-                profit: dollarPerQuery,
-                collected: 1,
-                lastActive: logDatum.date,
-            };
-        }
-    });
-    return Object.values(users);
-};
-
 export const Summary = (props: any) => {
     const [remainingBlanace, setRemainingBlanace] = useState<number>(300);
     const [users, setUsers] = useState<IUser[]>([]);
-    const [collectedLogData, setCollectedLogData] = useState<ILogData[]>(dummyLogData);
+    const [collectedLogData, setCollectedLogData] = useState<ILogData[]>([]);
     const dataStatByQueryType = useMemo(() => calculateStatByQueryTypes(collectedLogData), [collectedLogData]);
-    const totalGoalNumOfQueries = Object.values(dummyGoalNumOfQueries).reduce((acc, value) => acc + value, 0);
-
-    // TODO: Retrieve original balance from backend
-    const OriginalBalance = 1000;
+    const [goalNumOfQueries, setGoalNumOfQueries] = useState<{ [key: string]: number }>({});
+    const totalGoalNumOfQueries: number = useMemo(
+        () => (goalNumOfQueries ? Object.values(goalNumOfQueries).reduce((acc, value) => acc + value, 0) : 0),
+        [goalNumOfQueries]
+    );
+    const [originalBalance, setOriginalBalance] = useState<number>(1000);
 
     const getCollectedLogData = async () => {
-        const fetchedData = await fetchLogData();
-        const logData = fetchedData["logData"];
-        // Get only desired data
+        const logData = await fetchLogData();
         const selectedLogData: ILogData[] = [];
         for (let i = 0; i < logData.length; i++) {
             selectedLogData.push({
@@ -77,17 +55,34 @@ export const Summary = (props: any) => {
                 nl: logData[i]["given_nl"],
                 sql: logData[i]["given_sql"],
                 evql: logData[i]["given_evql"],
-                queryType: logData[i]["queryType"],
-                date: { year: 2022, month: 9, day: 12 },
+                queryType: logData[i]["given_queryType"],
+                date: stringToDate(logData[i]["date"]),
+                user_nl: logData[i]["user_nl"],
+                user_isCorrect: logData[i]["user_isCorrect"],
             });
         }
-        // Append with dummyLogData and save
-        setCollectedLogData([...selectedLogData, ...dummyLogData]);
+        setCollectedLogData([...selectedLogData]);
+    };
+
+    const getConfig = async () => {
+        const fetchedData = await fetchConfig();
+        // Set Balance
+        setOriginalBalance(fetchedData["originalBalance"]);
+        setRemainingBlanace(fetchedData["remainingBalance"]);
+        // Set goalNumOfQueries
+        const fetchedGoalNumOfQueries = fetchedData["goalNumOfQueries"] as { [key: string]: number };
+        const newGoalNumOfQueries: { [key: string]: number } = {};
+        Object.entries(fetchedGoalNumOfQueries).forEach(([key, value]) => {
+            newGoalNumOfQueries[queryTypeNames[key]] = value;
+        });
+        setGoalNumOfQueries(newGoalNumOfQueries);
     };
 
     useEffect(() => {
         // Fetch log data from backend
         getCollectedLogData();
+        // Fetch goal number of queries from backend
+        getConfig();
     }, []);
 
     useEffect(() => {
@@ -138,7 +133,7 @@ export const Summary = (props: any) => {
                             <Typography fontWeight={"bold"} fontFamily={"Roboto"} fontSize={60} align={"center"}>
                                 ${remainingBlanace}
                             </Typography>
-                            <BorderLinearProgress variant="determinate" value={(remainingBlanace * 100) / OriginalBalance} />
+                            <BorderLinearProgress variant="determinate" value={(remainingBlanace * 100) / originalBalance} />
                         </CardContent>
                     </Card>
                 </Grid>
@@ -161,16 +156,12 @@ export const Summary = (props: any) => {
                                 Data Collection Progress <span style={{ fontSize: "18px" }}>(by types)</span>
                             </Typography>
                             <br />
-                            {Object.keys(dataStatByQueryType).map((queryType, index) => (
+                            {Object.entries(dataStatByQueryType).map((entry: [string, number], index: number) => (
                                 <div key={index}>
                                     <Typography sx={{ marginTop: "5px" }}>
-                                        {queryType}{" "}
-                                        <span style={{ float: "right" }}>{(dataStatByQueryType[queryType] * 100) / dummyGoalNumOfQueries[queryType]}%</span>
+                                        {entry[0]} <span style={{ float: "right" }}>{(entry[1] * 100) / goalNumOfQueries[entry[0]]}%</span>
                                     </Typography>
-                                    <BorderLinearProgress
-                                        variant="determinate"
-                                        value={(dataStatByQueryType[queryType] * 100) / dummyGoalNumOfQueries[queryType]}
-                                    />
+                                    <BorderLinearProgress variant="determinate" value={(entry[1] * 100) / goalNumOfQueries[entry[0]]} />
                                 </div>
                             ))}
                         </CardContent>

@@ -1,6 +1,6 @@
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS workerlog (
+CREATE TABLE IF NOT EXISTS collection (
     id SERIAL PRIMARY KEY,
     given_nl VARCHAR(512) NOT NULL,
     given_sql VARCHAR(512) NOT NULL,
@@ -10,14 +10,14 @@ CREATE TABLE IF NOT EXISTS workerlog (
     given_result_table VARCHAR(4096) DEFAULT NULL,
     given_db_name VARCHAR(32) NOT NULL,
     given_task_type INTEGER NOT NULL,
-    answer_is_correct BOOLEAN NULL,
-    answer_nl VARCHAR(512) DEFAULT NULL,
+    user_is_correct BOOLEAN NULL,
+    user_nl VARCHAR(512) DEFAULT NULL,
     user_id VARCHAR(32) NOT NULL,
     date DATE DEFAULT CURRENT_DATE
 );
 
-INSERT INTO workerlog (given_nl, given_sql, given_evql, given_query_type, given_table_excerpt, given_result_table, given_db_name, given_task_type, answer_is_correct, answer_nl, user_id) VALUES
-('Show average max speed of each model whose production year is greater than 2010.', 'SELECT model, avg(max_speed) FROM cars WHERE year > 2010 GROUP BY model', '{
+INSERT INTO collection (id, given_nl, given_sql, given_evql, given_query_type, given_table_excerpt, given_result_table, given_db_name, given_task_type, user_is_correct, user_nl, user_id, date) VALUES
+(DEFAULT, 'Show average max speed of each model whose production year is greater than 2010.', 'SELECT model, avg(max_speed) FROM cars WHERE year > 2010 GROUP BY model', '{
             "header_names": [
                 "cars",
                 "id",
@@ -153,6 +153,6 @@ INSERT INTO workerlog (given_nl, given_sql, given_evql, given_query_type, given_
                 "model": "E",
                 "max_speed_avg": 600
             }
-        ]', 'cars', 1, true, 'For each model produced after 2010, show average max speed', 'dummyUser');
+        ]', 'cars', 1, true, 'For each model produced after 2010, show average max speed', 'dummyUser', DEFAULT);
 
 END;

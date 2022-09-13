@@ -1,40 +1,31 @@
 import { useEffect, useState } from "react";
-import { TextField, InputAdornment, Grid } from "@mui/material";
-import { QueryType } from "../Dataset/PairData";
+import { Button, TextField, InputAdornment, Grid } from "@mui/material";
 
-const goalSettings = (querTypeName: string) => {
-    const [goalNumOfQueries, setGoalNumOfQueries] = useState<number>(10);
+import { fetchConfig, updateConfig } from "../../api/connect";
+import { queryTypeNames } from "../Dataset/PairData";
 
-    useEffect(() => {
-        if (querTypeName) {
-            setGoalNumOfQueries(10);
-        }
-    }, []);
+export const Settings = (props: {}) => {
+    const [totalBudget, setTotalBudget] = useState<number>();
+    const [pricePerDataPair, setPricePerDataPair] = useState<number>();
+    const [goalNumOfQueries, setGoalNumOfQueries] = useState<{ [key: string]: number }>({});
 
-    return (
-        <>
-            <Grid container spacing={2}>
-                <Grid item xs={12} sm={4} sx={{ marginLeft: "25px" }}>
-                    <span>{querTypeName}:</span>
-                </Grid>
-                <Grid item xs={12} sm={2}>
-                    <TextField
-                        label={"Number of queries to collect"}
-                        defaultValue={goalNumOfQueries}
-                        variant="filled"
-                        onChange={(e) => setGoalNumOfQueries(parseFloat(e.target.value))}
-                        fullWidth={true}
-                    />
-                </Grid>
-            </Grid>
-            <br />
-        </>
-    );
-};
+    const getConfig = async () => {
+        const fetchedConfig = await fetchConfig();
+        setTotalBudget(fetchedConfig["originalBalance"]);
+        setPricePerDataPair(fetchedConfig["pricePerDataPair"]);
+        setGoalNumOfQueries(fetchedConfig["goalNumOfQueries"]);
+    };
 
-export const Settings = (props: any) => {
-    const [totalBudget, setTotalBudget] = useState<number>(1000);
-    const [pricePerDataPair, setPricePerDataPair] = useState<number>(0.5);
+    const configUpdateHandler = async () => {
+        const result: { [key: string]: string } = await updateConfig({
+            totalBudget: totalBudget,
+            pricePerDataPair: pricePerDataPair,
+            goalNumOfQueries: goalNumOfQueries,
+        });
+        const status = result["status"];
+        if (status == "success") alert("Config updated!");
+        else alert("Server error! Update not successful.");
+    };
 
     const budgetSettings = (): JSX.Element => {
         return (
@@ -46,8 +37,9 @@ export const Settings = (props: any) => {
                     </Grid>
                     <Grid item xs={12} sm={2}>
                         <TextField
+                            type="number"
                             label="Total Budget"
-                            defaultValue={totalBudget}
+                            value={totalBudget}
                             variant="filled"
                             InputProps={{
                                 startAdornment: <InputAdornment position="start">$</InputAdornment>,
@@ -63,13 +55,14 @@ export const Settings = (props: any) => {
                     </Grid>
                     <Grid item xs={12} sm={2}>
                         <TextField
+                            type="number"
                             label="Price per data pair"
-                            defaultValue={pricePerDataPair}
+                            value={pricePerDataPair}
                             variant="filled"
                             InputProps={{
                                 startAdornment: <InputAdornment position="start">$</InputAdornment>,
                             }}
-                            onChange={(e) => setPricePerDataPair(parseFloat(e.target.value))}
+                            onChange={(e) => setPricePerDataPair(Number(e.target.value))}
                         />
                     </Grid>
                 </Grid>
@@ -77,14 +70,45 @@ export const Settings = (props: any) => {
         );
     };
 
-    const querySettings = () => {
+    const querySettings = (): JSX.Element => {
         return (
             <>
                 <h2>Query Setting</h2>
-                {Object.values(QueryType).map((queryType) => goalSettings(queryType))}
+                {Object.entries(goalNumOfQueries).map((entry: [string, number]) => goalSettings(entry[0], entry[1]))}
             </>
         );
     };
+
+    const goalSettings = (queryType: string, goalNum: number): JSX.Element => {
+        const newGoalNumHandler = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+            const newGoal: number = Number(e.target.value);
+            setGoalNumOfQueries({ ...goalNumOfQueries, [queryType]: newGoal });
+        };
+        return (
+            <>
+                <Grid container spacing={2}>
+                    <Grid item xs={12} sm={4} sx={{ marginLeft: "25px" }}>
+                        <span>{queryTypeNames[queryType]}:</span>
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                        <TextField
+                            type="number"
+                            label={"Number of queries to collect"}
+                            defaultValue={goalNum}
+                            variant="filled"
+                            onChange={newGoalNumHandler}
+                            fullWidth={true}
+                        />
+                    </Grid>
+                </Grid>
+                <br />
+            </>
+        );
+    };
+
+    useEffect(() => {
+        getConfig();
+    }, []);
 
     return (
         <>
@@ -93,6 +117,9 @@ export const Settings = (props: any) => {
                 {budgetSettings()}
                 <br />
                 {querySettings()}
+                <Button variant="contained" color="success" onClick={configUpdateHandler}>
+                    Update
+                </Button>
             </div>
             <br />
         </>
