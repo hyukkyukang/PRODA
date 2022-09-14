@@ -47,5 +47,5 @@ jobs:
         if: success() || failure()
         with:
           name: Python Unittest
-          path: ./*.xml
+          path: ./src/*.xml
           reporter: java-junit
