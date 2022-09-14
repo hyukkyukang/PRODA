@@ -44,4 +44,5 @@ jobs:
         
       - name: show directory
         working-directory: ${{ env.working-directory }}
+        if: always()
         run: ls -al
