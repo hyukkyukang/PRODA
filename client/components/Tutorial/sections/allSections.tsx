@@ -23,17 +23,8 @@ export { NestingSection as NestingSection } from "./nesting";
 export { ForEachSection as ForEachSection } from "./forEach";
 
 // List of all sections
-export const allTutorialSections: ITutorialSection[] = [
-    ProjectionSection,
-    Agg1Section,
-    Agg2Section,
-    Selection1Section,
-    Selection2Section,
-    Selection3Section,
-    GroupingSection,
-    OrderingSection,
-    NestingSection,
-    ForEachSection,
-];
+export const basicTutorialSections: ITutorialSection[] = [ProjectionSection, Agg1Section, Agg2Section, Selection1Section, Selection2Section, OrderingSection];
 
-export default allTutorialSections;
+export const advanceTutorialSections: ITutorialSection[] = [GroupingSection, Selection3Section, NestingSection, ForEachSection];
+
+export const allTutorialSections: ITutorialSection[] = basicTutorialSections.concat(advanceTutorialSections);

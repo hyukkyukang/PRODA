@@ -1,8 +1,9 @@
 import React, { useState, MouseEventHandler } from "react";
 import ListItem from "@mui/material/ListItem";
 
-import { allTutorialSections } from "./sections/allSections";
+import { allTutorialSections, basicTutorialSections, advanceTutorialSections } from "./sections/allSections";
 import { ITutorialSection } from "./sections/abstractSection";
+import { isEmptyObject } from "../../utils";
 
 interface ISelectedSection {
     selectedSection: ITutorialSection;
@@ -42,10 +43,30 @@ export const SideBar = (params: ISelectedSection): React.ReactElement => {
         return {};
     };
 
+    if (isEmptyObject(basicTutorialSections)) return <></>;
     return (
         <>
-            <ListItem sx={{ fontWeight: "bold", fontSize: "20px", marginBottom: 1 }}>Tutorial Sections</ListItem>
-            {allTutorialSections.map((value) => (
+            <ListItem sx={{ fontWeight: "bold", fontSize: "20px", marginTop: 1 }}>Tutorial Sections</ListItem>
+            <div style={{ fontWeight: "bold", fontSize: "20px" }}>
+                <p> Basic </p>
+            </div>
+            {basicTutorialSections.map((value) => (
+                <ListItem
+                    sx={getStyle(value)}
+                    id={value.title}
+                    key={value.title}
+                    onClick={handleClick}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                >
+                    {" "}
+                    EVQL {value.title}{" "}
+                </ListItem>
+            ))}
+            <div style={{ fontWeight: "bold", fontSize: "20px" }}>
+                <p> Advance </p>
+            </div>
+            {advanceTutorialSections.map((value) => (
                 <ListItem
                     sx={getStyle(value)}
                     id={value.title}
