@@ -199,18 +199,18 @@ class OrderByQuery(TestQuery):
 class GroupByQuery(TestQuery):
     def __init__(self):
         self._evql = None
-        self._sql = "SELECT model FROM cars WHERE year = 2010 GROUP BY model"
+        self._sql = "SELECT count(*), model FROM cars GROUP BY model"
 
     @property
     def evql(self):
         if not self._evql:
             # Create tree node
             node = EVQLNode(CARS_TABLE_HEADERS)
+            node.add_projection(Header(CARS_TABLE_HEADERS.index("cars"), agg_type=Aggregator.count))
             node.add_projection(Header(CARS_TABLE_HEADERS.index("model")))
             # Create conditions for the node
-            cond1 = Selecting(CARS_TABLE_HEADERS.index("year"), Operator.equal, "2010")
-            cond2 = Grouping(CARS_TABLE_HEADERS.index("model"))
-            clause = Clause([cond1, cond2])
+            cond = Grouping(CARS_TABLE_HEADERS.index("model"))
+            clause = Clause([cond])
             node.add_predicate(clause)
             self._evql = EVQLTree(node)
         return self._evql

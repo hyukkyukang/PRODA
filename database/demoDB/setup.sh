@@ -4,6 +4,7 @@ set -e
 set -u
 
 # for database in imdb dataset
+psql -c "DROP DATABASE IF EXISTS proda_demo"
 psql -c "CREATE DATABASE proda_demo"
 psql -d proda_demo -f cars.sql
 

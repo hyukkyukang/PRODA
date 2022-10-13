@@ -9,7 +9,9 @@ export const Selection2Section: ITutorialSection = {
         "The following EVQL applies conditons on column 'model' and 'year'.\nIt returns records that has model equal to 'tesla model x' and year is equal to 2011 or 2012",
     demoDBName: "Overwrite a demo database name here",
     syntaxExamples: [SelectionOrSyntaxExample, SelectionAndSyntaxExample],
-    syntaxDescription: "To combine conditions with OR, write conditions in a separate row.\n To combine conditions with AND, write conditions in the same row.",
+    syntaxDescription:
+        "To combine conditions with OR, write conditions in a separate row.\n To combine conditions with AND, write conditions in the same row. \
+       \n To write a multiple conditions for one column, use the keyword AND to combine two different expressions.",
 };
 
 export default Selection2Section;

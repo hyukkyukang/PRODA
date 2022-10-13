@@ -8,7 +8,7 @@ export const Selection1Section: ITutorialSection = {
     exampleDescription: "The following EVQL the column id to project and applies condition on the column 'year'. It will return record of cars with year 2010.",
     demoDBName: "Overwrite a demo database name here",
     syntaxExamples: [SelectionSyntaxExample],
-    syntaxDescription: "We can write expressions/conditions below any columns to add conditions on those columns.",
+    syntaxDescription: "We can write conditions below any columns to add conditions on those columns.",
 };
 
 export default Selection1Section;

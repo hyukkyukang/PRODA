@@ -84,6 +84,28 @@ export const SelectionAndSyntaxExample: IEVQLTable = {
     rows: [["", "condition1", "condition2", "", ""].map(stringToReactElement).map(valueToCell)],
 };
 
+export const GroupingSyntaxExample: IEVQLTable = {
+    headers: [
+        { name: "table_name", aggFuncs: [], isToProject: false },
+        { name: "column1", aggFuncs: [], isToProject: false },
+        { name: "column2", aggFuncs: [0], isToProject: true },
+        { name: "column3", aggFuncs: [], isToProject: false },
+        { name: "...", aggFuncs: [], isToProject: false },
+    ],
+    rows: [["", "", "Group($column2)", "", ""].map(stringToReactElement).map(valueToCell)],
+};
+
+export const OrderingSyntaxExample: IEVQLTable = {
+    headers: [
+        { name: "table_name", aggFuncs: [], isToProject: false },
+        { name: "column1", aggFuncs: [0], isToProject: true },
+        { name: "column2", aggFuncs: [], isToProject: false },
+        { name: "column3", aggFuncs: [], isToProject: false },
+        { name: "...", aggFuncs: [], isToProject: false },
+    ],
+    rows: [["", "Asc($column1)", "", "", ""].map(stringToReactElement).map(valueToCell)],
+};
+
 export const HavingSyntaxExampleStep1: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
