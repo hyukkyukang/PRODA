@@ -39,8 +39,7 @@ const HandsOnEVQL = (props: any) => {
     // Visualize EVQL
     const doInitSetting = async (queryName: string) => {
         // Fetch example EVQL
-        const tmpFetchResult = await fetchEVQL({ queryType: queryName, dbName: demoDBName });
-        const tmpEVQL = tmpFetchResult["evql"];
+        const tmpEVQL = await fetchEVQL({ queryType: queryName, dbName: demoDBName });
         // Execute EVQL
         const tmpQueryResult = await runEVQL({ evqlStr: JSON.stringify(tmpEVQL), dbName: demoDBName });
         // Set values
