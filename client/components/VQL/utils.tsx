@@ -155,8 +155,8 @@ export const conditionToExpression = (condition: Function, names: string[]): str
         }
         const op = operators[condition.op_type - 1];
         if (binaryOperators.includes(op)) {
-            const tmp = condition?.r_operand;
-            const r_op = isNumber(tmp) ? tmp : `"${tmp}"`;
+            const tmp = condition?.r_operand ? condition.r_operand : "";
+            const r_op = isNumber(tmp) || tmp.startsWith("$") ? tmp : `"${tmp}"`;
             return `\$${l_op} ${op} ${r_op}`;
         } else {
             return `${op}($${l_op})`;
