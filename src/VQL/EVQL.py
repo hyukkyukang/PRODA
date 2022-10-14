@@ -2,6 +2,7 @@ import abc
 import typing
 
 from enum import IntEnum
+from src.table.table import Table
 
 class Operator(IntEnum):
     equal = 1
@@ -165,9 +166,9 @@ class Clause():
         return Clause([Function.load_json(condition) for condition in json_obj["conditions"]])
 
 class EVQLNode():
-    def __init__(self, header_names, header_aliases=None, foreach_col_id=None):
-        self.header_names = header_names
-        self.header_aliases = header_aliases if header_aliases else header_names
+    def __init__(self, table_excerpt, header_aliases=None, foreach_col_id=None):
+        self.table_excerpt = table_excerpt
+        self.header_aliases = header_aliases if header_aliases else table_excerpt.table_excerpt_headers
         self.foreach = foreach_col_id
         self._projection = Projection()
         # Predicates follow DNF form. Hence, within each clause, conditions are joined with AND.
@@ -189,7 +190,7 @@ class EVQLNode():
 
     def dump_json(self):
         json_obj = {}
-        json_obj["header_names"] = self.header_names
+        json_obj["table_excerpt"] = self.table_excerpt.dump_json()
         json_obj["header_aliases"] = self.header_aliases
         json_obj["foreach"] = self.foreach
         json_obj["projection"] = self.projection.dump_json()
@@ -198,7 +199,7 @@ class EVQLNode():
 
     @staticmethod
     def load_json(json_obj):
-        obj = EVQLNode(json_obj["header_names"], json_obj["header_aliases"], json_obj["foreach"])
+        obj = EVQLNode(Table.load_json(json_obj["table_excerpt"]), json_obj["header_aliases"], json_obj["foreach"])
         # Non-primitive types
         for header in Projection.load_json(json_obj["projection"]).headers:
             obj.add_projection(header)
@@ -238,7 +239,7 @@ class EVQLTree:
             for clause in self.node.predicate.clauses:
                 for op in clause.conditions:
                     # Condition 1
-                    if op.header_id < len(child.header_names):
+                    if op.header_id < len(child.table_excerpt.table_excerpt_headers):
                         return False
                     elif isinstance(op, Selecting):
                         # Condition 2
@@ -270,12 +271,12 @@ class EVQLTree:
         return self.children[0] if self.children else None
 
     def get_var_name(self, header_idx):
-        var_name = self.node.header_names[header_idx] if header_idx else "*"
+        var_name = self.node.table_excerpt.table_excerpt_headers[header_idx] if header_idx else "*"
         return f"T{self.level}.{var_name}" if self.use_t_alias else var_name
 
     def get_parent_var_name_for_correlation(self, header_idx):
         """Assumption: correlation only happens with the parent node and the alias simply plus one"""
-        var_name = self.node.header_names[header_idx] if header_idx else "*"
+        var_name = self.node.table_excerpt.table_excerpt_headers[header_idx] if header_idx else "*"
         return f"T{self.level+1}.{var_name}" if self.use_t_alias else var_name
 
     def dump_json(self):
@@ -370,7 +371,7 @@ def evql_tree_to_SQL(evql_tree):
 
     def create_from_clause(tree):
         postfix = f" AS T{tree.level}" if tree.use_t_alias else ""
-        return f" FROM {tree.node.header_names[0]}{postfix}"
+        return f" FROM {tree.node.table_excerpt.table_excerpt_headers[0]}{postfix}"
 
     def create_having_clause(tree):
         def create_clause_str(formatted_conditions):
@@ -379,7 +380,7 @@ def evql_tree_to_SQL(evql_tree):
                 assert l_op.count("_") > 1, "Having clause should have aggregated values"
                 l_op_split = l_op.split("_")
                 l_op_att_str = '_'.join(l_op_split[1:-1])
-                l_op_att_str = "*" if tree.node.header_names.index(l_op_att_str) == 0 else l_op_att_str
+                l_op_att_str = "*" if tree.node.table_excerpt.table_excerpt_headers.index(l_op_att_str) == 0 else l_op_att_str
                 l_op_att_str = f"{l_op_split[-1]}({l_op_att_str})"
                 formatted_cond_str_list.append(Operator.format_expression(l_op_att_str, op, r_op))
             return " AND ".join(formatted_cond_str_list)

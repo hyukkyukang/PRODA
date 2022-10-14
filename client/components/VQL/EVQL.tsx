@@ -5,6 +5,20 @@ export const unaryOperators = ["EXISTS", "NOT EXISTS"];
 export const aggFunctions = ["none", "count", "sum", "avg", "min", "max"];
 
 // Interface
+export interface Cell {
+    value: any;
+}
+export interface Row {
+    cells: Cell[];
+}
+export interface Table {
+    name: string;
+    headers: string[];
+    col_types: string[];
+    allow_null: boolean;
+    rows: Row[];
+}
+
 export interface Header {
     id: number;
     agg_type: number | null;
@@ -34,7 +48,7 @@ export interface Predicate {
 }
 
 export interface EVQLNode {
-    header_names: string[];
+    table_excerpt: Table;
     header_aliases: string[];
     foreach: number | null;
     projection: Projection;

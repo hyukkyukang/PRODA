@@ -1,7 +1,7 @@
 import json
 import argparse
 
-from VQL.EVQL import EVQLTree
+from src.VQL.EVQL import EVQLTree
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Translate EVQL to SQL")

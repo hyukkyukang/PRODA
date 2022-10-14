@@ -19,13 +19,13 @@ export const EVQLNodeToEVQLTable = (evqlNode: EVQLNode, editable: boolean): IEVQ
         return !isEmptyObject(node.predicate) && !isEmptyObject(node.predicate.clauses);
     };
     const numOfRows = hasPredicate(evqlNode) ? evqlNode.predicate.clauses.length : 1;
-    const numOfCols = evqlNode.header_names.length;
+    const numOfCols = evqlNode.header_aliases.length;
     var headers: IEVQLTableHeader[] = [];
     var rows = createEmptyValueMatrix(numOfRows, numOfCols, !editable);
 
     // Create default headers
     for (let i = 0; i < numOfCols; i++) {
-        headers.push({ name: evqlNode.header_names[i], aggFuncs: [], isToProject: false });
+        headers.push({ name: evqlNode.header_aliases[i], aggFuncs: [], isToProject: false });
     }
 
     // Add info for projection
@@ -173,8 +173,9 @@ export const conditionToExpression = (condition: Function, names: string[]): str
 export const addEVQLNode = (evqlTree: EVQLTree, newHeaders: string[]): EVQLTree => {
     // Create new evql node
     // TODO: modify header_names if necessary in the parent node
+    // TODO: Need to get result table from the previous query and make a new table excerpt
     const newNode: EVQLNode = {
-        header_names: [...newHeaders],
+        table_excerpt: { headers: [...newHeaders] },
         header_aliases: [...newHeaders],
         foreach: null,
         projection: {
@@ -217,7 +218,7 @@ export const getProjectedNames = (evqlTree: EVQLTree, childListPath: number[]): 
 
     const prefix = `step${queryStep + 1}_`;
     evql.projection.headers.forEach((header) => {
-        const newColName = prefix + evql.header_names[header.id];
+        const newColName = prefix + evql.header_aliases[header.id];
         if (header.agg_type === aggFunctions.indexOf("count")) {
             projectedNames.push(`${newColName}_count`);
         } else if (header.agg_type === aggFunctions.indexOf("sum")) {

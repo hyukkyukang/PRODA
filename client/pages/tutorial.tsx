@@ -111,10 +111,8 @@ const Tutorial = () => {
                 </Grid>
                 <Grid item xs={10} sx={{ background: "white", color: "black" }}>
                     <h1>{selectedSection.title}</h1>
-
                     {PageNavigationButtons(selectPrevTutorialHandler, selectNextTutorialHandler)}
                     {DividerWithMargin}
-
                     <p>{selectedSection.description}</p>
                     <h2> {selectedSection.title} Syntax</h2>
                     <p> {selectedSection.syntaxDescription} </p>

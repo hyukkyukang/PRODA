@@ -5,7 +5,7 @@ var assert = require("assert");
 
 /* Add environment variable to Python path */
 const PathToPythonSrc = "../src/";
-process.env["PYTHONPATH"] = PathToPythonSrc;
+process.env["PYTHONPATH"] = "../";
 
 /* Fetch configs */
 function getConfig() {
