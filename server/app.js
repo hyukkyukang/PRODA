@@ -24,28 +24,28 @@ app.post("/fetchConfig", function (req, res) {
 app.post("/fetchEVQL", function (req, res) {
     console.log("app.post./fetchEVQL");
     const queryType = req.body.params.queryType;
+    console.log(`queryType: ${queryType}`);
     const evql = func.getEVQL(queryType);
     res.send(evql);
 });
 
-app.post("/runEVQL", function (req, res) {
+app.post("/runEVQL", async function (req, res) {
     console.log("app.post./runEVQL");
     const evqlStr = req.body.params.evqlStr;
     const dbName = req.body.params.dbName;
     const sql = func.EVQLToSQL(evqlStr);
-    const queryResult = func.queryDB(sql, dbName);
+    const queryResult = await func.queryDB(sql, dbName);
     console.log("evql:" + evqlStr);
     console.log("sql: " + sql);
     res.send({ sql: sql, result: queryResult });
 });
 
-app.post("/runSQL", function (req, res) {
+app.post("/runSQL", async function (req, res) {
     console.log("app.posts.runSQL");
     const sql = req.body.params.sql;
     const dbName = req.body.params.dbName;
-    const queryResult = func.queryDB(sql, dbName);
-    console.log(`SQL:${JSON.stringify(sql)} on ${dbName}`);
-    res.send({ result: queryResult });
+    const queryResult = await func.queryDB(sql, dbName);
+    res.send(queryResult);
 });
 
 app.post("/fetchTask", function (req, res) {

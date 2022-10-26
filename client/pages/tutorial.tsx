@@ -10,6 +10,8 @@ import { ResultTable } from "../components/ResultTable/resultTable";
 import { SideBar } from "../components/Tutorial/sidebar";
 import { allTutorialSections, ProjectionSection } from "../components/Tutorial/sections/allSections";
 import { ITutorialSection } from "../components/Tutorial/sections/abstractSection";
+import { PGResultToTableExcerpt } from "../components/VQL/Postgres";
+import { Table } from "../components/VQL/TableExcerpt";
 
 const DividerWithMargin: JSX.Element = (
     <>
@@ -43,8 +45,8 @@ const Tutorial = () => {
     // Local variables
     const [evql, setEVQL] = useState({} as EVQLTree);
     const [sql, setSQL] = useState("");
-    const [sampledDBRows, setSampledDBRows] = useState<any[]>([]);
-    const [queryResult, setQueryResult] = useState<any[]>([]);
+    const [demoDBResult, setDemoDBResult] = useState<Table>({} as Table);
+    const [queryResult, setQueryResult] = useState<Table>({} as Table);
 
     // Perform example settings
     const doExampleSettings = async (exampleQueryName: String) => {
@@ -55,15 +57,15 @@ const Tutorial = () => {
         // Set values
         setEVQL(fetchedEVQL);
         setSQL(tmpQueryResult["sql"]);
-        setQueryResult(tmpQueryResult["result"]);
+        setQueryResult(PGResultToTableExcerpt(tmpQueryResult["result"]));
     };
 
     // get sampled DB Rows
     const getRowsOfDemoDB = async () => {
         // Handle data fetching
-        runSQL({ sql: `SELECT * FROM cars LIMIT 5`, dbName: demoDBName })
-            .then((data) => {
-                setSampledDBRows(data["result"]);
+        runSQL({ sql: "SELECT * FROM cars", dbName: demoDBName })
+            .then((result) => {
+                setDemoDBResult(PGResultToTableExcerpt(result));
             })
             .catch((e) => {
                 console.warn(`error:${e}`);
@@ -90,12 +92,12 @@ const Tutorial = () => {
 
     // Once in the start
     useEffect(() => {
-        if (isEmptyObject(sampledDBRows)) {
+        if (isEmptyObject(demoDBResult)) {
             getRowsOfDemoDB();
         }
     }, []);
 
-    // when the depdency changes
+    // when the dependency changes
     useEffect(() => {
         if (selectedSection) {
             doExampleSettings(selectedSection.exampleQueryName);
@@ -116,7 +118,7 @@ const Tutorial = () => {
                     {selectedSection.syntaxDescription}
                     <h2> Demo Database </h2>
                     <p> Below is a sampled rows from the "cars" table in our demo database: </p>
-                    <ResultTable queryResult={sampledDBRows} />
+                    <ResultTable queryResult={demoDBResult} />
                     <h2> {selectedSection.title} Example</h2>
                     <p>{selectedSection.exampleDescription}</p>
                     <EVQLTables evqlRoot={evql} setEVQLRoot={setEVQL} editable={false} />

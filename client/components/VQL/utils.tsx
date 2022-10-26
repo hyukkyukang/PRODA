@@ -2,6 +2,7 @@ import { EVQLTree, EVQLNode, Header, Function, operators, unaryOperators, binary
 import { createEmptyMatrix, Matrix, CellBase } from "react-spreadsheet-custom";
 import { IEVQLTable, IEVQLTableHeader } from "./EVQLTable";
 import { isEmptyObject, removeMultipleSpaces, isNumber, stripQutations, isArrayEqual } from "../../utils";
+import { Table, Row, Cell } from "./TableExcerpt";
 
 export const createEmptyValueMatrix = (numOfRow: number, numOfCol: number, readOnly?: boolean): Matrix<CellBase> => {
     var rows = createEmptyMatrix<CellBase>(numOfRow, numOfCol);
@@ -57,10 +58,14 @@ export const EVQLNodeToEVQLTable = (evqlNode: EVQLNode, editable: boolean): IEVQ
 };
 
 export const getNode = (evqlTree: EVQLTree, childListIndices: number[] | undefined): EVQLNode => {
-    if (childListIndices == undefined || childListIndices.length == 0) return evqlTree.node;
+    return getSubtree(evqlTree, childListIndices).node;
+};
+
+export const getSubtree = (evqlTree: EVQLTree, childListIndices: number[] | undefined): EVQLTree => {
+    if (childListIndices == undefined || childListIndices.length == 0) return evqlTree;
     const idx = childListIndices.shift();
     if (idx == undefined) throw "idx variable is undefined!";
-    return getNode(evqlTree.children[idx], childListIndices);
+    return getSubtree(evqlTree.children[idx], childListIndices);
 };
 
 export const getTreeTraversingPaths = (evqlTree: EVQLTree, prevPath?: number[]): number[][] => {
@@ -69,13 +74,15 @@ export const getTreeTraversingPaths = (evqlTree: EVQLTree, prevPath?: number[]):
     if (prevPath == undefined) prevPath = [];
 
     const pathsToReturn: number[][] = [];
-    for (let i = 0; i < evqlTree.children.length; i++) {
-        const child = evqlTree.children[i];
-        // Add paths for the child
-        pathsToReturn.push(...getTreeTraversingPaths(child, [...prevPath, ...[i]]));
+    if (evqlTree.children) {
+        for (let i = 0; i < evqlTree.children.length; i++) {
+            const child = evqlTree.children[i];
+            // Add paths for the child
+            pathsToReturn.push(...getTreeTraversingPaths(child, [...prevPath, ...[i]]));
+        }
+        // Add paths for this node
+        pathsToReturn.push(prevPath);
     }
-    // Add paths for this node
-    pathsToReturn.push(prevPath);
     return pathsToReturn;
 };
 
@@ -235,3 +242,15 @@ export const getProjectedNames = (evqlTree: EVQLTree, childListPath: number[]): 
     });
     return projectedNames;
 };
+
+// export const tableExcerptToVisualizableRows = (tableExceprt: Table): any[][] => {
+//     const rows: any[][] = [];
+//     tableExceprt.rows.forEach((row: Row) => {
+//         const rowDict: any = {};
+//         row.cells.forEach((cell: Cell, col_idx: number) => {
+//             rowDict[tableExceprt.headers[col_idx]] = cell.value;
+//         });
+//         rows.push(rowDict);
+//     });
+//     return rows;
+// };

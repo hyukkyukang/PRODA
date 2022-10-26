@@ -2,11 +2,16 @@ import classNames from "classnames";
 import React, { useEffect, useState } from "react";
 import { Spreadsheet, DataViewerComponent, Matrix, CellBase, ColumnIndicatorComponent, Point } from "react-spreadsheet-custom";
 import { AiOutlinePlusSquare, AiOutlineMinusSquare } from "react-icons/ai";
-import { Typography } from "@mui/material";
 
 import { EVQLTree, EVQLNode, aggFunctions, Function, Clause } from "./EVQL";
-import { getNode, EVQLNodeToEVQLTable, getTreeTraversingPaths, parseExpressions, getProjectedNames, addEVQLNode } from "./utils";
+import { getNode, EVQLNodeToEVQLTable, getTreeTraversingPaths, parseExpressions, getProjectedNames, addEVQLNode, getSubtree } from "./utils";
 import { isEmptyObject } from "../../utils";
+import { runEVQL } from "../../api/connect";
+import { ResultTable } from "../ResultTable/resultTable";
+import { Table } from "./TableExcerpt";
+import { demoDBName } from "../../config";
+import { runSQL } from "../../api/connect";
+import { PGResultToTableExcerpt } from "./Postgres";
 
 // This is from react-spreadsheet-custom/src/selection.ts
 export enum EntireType {
@@ -36,6 +41,7 @@ export interface IEVQLVisualizationContext {
     evqlRoot: EVQLTree;
     setEVQLRoot?: React.Dispatch<React.SetStateAction<EVQLTree>>;
     setSelectedCoordinate?: React.Dispatch<React.SetStateAction<Coordinate | undefined>>;
+    prevChildListPath: number[] | null;
     childListPath: number[];
     editable: boolean;
 }
@@ -89,13 +95,18 @@ export const EVQLColumnIndicator: ColumnIndicatorComponent = ({ column, label, s
 };
 
 export const EVQLTable = (props: IEVQLVisualizationContext) => {
-    const { evqlRoot, setEVQLRoot, setSelectedCoordinate, childListPath, editable } = props;
+    const { evqlRoot, setEVQLRoot, setSelectedCoordinate, prevChildListPath, childListPath, editable } = props;
 
     // Local context to visualize table
     const [evqlNode, setEVQLNode] = useState({} as EVQLNode);
-    const [isFocus, setIsFocus] = useState<boolean>(true);
     const [rowLabels, setRowLabels] = useState<string[]>(["1"]);
     const [tableContext, setTableContext] = useState<IEVQLTable>({} as IEVQLTable);
+    const [resultTable, setResultTable] = useState<Table>({} as Table);
+
+    const getResultTable = async (subTree: EVQLTree) => {
+        const tmpQueryResult = await runEVQL({ evqlStr: JSON.stringify(subTree), dbName: "proda_demo" });
+        setResultTable(PGResultToTableExcerpt(tmpQueryResult["result"]));
+    };
 
     const dataViewer: DataViewerComponent<CellBase<any>> = (cellData) => {
         if (cellData.cell) {
@@ -185,6 +196,38 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
             const node = getNode(evqlRoot, [...childListPath]);
             const tmpTableContext = EVQLNodeToEVQLTable(node, editable);
             const tmpRowLabels = Array.from({ length: tmpTableContext.rows.length }, (x, i) => i + 1).map((x) => x.toString());
+            console.log(`table_exceprt: ${JSON.stringify(node.table_excerpt)}`);
+            // Get table excerpt
+            if (isEmptyObject(node.table_excerpt)) {
+                console.log(`table_exceprt is empty`);
+                console.log(`prevChildListPath: ${JSON.stringify(prevChildListPath)}`);
+                // Get from prev node
+                if (prevChildListPath) {
+                    const prevSubtree = getSubtree(evqlRoot, [...childListPath]);
+                    runEVQL({ evqlStr: JSON.stringify(prevSubtree), dbName: "proda_demo" })
+                        .then((tmpQueryResult) => {
+                            node.table_excerpt = PGResultToTableExcerpt(tmpQueryResult["result"]);
+                        })
+                        .catch((err) => {
+                            console.warn(`error:${err}`);
+                        });
+                } else {
+                    // Get default table
+                    runSQL({ sql: `SELECT * FROM cars`, dbName: demoDBName })
+                        .then((result) => {
+                            node.table_excerpt = PGResultToTableExcerpt(result);
+                            console.log(`result: ${JSON.stringify(result)}`);
+                        })
+                        .catch((err) => {
+                            console.warn(`error:${err}`);
+                        });
+                }
+            }
+            if (!editable) {
+                // Get and show result table
+                const subtree = getSubtree(evqlRoot, [...childListPath]);
+                getResultTable(subtree);
+            }
             setEVQLNode(node);
             setTableContext(tmpTableContext);
             setRowLabels(tmpRowLabels);
@@ -194,6 +237,9 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     if (!isEmptyObject(tableContext)) {
         return (
             <div style={{ overflow: "scroll" }}>
+                {evqlNode.table_excerpt ? <p>Table Excerpt:</p> : null}
+                {evqlNode.table_excerpt ? <ResultTable queryResult={evqlNode.table_excerpt} /> : null}
+                <p>EVQL:</p>
                 <div style={{ display: "inline-block" }}>
                     <Spreadsheet
                         className="table_sketch"
@@ -224,6 +270,8 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                         ))}
                     </div>
                 </div>
+                {resultTable ? <p>Result Table:</p> : null}
+                {resultTable ? <ResultTable queryResult={resultTable} /> : null}
             </div>
         );
     }
@@ -292,6 +340,7 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
                               evqlRoot={evqlRoot}
                               setEVQLRoot={setEVQLRoot}
                               setSelectedCoordinate={setSelectedCoordinate}
+                              prevChildListPath={index > 0 ? childPathLists[index - 1] : null}
                               childListPath={path}
                               editable={editable && index + 1 == childPathLists.length}
                           />

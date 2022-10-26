@@ -165,11 +165,17 @@ function EVQLToSQL(evql) {
     return result;
 }
 
-function queryDB(sql, dbName) {
-    const client = new pg();
-    client.connectSync(`user=${config.demoDBUserID} password=${config.demoDBUserPW} port=${config.demoDBPort} host=${config.demoDBIP} dbname=${dbName}`);
-    result = client.querySync(sql);
-    client.end();
+async function queryDB(sql, dbName) {
+    const { Client } = require("pg");
+    const client = new Client({
+        host: config.demoDBIP,
+        port: config.demoDBPort,
+        user: config.demoDBUserID,
+        password: config.demoDBUserPW,
+        database: dbName,
+    });
+    client.connect();
+    result = await client.query({ text: sql, rowMode: "array" });
     return result;
 }
 

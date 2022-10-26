@@ -29,7 +29,8 @@ const HandsOnEVQL = (props: any) => {
         // Handle data fetching
         runSQL({ sql: `SELECT * FROM cars LIMIT 5`, dbName: demoDBName })
             .then((data) => {
-                setSampledDBRows(data["result"]);
+                console.log(`data: ${JSON.stringify(data)}`);
+                setSampledDBRows(data.rows);
             })
             .catch((e) => {
                 console.warn(`error:${e}`);

@@ -32,7 +32,7 @@ class Cell:
     @staticmethod
     def to_dtype(value: Any) -> DType:
         """Convert value into DType"""
-        if type(value) == int:
+        if type(value) in [int, float]:
             return DNumber()
         elif type(value) == str:
             return DString()

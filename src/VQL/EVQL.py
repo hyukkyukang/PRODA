@@ -208,9 +208,9 @@ class EVQLNode():
         return obj
 
 class EVQLTree:
-    def __init__(self, node, children=[], enforce_t_alias=False):
+    def __init__(self, node, children=None, enforce_t_alias=False):
         self.node: EVQLNode = node
-        self.children: typing.List[EVQLTree]= children
+        self.children: typing.List[EVQLTree]= children if children else []
         self.enforce_t_alias = enforce_t_alias
 
     @property
@@ -374,14 +374,23 @@ def evql_tree_to_SQL(evql_tree):
         return f" FROM {tree.node.table_excerpt.table_excerpt_headers[0]}{postfix}"
 
     def create_having_clause(tree):
+        def get_agg_func_name_from_prev_node(tree, col_name):
+            """Find out aggregation operator from the previous EVQL projection"""
+            prev_node = tree.children[0].node
+            prev_headers = prev_node.header_aliases
+            col_id = prev_headers.index(col_name)
+            prev_projection_headers = prev_node.projection.headers
+            for projected_header in prev_projection_headers:
+                if projected_header.id == col_id:
+                    return Aggregator.to_str(projected_header.agg_type)
+            raise RuntimeError(f"Cannot find aggregation function for column: {col_name}")
+        
         def create_clause_str(formatted_conditions):
             formatted_cond_str_list = []
             for l_op, op, r_op in formatted_conditions:
-                assert l_op.count("_") > 1, "Having clause should have aggregated values"
-                l_op_split = l_op.split("_")
-                l_op_att_str = '_'.join(l_op_split[1:-1])
-                l_op_att_str = "*" if tree.node.table_excerpt.table_excerpt_headers.index(l_op_att_str) == 0 else l_op_att_str
-                l_op_att_str = f"{l_op_split[-1]}({l_op_att_str})"
+                agg_func_name = get_agg_func_name_from_prev_node(tree, l_op)
+                l_op = "*" if tree.node.table_excerpt.table_excerpt_headers.index(l_op) == 0 else l_op
+                l_op_att_str = f"{agg_func_name}({l_op})"
                 formatted_cond_str_list.append(Operator.format_expression(l_op_att_str, op, r_op))
             return " AND ".join(formatted_cond_str_list)
         formatted_clause_list = get_formatted_selection(tree)

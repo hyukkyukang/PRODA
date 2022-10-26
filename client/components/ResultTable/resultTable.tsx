@@ -2,50 +2,56 @@ import React from "react";
 import { ReactGrid, Column, Row, HeaderCell, TextCell, NumberCell } from "@silevis/reactgrid";
 import "@silevis/reactgrid/styles.css";
 import { isEmptyObject, isNumber } from "../../utils";
+import { PGResultInterface } from "../VQL/Postgres";
+import { Table } from "../VQL/TableExcerpt";
 
 const recomCellSizeFor = (value: string): number => {
     return Math.floor(value.length / 6) * 50 + 80;
 };
 
-const queryResultToReactGridTable = (queryResult: any[]) => {
-    const columnNames = Object.keys(queryResult[0]);
-    const rows: Row[] = [];
+const toReactGridColumn = (table: Table): Column[] => {
     const colInfos: Column[] = [];
+    table.headers.forEach((headerName, idx) => {
+        colInfos.push({ columnId: headerName, width: recomCellSizeFor(headerName) });
+    });
+    return colInfos;
+};
+
+const toReactGridRows = (table: Table): Row[] => {
+    const rows: Row[] = [];
     const headerCells: HeaderCell[] = [];
-
-    for (var idx = 0; idx < columnNames.length; idx++) {
-        const colName = columnNames[idx];
-        colInfos.push({ columnId: colName, width: recomCellSizeFor(colName) });
-        headerCells.push({ type: "header", text: colName });
-    }
-
+    // Create header cells
+    table.headers.forEach((headerName, idx) => {
+        headerCells.push({ type: "header", text: headerName });
+    });
     rows.push({ rowId: "header", cells: headerCells });
 
-    for (var idx = 0; idx < queryResult.length; idx++) {
+    // Create data cells
+    table.rows.forEach((row, rowIdx) => {
         const cells: (TextCell | NumberCell)[] = [];
-        columnNames.forEach((colName) => {
-            const value = queryResult[idx][colName];
+        for (var idx = 0; idx < row.cells.length; idx++) {
+            const value = row.cells[idx].value;
             if (isNumber(value.toString())) {
                 cells.push({ type: "number", value: parseFloat(value) });
             } else {
                 cells.push({ type: "text", text: value });
             }
-        });
-        rows.push({ rowId: idx, cells: cells });
-    }
-    return { rows: rows, columns: colInfos };
+        }
+        rows.push({ rowId: rowIdx, cells: cells });
+    });
+
+    return rows;
 };
 
 export const ResultTable = (props: React.ComponentProps<any>) => {
-    const queryResult = props.queryResult;
-    if (Array.isArray(queryResult)) {
-        if (queryResult.length == 0) {
+    const queryResult: Table = props.queryResult;
+    if (!isEmptyObject(queryResult)) {
+        if (isEmptyObject(queryResult.headers) || isEmptyObject(queryResult.rows) || queryResult.rows.length == 0) {
             return <div style={{ marginLeft: "10px" }}>(0 rows)</div>;
         }
-        const gridTable = queryResultToReactGridTable(queryResult);
         return (
             <>
-                <ReactGrid rows={gridTable.rows} columns={gridTable.columns} />
+                <ReactGrid rows={toReactGridRows(queryResult)} columns={toReactGridColumn(queryResult)} />
             </>
         );
     }

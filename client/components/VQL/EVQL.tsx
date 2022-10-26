@@ -1,3 +1,5 @@
+import { Table } from "./TableExcerpt";
+
 // Operators
 export const operators = ["=", "<", ">", "EXISTS", "NOT EXISTS"];
 export const binaryOperators = ["=", "<", ">"];
@@ -5,20 +7,6 @@ export const unaryOperators = ["EXISTS", "NOT EXISTS"];
 export const aggFunctions = ["none", "count", "sum", "avg", "min", "max"];
 
 // Interface
-export interface Cell {
-    value: any;
-}
-export interface Row {
-    cells: Cell[];
-}
-export interface Table {
-    name: string;
-    headers: string[];
-    col_types: string[];
-    allow_null: boolean;
-    rows: Row[];
-}
-
 export interface Header {
     id: number;
     agg_type: number | null;
