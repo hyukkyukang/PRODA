@@ -1,5 +1,26 @@
+import Spreadsheet from "react-spreadsheet-custom";
+
 import ITutorialSection from "./abstractSection";
+import { EVQLColumnIndicator } from "../../VQL/EVQLTable";
 import { GroupingSyntaxExample } from "../syntaxExamples";
+
+export const SyntaxDescription = () => {
+    return (
+        <>
+            <h2>Grouping syntax</h2>
+            <p>
+                'The name of grouping function is "Group". We write grouping expression in the condition of the grouping column, with the name of the column
+                given as an input to the grouping function.',
+            </p>
+            <Spreadsheet
+                className="syntaxExample"
+                data={GroupingSyntaxExample.rows}
+                columnLabels={GroupingSyntaxExample.headers}
+                ColumnIndicator={EVQLColumnIndicator}
+            />
+        </>
+    );
+};
 
 export const GroupingSection: ITutorialSection = {
     title: "Grouping",
@@ -10,9 +31,7 @@ export const GroupingSection: ITutorialSection = {
     exampleDescription: " The following EVQL Groups data by the column 'model' and projects the name and number of models.",
     demoDBName: "Overwrite a demo database name here",
     syntaxExamples: [GroupingSyntaxExample],
-    syntaxDescription:
-        'The name of grouping function is "Group". \
-        \n We write grouping expression in the condition of the grouping column, with the name of the column given as an input to the grouping function.',
+    syntaxDescription: SyntaxDescription(),
 };
 
 export default GroupingSection;

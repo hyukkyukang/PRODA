@@ -1,11 +1,10 @@
 import { useEffect, useState, MouseEventHandler } from "react";
 import { Divider, Button, Grid } from "@mui/material";
-import Spreadsheet from "react-spreadsheet-custom";
 
 import { demoDBName } from "../config";
 import { isEmptyObject } from "../utils";
 import { fetchEVQL, runEVQL, runSQL } from "../api/connect";
-import { EVQLTables, EVQLColumnIndicator } from "../components/VQL/EVQLTable";
+import { EVQLTables } from "../components/VQL/EVQLTable";
 import { EVQLTree } from "../components/VQL/EVQL";
 import { ResultTable } from "../components/ResultTable/resultTable";
 import { SideBar } from "../components/Tutorial/sidebar";
@@ -114,14 +113,7 @@ const Tutorial = () => {
                     {PageNavigationButtons(selectPrevTutorialHandler, selectNextTutorialHandler)}
                     {DividerWithMargin}
                     <p>{selectedSection.description}</p>
-                    <h2> {selectedSection.title} Syntax</h2>
-                    <p> {selectedSection.syntaxDescription} </p>
-                    {selectedSection.syntaxExamples.map((example, index) => (
-                        <div key={index}>
-                            {/* TODO: Make the table unclickable */}
-                            <Spreadsheet className="syntaxExample" data={example.rows} columnLabels={example.headers} ColumnIndicator={EVQLColumnIndicator} />
-                        </div>
-                    ))}
+                    {selectedSection.syntaxDescription}
                     <h2> Demo Database </h2>
                     <p> Below is a sampled rows from the "cars" table in our demo database: </p>
                     <ResultTable queryResult={sampledDBRows} />

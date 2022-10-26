@@ -1,5 +1,23 @@
+import Spreadsheet from "react-spreadsheet-custom";
+
 import ITutorialSection from "./abstractSection";
+import { EVQLColumnIndicator } from "../../VQL/EVQLTable";
 import { MinMaxSyntaxExample } from "../syntaxExamples";
+
+export const SyntaxDescription = () => {
+    return (
+        <>
+            <h2>Min and Max Syntax</h2>
+            <p>"Below EVQL applies min function on 'column1' and max function on 'column2'."</p>
+            <Spreadsheet
+                className="syntaxExample"
+                data={MinMaxSyntaxExample.rows}
+                columnLabels={MinMaxSyntaxExample.headers}
+                ColumnIndicator={EVQLColumnIndicator}
+            />
+        </>
+    );
+};
 
 export const Agg1Section: ITutorialSection = {
     title: "Min and Max",
@@ -8,7 +26,7 @@ export const Agg1Section: ITutorialSection = {
     exampleDescription: "The following EVQL lists the maximum 'horsepower' and the minimum 'max_speed' of cars",
     demoDBName: "Overwrite a demo database name here",
     syntaxExamples: [MinMaxSyntaxExample],
-    syntaxDescription: "Below EVQL applies min function on 'column1' and max function on 'column2'.",
+    syntaxDescription: SyntaxDescription(),
 };
 
 export default Agg1Section;

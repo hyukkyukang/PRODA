@@ -1,13 +1,27 @@
 import ITutorialSection from "./abstractSection";
 
+export const SyntaxDescription = () => {
+    return (
+        <>
+            <h2>Selection on Aggregated Results Syntax</h2>
+            <p>
+                To perform selection on aggregated results, we first write an EVQL with grouping operation. And we write another EVQL with a condition on the
+                result of the first EVQL query.
+            </p>
+        </>
+    );
+};
+
 export const Selection3Section: ITutorialSection = {
     title: "Selection on Aggregated Results",
     description: "EVQL allows you to add selection on aggregated results",
     exampleQueryName: "having",
-    exampleDescription: "",
+    exampleDescription:
+        "In the below example, we first group models and find the average max_speed of each model.\
+                        \nThen, we show the name of models with average max_speed greater than 400.",
     demoDBName: "Overwrite a demo database name here",
     syntaxExamples: [],
-    syntaxDescription: "",
+    syntaxDescription: SyntaxDescription(),
 };
 
 export default Selection3Section;

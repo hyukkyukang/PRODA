@@ -7,7 +7,7 @@ export interface ITutorialSection {
     exampleDescription: string;
     demoDBName: string;
     syntaxExamples: IEVQLTable[];
-    syntaxDescription: string;
+    syntaxDescription: JSX.Element;
 }
 
 export default ITutorialSection;

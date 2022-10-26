@@ -1,5 +1,13 @@
 import ITutorialSection from "./abstractSection";
 
+export const SyntaxDescription = () => {
+    return (
+        <>
+            <h2>ForEach Syntax</h2>
+        </>
+    );
+};
+
 export const ForEachSection: ITutorialSection = {
     title: "ForEach",
     description: "Overwrite a description here",
@@ -7,7 +15,7 @@ export const ForEachSection: ITutorialSection = {
     exampleDescription: "overwrite a description here",
     demoDBName: "Overwrite a demo database name here",
     syntaxExamples: [],
-    syntaxDescription: "Overwrite a description here",
+    syntaxDescription: SyntaxDescription(),
 };
 
 export default ForEachSection;
