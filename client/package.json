@@ -9,14 +9,14 @@
         "lint": "next lint"
     },
     "dependencies": {
-        "@emotion/react": "^11.10.0",
-        "@emotion/styled": "^11.10.0",
+        "@emotion/react": "^11.10.4",
+        "@emotion/styled": "^11.10.4",
         "@mui/icons-material": "^5.10.3",
         "@mui/material": "^5.10.1",
         "@nivo/bar": "^0.79.1",
         "@nivo/core": "^0.78.0",
         "@nivo/line": "^0.78.0",
-        "@silevis/reactgrid": "^4.0.4",
+        "antd": "^4.23.6",
         "axios": "^0.27.2",
         "classnames": "^2.3.1",
         "next": "12.2.5",

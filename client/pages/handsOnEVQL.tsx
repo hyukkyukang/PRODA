@@ -6,7 +6,7 @@ import { isEmptyObject } from "../utils";
 import { runEVQL, fetchEVQL, runSQL } from "../api/connect";
 import { EVQLTree } from "../components/VQL/EVQL";
 import { EVQLTables, Coordinate } from "../components/VQL/EVQLTable";
-import { ResultTable } from "../components/ResultTable/resultTable";
+import { TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
 import { SideBar } from "../components/VQL/Sidebar";
 
 const HandsOnEVQL = (props: any) => {
@@ -29,7 +29,6 @@ const HandsOnEVQL = (props: any) => {
         // Handle data fetching
         runSQL({ sql: `SELECT * FROM cars LIMIT 5`, dbName: demoDBName })
             .then((data) => {
-                console.log(`data: ${JSON.stringify(data)}`);
                 setSampledDBRows(data.rows);
             })
             .catch((e) => {
@@ -77,7 +76,7 @@ const HandsOnEVQL = (props: any) => {
                     <div>
                         <h2> Demo Database </h2>
                         <p> Below is the "cars" table in our demo database: </p>
-                        <ResultTable queryResult={sampledDBRows} />
+                        <TableExcerpt queryResult={sampledDBRows} />
                     </div>
                     <div>
                         <h2>EVQL Query</h2>
@@ -88,7 +87,7 @@ const HandsOnEVQL = (props: any) => {
                             {"Run EVQL"}{" "}
                         </Button>
                         <h3>Results:</h3>
-                        <ResultTable queryResult={queryResult} />
+                        <TableExcerpt queryResult={queryResult} />
                         <br />
                         {/* TODO: Remove debugging print below */}
                         SQL (for debug): {sql}

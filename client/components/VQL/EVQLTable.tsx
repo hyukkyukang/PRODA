@@ -7,8 +7,7 @@ import { EVQLTree, EVQLNode, aggFunctions, Function, Clause } from "./EVQL";
 import { getNode, EVQLNodeToEVQLTable, getTreeTraversingPaths, parseExpressions, getProjectedNames, addEVQLNode, getSubtree } from "./utils";
 import { isEmptyObject } from "../../utils";
 import { runEVQL } from "../../api/connect";
-import { ResultTable } from "../ResultTable/resultTable";
-import { Table } from "./TableExcerpt";
+import { ITableExcerpt, TableExcerpt } from "../TableExcerpt/TableExcerpt";
 import { demoDBName } from "../../config";
 import { runSQL } from "../../api/connect";
 import { PGResultToTableExcerpt } from "./Postgres";
@@ -101,7 +100,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     const [evqlNode, setEVQLNode] = useState({} as EVQLNode);
     const [rowLabels, setRowLabels] = useState<string[]>(["1"]);
     const [tableContext, setTableContext] = useState<IEVQLTable>({} as IEVQLTable);
-    const [resultTable, setResultTable] = useState<Table>({} as Table);
+    const [resultTable, setResultTable] = useState<ITableExcerpt>({} as ITableExcerpt);
 
     const getResultTable = async (subTree: EVQLTree) => {
         const tmpQueryResult = await runEVQL({ evqlStr: JSON.stringify(subTree), dbName: "proda_demo" });
@@ -196,11 +195,8 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
             const node = getNode(evqlRoot, [...childListPath]);
             const tmpTableContext = EVQLNodeToEVQLTable(node, editable);
             const tmpRowLabels = Array.from({ length: tmpTableContext.rows.length }, (x, i) => i + 1).map((x) => x.toString());
-            console.log(`table_exceprt: ${JSON.stringify(node.table_excerpt)}`);
             // Get table excerpt
             if (isEmptyObject(node.table_excerpt)) {
-                console.log(`table_exceprt is empty`);
-                console.log(`prevChildListPath: ${JSON.stringify(prevChildListPath)}`);
                 // Get from prev node
                 if (prevChildListPath) {
                     const prevSubtree = getSubtree(evqlRoot, [...childListPath]);
@@ -216,7 +212,6 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                     runSQL({ sql: `SELECT * FROM cars`, dbName: demoDBName })
                         .then((result) => {
                             node.table_excerpt = PGResultToTableExcerpt(result);
-                            console.log(`result: ${JSON.stringify(result)}`);
                         })
                         .catch((err) => {
                             console.warn(`error:${err}`);
@@ -238,7 +233,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
         return (
             <div style={{ overflow: "scroll" }}>
                 {evqlNode.table_excerpt ? <p>Table Excerpt:</p> : null}
-                {evqlNode.table_excerpt ? <ResultTable queryResult={evqlNode.table_excerpt} /> : null}
+                {evqlNode.table_excerpt ? <TableExcerpt queryResult={evqlNode.table_excerpt} /> : null}
                 <p>EVQL:</p>
                 <div style={{ display: "inline-block" }}>
                     <Spreadsheet
@@ -271,7 +266,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                     </div>
                 </div>
                 {resultTable ? <p>Result Table:</p> : null}
-                {resultTable ? <ResultTable queryResult={resultTable} /> : null}
+                {resultTable ? <TableExcerpt queryResult={resultTable} /> : null}
             </div>
         );
     }
@@ -298,7 +293,7 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
     };
 
     const removeTableHandler: React.MouseEventHandler = (event) => {
-        if (evqlRoot.children.length === 0) {
+        if (!evqlRoot.child) {
             alert("Cannot remove the last table");
             return;
         }
@@ -313,7 +308,7 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
         }
 
         // TODO: need to change data structure of EVQL.
-        const subTree = evqlRoot.children[0];
+        const subTree = evqlRoot.child;
         if (setEVQLRoot) setEVQLRoot(subTree);
     };
 

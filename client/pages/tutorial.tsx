@@ -6,12 +6,11 @@ import { isEmptyObject } from "../utils";
 import { fetchEVQL, runEVQL, runSQL } from "../api/connect";
 import { EVQLTables } from "../components/VQL/EVQLTable";
 import { EVQLTree } from "../components/VQL/EVQL";
-import { ResultTable } from "../components/ResultTable/resultTable";
+import { ITableExcerpt, TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
 import { SideBar } from "../components/Tutorial/sidebar";
 import { allTutorialSections, ProjectionSection } from "../components/Tutorial/sections/allSections";
 import { ITutorialSection } from "../components/Tutorial/sections/abstractSection";
 import { PGResultToTableExcerpt } from "../components/VQL/Postgres";
-import { Table } from "../components/VQL/TableExcerpt";
 
 const DividerWithMargin: JSX.Element = (
     <>
@@ -45,8 +44,8 @@ const Tutorial = () => {
     // Local variables
     const [evql, setEVQL] = useState({} as EVQLTree);
     const [sql, setSQL] = useState("");
-    const [demoDBResult, setDemoDBResult] = useState<Table>({} as Table);
-    const [queryResult, setQueryResult] = useState<Table>({} as Table);
+    const [demoDBResult, setDemoDBResult] = useState<ITableExcerpt>({} as ITableExcerpt);
+    const [queryResult, setQueryResult] = useState<ITableExcerpt>({} as ITableExcerpt);
 
     // Perform example settings
     const doExampleSettings = async (exampleQueryName: String) => {
@@ -118,13 +117,13 @@ const Tutorial = () => {
                     {selectedSection.syntaxDescription}
                     <h2> Demo Database </h2>
                     <p> Below is a sampled rows from the "cars" table in our demo database: </p>
-                    <ResultTable queryResult={demoDBResult} />
+                    <TableExcerpt queryResult={demoDBResult} />
                     <h2> {selectedSection.title} Example</h2>
                     <p>{selectedSection.exampleDescription}</p>
                     <EVQLTables evqlRoot={evql} setEVQLRoot={setEVQL} editable={false} />
                     <p> Below is the query result from the Demo Database: </p>
                     {/* <p> SQL:{sql} </p> */}
-                    <ResultTable queryResult={queryResult} />
+                    <TableExcerpt queryResult={queryResult} />
                     <br />
                     <Button variant="contained" color="success" size="medium" onClick={navigateToDemoPage}>
                         {"Try it Yourself>>"}{" "}
