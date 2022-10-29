@@ -1,6 +1,7 @@
 import abc
 
 from enum import IntEnum
+from typing import List
 from src.table_excerpt.table_excerpt import TableExcerpt
 
 class Operator(IntEnum):
@@ -194,7 +195,8 @@ class Clause():
         return Clause([Function.load_json(condition) for condition in json_obj["conditions"]])
 
 class EVQLNode():
-    def __init__(self, table_excerpt, header_aliases=None, is_concatenate=False):
+    def __init__(self, name, table_excerpt, header_aliases=None, is_concatenate=False):
+        self.name = name
         self.table_excerpt = table_excerpt
         self.is_concatenate = is_concatenate
         self._header_aliases = header_aliases if header_aliases else None
@@ -227,6 +229,7 @@ class EVQLNode():
 
     def dump_json(self):
         json_obj = {}
+        json_obj["name"] = self.name
         json_obj["table_excerpt"] = self.table_excerpt.dump_json()
         json_obj["is_concatenate"] = self.is_concatenate
         json_obj["_header_aliases"] = self._header_aliases
@@ -240,7 +243,7 @@ class EVQLNode():
 
     @staticmethod
     def load_json(json_obj):
-        obj = EVQLNode(TableExcerpt.load_json(json_obj["table_excerpt"]), json_obj["_header_aliases"], json_obj["is_concatenate"])
+        obj = EVQLNode(json_obj["name"], TableExcerpt.load_json(json_obj["table_excerpt"]), json_obj["_header_aliases"], json_obj["is_concatenate"])
         # Non-primitive types
         for header in Projection.load_json(json_obj["_projection"]).headers:
             obj.add_projection(header)
@@ -249,14 +252,20 @@ class EVQLNode():
         return obj
 
 class EVQLTree:
-    def __init__(self, node, child=None, enforce_t_alias=False):
+    def __init__(self, node, children=None, enforce_t_alias=False):
         self.node: EVQLNode = node
-        self.child: EVQLTree = child
+        self.children: List[EVQLTree] = children if children else []
         self.enforce_t_alias = enforce_t_alias
 
     @property
+    def table_name(self):
+        if self.children:
+            return self.children[0].table_name
+        return self.node.table_excerpt.name
+
+    @property
     def level(self):
-            return self.child.level + int(not self.is_having) if self.child else 1
+            return max([child.level for child in self.children]) + int(not self.is_having) if self.children else 1
 
     @property
     def is_groupby(self):
@@ -264,12 +273,13 @@ class EVQLTree:
 
     @property
     def is_having(self):
-        """ Assumption: only one condition on the having clause
+        """ Assumption: only one condition and one child on the having clause
             If there is a child and current node has selection on aggregated projection from the child node"""
-        if not self.child:
+        if len(self.children) != 1:
             return False
-        child_is_group_by = self.child.is_groupby
-        child_projection_headers_with_agg = list(map(self.child.node.get_header_name, self.child.node.projection.headers_with_agg))
+        child = self.children[0]
+        child_is_group_by = child.is_groupby
+        child_projection_headers_with_agg = list(map(child.node.get_header_name, child.node.projection.headers_with_agg))
         if child_is_group_by and child_projection_headers_with_agg and not self.node.is_concatenate:
             # Check two conditions:
             #   1. operator should be of selection excluding Exists and NotExists
@@ -285,7 +295,7 @@ class EVQLTree:
 
     @property
     def is_nested(self):
-        return bool(self.child) and not self.is_having
+        return bool(self.children) and not self.is_having
 
     @property
     def header_ids_for_correlation(self):
@@ -318,13 +328,13 @@ class EVQLTree:
     def dump_json(self):
         return {
             "node": self.node.dump_json(),
-            "child": self.child.dump_json() if self.child else None,
+            "children": [child.dump_json() for child in self.children],
             "enforce_t_alias": self.enforce_t_alias
         }
         
     @staticmethod
     def load_json(json_obj):
-        return EVQLTree(EVQLNode.load_json(json_obj["node"]), EVQLTree.load_json(json_obj["child"]) if json_obj["child"] else None, json_obj["enforce_t_alias"])
+        return EVQLTree(EVQLNode.load_json(json_obj["node"]), [EVQLTree.load_json(child) for child in json_obj["children"]], json_obj["enforce_t_alias"])
 
 def evql_tree_to_SQL(evql_tree):
     def create_select_clause(tree):
@@ -358,7 +368,11 @@ def evql_tree_to_SQL(evql_tree):
                     # If nested and is not grouped by
                     #                           : -> create nested query and use it as an operand
                     if tree.node.table_excerpt.is_nested_col(EVQLNode.to_table_excerpt_header_idx(sel_cond.r_operand)):
-                        r_op_str = f"({evql_tree_to_SQL(tree.child)})"
+                        base_table_name = tree.node.table_excerpt.base_table_names[EVQLNode.to_table_excerpt_header_idx(sel_cond.r_operand)]
+                        children_of_base_table = [child for child in tree.children if child.node.name == base_table_name]
+                        assert len(children_of_base_table) == 1, f"Assumption: only one child for each base table, but found: {len(children_of_base_table)}"
+                        child_of_base_table = children_of_base_table[0]
+                        r_op_str = f"({evql_tree_to_SQL(child_of_base_table)})"
                     else:
                         r_op_str = tree.get_var_name(sel_cond.r_operand)
                 else:
@@ -424,12 +438,14 @@ def evql_tree_to_SQL(evql_tree):
 
     def create_from_clause(tree):
         postfix = f" AS T{tree.level}" if tree.use_t_alias else ""
-        return f" FROM {tree.node.table_excerpt.table_excerpt_headers[0]}{postfix}"
+        return f" FROM {tree.table_name}{postfix}"
 
     def create_having_clause(tree):
         def get_agg_func_name_from_prev_node(tree, col_name):
             """Find out aggregation operator from the previous EVQL projection"""
-            prev_node = tree.child.node
+            assert len(tree.children) == 1, f"Expected only one child, but got {len(tree.children)}"
+            child = tree.children[0]
+            prev_node = child.node
             prev_headers = prev_node.headers
             col_id = prev_headers.index(col_name)
             prev_projection_headers = prev_node.projection.headers
@@ -469,8 +485,8 @@ def evql_tree_to_SQL(evql_tree):
     from_clause = create_from_clause(evql_tree)
     order_by_clause = create_order_by_clause(evql_tree)
     if evql_tree.is_having:
-        where_clause = create_where_clause(evql_tree.child, evql_tree)
-        group_by_clause = create_group_by_clause(evql_tree.child)
+        where_clause = create_where_clause(evql_tree.children[0], evql_tree)
+        group_by_clause = create_group_by_clause(evql_tree.children[0])
         having_clause = create_having_clause(evql_tree)
     else:
         where_clause = create_where_clause(evql_tree, evql_tree)

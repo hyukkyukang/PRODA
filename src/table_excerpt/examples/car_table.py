@@ -17,7 +17,7 @@ rows = [
     [12, "genesis", 11, 1140, 2015, 112000]
 ]
 
-car_table = TableExcerpt(headers, col_types, table_name="cars", rows=rows)
+car_table = TableExcerpt("cars", headers, col_types, rows=rows)
 
 if __name__ == "__main__":
     stop = 1

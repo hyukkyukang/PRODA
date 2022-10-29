@@ -37,7 +37,7 @@ class ProjectionQuery(TestQuery):
     def evql(self):
         if not self._evql:
             # Create tree node
-            node = EVQLNode(car_table)
+            node = EVQLNode(f"{car_table.name}_query", car_table)
             node.add_projection(Header(car_table.table_excerpt_headers.index("id")))
             # Construct tree
             self._evql = EVQLTree(node)
@@ -52,7 +52,7 @@ class MinMaxQuery(TestQuery):
     def evql(self):
         if not self._evql:
             # Create tree node
-            node = EVQLNode(car_table)
+            node = EVQLNode(f"{car_table.name}_query", car_table)
             node.add_projection(Header(node.headers.index("horsepower"), agg_type=Aggregator.max))
             node.add_projection(Header(node.headers.index("max_speed"), agg_type=Aggregator.min))
             # Construct tree
@@ -69,7 +69,7 @@ class CountAvgSumQuery(TestQuery):
     def evql(self):
         if not self._evql:
             # Create tree node
-            node = EVQLNode(car_table)
+            node = EVQLNode(f"{car_table.name}_query", car_table)
             node.add_projection(Header(node.headers.index("id"), agg_type=Aggregator.count))
             node.add_projection(Header(node.headers.index("max_speed"), agg_type=Aggregator.avg))
             node.add_projection(Header(node.headers.index("price"), agg_type=Aggregator.sum))
@@ -87,7 +87,7 @@ class SelectionQuery(TestQuery):
     def evql(self):
         if not self._evql:
             # Create tree node
-            node = EVQLNode(car_table)
+            node = EVQLNode(f"{car_table.name}_query", car_table)
             node.add_projection(Header(node.headers.index("id")))
             # Create conditions for the node
             clause = Clause([Selecting(node.headers.index("year"),
@@ -108,7 +108,7 @@ class AndOrQuery(TestQuery):
     def evql(self):
         if not self._evql:
             # Create tree node
-            node = EVQLNode(car_table)
+            node = EVQLNode(f"{car_table.name}_query", car_table)
             node.add_projection(Header(node.headers.index("id")))
             node.add_projection(Header(node.headers.index("price")))
             # Create conditions for the node
@@ -146,7 +146,7 @@ class SelectionQueryWithOr(TestQuery):
     def evql(self):
         if not self._evql:
             # Create tree node
-            node = EVQLNode(car_table)
+            node = EVQLNode(f"{car_table.name}_query", car_table)
             node.add_projection(Header(node.headers.index("id")))
             # Create conditions for the node
             clause1 = Clause([Selecting(node.headers.index("max_speed"), 
@@ -171,7 +171,7 @@ class SelectionQueryWithAnd(TestQuery):
     def evql(self):
         if not self._evql:
             # Create tree node
-            node = EVQLNode(car_table)
+            node = EVQLNode(f"{car_table.name}_query", car_table)
             node.add_projection(Header(node.headers.index("id")))
             # Create conditions for the node
             cond1 = Selecting(node.headers.index("max_speed"), Operator.greaterThan, "2000")
@@ -191,7 +191,7 @@ class OrderByQuery(TestQuery):
     def evql(self):
         if not self._evql:
             # Create tree node
-            node = EVQLNode(car_table)
+            node = EVQLNode(f"{car_table.name}_query", car_table)
             node.add_projection(Header(node.headers.index("id")))
             # Create conditions for the node
             cond1 = Selecting(node.headers.index("year"), Operator.equal, "2010")
@@ -211,7 +211,7 @@ class GroupByQuery(TestQuery):
     def evql(self):
         if not self._evql:
             # Create tree node
-            node = EVQLNode(car_table)
+            node = EVQLNode(f"{car_table.name}_query", car_table)
             node.add_projection(Header(node.headers.index("cars"), agg_type=Aggregator.count))
             node.add_projection(Header(node.headers.index("model")))
             # Create conditions for the node
@@ -231,7 +231,7 @@ class HavingQuery(TestQuery):
     def evql(self):
         if not self._evql:
             # Create tree node 1
-            node_1 = EVQLNode(car_table)
+            node_1 = EVQLNode(f"{car_table.name}_query", car_table)
             node_1.add_projection(Header(node_1.headers.index("model")))
             node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
             # Create conditions for the node
@@ -252,7 +252,7 @@ class HavingQuery(TestQuery):
                             ["hyundai", (930+940)/2],
                             ["kia", 1030],
                             ["genesis", (1130+1140)/2]]
-            result_table = TableExcerpt(result_headers, result_col_types, "cars", result_rows)
+            result_table = TableExcerpt("cars2", result_headers, result_col_types, result_rows)
             
             # Next Table Excerpt
             new_car_headers = result_headers
@@ -272,16 +272,16 @@ class HavingQuery(TestQuery):
             #     [12, "genesis", 11, 1140, 2015, 112000, "genesis", (1130+1140)/2]
             # ]
             new_rows = result_rows
-            new_table_excerpt = TableExcerpt(new_car_headers, new_col_types, "cars", new_rows)
+            new_table_excerpt = TableExcerpt("cars3", new_car_headers, new_col_types, new_rows)
 
             # Create tree node 2
             # TODO: Need to discuss about how to name variables from previous step
-            node_2 = EVQLNode(new_table_excerpt)
+            node_2 = EVQLNode(f"{new_table_excerpt.name}_query", new_table_excerpt)
             node_2.add_projection(Header(node_2.headers.index("model")))
             
             cond2 = Selecting(find_nth_occurrence_index(node_2.headers, "max_speed", 1), Operator.greaterThan, "400")
             node_2.add_predicate(Clause([cond2]))
-            self._evql = EVQLTree(node_2, child=EVQLTree(node_1))
+            self._evql = EVQLTree(node_2, children=[EVQLTree(node_1)])
         return self._evql
 
 
@@ -294,7 +294,7 @@ class NestedQuery(TestQuery):
     def evql(self):
         if not self._evql:
             # Create tree node 1
-            node_1 = EVQLNode(car_table, is_concatenate=True)
+            node_1 = EVQLNode(f"{car_table.name}_query", car_table, is_concatenate=True)
             node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
             # Create conditions for the node
             cond1_1 = Selecting(node_1.headers.index("year"), Operator.equal, "2010")
@@ -302,32 +302,19 @@ class NestedQuery(TestQuery):
 
             # Query Result
             result_headers = ["avg_max_speed"]
-            result_col_types = ["list.number"]
-            result_rows = [280]
-
+            result_col_types = ["number"]
+            result_rows = [[280]]
+            result_table = TableExcerpt(node_1.name, result_headers, result_col_types, result_rows)
+            
             # New table excerpt
-            new_car_headers = car_table.headers + result_headers
-            new_col_types = car_table.col_types + result_col_types
-            new_rows = [[1, "ford", 10, 230, 2019, 20000, result_rows],
-                        [2, "cherlet", 10, 330, 2018, 15000, result_rows],
-                        [3, "toyota", 10, 430, 2017, 10000, result_rows],
-                        [4, "volkswage", 10, 530, 2016, 8000, result_rows],
-                        [5, "amc", 10, 630, 2018, 15000, result_rows],
-                        [6, "pontiac", 10, 730, 2012, 71000, result_rows],
-                        [7, "datsun", 10, 830, 2013, 81000, result_rows],
-                        [8, "hyundai", 10, 930, 2013, 91000, result_rows],
-                        [9, "hyundai", 11, 940, 2014, 92000, result_rows],
-                        [10, "kia", 10, 1030, 2014, 101000, result_rows],
-                        [11, "genesis", 10, 1130, 2014, 111000, result_rows],
-                        [12, "genesis", 11, 1140, 2015, 112000, result_rows]]
-            new_table_excerpt = TableExcerpt(new_car_headers, new_col_types, "cars", new_rows)
-
+            new_table_excerpt = TableExcerpt.concatenate("cars3", car_table, result_table)
+            
             # Create tree node 2
-            node_2 = EVQLNode(new_table_excerpt)
+            node_2 = EVQLNode(f"{new_table_excerpt.name}_query", new_table_excerpt)
             node_2.add_projection(Header(node_2.headers.index("id")))
             cond2 = Selecting(find_nth_occurrence_index(node_2.headers, "max_speed", 1), Operator.greaterThan, node_2.headers.index("avg_max_speed"))
             node_2.add_predicate(Clause([cond2]))
-            self._evql = EVQLTree(node_2, EVQLTree(node_1))
+            self._evql = EVQLTree(node_2, children=[EVQLTree(node_1)])
         return self._evql
 
 
@@ -340,7 +327,7 @@ class CorrelatedNestedQuery(TestQuery):
     def evql(self):
         if not self._evql:
             # Create tree node 1
-            node_1 = EVQLNode(car_table, is_concatenate=True)
+            node_1 = EVQLNode(f"{car_table.name}_query", car_table, is_concatenate=True)
             node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
             cond1 = Grouping(node_1.headers.index("model"))
             node_1.add_predicate(Clause([cond1]))
@@ -374,89 +361,115 @@ class CorrelatedNestedQuery(TestQuery):
                         [10, "kia", 10, 1030, 2014, 101000, [item[0] for item in result_rows], [item[1] for item in result_rows]],
                         [11, "genesis", 10, 1130, 2014, 111000, [item[0] for item in result_rows], [item[1] for item in result_rows]],
                         [12, "genesis", 11, 1140, 2015, 112000, [item[0] for item in result_rows], [item[1] for item in result_rows]]]
-            new_car_table = TableExcerpt(new_car_headers, new_col_types, "cars", new_rows)
+            new_car_table = TableExcerpt(node_1.name, new_car_headers, new_col_types, new_rows)
 
             # Create tree node 2
-            node_2 = EVQLNode(new_car_table, is_concatenate=True)
-            node_2.add_projection(Header(find_nth_occurrence_index(node_2.headers, "model", 1)))
+            node_2 = EVQLNode(f"{new_car_table.name}_query", new_car_table, is_concatenate=True)
+            node_2.add_projection(Header(node_2.headers.index("id")))
             # Create conditions for the node
             cond2_1 = Selecting(node_2.headers.index("max_speed"), Operator.greaterThan, node_2.headers.index("avg_max_speed"))
             cond2_2 = Selecting(find_nth_occurrence_index(node_2.headers, "model", 1), Operator.equal, find_nth_occurrence_index(node_2.headers, "model", 2))
             node_2.add_predicate(Clause([cond2_1, cond2_2]))
-
-            # # Query Result
-            # new_car_headers = new_car_table.headers + ["step2_model"]
-            # new_col_types = new_car_table.col_types + [TableExcerpt._str_to_dtype("list.float")]
-            # def avg(list_of_item):
-            #     return sum(list_of_item) / len(list_of_item)
-            # new_rows = [[1, "ford", 10, 230, 2019, 20000, [item[0] for item in result_rows], [item[1] for item in result_rows], [avg([item[1] for item in result_rows if item[0] == "ford"])]],
-            #             [2, "cherlet", 10, 330, 2018, 15000, [item[0] for item in result_rows], [item[1] for item in result_rows], [avg([item[1] for item in result_rows if item[0] == "cherlet"])]],
-            #             [3, "toyota", 10, 430, 2017, 10000, [item[0] for item in result_rows], [item[1] for item in result_rows], [avg([item[1] for item in result_rows if item[0] == "toyota"])]],
-            #             [4, "volkswage", 10, 530, 2016, 8000, [item[0] for item in result_rows], [item[1] for item in result_rows], [avg([item[1] for item in result_rows if item[0] == "volkswage"])]],
-            #             [5, "amc", 10, 630, 2018, 15000, [item[0] for item in result_rows], [item[1] for item in result_rows], [avg([item[1] for item in result_rows if item[0] == "amc"])]],
-            #             [6, "pontiac", 10, 730, 2012, 71000, [item[0] for item in result_rows], [item[1] for item in result_rows], [avg([item[1] for item in result_rows if item[0] == "pontiac"])]],
-            #             [7, "datsun", 10, 830, 2013, 81000, [item[0] for item in result_rows], [item[1] for item in result_rows], [avg([item[1] for item in result_rows if item[0] == "datsun"])]],
-            #             [8, "hyundai", 10, 930, 2013, 91000, [item[0] for item in result_rows], [item[1] for item in result_rows], [avg([item[1] for item in result_rows if item[0] == "hyundai"])]],
-            #             [9, "hyundai", 11, 940, 2014, 92000, [item[0] for item in result_rows], [item[1] for item in result_rows], [avg([item[1] for item in result_rows if item[0] == "hyundai"])]],
-            #             [10, "kia", 10, 1030, 2014, 101000, [item[0] for item in result_rows], [item[1] for item in result_rows], [avg([item[1] for item in result_rows if item[0] == "kia"])]],
-            #             [11, "genesis", 10, 1130, 2014, 111000, [item[0] for item in result_rows], [item[1] for item in result_rows], [avg([item[1] for item in result_rows if item[0] == "genesis"])]],
-            #             [12, "genesis", 11, 1140, 2015, 112000, [item[0] for item in result_rows], [item[1] for item in result_rows], [avg([item[1] for item in result_rows if item[0] == "genesis"])]]]
-            # new_car_table = TableExcerpt(new_car_headers, new_col_types, "cars", new_rows)
-
-            # # Create tree node 3
-            # next_headers = new_car_table.table_excerpt_headers
-            # node_3 = EVQLNode(new_car_table)
-            # node_3.add_projection(Header(next_headers.index("id")))
-            # # Create conditions for the node
-            # cond3 = Selecting(next_headers.index("step2_model"), Operator.exists, None)
-            # node_3.add_predicate(Clause([cond3]))
-            self._evql = EVQLTree(node_2, EVQLTree(node_1, enforce_t_alias=True))
+            
+            self._evql = EVQLTree(node_2, children=[EVQLTree(node_1, enforce_t_alias=True)])
         return self._evql
 
 
 class CorrelatedNestedQuery2(TestQuery):
     def __init__(self):
         self._evql = None
-        self._sql = "SELECT T2.id FROM cars AS T2 WHERE EXISTS (SELECT T1.model FROM cars AS T1 WHERE T1.model = T2.model GROUP BY T1.model HAVING COUNT(*) > 1)"
+        self._sql = "SELECT T2.id FROM cars AS T2 WHERE max_speed > (SELECT avg(max_speed) FROM cars AS T1 WHERE T1.model = T2.model) GROUP BY T1.model HAVING AVG(max_speed) > 300)"
 
     @property
     def evql(self):
         if not self._evql:
             # Create tree node 1
-            node_1 = EVQLNode(car_table)
-            node_1.add_projection(Header(node_1.headers.index("cars"), agg_type=Aggregator.count))
+            node_1 = EVQLNode(f"{car_table.name}_query", car_table)
+            node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
             # Create conditions for the node
             cond1_1 = Grouping(node_1.headers.index("model"))
             node_1.add_predicate(Clause([cond1_1]))
 
             # Query Result
-            new_car_headers = car_table.headers + ["model"] + ["step1_cars_count"]
-            new_col_types = car_table.col_types + [TableExcerpt._str_to_dtype("list.string"), TableExcerpt._str_to_dtype("list.float")]
-            new_rows = [[1, "ford", 10, 230, 2019, 20000, 400]]
-            new_car_table = TableExcerpt(new_car_headers, new_col_types, "cars", new_rows)
+            result_headers = ["model"] + ["max_speed"]
+            result_col_types = [TableExcerpt._str_to_dtype("list.string"), TableExcerpt._str_to_dtype("list.float")]
+            result_rows = [["ford", 230],
+                            ["cherlet", 330],
+                            ["toyota", 430],
+                            ["volkswage", 530],
+                            ["amc", 630],
+                            ["pontiac", 730],
+                            ["datsun", 830],
+                            ["hyundai", 935],
+                            ["kia", 1030],
+                            ["genesis", 1135]]
+            result_table = TableExcerpt(node_1.name, result_headers, result_col_types, result_rows)
 
             # Create tree node 2
-            node_2 = EVQLNode(new_car_table)
-            node_2.add_projection(Header(node_2.headers.index("model")))
+            new_table_excerpt = TableExcerpt.concatenate([car_table, result_table])
+            node_2 = EVQLNode(f"{new_table_excerpt.name}_query", new_table_excerpt)
+            node_2.add_projection(Header(node_2.headers.index("id")))
+            node_2.add_projection(Header(node_2.headers.index("max_speed"), agg_type=Aggregator.avg))
             # Create conditions for the node
-            cond2 = Selecting(node_2.headers.index("step1_cars_count"), Operator.greaterThan, "1")
+            cond2_1 = Selecting(node_2.headers.index("max_speed"), Operator.greaterThan, find_nth_occurrence_index(node_2.headers, "max_speed", 2))
+            cond2_2 = Selecting(node_2.headers.index("model"), Operator.equal, find_nth_occurrence_index(node_2.headers, "model", 2))
+            node_2.add_predicate(Clause([cond2_1, cond2_2]))
+
+            # Query Result
+            result_headers_2 = ["id", "max_speed"]
+            result_col_types_2 = [TableExcerpt._str_to_dtype("list.int"), TableExcerpt._str_to_dtype("list.float")]
+            result_rows_2 = [[1, 350]]
+            result_table_2 = TableExcerpt(node_2.name, result_headers_2, result_col_types_2, result_rows_2)
+
+            # Create tree node 3
+            node_3 = EVQLNode(f"{result_table_2.name}_query", result_table_2)
+            node_3.add_projection(Header(node_3.headers.index("id")))
+            # Create conditions for the node
+            cond3 = Selecting(node_3.headers.index("max_speed"), Operator.greaterThan, "300")
+            node_3.add_predicate(Clause([cond3]))
+            self._evql = EVQLTree(node_3, children=[EVQLTree(node_2, children=[EVQLTree(node_1, enforce_t_alias=True)])])
+        return self._evql
+
+
+class MultipleSublinksQuery(TestQuery):
+    def __init__(self):
+        self._evql = None
+        self._sql = "SELECT id FROM cars WHERE max_speed > (SELECT avg(max_speed) FROM cars WHERE model = 'hyundai') AND horsepower > (SELECT avg(horsepower) FROM cars WHERE model = 'genesis')"
+
+    @property
+    def evql(self):
+        if not self._evql:
+            # Create tree node 1
+            node_1 = EVQLNode(f"{car_table}_query1", car_table)
+            node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
+            # Create conditions for the node
+            cond1 = Selecting(node_1.headers.index("model"), Operator.equal, "hyundai")
+            node_1.add_predicate(Clause([cond1]))
+
+            # Create tree node 2
+            node_2 = EVQLNode(f"{car_table}_query2", car_table)
+            node_2.add_projection(Header(node_2.headers.index("horsepower"), agg_type=Aggregator.avg))
+            # Create conditions for the node
+            cond2 = Selecting(node_2.headers.index("model"), Operator.equal, "genesis")
             node_2.add_predicate(Clause([cond2]))
 
             # Query Result
-            new_car_headers = new_car_table.headers + ["step2_model"]
-            new_col_types = new_car_table.col_types + [TableExcerpt._str_to_dtype("list.float")]
-            new_rows = [[1, "ford", 10, 230, 2019, 20000, 400, 2]]
-            new_car_table = TableExcerpt(new_car_headers, new_col_types, "cars", new_rows)
+            new_car_headers = car_table.headers + ["max_speed"] + ["horsepower"]
+            new_col_types = new_car_table.col_types + [TableExcerpt._str_to_dtype("list.float") + TableExcerpt._str_to_dtype("list.float")]
+            node_1_result = [[935]]
+            node_2_result = [[10.5]]
+            new_rows = [row + node_1_result + node_2_result for row in car_table.rows]
+            new_car_table = TableExcerpt(node_2.name, new_car_headers, new_col_types, new_rows)
 
             # Create tree node 3
-            node_3 = EVQLNode(new_car_table)
+            node_3 = EVQLNode(f"{new_car_table.name}_query", new_car_table)
             node_3.add_projection(Header(node_3.headers.index("id")))
             # Create conditions for the node
-            cond3 = Selecting(node_3.headers.index("step2_model"), Operator.exists, None)
-            node_3.add_predicate(Clause([cond3]))
-            self._evql = EVQLTree(node_3, EVQLTree(node_2, EVQLTree(node_1, enforce_t_alias=True)))
+            cond3_1 = Selecting(node_3.headers.index("max_speed"), Operator.greaterThan, find_nth_occurrence_index(node_3.headers, "max_speed", 2))
+            cond3_2 = Selecting(node_3.headers.index("horsepower"), Operator.greaterThan, find_nth_occurrence_index(node_3.headers, "horsepower", 2))
+            node_3.add_predicate(Clause([cond3_1, cond3_2]))
+            self._evql = EVQLTree(node_3, children=[EVQLTree(node_2), EVQLTree(node_1)])
         return self._evql
-
 
 
 def parse_args():
@@ -481,7 +494,9 @@ if __name__ == "__main__":
         "groupBy": GroupByQuery,
         "having": HavingQuery,
         "nested": NestedQuery,
-        "correlatedNested": CorrelatedNestedQuery
+        "correlatedNested": CorrelatedNestedQuery,
+        "correlatedNested2": CorrelatedNestedQuery2,
+        "multipleSublinks": MultipleSublinksQuery
     }
     
     args = parse_args()
@@ -493,4 +508,3 @@ if __name__ == "__main__":
         raise RuntimeError("Should not be here")
     dumped_query = query.evql.dump_json()
     print(json.dumps(dumped_query, indent=4))
-    

@@ -1,5 +1,5 @@
 import unittest
-from VQL.example_queries import SelectionQueryWithAnd, SelectionQueryWithOr, OrderByQuery, GroupByQuery, HavingQuery, NestedQuery, CorrelatedNestedQuery
+from VQL.example_queries import SelectionQueryWithAnd, SelectionQueryWithOr, OrderByQuery, GroupByQuery, HavingQuery, NestedQuery, CorrelatedNestedQuery, CorrelatedNestedQuery2, MultipleSublinksQuery
 from VQL.EVQL import EVQLTree
 
 class Test_data_consistency(unittest.TestCase):
@@ -28,6 +28,11 @@ class Test_data_consistency(unittest.TestCase):
 
     def test_correlated_nested(self):
         self._test_consistency(CorrelatedNestedQuery())
+
+    def test_correlated_nested2(self):
+        self._test_consistency(CorrelatedNestedQuery2())
+    def test_multiple_sublinks(self):
+        self._test_consistency(MultipleSublinksQuery())
 
 if __name__ == "__main__":
     unittest.main()

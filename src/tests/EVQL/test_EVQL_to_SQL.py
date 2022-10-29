@@ -1,5 +1,5 @@
 import unittest
-from VQL.example_queries import ProjectionQuery, MinMaxQuery, CountAvgSumQuery, SelectionQuery, AndOrQuery, SelectionQueryWithAnd, SelectionQueryWithOr, OrderByQuery, GroupByQuery, HavingQuery, NestedQuery, CorrelatedNestedQuery
+from VQL.example_queries import ProjectionQuery, MinMaxQuery, CountAvgSumQuery, SelectionQuery, AndOrQuery, SelectionQueryWithAnd, SelectionQueryWithOr, OrderByQuery, GroupByQuery, HavingQuery, NestedQuery, CorrelatedNestedQuery, CorrelatedNestedQuery2, MultipleSublinksQuery
 
 class Test_EVQL_to_SQL(unittest.TestCase):
     def _test_translation(self, query):
@@ -27,7 +27,10 @@ class Test_EVQL_to_SQL(unittest.TestCase):
 
     def test_correlated_nested(self):
         self._test_translation(CorrelatedNestedQuery())
-        
+
+    def test_correlated_nested2(self):
+        self._test_translation(CorrelatedNestedQuery2())
+
     def test_projection(self):
         self._test_translation(ProjectionQuery())
         
@@ -43,6 +46,8 @@ class Test_EVQL_to_SQL(unittest.TestCase):
     def test_selection(self):
         self._test_translation(SelectionQuery())
 
+    def test_multiple_sublinks(self):
+        self._test_translation(MultipleSublinksQuery())
 
 if __name__ == "__main__":
     unittest.main()

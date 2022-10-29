@@ -16,8 +16,8 @@ export interface ITableExcerpt {
     name: string;
     headers: string[];
     col_types: string[];
-    allow_null: boolean;
     rows: Row[];
+    base_table_names: string[];
 }
 
 const toAntdColumns = (tableExcerpt: ITableExcerpt): ColumnsType<any> => {
