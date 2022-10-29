@@ -6,6 +6,8 @@ class Test_data_consistency(unittest.TestCase):
     def _test_consistency(self, query):
         json_obj = query.evql.dump_json()
         new_query_obj = EVQLTree.load_json(json_obj)
+        ori = query.evql.to_sql
+        new = new_query_obj.to_sql
         self.assertTrue(query.evql.to_sql == new_query_obj.to_sql, f'\nExpected: "{query.evql.to_sql}". \nGot: "{new_query_obj.to_sql}"')
 
     def test_selection_with_or(self):

@@ -165,11 +165,11 @@ class TableExcerpt:
         return [self.add_row(row) for row in rows]
 
     def dump_json(self):
-        return {"name": self.name, "headers": self.headers, "col_types": [col_type.dump_json() for col_type in self.col_types], "rows": [row.dump_json() for row in self.rows]}
+        return {"name": self.name, "headers": self.headers, "col_types": [col_type.dump_json() for col_type in self.col_types], "rows": [row.dump_json() for row in self.rows], "base_table_names": self.base_table_names}
     
     @staticmethod
     def load_json(json_obj):
-        return TableExcerpt(json_obj["name"], json_obj["headers"], [DType.load_json(col_type) for col_type in json_obj["col_types"]], rows=[Row.load_json(row) for row in json_obj["rows"]])
+        return TableExcerpt(json_obj["name"], json_obj["headers"], [DType.load_json(col_type) for col_type in json_obj["col_types"]], rows=[Row.load_json(row) for row in json_obj["rows"]], base_table_names=json_obj["base_table_names"])
     
     
 if __name__ == "__main__":
