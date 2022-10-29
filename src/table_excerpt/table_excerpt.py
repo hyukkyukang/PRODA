@@ -8,11 +8,16 @@ class DType:
         return self.__class__.__name__
 
     def dump_json(self):
+        if type(self) == DList:
+            return f"{self.__class__.__name__}.{self.inner_type.dump_json()}"
         return self.__class__.__name__
     
     @staticmethod
     def load_json(type_name: str):
-        module = getattr(__import__("src.table.table"), "table").table
+        module = getattr(__import__("src.table_excerpt.table_excerpt"), "table_excerpt").table_excerpt
+        sub_type_names = type_name.split(".")
+        if len(sub_type_names) > 1:
+            return getattr(module, sub_type_names[0])(inner_type=DType.load_json(".".join(sub_type_names[1:])))
         return getattr(module, type_name)()
 
 class DNumber(DType):
@@ -23,6 +28,16 @@ class DString(DType):
 
 class DBoolean(DType):
     pass
+
+class DList(DType):
+    def __init__(self, inner_type: DType):
+        self.inner_type = inner_type
+
+    def __str__(self):
+        return self.__class__.__name__ + f"[{self.inner_type}]"
+    
+    def __repr__(self):
+        return self.__class__.__name__ + f"[{self.inner_type}]"
 
 class Cell:
     def __init__(self, value: Any):
@@ -38,6 +53,8 @@ class Cell:
             return DString()
         elif type(value) == bool:
             return DBoolean()
+        elif type(value) == list:
+            return DList(Cell.to_dtype(value[0]))
         raise ValueError(f"Cannot convert {type(value)} to dtype")
     
     @staticmethod
@@ -68,16 +85,14 @@ class Row:
     def load_json(json_obj: dict):
         return Row([Cell.load_json(cell) for cell in json_obj["cells"]])
 
-
-class Table:
+class TableExcerpt:
     def __init__(self, headers, col_types, table_name=None, rows=None, allow_null=True):
         self.name = table_name
         self.headers: List[str] = headers
-        self.col_types: List[DType] = list(map(Table._str_to_dtype, col_types))
+        self.col_types: List[DType] = list(map(TableExcerpt._str_to_dtype, col_types))
         self.allow_null = allow_null
         self.rows: Optional[Union[Row, List[str]]] = []
         self.add_rows(rows)
-        
 
     @staticmethod
     def _str_to_dtype(data_type: Union[str, DType]) -> DType:
@@ -85,14 +100,22 @@ class Table:
         if isinstance(data_type, DType):
             return data_type
         assert type(data_type) == str, f"Data type must be str or DType, got {type(data_type)}"
-        type_name = data_type.lower()
+        type_names = data_type.lower().split(".")
+        type_name = type_names[0]
         if type_name in ["int", "float", "number"]:
             return DNumber()
         elif type_name in ["str", "string"]:
             return DString()
         elif type_name in ["bool", "boolean"]:
             return DBoolean()
+        elif type_name in ["list"]:
+            return DList(TableExcerpt._str_to_dtype(".".join(type_names[1:])))
         raise ValueError(f"Cannot convert {type_name} to dtype")
+
+    @property
+    def header_names_for_grouping(self):
+        # TODO: Need to find better way to distinguish headers for grouping
+        return [header for header in self.headers if "group" in header.lower()]
 
     @property
     def table_excerpt_headers(self):
@@ -106,6 +129,9 @@ class Table:
             if self.allow_null and cell.is_null:
                 continue
             assert type(cell.dtype) == type(col_type) and cell.dtype.__class__.__name__ == col_type.__class__.__name__, f"Column {i} must be {col_type}, got {cell.dtype}"
+
+    def is_nested_col(self, col_index: int):
+        return type(self.col_types[col_index]) == DList
 
     def add_row(self, row):
         if not isinstance(row, Row):
@@ -122,9 +148,9 @@ class Table:
     
     @staticmethod
     def load_json(json_obj):
-        return Table(json_obj["headers"], [DType.load_json(col_type) for col_type in json_obj["col_types"]], table_name=json_obj["name"], rows=[Row.load_json(row) for row in json_obj["rows"]], allow_null=json_obj["allow_null"])
+        return TableExcerpt(json_obj["headers"], [DType.load_json(col_type) for col_type in json_obj["col_types"]], table_name=json_obj["name"], rows=[Row.load_json(row) for row in json_obj["rows"]], allow_null=json_obj["allow_null"])
     
     
 if __name__ == "__main__":
-    from src.table.examples.car_table import car_table
+    from src.table_excerpt.examples.car_table import car_table
     stop = 1

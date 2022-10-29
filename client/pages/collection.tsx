@@ -3,7 +3,7 @@ import { Container, Box, Paper, Button, Step, Stepper, StepLabel, Grid } from "@
 
 import { Instruction } from "../components/Collection/instruction";
 import { Task } from "../components/Collection/task";
-import { ResultTable } from "../components/ResultTable/resultTable";
+import { ResultTable } from "../components/TableExcerpt/resultTable";
 import { EVQLTable } from "../components/VQL/EVQLTable";
 import { UserAnswer, AnswerSheet } from "../components/Collection/answerSheet";
 import { fetchTask, sendWorkerAnswer } from "../api/connect";
@@ -77,7 +77,7 @@ export const Collection = (props: any) => {
                                             <b>EVQL</b>
                                             <br />
                                             <EVQLTable
-                                                evqlRoot={{ node: currentSubTask.evql, children: [], enforce_t_alias: false }}
+                                                evqlRoot={{ node: currentSubTask.evql, child: null, enforce_t_alias: false }}
                                                 childListPath={[]}
                                                 editable={false}
                                             />

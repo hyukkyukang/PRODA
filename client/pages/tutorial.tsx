@@ -10,7 +10,7 @@ import { ITableExcerpt, TableExcerpt } from "../components/TableExcerpt/TableExc
 import { SideBar } from "../components/Tutorial/sidebar";
 import { allTutorialSections, ProjectionSection } from "../components/Tutorial/sections/allSections";
 import { ITutorialSection } from "../components/Tutorial/sections/abstractSection";
-import { PGResultToTableExcerpt } from "../components/VQL/Postgres";
+import { PGResultToTableExcerpt } from "../components/TableExcerpt/Postgres";
 
 const DividerWithMargin: JSX.Element = (
     <>

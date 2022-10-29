@@ -2,7 +2,7 @@ import { EVQLTree, EVQLNode, Header, Function, operators, unaryOperators, binary
 import { createEmptyMatrix, Matrix, CellBase } from "react-spreadsheet-custom";
 import { IEVQLTable, IEVQLTableHeader } from "./EVQLTable";
 import { isEmptyObject, removeMultipleSpaces, isNumber, stripQutations, isArrayEqual } from "../../utils";
-import { Table, Row, Cell } from "./TableExcerpt";
+import { Table, Row, Cell } from "../TableExcerpt/TableExcerpt";
 
 export const createEmptyValueMatrix = (numOfRow: number, numOfCol: number, readOnly?: boolean): Matrix<CellBase> => {
     var rows = createEmptyMatrix<CellBase>(numOfRow, numOfCol);
@@ -196,7 +196,7 @@ export const addEVQLNode = (evqlTree: EVQLTree, newHeaders: string[]): EVQLTree 
     // Add new node to the tree
     const newTree: EVQLTree = {
         node: newNode,
-        children: [evqlTree],
+        child: evqlTree,
         enforce_t_alias: false,
     };
 

@@ -47,7 +47,7 @@ def create_dummy_task():
     sub_task1 = SubTask(
         nl="Show average max speed of each model whose production year is 2010.",
         sql="SELECT model, avg(max_speed) FROM cars WHERE year = 2010 GROUP BY model",
-        evql=HavingQuery().evql.children[0].node,
+        evql=HavingQuery().evql.child.node,
         table_excerpt= [
         { "id": 1, "model": "A", "horsepower": 100, "max_speed": 200, "year": 2012, "price": 10000 },
         { "id": 2, "model": "B", "horsepower": 200, "max_speed": 300, "year": 2011, "price": 70000 },

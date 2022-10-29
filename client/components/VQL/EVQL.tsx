@@ -1,4 +1,4 @@
-import { Table } from "./TableExcerpt";
+import { Table } from "../TableExcerpt/TableExcerpt";
 
 // Operators
 export const operators = ["=", "<", ">", "EXISTS", "NOT EXISTS"];
@@ -45,7 +45,7 @@ export interface EVQLNode {
 
 export interface EVQLTree {
     node: EVQLNode;
-    children: EVQLTree[];
+    child: EVQLTree;
     enforce_t_alias: boolean;
 }
 

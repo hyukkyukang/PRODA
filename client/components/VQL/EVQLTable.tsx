@@ -10,7 +10,7 @@ import { runEVQL } from "../../api/connect";
 import { ITableExcerpt, TableExcerpt } from "../TableExcerpt/TableExcerpt";
 import { demoDBName } from "../../config";
 import { runSQL } from "../../api/connect";
-import { PGResultToTableExcerpt } from "./Postgres";
+import { PGResultToTableExcerpt } from "../TableExcerpt/Postgres";
 
 // This is from react-spreadsheet-custom/src/selection.ts
 export enum EntireType {

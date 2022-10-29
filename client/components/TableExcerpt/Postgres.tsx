@@ -1,4 +1,4 @@
-import { Table } from "./TableExcerpt";
+import { ITableExcerpt } from "./TableExcerpt";
 
 export interface PGResultFieldInterface {
     name: string;
@@ -23,7 +23,7 @@ export interface PGResultInterface {
     RowCtor: any;
 }
 
-export const PGResultToTableExcerpt = (pgResult: PGResultInterface): Table => {
+export const PGResultToTableExcerpt = (pgResult: PGResultInterface): ITableExcerpt => {
     const table = {
         name: "result",
         headers: pgResult.fields.map((field) => field.name),
