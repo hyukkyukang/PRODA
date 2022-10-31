@@ -33,10 +33,10 @@ class Test_EVQL_to_SQL(unittest.TestCase):
 
     def test_projection(self):
         self._test_translation(ProjectionQuery())
-        
+
     def test_min_max(self):
         self._test_translation(MinMaxQuery())
-        
+
     def test_count_avg_sum(self):
         self._test_translation(CountAvgSumQuery())
         

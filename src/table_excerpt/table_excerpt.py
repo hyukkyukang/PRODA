@@ -97,16 +97,22 @@ class TableExcerpt:
 
     @staticmethod
     def concatenate(new_table_name, base_table, new_table):
-        def retrieve_col_items(rows, col_id):
-            return [row[col_id].value for row in rows]
+        def retrieve_col_items(rows, col_id, list_num):
+            tmp = [row[col_id].value for row in rows]
+            if list_num == 1:
+                return tmp
+            return [tmp for _ in range(list_num)]
             
         """ Cartesian product of two tables """
         new_headers = base_table.headers + new_table.headers
         new_col_types = base_table.col_types + [DList(col_type) for col_type in new_table.col_types]
         base_table_names = base_table.base_table_names + new_table.base_table_names
-        
+
+        # Find column with most grouping layer
+        max_recursive_list_num = max([str(col_type).count("DList") for col_type in new_col_types])
+
         # Create lists of column items
-        columns_to_concatenate = [Cell(retrieve_col_items(new_table.rows, col_id)) for col_id in range(len(new_table.headers))]
+        columns_to_concatenate = [Cell(retrieve_col_items(new_table.rows, col_id, max_recursive_list_num)) for col_id in range(len(new_table.headers))]
         new_rows =  [Row(row.cells + columns_to_concatenate) for row in base_table.rows]
         return TableExcerpt(new_table_name, new_headers, new_col_types, rows=new_rows, base_table_names=base_table_names)
             
@@ -132,11 +138,6 @@ class TableExcerpt:
         elif type_name in ["list"]:
             return DList(TableExcerpt._str_to_dtype(".".join(type_names[1:])))
         raise ValueError(f"Cannot convert {type_name} to dtype")
-
-    @property
-    def header_names_for_grouping(self):
-        # TODO: Need to find better way to distinguish headers for grouping
-        return [header for header in self.headers if "group" in header.lower()]
 
     @property
     def table_excerpt_headers(self):
