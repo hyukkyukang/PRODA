@@ -76,11 +76,7 @@ export const Collection = (props: any) => {
                                         <Grid item xs={12} sm={6}>
                                             <b>EVQL</b>
                                             <br />
-                                            <EVQLTable
-                                                evqlRoot={{ node: currentSubTask.evql, child: null, enforce_t_alias: false }}
-                                                childListPath={[]}
-                                                editable={false}
-                                            />
+                                            <EVQLTable evqlRoot={{ node: currentSubTask.evql, child: null }} childListPath={[]} editable={false} />
                                         </Grid>
                                         <Grid item xs={12} sm={6}>
                                             <b>Table Excerpt</b>

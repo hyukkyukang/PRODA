@@ -27,15 +27,6 @@ INSERT INTO collection (id, given_nl, given_sql, given_evql, given_query_type, g
                 "year",
                 "price"
             ],
-            "header_aliases": [
-                "cars",
-                "id",
-                "model",
-                "horsepower",
-                "max_speed",
-                "year",
-                "price"
-            ],
             "foreach": null,
             "projection": {
                 "headers": [

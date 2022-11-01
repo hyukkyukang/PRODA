@@ -16,17 +16,26 @@ export const createEmptyValueMatrix = (numOfRow: number, numOfCol: number, readO
 };
 
 export const EVQLNodeToEVQLTable = (evqlNode: EVQLNode, editable: boolean): IEVQLTable => {
+    // Handle exception
+    if (isEmptyObject(evqlNode)) {
+        console.warn(`evqlNode empty when calling EVQLNodeToEVQLTable`);
+        return {} as IEVQLTable;
+    }
+    if (isEmptyObject(evqlNode.headers)) {
+        console.warn(`evqlNode does not have headers..`);
+        return {} as IEVQLTable;
+    }
     const hasPredicate = (node: EVQLNode): boolean => {
         return !isEmptyObject(node.predicate) && !isEmptyObject(node.predicate.clauses);
     };
     const numOfRows = hasPredicate(evqlNode) ? evqlNode.predicate.clauses.length : 1;
-    const numOfCols = evqlNode.header_aliases.length;
+    const numOfCols = evqlNode.headers.length;
     var headers: IEVQLTableHeader[] = [];
     var rows = createEmptyValueMatrix(numOfRows, numOfCols, !editable);
 
     // Create default headers
     for (let i = 0; i < numOfCols; i++) {
-        headers.push({ name: evqlNode.header_aliases[i], aggFuncs: [], isToProject: false });
+        headers.push({ name: evqlNode.headers[i], aggFuncs: [], isToProject: false });
     }
 
     // Add info for projection
@@ -41,7 +50,7 @@ export const EVQLNodeToEVQLTable = (evqlNode: EVQLNode, editable: boolean): IEVQ
         for (let i = 0; i < evqlNode.predicate.clauses.length; i++) {
             for (let j = 0; j < evqlNode.predicate.clauses[i].conditions.length; j++) {
                 const tmpCondition: Function = evqlNode.predicate.clauses[i].conditions[j];
-                const newCellValue: string = conditionToExpression(tmpCondition, evqlNode.header_aliases);
+                const newCellValue: string = conditionToExpression(tmpCondition, evqlNode.headers);
                 const cell = tmpCondition.header_id == -1 || tmpCondition.header_id >= numOfCols ? null : rows[i][tmpCondition.header_id];
 
                 if (cell && cell.value) {
@@ -154,7 +163,7 @@ export const parseExpressions = (cellValue: string, header_names: string[], igno
 
 export const conditionToExpression = (condition: Function, names: string[]): string => {
     const l_op = names[condition.header_id];
-
+    console.log(`condition: ${JSON.stringify(condition)}`);
     if (condition.func_type == "Selecting") {
         if (!condition.op_type) {
             console.error("op_type is not defined");
@@ -163,7 +172,17 @@ export const conditionToExpression = (condition: Function, names: string[]): str
         const op = operators[condition.op_type - 1];
         if (binaryOperators.includes(op)) {
             const tmp = condition?.r_operand ? condition.r_operand : "";
-            const r_op = isNumber(tmp) || tmp.startsWith("$") ? tmp : `"${tmp}"`;
+            // Parse right operand
+            var r_op;
+            if (isEmptyObject(condition.r_operand)) {
+                r_op = "";
+            } else if (isNumber(condition.r_operand)) {
+                r_op = condition.r_operand;
+            } else if (condition.r_operand?.startsWith("$")) {
+                r_op = `$${names[parseInt(condition.r_operand.substring(1))]}`;
+            } else {
+                r_op = `"${condition.r_operand}"`;
+            }
             return `\$${l_op} ${op} ${r_op}`;
         } else {
             return `${op}($${l_op})`;
@@ -183,7 +202,7 @@ export const addEVQLNode = (evqlTree: EVQLTree, newHeaders: string[]): EVQLTree 
     // TODO: Need to get result table from the previous query and make a new table excerpt
     const newNode: EVQLNode = {
         table_excerpt: { headers: [...newHeaders] },
-        header_aliases: [...newHeaders],
+        headers: [...newHeaders],
         foreach: null,
         projection: {
             headers: [],
@@ -196,8 +215,7 @@ export const addEVQLNode = (evqlTree: EVQLTree, newHeaders: string[]): EVQLTree 
     // Add new node to the tree
     const newTree: EVQLTree = {
         node: newNode,
-        child: evqlTree,
-        enforce_t_alias: false,
+        children: [evqlTree],
     };
 
     return newTree;
@@ -225,7 +243,7 @@ export const getProjectedNames = (evqlTree: EVQLTree, childListPath: number[]): 
 
     const prefix = `step${queryStep + 1}_`;
     evql.projection.headers.forEach((header) => {
-        const newColName = prefix + evql.header_aliases[header.id];
+        const newColName = prefix + evql.headers[header.id];
         if (header.agg_type === aggFunctions.indexOf("count")) {
             projectedNames.push(`${newColName}_count`);
         } else if (header.agg_type === aggFunctions.indexOf("sum")) {

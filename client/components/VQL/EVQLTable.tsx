@@ -6,10 +6,9 @@ import { AiOutlinePlusSquare, AiOutlineMinusSquare } from "react-icons/ai";
 import { EVQLTree, EVQLNode, aggFunctions, Function, Clause } from "./EVQL";
 import { getNode, EVQLNodeToEVQLTable, getTreeTraversingPaths, parseExpressions, getProjectedNames, addEVQLNode, getSubtree } from "./utils";
 import { isEmptyObject } from "../../utils";
-import { runEVQL } from "../../api/connect";
+import { runEVQL, runSQL } from "../../api/connect";
 import { ITableExcerpt, TableExcerpt } from "../TableExcerpt/TableExcerpt";
 import { demoDBName } from "../../config";
-import { runSQL } from "../../api/connect";
 import { PGResultToTableExcerpt } from "../TableExcerpt/Postgres";
 
 // This is from react-spreadsheet-custom/src/selection.ts
@@ -125,7 +124,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                 if (tmp && tmp.value != null) {
                     try {
                         // Create a condition
-                        const conditions: Function[] = parseExpressions(tmp.value, evqlNode.header_names);
+                        const conditions: Function[] = parseExpressions(tmp.value, evqlNode.headers);
                         if (!isEmptyObject(conditions)) newClause.conditions.push(...conditions);
                     } catch {
                         console.warn(`Not a complete expression yet: ${tmp.value}`);
@@ -288,12 +287,12 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
         // Get names of projection to add to header of new node
         const newlyprojectNames = getProjectedNames(evqlRoot, []);
         // Create new node
-        const newTree = addEVQLNode(evqlRoot, [...evqlRoot.node.header_names].concat(newlyprojectNames));
+        const newTree = addEVQLNode(evqlRoot, [...evqlRoot.node.headers].concat(newlyprojectNames));
         if (setEVQLRoot) setEVQLRoot(newTree);
     };
 
     const removeTableHandler: React.MouseEventHandler = (event) => {
-        if (!evqlRoot.child) {
+        if (!evqlRoot.children) {
             alert("Cannot remove the last table");
             return;
         }
@@ -308,7 +307,7 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
         }
 
         // TODO: need to change data structure of EVQL.
-        const subTree = evqlRoot.child;
+        const subTree = evqlRoot.children[0];
         if (setEVQLRoot) setEVQLRoot(subTree);
     };
 

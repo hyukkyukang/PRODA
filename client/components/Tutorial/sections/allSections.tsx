@@ -8,6 +8,7 @@ import GroupingSection from "./grouping";
 import OrderingSection from "./ordering";
 import NestingSection from "./nesting";
 import ForEachSection from "./forEach";
+import MultipleSublinks from "./multisublinks";
 import { ITutorialSection } from "./abstractSection";
 
 // For easy import from other files
@@ -21,10 +22,11 @@ export { GroupingSection as GroupingSection } from "./grouping";
 export { OrderingSection as OrderingSection } from "./ordering";
 export { NestingSection as NestingSection } from "./nesting";
 export { ForEachSection as ForEachSection } from "./forEach";
+export { MultipleSublinks as MultipleSublinks } from "./multisublinks";
 
 // List of all sections
 export const basicTutorialSections: ITutorialSection[] = [ProjectionSection, Agg1Section, Agg2Section, Selection1Section, Selection2Section, OrderingSection];
 
-export const advanceTutorialSections: ITutorialSection[] = [GroupingSection, Selection3Section, NestingSection, ForEachSection];
+export const advanceTutorialSections: ITutorialSection[] = [GroupingSection, Selection3Section, NestingSection, ForEachSection, MultipleSublinks];
 
 export const allTutorialSections: ITutorialSection[] = basicTutorialSections.concat(advanceTutorialSections);

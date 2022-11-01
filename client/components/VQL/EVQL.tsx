@@ -1,4 +1,4 @@
-import { Table } from "../TableExcerpt/TableExcerpt";
+import { ITableExcerpt } from "../TableExcerpt/TableExcerpt";
 
 // Operators
 export const operators = ["=", "<", ">", "EXISTS", "NOT EXISTS"];
@@ -36,17 +36,16 @@ export interface Predicate {
 }
 
 export interface EVQLNode {
-    table_excerpt: Table;
-    header_aliases: string[];
-    foreach: number | null;
+    name: string;
+    table_excerpt: ITableExcerpt;
+    headers: string[];
     projection: Projection;
     predicate: Predicate;
 }
 
 export interface EVQLTree {
     node: EVQLNode;
-    child: EVQLTree;
-    enforce_t_alias: boolean;
+    children: EVQLTree[];
 }
 
 export interface IEVQLContext {
