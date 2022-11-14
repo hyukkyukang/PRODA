@@ -7,6 +7,21 @@ This is a software to collect natural language and SQL pair data
 [![PRODA:EVQL Unittest](https://github.com/hyukkyukang/proda/actions/workflows/test_EVQL.yml/badge.svg)](https://github.com/hyukkyukang/PRODA/actions/workflows/test_EVQL.yml)
 [![PRODA:Deployment](https://github.com/hyukkyukang/proda/actions/workflows/deployment_main.yml/badge.svg)](https://github.com/hyukkyukang/PRODA/actions/workflows/deployment_main.yml)
 
+# Docker
+
+Using Dockerfile
+
+```bash
+docker pull hyukkyukang/proda:latest
+docker run -it -p 3000:3000 -p 4000:4000 -p 5432:5432 -v ./:/app --name proda hyukkyukang/proda:latest /bin/bash
+```
+
+or using docker-compose
+
+```bash
+docker-commpose up -d
+```
+
 # Web Client
 
 1. cd ./client

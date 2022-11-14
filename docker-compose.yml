@@ -1,0 +1,10 @@
+services:
+    proda:
+        image: hyukkyukang/proda:latest
+        networks: "host"
+        ports:
+            - "3000:3000"
+            - "4000:4000"
+            - "5432:5432"
+        volumns:
+            - .:/app
