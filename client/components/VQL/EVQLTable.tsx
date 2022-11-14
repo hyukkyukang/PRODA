@@ -39,9 +39,9 @@ export interface IEVQLVisualizationContext {
     evqlRoot: EVQLTree;
     setEVQLRoot?: React.Dispatch<React.SetStateAction<EVQLTree>>;
     setSelectedCoordinate?: React.Dispatch<React.SetStateAction<Coordinate | undefined>>;
-    prevChildListPath: number[] | null;
     childListPath: number[];
     editable: boolean;
+    isFirstNode: boolean;
 }
 
 export interface EVQLTreeWrapperProps {
@@ -93,7 +93,7 @@ export const EVQLColumnIndicator: ColumnIndicatorComponent = ({ column, label, s
 };
 
 export const EVQLTable = (props: IEVQLVisualizationContext) => {
-    const { evqlRoot, setEVQLRoot, setSelectedCoordinate, prevChildListPath, childListPath, editable } = props;
+    const { evqlRoot, setEVQLRoot, setSelectedCoordinate, childListPath, editable, isFirstNode } = props;
 
     // Local context to visualize table
     const [evqlNode, setEVQLNode] = useState({} as EVQLNode);
@@ -197,7 +197,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
             // Get table excerpt
             if (isEmptyObject(node.table_excerpt)) {
                 // Get from prev node
-                if (prevChildListPath) {
+                if (!isFirstNode) {
                     const prevSubtree = getSubtree(evqlRoot, [...childListPath]);
                     runEVQL({ evqlStr: JSON.stringify(prevSubtree), dbName: "proda_demo" })
                         .then((tmpQueryResult) => {
@@ -334,9 +334,9 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
                               evqlRoot={evqlRoot}
                               setEVQLRoot={setEVQLRoot}
                               setSelectedCoordinate={setSelectedCoordinate}
-                              prevChildListPath={index > 0 ? childPathLists[index - 1] : null}
                               childListPath={path}
                               editable={editable && index + 1 == childPathLists.length}
+                              isFirstNode={index > 0 ? childPathLists[index - 1] : null}
                           />
                           <br />
                           <br />

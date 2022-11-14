@@ -1,9 +1,11 @@
 import abc
-
 from enum import IntEnum
 from typing import List
-from src.table_excerpt.table_excerpt import TableExcerpt
+
 import src.VQL.utils as utils
+from src.table_excerpt.table_excerpt import TableExcerpt
+
+
 class Operator(IntEnum):
     equal = 1
     lessThan = 2

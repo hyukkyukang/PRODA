@@ -1,11 +1,12 @@
 import abc
-import json
 import argparse
-
-from src.VQL.EVQL import EVQLTree , EVQLNode, Selecting, Ordering, Grouping, Operator, Aggregator, Header, Clause
+import json
 
 from src.table_excerpt.examples.car_table import car_table
 from src.table_excerpt.table_excerpt import TableExcerpt
+from src.VQL.EVQL import (Aggregator, Clause, EVQLNode, EVQLTree, Grouping,
+                          Header, Operator, Ordering, Selecting)
+
 
 def find_nth_occurrence_index(lst, item, n):
     """Find the nth occurrence of an item in a list"""
@@ -231,7 +232,6 @@ class HavingQuery(TestQuery):
         if not self._evql:
             # Create tree node 1
             node_1 = EVQLNode(f"{car_table.name}_query", car_table)
-            node_1.add_projection(Header(node_1.headers.index("model")))
             node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
             # Create conditions for the node
             cond1_2 = Grouping(node_1.headers.index("model"))
@@ -257,7 +257,7 @@ class HavingQuery(TestQuery):
             new_car_headers = result_headers
             new_col_types = result_col_types
             new_rows = result_rows
-            new_table_excerpt = TableExcerpt("cars3", new_car_headers, new_col_types, new_rows)
+            new_table_excerpt = TableExcerpt("cars", new_car_headers, new_col_types, new_rows)
 
             # Create tree node 2
             # TODO: Need to discuss about how to name variables from previous step

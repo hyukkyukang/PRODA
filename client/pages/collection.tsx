@@ -3,7 +3,7 @@ import { Container, Box, Paper, Button, Step, Stepper, StepLabel, Grid } from "@
 
 import { Instruction } from "../components/Collection/instruction";
 import { Task } from "../components/Collection/task";
-import { ResultTable } from "../components/TableExcerpt/resultTable";
+import { TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
 import { EVQLTable } from "../components/VQL/EVQLTable";
 import { UserAnswer, AnswerSheet } from "../components/Collection/answerSheet";
 import { fetchTask, sendWorkerAnswer } from "../api/connect";
@@ -47,12 +47,16 @@ export const Collection = (props: any) => {
 
     const fetchTaskHandler = async () => {
         const fetchedTask = await fetchTask();
+        console.log(`fecthed Task: ${fetchedTask}`);
         setCurrentTask(fetchedTask);
     };
 
     useEffect(() => {
         fetchTaskHandler();
     }, []);
+
+    // console.log(`currentTask: ${JSON.stringify(currentTask)}`);
+    // return <></>;
 
     return (
         <React.Fragment>
@@ -76,15 +80,20 @@ export const Collection = (props: any) => {
                                         <Grid item xs={12} sm={6}>
                                             <b>EVQL</b>
                                             <br />
-                                            <EVQLTable evqlRoot={{ node: currentSubTask.evql, child: null }} childListPath={[]} editable={false} />
+                                            <EVQLTable
+                                                evqlRoot={{ node: currentSubTask.evql, children: [] }}
+                                                childListPath={[]}
+                                                editable={false}
+                                                isFirstNode={true}
+                                            />
                                         </Grid>
-                                        <Grid item xs={12} sm={6}>
-                                            <b>Table Excerpt</b>
-                                            <ResultTable queryResult={currentSubTask.tableExcerpt} />
+                                        {/* <Grid item xs={12} sm={6}>
+                                            currentSubTask.tableExcerpt && ? (<b>Table Excerpt</b>
+                                            <TableExcerpt queryResult={currentSubTask.tableExcerpt} />
                                             <br />
                                             <b>Query Result</b>
-                                            <ResultTable queryResult={currentSubTask.resultTable} />
-                                        </Grid>
+                                            <TableExcerpt queryResult={currentSubTask.resultTable} />) : null
+                                        </Grid> */}
                                     </Grid>
                                     <br />
                                 </Box>

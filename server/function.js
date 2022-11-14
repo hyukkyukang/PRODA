@@ -49,7 +49,7 @@ function getEVQL(queryType) {
 
 function getTask() {
     var spawnSync = require("child_process").spawnSync;
-    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/task/task.py`]);
+    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/task/example_tasks.py`]);
     var result = spawnedProcess.stdout.toString();
     // Parse JSON string
     var taskData = null;
