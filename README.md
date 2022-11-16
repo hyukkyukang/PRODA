@@ -19,7 +19,36 @@ docker run -it -p 3000:3000 -p 4000:4000 -p 5432:5432 -v ./:/app --name proda hy
 or using docker-compose
 
 ```bash
-docker-commpose up -d
+docker-compose up -d
+```
+
+# Setting system Databases
+
+1. change user to get privilege
+
+```bash
+su postgres
+```
+
+2. set config DB
+
+```bash
+cd database/systemConfig
+sh setup.sh
+```
+
+3. set Demo DB
+
+```bash
+cd database/demoDB
+sh setup.sh
+```
+
+4. set data collection DB
+
+```bash
+cd database/dataCollection
+sh setup.sh
 ```
 
 # Web Client
