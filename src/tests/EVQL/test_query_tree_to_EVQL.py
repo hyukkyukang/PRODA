@@ -5,29 +5,27 @@ from VQL.example_queries import (
     CountAvgSumQuery,
     SelectionQuery,
     AndOrQuery,
-    SelectionQueryWithAnd,
-    SelectionQueryWithOr,
     OrderByQuery,
     GroupByQuery,
     HavingQuery,
     NestedQuery,
     CorrelatedNestedQuery,
-    CorrelatedNestedQuery2,
-    MultipleSublinksQuery,
 )
 
+from VQL.query_tree_to_EVQL import convert_query_tree_to_EVQL
 
-class Test_EVQL_to_SQL(unittest.TestCase):
+
+class Test_QueryTree_to_EVQL(unittest.TestCase):
     def _test_translation(self, query):
-        gold_sql = query.sql.lower()
-        generated_sql = query.evql.to_sql.lower()
-        self.assertTrue(gold_sql == generated_sql, f'\nExpected: "{gold_sql}". \nGot: "{generated_sql}"')
+        query_tree = query.query_tree
+        object_EVQL = convert_query_tree_to_EVQL(query_tree)
+        self.assertTrue(object_EVQL != None, f'\nExpected: "{object_EVQL}". \nGot: "{object_EVQL}"')
 
-    def test_selection_with_or(self):
-        self._test_translation(SelectionQueryWithOr())
+    def test_projection(self):
+        self._test_translation(ProjectionQuery())
 
-    def test_selection_with_and(self):
-        self._test_translation(SelectionQueryWithAnd())
+    def test_selection(self):
+        self._test_translation(SelectionQuery())
 
     def test_order_by(self):
         self._test_translation(OrderByQuery())
@@ -44,12 +42,6 @@ class Test_EVQL_to_SQL(unittest.TestCase):
     def test_correlated_nested(self):
         self._test_translation(CorrelatedNestedQuery())
 
-    def test_correlated_nested2(self):
-        self._test_translation(CorrelatedNestedQuery2())
-
-    def test_projection(self):
-        self._test_translation(ProjectionQuery())
-
     def test_min_max(self):
         self._test_translation(MinMaxQuery())
 
@@ -58,12 +50,6 @@ class Test_EVQL_to_SQL(unittest.TestCase):
 
     def test_and_or(self):
         self._test_translation(AndOrQuery())
-
-    def test_selection(self):
-        self._test_translation(SelectionQuery())
-
-    def test_multiple_sublinks(self):
-        self._test_translation(MultipleSublinksQuery())
 
 
 if __name__ == "__main__":

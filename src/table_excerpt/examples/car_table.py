@@ -14,7 +14,7 @@ rows = [
     [9, "hyundai", 11, 940, 2014, 92000],
     [10, "kia", 10, 1030, 2014, 101000],
     [11, "genesis", 10, 1130, 2014, 111000],
-    [12, "genesis", 11, 1140, 2015, 112000]
+    [12, "genesis", 11, 1140, 2015, 112000],
 ]
 
 car_table = TableExcerpt("cars", headers, col_types, rows=rows)

@@ -48,16 +48,18 @@ class Operator(IntEnum):
                 return False
             except:
                 return "select " not in operand.lower()
+
         if operator in [Operator.exists, Operator.notExists]:
             assert right is None, "EXISTS and NOT EXISTS are uniary operators"
             return f"{Operator.to_str(operator)} {left}"
         else:
-            # Assumption: 
-                #   1. right can be a column when the condition is for correlation
-                #   2. alias is always used in correlation
+            # Assumption:
+            #   1. right can be a column when the condition is for correlation
+            #   2. alias is always used in correlation
             if is_string_value(right) and not utils.is_alias(right):
                 right = f"'{right}'"
             return f"{left} {Operator.to_str(operator)} {right}"
+
 
 class Aggregator(IntEnum):
     count = 1
@@ -81,10 +83,11 @@ class Aggregator(IntEnum):
         else:
             raise ValueError(f"Unknown aggregator: {agg_type}")
 
-class Projection():
+
+class Projection:
     def __init__(self, headers=None):
         self.headers = headers if headers else []
-        
+
     def dump_json(self):
         return {"headers": [header.dump_json() for header in self.headers]}
 
@@ -96,7 +99,8 @@ class Projection():
     def load_json(json_obj):
         return Projection([Header.load_json(header) for header in json_obj["headers"]])
 
-class Header():
+
+class Header:
     def __init__(self, id, agg_type=None):
         self.id = id
         self.agg_type = agg_type
@@ -104,13 +108,14 @@ class Header():
     @property
     def is_agg(self):
         return bool(self.agg_type)
-    
+
     def dump_json(self):
         return {"id": self.id, "agg_type": self.agg_type}
-    
+
     @staticmethod
     def load_json(json_obj):
         return Header(json_obj["id"], json_obj["agg_type"])
+
 
 class Function(metaclass=abc.ABCMeta):
     def __init__(self, header_id):
@@ -122,7 +127,7 @@ class Function(metaclass=abc.ABCMeta):
     @property
     def used_columns(self):
         return [self.header_id]
-    
+
     @staticmethod
     def load_json(json_obj):
         if json_obj["func_type"] == "Ordering":
@@ -133,27 +138,30 @@ class Function(metaclass=abc.ABCMeta):
             return Selecting(json_obj["header_id"], json_obj["op_type"], json_obj["r_operand"])
         return Function(json_obj["header_id"])
 
+
 class Ordering(Function):
     def __init__(self, header_id, is_ascending=True):
         super().__init__(header_id)
-        self.is_ascending=is_ascending
-        
+        self.is_ascending = is_ascending
+
     def dump_json(self):
         json_obj = super().dump_json()
         json_obj["is_ascending"] = self.is_ascending
         return json_obj
 
+
 class Grouping(Function):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
 
 class Selecting(Function):
     def __init__(self, l_header_id, op_type, r_operand):
         self.header_id = l_header_id
         self.op_type = op_type
         # Can be either a value or header_id
-        self.r_operand = r_operand 
-        
+        self.r_operand = r_operand
+
     @property
     def used_columns(self):
         if type(self.r_operand) == int:
@@ -166,9 +174,10 @@ class Selecting(Function):
         json_obj["r_operand"] = self.r_operand
         return json_obj
 
-class Predicate():
+
+class Predicate:
     def __init__(self, clauses=None):
-        self.clauses:List[Clause] = clauses if clauses else []
+        self.clauses: List[Clause] = clauses if clauses else []
 
     @staticmethod
     def load_json(json_obj):
@@ -187,10 +196,10 @@ class Predicate():
         for clause in self.clauses:
             tmp += clause.used_columns
         return tmp
-    
+
     def __len__(self):
         return len(self.clauses)
-    
+
     # Helper functions
     def add(self, clause):
         self.clauses.append(clause)
@@ -200,16 +209,16 @@ class Predicate():
             return {"clauses": [clause.dump_json() for clause in self.clauses]}
         else:
             return {"clauses": [Clause().dump_json()]}
-        
 
-class Clause():
+
+class Clause:
     def __init__(self, conditions=None):
         self.conditions: List[Function] = conditions if conditions else []
 
     @staticmethod
     def load_json(json_obj):
         return Clause([Function.load_json(condition) for condition in json_obj["conditions"]])
-        
+
     @property
     def columns_for_grouping(self):
         return [condition.header_id for condition in self.conditions if type(condition) == Grouping]
@@ -220,23 +229,25 @@ class Clause():
         for condition in self.conditions:
             tmp += condition.used_columns
         return tmp
-    
+
     def __len__(self):
         return len(self.conditions)
-    
+
     def add(self, condition):
         self.conditions.append(condition)
 
     def dump_json(self):
-        return {"conditions":[condition.dump_json() for condition in self.conditions]}
+        return {"conditions": [condition.dump_json() for condition in self.conditions]}
 
-class EVQLNode():
+
+class EVQLNode:
     def __init__(self, name, table_excerpt):
         self.name = name
         self.table_excerpt = table_excerpt
         self._projection = Projection()
         # Predicates follow DNF form. Hence, within each clause, conditions are joined with AND.
         self._predicate = Predicate()
+
     @staticmethod
     def to_table_excerpt_header_idx(evql_header_idx):
         return evql_header_idx - 1
@@ -250,7 +261,6 @@ class EVQLNode():
         for clause in Predicate.load_json(json_obj["predicate"]).clauses:
             obj.add_predicate(clause)
         return obj
-
 
     # Basic property
     @property
@@ -285,6 +295,7 @@ class EVQLNode():
         json_obj["headers"] = self.headers
         return json_obj
 
+
 class EVQLTree:
     def __init__(self, node, children=None):
         self.node: EVQLNode = node
@@ -298,7 +309,7 @@ class EVQLTree:
 
     @property
     def level(self):
-            return max([child.level for child in self.children]) + int(not self.is_having) if self.children else 1
+        return max([child.level for child in self.children]) + int(not self.is_having) if self.children else 1
 
     @property
     def is_groupby(self):
@@ -306,13 +317,15 @@ class EVQLTree:
 
     @property
     def is_having(self):
-        """ Assumption: only one condition and one child on the having clause
-            If there is a child and current node has selection on aggregated projection from the child node"""
+        """Assumption: only one condition and one child on the having clause
+        If there is a child and current node has selection on aggregated projection from the child node"""
         if len(self.children) != 1 or len(self.node.predicate) != 1 or len(self.node.predicate.clauses[0]) != 1:
             return False
         child = self.children[0]
         child_is_group_by = child.is_groupby
-        child_projection_headers_with_agg = list(map(child.node.get_header_name, child.node.projection.headers_with_agg))
+        child_projection_headers_with_agg = list(
+            map(child.node.get_header_name, child.node.projection.headers_with_agg)
+        )
         if child_is_group_by and child_projection_headers_with_agg:
             # Check two conditions:
             #   1. operator should be of selection excluding Exists and NotExists
@@ -333,13 +346,17 @@ class EVQLTree:
     @property
     def header_ids_for_correlation(self):
         """Check if has correlation: if current node has selection on columns that are used for grouping in the children nodes
-            Assumption: table_excerpts are accumulated for nested queries"""
+        Assumption: table_excerpts are accumulated for nested queries"""
         # Get all grouping columns in children
         column_names_for_grouping = []
         for child in self.children:
             column_ids_for_grouping = child.node.predicate.columns_for_grouping
             column_names_for_grouping += [child.node.headers[idx] for idx in column_ids_for_grouping]
-        return [col_id for col_id in self.node.predicate.used_columns if self.node.headers[col_id] in column_names_for_grouping]
+        return [
+            col_id
+            for col_id in self.node.predicate.used_columns
+            if self.node.headers[col_id] in column_names_for_grouping
+        ]
 
     @property
     def is_nested_with_correlation(self):
@@ -369,7 +386,10 @@ class EVQLTree:
 
     @staticmethod
     def load_json(json_obj):
-        return EVQLTree(EVQLNode.load_json(json_obj["node"]), [EVQLTree.load_json(child) for child in json_obj["children"]])
+        return EVQLTree(
+            EVQLNode.load_json(json_obj["node"]), [EVQLTree.load_json(child) for child in json_obj["children"]]
+        )
+
 
 def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
     def create_select_clause(tree):
@@ -384,22 +404,23 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
             att_str_list.append(att_str)
         # Get all headers for grouping as well
         if not bool(correlation_cond_str):
-            for hid in  tree.node.predicate.columns_for_grouping:
+            for hid in tree.node.predicate.columns_for_grouping:
                 att_str_list.append(tree.get_var_name(hid, use_t_alias=bool(correlation_cond_str)))
         return f"SELECT {', '.join(att_str_list)}"
-    
+
     def create_clause_str(formatted_conditions):
         def to_value(operand):
             return operand
+
         clause_str_list = []
         for l_op, op, r_op in formatted_conditions:
             clause_str_list.append(Operator.format_expression(to_value(l_op), op, to_value(r_op)))
         return " AND ".join(clause_str_list)
 
     def get_formatted_selection(tree):
-        """ Assumption: following disjunctive normal form"""
+        """Assumption: following disjunctive normal form"""
         """ return: List of List of triple of (left_operand_str, operator, right_operand_str)"""
-        formatted_clause_list= []
+        formatted_clause_list = []
         for clause in tree.node.predicate.clauses:
             correlation_mapping = {}
             for sel_cond in filter(lambda cond: isinstance(cond, Selecting), clause.conditions):
@@ -408,11 +429,17 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
                     # should be nested for correlation
                     if tree.node.table_excerpt.is_nested_col(EVQLNode.to_table_excerpt_header_idx(r_col_idx)):
                         # Get child that belongs to the r_operand
-                        base_table_name = tree.node.table_excerpt.base_table_names[EVQLNode.to_table_excerpt_header_idx(r_col_idx)]
-                        children_of_base_table = [child for child in tree.children if child.node.name == base_table_name]
-                        assert len(children_of_base_table) == 1, f"Assumption: only one child for each base table, but found: {len(children_of_base_table)}"
+                        base_table_name = tree.node.table_excerpt.base_table_names[
+                            EVQLNode.to_table_excerpt_header_idx(r_col_idx)
+                        ]
+                        children_of_base_table = [
+                            child for child in tree.children if child.node.name == base_table_name
+                        ]
+                        assert (
+                            len(children_of_base_table) == 1
+                        ), f"Assumption: only one child for each base table, but found: {len(children_of_base_table)}"
                         node_of_base_table = children_of_base_table[0].node
-                        # Get the name of the column 
+                        # Get the name of the column
                         header_name = tree.node.headers[r_col_idx]
                         # Get grouping header ids of the child node
                         grouping_column_ids = node_of_base_table.predicate.columns_for_grouping
@@ -420,7 +447,11 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
                         if header_name in grouping_column_names:
                             # Create SQL condition
                             grouping_column_id = grouping_column_ids[grouping_column_names.index(header_name)]
-                            formatted_cond = (tree.get_child_var_name_for_correlation(grouping_column_id), sel_cond.op_type, tree.get_var_name(sel_cond.header_id, bool(correlation_cond_str)))
+                            formatted_cond = (
+                                tree.get_child_var_name_for_correlation(grouping_column_id),
+                                sel_cond.op_type,
+                                tree.get_var_name(sel_cond.header_id, bool(correlation_cond_str)),
+                            )
                             correlation_condition = create_clause_str([formatted_cond])
                             # Save mapping for later use
                             correlation_mapping[base_table_name] = correlation_condition
@@ -441,11 +472,17 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
                     #                           : -> create nested query and use it as an operand
                     if tree.node.table_excerpt.is_nested_col(EVQLNode.to_table_excerpt_header_idx(r_col_idx)):
                         # Get child that belongs to the r_operand
-                        base_table_name = tree.node.table_excerpt.base_table_names[EVQLNode.to_table_excerpt_header_idx(r_col_idx)]
-                        children_of_base_table = [child for child in tree.children if child.node.name == base_table_name]
-                        assert len(children_of_base_table) == 1, f"Assumption: only one child for each base table, but found: {len(children_of_base_table)}"
+                        base_table_name = tree.node.table_excerpt.base_table_names[
+                            EVQLNode.to_table_excerpt_header_idx(r_col_idx)
+                        ]
+                        children_of_base_table = [
+                            child for child in tree.children if child.node.name == base_table_name
+                        ]
+                        assert (
+                            len(children_of_base_table) == 1
+                        ), f"Assumption: only one child for each base table, but found: {len(children_of_base_table)}"
                         child_of_base_table = children_of_base_table[0]
-                        # Get the name of the column 
+                        # Get the name of the column
                         header_name = tree.node.headers[r_col_idx]
                         # Get grouping header ids of the child node
                         grouping_column_ids = child_of_base_table.node.predicate.columns_for_grouping
@@ -456,7 +493,9 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
                         correlation_condition = None
                         if base_table_name in correlation_mapping:
                             correlation_condition = correlation_mapping[base_table_name]
-                        r_op_str = f"({evql_tree_to_SQL(child_of_base_table, correlation_cond_str=correlation_condition)})"
+                        r_op_str = (
+                            f"({evql_tree_to_SQL(child_of_base_table, correlation_cond_str=correlation_condition)})"
+                        )
                     else:
                         r_op_str = tree.get_var_name(r_col_idx, use_t_alias=bool(correlation_cond_str))
                 else:
@@ -468,7 +507,6 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
         return formatted_clause_list
 
     def create_where_clause(tree):
-
         formatted_clause_list = get_formatted_selection(tree)
         clause_str_list = list(map(create_clause_str, formatted_clause_list))
         # Add correlation condition to the list (inject into DNF)
@@ -484,13 +522,16 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
         elif len(clause_str_list) == 1:
             return f"{prefix} {clause_str_list[0]}"
         return ""
-    
+
     def create_order_by_clause(tree):
         # Get all attribute strings for ordering
         ordering_ops = []
         for clause in tree.node.predicate.clauses:
             ordering_ops += [cond for cond in clause.conditions if isinstance(cond, Ordering)]
-        att_str_list = [f" {tree.get_var_name(op.header_id, use_t_alias=bool(correlation_cond_str))} {'ASC' if op.is_ascending else 'DESC'}" for op in ordering_ops]
+        att_str_list = [
+            f" {tree.get_var_name(op.header_id, use_t_alias=bool(correlation_cond_str))} {'ASC' if op.is_ascending else 'DESC'}"
+            for op in ordering_ops
+        ]
         return f" order by{','.join(att_str_list)}" if att_str_list else ""
 
     def create_group_by_clause(tree):
@@ -500,11 +541,15 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
             grouping_ops += [cond for cond in clause.conditions if isinstance(cond, Grouping)]
             # for cond in clause.conditions:
             #     grouping_ops += [op for op in cond.operations if isinstance(op, Grouping)]
-        return f" group by {','.join([tree.get_var_name(op.header_id, use_t_alias=bool(correlation_cond_str)) for op in grouping_ops])}" if grouping_ops else ""
+        return (
+            f" group by {','.join([tree.get_var_name(op.header_id, use_t_alias=bool(correlation_cond_str)) for op in grouping_ops])}"
+            if grouping_ops
+            else ""
+        )
 
     def create_from_clause(tree):
-        """ tree.use_t_alias covers outer queries, but it does not cover the most inner query
-            correlation_cond_str is for the most inner query """
+        """tree.use_t_alias covers outer queries, but it does not cover the most inner query
+        correlation_cond_str is for the most inner query"""
         postfix = f" AS T{tree.level}" if tree.use_t_alias or bool(correlation_cond_str) else ""
         return f" FROM {tree.table_name}{postfix}"
 
@@ -533,6 +578,7 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
                 l_op_att_str = f"{agg_func_name}({l_op})"
                 formatted_cond_str_list.append(Operator.format_expression(l_op_att_str, op, r_op))
             return " AND ".join(formatted_cond_str_list)
+
         formatted_clause_list = get_formatted_selection(tree)
         clause_str_list = list(map(create_clause_str, formatted_clause_list))
         if len(clause_str_list) > 1:
@@ -544,6 +590,7 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
     def compose_clauses(select_clause, from_clause, where_clause, group_by_clause, having_clause, order_by_clause):
         def append_string(cumulated_str, new_str):
             return cumulated_str + new_str if new_str else cumulated_str
+
         sql_str = append_string(select_clause, from_clause)
         sql_str = append_string(sql_str, where_clause)
         sql_str = append_string(sql_str, group_by_clause)
@@ -566,6 +613,7 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
 
     # Return composed SQL string
     return compose_clauses(select_clause, from_clause, where_clause, group_by_clause, having_clause, order_by_clause)
+
 
 if __name__ == "__main__":
     pass
