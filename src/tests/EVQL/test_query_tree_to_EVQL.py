@@ -12,13 +12,13 @@ from VQL.example_queries import (
     CorrelatedNestedQuery,
 )
 
-from VQL.query_tree_to_EVQL import convert_query_tree_to_EVQL
+from VQL.query_tree_to_EVQL import convert_queryTree_to_EVQLTree
 
 
 class Test_QueryTree_to_EVQL(unittest.TestCase):
     def _test_translation(self, query):
         query_tree = query.query_tree
-        object_EVQL = convert_query_tree_to_EVQL(query_tree)
+        object_EVQL = convert_queryTree_to_EVQLTree(query_tree)
         self.assertTrue(object_EVQL != None, f'\nExpected: "{object_EVQL}". \nGot: "{object_EVQL}"')
 
     def test_projection(self):

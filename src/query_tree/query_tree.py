@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 
 import hkkang_utils.list as list_utils
 
-from src.query_tree.operator import Operation, Selection, Projection
+from src.query_tree.operator import Operation, Projection, Clause
 
 
 class Node(metaclass=abc.ABCMeta):
@@ -48,12 +48,12 @@ class QueryBlock(Node):
         self,
         child_tables: List[Edge],
         operations: List[Operation],
-        join_conditions: Optional[List[Selection]] = None,
+        join_conditions: Optional[List[Clause]] = None,
         sql: Optional[str] = None,
     ):
         """Multiple Selection in the operations list are treated as conjunctions"""
         self.child_tables: List[Edge] = child_tables
-        self.join_conditions: List[Selection] = join_conditions if join_conditions else []
+        self.join_conditions: List[Clause] = join_conditions if join_conditions else []
         self.operations: List[Operation] = operations
         self.sql: str = sql
 
@@ -72,28 +72,41 @@ class QueryBlock(Node):
 
     def get_headers(self) -> List[str]:
         # Get header names
-        new_heaers = []
+        new_headers = []
         projections = [op for op in self.operations if isinstance(op, Projection)]
         for proj in projections:
             if proj.alias:
-                new_heaers.append(proj.alias)
+                new_headers.append(proj.alias)
             else:
                 accumulated_len = 0
                 for child_edge in self.child_tables:
                     child_table = child_edge.child
                     child_headers = child_table.get_headers()
                     if accumulated_len + len(child_headers) > proj.column_id:
-                        new_heaers.append(child_headers[proj.column_id - accumulated_len])
+                        new_headers.append(child_headers[proj.column_id - accumulated_len])
                         break
                     accumulated_len += len(child_headers)
-
-        return new_heaers
+        return new_headers
 
     def get_rows(self) -> List[List[Any]]:
-        if self.join_conditions:
-            # TODO
-            raise NotImplementedError
-        return list_utils.do_flatten_list([t.child.get_rows() for t in self.child_tables])
+        # new_rows = []
+        # projections = [op for op in self.operations if isinstance(op, Projection)]
+        # for proj in projections:
+        #     accumulated_len = 0
+        #     for child_edge in self.child_tables:
+        #         child_table = child_edge.child
+        #         child_headers = child_table.get_headers()
+        #         child_rows = child_table.get_rows()
+        #         if accumulated_len + len(child_headers) > proj.column_id:
+        #             for child_row in child_rows
+        #             new_rows.append(child_row[proj.column_id - accumulated_len] for child_row in child_rows)
+        #             break
+        #         accumulated_len += len(child_rows)
+        # if self.join_conditions:
+        #     # TODO
+        #     raise NotImplementedError
+        # return list_utils.do_flatten_list([t.child.get_rows() for t in self.child_tables])
+        return []
 
 
 class QueryTree:

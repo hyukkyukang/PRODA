@@ -156,8 +156,8 @@ class Grouping(Function):
 
 
 class Selecting(Function):
-    def __init__(self, l_header_id, op_type, r_operand):
-        self.header_id = l_header_id
+    def __init__(self, header_id, op_type, r_operand):
+        self.header_id = header_id
         self.op_type = op_type
         # Can be either a value or header_id
         self.r_operand = r_operand

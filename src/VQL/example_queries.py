@@ -4,7 +4,7 @@ import json
 
 from hkkang_utils import misc as misc_utils
 
-from src.query_tree.operator import Aggregation, Foreach, Grouping, Ordering, Projection, Selection
+from src.query_tree.operator import Aggregation, Foreach, Grouping, Ordering, Projection, Selection, Condition, Clause
 from src.query_tree.query_tree import Attach, BaseTable, QueryBlock, QueryTree, Refer, get_global_index
 from src.table_excerpt.examples.car_table import car_table
 from src.table_excerpt.table_excerpt import TableExcerpt
@@ -161,9 +161,17 @@ class SelectionQuery(TestQuery):
             operations=[
                 Projection(get_global_index(base_tables, 0, "id")),
                 Selection(
-                    l_operand=get_global_index(base_tables, 0, "year"),
-                    operator="=",
-                    r_operand="2010",
+                    clauses=[
+                        Clause(
+                            conditions=[
+                                Condition(
+                                    l_operand=get_global_index(base_tables, 0, "year"),
+                                    operator="=",
+                                    r_operand="2010",
+                                )
+                            ]
+                        )
+                    ]
                 ),
             ],
             sql=self.sql,
@@ -208,33 +216,36 @@ class AndOrQuery(TestQuery):
                 Projection(get_global_index(base_tables, 0, "id")),
                 Projection(get_global_index(base_tables, 0, "price")),
                 Selection(
-                    r_operand=Selection(
-                        l_operand=Selection(
-                            get_global_index(base_tables, 0, "model"),
-                            "=",
-                            "tesla model x",
+                    clauses=[
+                        Clause(
+                            conditions=[
+                                Condition(
+                                    l_operand=get_global_index(base_tables, 0, "model"),
+                                    operator="=",
+                                    r_operand="tesla model x",
+                                ),
+                                Condition(
+                                    l_operand=get_global_index(base_tables, 0, "year"),
+                                    operator="=",
+                                    r_operand="2011",
+                                ),
+                            ]
                         ),
-                        operator="=",
-                        r_operand=Selection(
-                            get_global_index(base_tables, 0, "year"),
-                            "=",
-                            "2011",
+                        Clause(
+                            conditions=[
+                                Condition(
+                                    l_operand=get_global_index(base_tables, 0, "model"),
+                                    operator="=",
+                                    r_operand="tesla model x",
+                                ),
+                                Condition(
+                                    l_operand=get_global_index(base_tables, 0, "year"),
+                                    operator="=",
+                                    r_operand="2012",
+                                ),
+                            ]
                         ),
-                    ),
-                    operator="or",
-                    l_operand=Selection(
-                        l_operand=Selection(
-                            get_global_index(base_tables, 0, "model"),
-                            "=",
-                            "tesla model x",
-                        ),
-                        operator="=",
-                        r_operand=Selection(
-                            get_global_index(base_tables, 0, "year"),
-                            "=",
-                            "2012",
-                        ),
-                    ),
+                    ]
                 ),
             ],
         )
@@ -277,13 +288,24 @@ class SelectionQueryWithOr(TestQuery):
             operations=[
                 Projection(get_global_index(base_tables, 0, "id")),
                 Selection(
-                    l_operand=Selection(
-                        get_global_index(base_tables, 0, "max_speed"),
-                        ">",
-                        "2000",
-                    ),
-                    operator="or",
-                    r_operand=Selection(get_global_index(base_tables, 0, "year"), "=", "2010"),
+                    clauses=[
+                        Clause(
+                            Conditions=[
+                                Condition(
+                                    l_operand=get_global_index(base_tables, 0, "max_speed"),
+                                    operator=">",
+                                    r_operand="2000",
+                                )
+                            ]
+                        ),
+                        Clause(
+                            Conditions=[
+                                Condition(
+                                    l_operand=get_global_index(base_tables, 0, "year"), opeartor="=", r_operand="2010"
+                                )
+                            ]
+                        ),
+                    ]
                 ),
             ],
         )
@@ -317,14 +339,20 @@ class SelectionQueryWithAnd(TestQuery):
             operations=[
                 Projection(get_global_index(base_tables, 0, "id")),
                 Selection(
-                    l_operand=get_global_index(base_tables, 0, "max_speed"),
-                    operator=">",
-                    r_operand="2000",
-                ),
-                Selection(
-                    l_operand=get_global_index(base_tables, 0, "year"),
-                    operator="=",
-                    r_operand="2010",
+                    clauses=[
+                        Clause(
+                            conditions=[
+                                Condition(
+                                    l_operand=get_global_index(base_tables, 0, "max_speed"),
+                                    operator=">",
+                                    r_operand="2000",
+                                ),
+                                Condition(
+                                    l_operand=get_global_index(base_tables, 0, "year"), operator="=", r_operand="2010"
+                                ),
+                            ]
+                        )
+                    ]
                 ),
             ],
         )
@@ -357,7 +385,9 @@ class OrderByQuery(TestQuery):
             child_tables=list(map(lambda t: Refer(t), base_tables)),
             operations=[
                 Projection(get_global_index(base_tables, 0, "id")),
-                Selection(get_global_index(base_tables, 0, "year"), "=", "2010"),
+                Selection(
+                    clauses=[Clause(conditions=[Condition(get_global_index(base_tables, 0, "year"), "=", "2010")])]
+                ),
                 Ordering(get_global_index(base_tables, 0, "horsepower"), is_ascending=False),
             ],
         )
@@ -468,7 +498,11 @@ class HavingQuery(TestQuery):
             child_tables=list(map(lambda t: Refer(t), node2_tables)),
             operations=[
                 Projection(get_global_index(node2_tables, 0, "model")),
-                Selection(get_global_index(node2_tables, 0, "avg_max_speed"), ">", "400"),
+                Selection(
+                    clauses=[
+                        Clause(conditions=[Condition(get_global_index(node2_tables, 0, "avg_max_speed"), ">", "400")])
+                    ]
+                ),
             ],
         )
         return QueryTree(root=node2, sql=self.sql)
@@ -519,7 +553,9 @@ class NestedQuery(TestQuery):
             operations=[
                 Projection(get_global_index(base_tables, 0, "max_speed"), "avg_max_speed"),
                 Aggregation(get_global_index(base_tables, 0, "max_speed"), "avg"),
-                Selection(get_global_index(base_tables, 0, "year"), "=", "2010"),
+                Selection(
+                    clauses=[Clause(conditions=[Condition(get_global_index(base_tables, 0, "year"), "=", "2010")])]
+                ),
             ],
         )
 
@@ -530,9 +566,17 @@ class NestedQuery(TestQuery):
             operations=[
                 Projection(get_global_index(node2_tables, 0, "id")),
                 Selection(
-                    get_global_index(node2_tables, 0, "max_speed"),
-                    ">",
-                    get_global_index(node2_tables, 1, "avg_max_speed"),
+                    clauses=[
+                        Clause(
+                            conditions=[
+                                Condition(
+                                    get_global_index(node2_tables, 0, "max_speed"),
+                                    ">",
+                                    get_global_index(node2_tables, 1, "avg_max_speed"),
+                                )
+                            ]
+                        )
+                    ]
                 ),
             ],
         )
@@ -605,7 +649,19 @@ class CorrelatedNestedQuery(TestQuery):
         node1 = QueryBlock(
             child_tables=list(map(lambda t: Refer(t), base_tables)),
             join_conditions=[
-                Selection(get_global_index(base_tables, 0, "model"), "=", get_global_index(base_tables, 1, "model"))
+                Selection(
+                    clauses=[
+                        Clause(
+                            conditions=[
+                                Condition(
+                                    get_global_index(base_tables, 0, "model"),
+                                    "=",
+                                    get_global_index(base_tables, 1, "model"),
+                                )
+                            ]
+                        )
+                    ]
+                )
             ],
             operations=[
                 Projection(get_global_index(base_tables, 0, "max_speed"), "avg_max_speed"),
@@ -621,9 +677,17 @@ class CorrelatedNestedQuery(TestQuery):
             operations=[
                 Projection(get_global_index(node2_tables, 0, "id")),
                 Selection(
-                    get_global_index(node2_tables, 0, "max_speed"),
-                    ">",
-                    get_global_index(node2_tables, 1, "avg_max_speed"),
+                    clauses=[
+                        Clause(
+                            conditions=[
+                                Condition(
+                                    get_global_index(node2_tables, 0, "max_speed"),
+                                    ">",
+                                    get_global_index(node2_tables, 1, "avg_max_speed"),
+                                )
+                            ]
+                        )
+                    ]
                 ),
             ],
         )
@@ -700,6 +764,10 @@ class CorrelatedNestedQuery2(TestQuery):
         node_3.add_predicate(Clause([cond3]))
         return EVQLTree(node_3, children=[EVQLTree(node_2, children=[EVQLTree(node_1)])])
 
+    @misc_utils.property_with_cache
+    def query_tree(self):
+        pass
+
 
 class MultipleSublinksQuery(TestQuery):
     def __init__(self):
@@ -754,10 +822,14 @@ class MultipleSublinksQuery(TestQuery):
         node_3.add_predicate(Clause([cond3_1, cond3_2]))
         return EVQLTree(node_3, children=[EVQLTree(node_2), EVQLTree(node_1)])
 
+    @misc_utils.property_with_cache
+    def query_tree(self):
+        pass
 
-class MultipleSublinksQuery(TestQuery):
+
+class MultipleSublinksQuery2(TestQuery):
     def __init__(self):
-        super(MultipleSublinksQuery, self).__init__()
+        super(MultipleSublinksQuery2, self).__init__()
         self._sql = """SELECT M1.id
                         FROM movie AS M1
                             JOIN rating AS R1
