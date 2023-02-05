@@ -1,0 +1,20 @@
+SELECT Student.city_code, COUNT(DISTINCT Student.Sex), MAX(Student.StuID) FROM Student WHERE (Student.Advisor > 2311 OR Student.Sex IN "('M','F')") GROUP BY Student.city_code HAVING (Student.city_code LIKE "PHL%" AND SUM(Student.Advisor) = 8722)
+SELECT Student.StuID, COUNT(*) FROM Student WHERE Student.Fname NOT LIKE "%Linda" GROUP BY Student.StuID HAVING COUNT(Student.Fname) > 3
+SELECT Student.city_code, COUNT(*) FROM Student WHERE (Student.Major < 600 OR Student.Sex != "'M'") GROUP BY Student.city_code HAVING COUNT(Student.Fname) > 4
+SELECT Student.StuID, COUNT(DISTINCT Student.Advisor) FROM Student WHERE (Student.Sex IN "('M','F')" OR Student.Advisor >= 7792) GROUP BY Student.StuID HAVING COUNT(Student.LName) <= 2
+SELECT Student.city_code, COUNT(DISTINCT Student.Sex) FROM Student WHERE (Student.Fname != "Arthur" AND Student.Major = 520) GROUP BY Student.city_code HAVING COUNT(Student.Age) <= 3
+SELECT Student.city_code, COUNT(*) FROM Student WHERE Student.Fname LIKE "%George%" GROUP BY Student.city_code HAVING (Student.city_code NOT LIKE "%DET" OR (MAX(Student.Major) <= 600 AND COUNT(Student.Sex) <= 2))
+SELECT Student.Sex, COUNT(DISTINCT Student.Sex) FROM Student WHERE Student.Sex != "F" GROUP BY Student.Sex HAVING MIN(Student.StuID) < 1029
+SELECT Student.Age, AVG(Student.Major), COUNT(DISTINCT Student.city_code) FROM Student WHERE (Student.Fname != "Jun" OR (Student.Age >= 19 AND Student.Age > 19)) GROUP BY Student.Age HAVING COUNT(Student.Fname) > 2
+SELECT Student.Fname, COUNT(*) FROM Student WHERE ((Student.StuID != 1030 OR Student.Fname NOT LIKE "%Sarah%") OR Student.LName IN "('Apap','Goldman','Adams','Norris')") GROUP BY Student.Fname HAVING AVG(Student.StuID) < 1031
+SELECT Student.LName, COUNT(DISTINCT Student.LName), MIN(Student.StuID) FROM Student WHERE ((Student.Advisor < 2311 OR Student.city_code LIKE "YYZ%") AND Student.Advisor > 1148) GROUP BY Student.LName HAVING (COUNT(Student.Sex) >= 4 AND COUNT(Student.Fname) = 4)
+SELECT Student.StuID, COUNT(*) FROM Student WHERE (Student.LName NOT IN "('Tai','Gompers','Han')" OR Student.LName != "Rugh") GROUP BY Student.StuID HAVING COUNT(Student.Sex) >= 3
+SELECT Student.city_code, MAX(Student.Advisor), COUNT(DISTINCT Student.Sex) FROM Student WHERE ((Student.LName LIKE "%Goldman%" AND Student.Fname LIKE "%Mark") OR Student.LName LIKE "%Goldman%") GROUP BY Student.city_code HAVING (MAX(Student.Advisor) >= 7271 AND SUM(Student.Advisor) < 7271)
+SELECT Student.Age, COUNT(*) FROM Student WHERE (Student.Advisor = 9172 AND Student.Advisor > 2192) GROUP BY Student.Age HAVING (COUNT(Student.LName) = 1 AND (SUM(Student.Advisor) >= 7134 OR COUNT(Student.Major) != 2))
+SELECT Student.StuID, SUM(Student.Advisor), COUNT(DISTINCT Student.city_code) FROM Student WHERE Student.Major < 600 GROUP BY Student.StuID HAVING (Student.StuID <= 1012 OR AVG(Student.Major) > 600)
+SELECT Student.Advisor, COUNT(DISTINCT Student.Fname) FROM Student WHERE Student.LName NOT LIKE "%Kumar" GROUP BY Student.Advisor HAVING COUNT(Student.LName) < 4
+SELECT Student.Fname, SUM(Student.Advisor) FROM Student WHERE Student.Advisor >= 8423 GROUP BY Student.Fname HAVING (COUNT(Student.city_code) = 4 AND COUNT(Student.city_code) <= 4)
+SELECT Student.city_code, COUNT(DISTINCT Student.Fname), SUM(Has_Pet.StuID) FROM Has_Pet JOIN Student ON Student.StuID=Has_Pet.StuID WHERE ((Student.Fname IN "('Ian','Paul','Bruce','Susan','Sarah')" OR Student.Advisor != 7271) OR Student.Age > 18) GROUP BY Student.city_code HAVING (COUNT(Pets.weight) != 3 AND COUNT(Student.LName) > 2)
+SELECT Student.StuID, COUNT(DISTINCT Student.LName) FROM Student WHERE ((Student.Advisor >= 8772 AND Student.Advisor != 1121) AND Student.Major != 600) GROUP BY Student.StuID HAVING (SUM(Student.Advisor) < 2311 OR COUNT(Student.LName) != 4)
+SELECT Student.city_code, COUNT(*) FROM Student WHERE Student.Major <= 550 GROUP BY Student.city_code HAVING (SUM(Student.Major) <= 550 AND SUM(Student.Advisor) < 8772)
+SELECT Student.city_code, COUNT(DISTINCT Student.Sex) FROM Student WHERE Student.Fname = "Susan" GROUP BY Student.city_code HAVING COUNT(Student.Sex) <= 2

@@ -1,0 +1,3 @@
+[submodule "SQLGenerator"]
+	path = SQLGenerator
+	url = https://github.com/hjkim-postechdblab/SQLGenerator.git
