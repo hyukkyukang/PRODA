@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 
 import hkkang_utils.list as list_utils
 
-from src.query_tree.operator import Operation, Projection, Clause
+from src.query_tree.operator import Clause, Operation, Projection, Foreach
 
 
 class Node(metaclass=abc.ABCMeta):
@@ -36,6 +36,9 @@ class BaseTable(Node):
         self.header: List[str] = header
         self.data: List[List[Any]] = data
 
+    def __len__(self):
+        return len(self.header)
+
     def get_headers(self) -> List[str]:
         return self.header
 
@@ -57,18 +60,8 @@ class QueryBlock(Node):
         self.operations: List[Operation] = operations
         self.sql: str = sql
 
-    def _new_table_idx_mapping(self) -> List[int]:
-        """This function maps the new table's indices to the indices of the child tables
-
-        :return: A list of indices
-        :rtype: List[int]
-        """
-        # Check if there is a projection
-
-        # Check if there is aggregation
-
-        # Check if there is a join condition
-        pass
+    def __len__(self):
+        return sum(len(op) for op in self.operations if type(op) in [Projection, Foreach])
 
     def get_headers(self) -> List[str]:
         # Get header names
@@ -119,4 +112,4 @@ class QueryTree:
 def get_global_index(tables: List[Node], table_id: int, column_name: str) -> int:
     if column_name == "*":
         return -1
-    return len(tables[:table_id]) + tables[table_id].get_headers().index(column_name)
+    return sum(len(t) for t in tables[:table_id]) + tables[table_id].get_headers().index(column_name)

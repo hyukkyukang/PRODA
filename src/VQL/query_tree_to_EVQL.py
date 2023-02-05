@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Any
 import src.query_tree.query_tree as QueryTree
 import src.query_tree.operator as QueryTreeOperator
 import src.VQL.EVQL as EVQL
@@ -16,12 +16,9 @@ def convert_node(query_tree_node: QueryTree.Node) -> EVQL.EVQLTree:
     # Create current EVQL Node
     ## Create Table excerpt
     # TODO: base table can be more dynamic. Table excerpt should be the a table that is the combination of all the tables in children nodes
-    try:
-        all_headers = list_utils.do_flatten_list(
-            [child_table.child.get_headers() for child_table in query_tree_node.child_tables]
-        )
-    except:
-        stop = 1
+    all_headers = list_utils.do_flatten_list(
+        [child_table.child.get_headers() for child_table in query_tree_node.child_tables]
+    )
     table_excerpt = TableExcerpt.TableExcerpt(
         name=RANDOMSTRING,
         headers=all_headers,
@@ -57,6 +54,9 @@ def create_projection_headers(query_tree_node: QueryTree.QueryBlock) -> List[EVQ
     aggregations: List[QueryTreeOperator.Aggregation] = list(
         filter(lambda k: type(k) == QueryTreeOperator.Aggregation, query_tree_node.operations)
     )
+    foreaches: List[QueryTreeOperator.Foreach] = list(
+        filter(lambda k: type(k) == QueryTreeOperator.Foreach, query_tree_node.operations)
+    )
 
     # Create header for all projectoin attributes
     headers = []
@@ -67,9 +67,12 @@ def create_projection_headers(query_tree_node: QueryTree.QueryBlock) -> List[EVQ
         agg_type = None
         if agg_list:
             assert len(agg_list) == 1
-            agg_type = agg_list[0].func_type
+            agg_type = EVQL.Aggregator.from_str(agg_list[0].func_type)
         # Append header
-        headers.append(EVQL.Header(column_id, agg_type))
+        headers.append(EVQL.Header(column_id + 1, agg_type))
+    # Add attributes for correlation
+    for foreach in foreaches:
+        headers.append(EVQL.Header(foreach.column_id + 1))
 
     return headers
 
@@ -96,14 +99,25 @@ def create_predicate_clauses(qt_node: QueryTree.QueryBlock) -> List[EVQL.Clause]
 
 
 def convert_selection(qt_node: QueryTree.QueryBlock) -> List[EVQL.Clause]:
+    def create_r_operand(r_operand: Any) -> Any:
+        if type(r_operand) == int:
+            # When the operand is column id
+            return f"${r_operand+1}"
+        elif type(r_operand) == str:
+            # When the operand is a value
+            return r_operand
+        else:
+            # When the operand is a nested query
+            return r_operand
+
     def convert_selection_clause(qt_clause: QueryTreeOperator.Clause) -> EVQL.Clause:
         conditions: List[EVQL.Selecting] = []
         for qt_condition in qt_clause.conditions:
             conditions.append(
                 EVQL.Selecting(
-                    header_id=qt_condition.l_operand,
-                    op_type=qt_condition.operator,
-                    r_operand=qt_condition.r_operand,
+                    header_id=qt_condition.l_operand + 1,
+                    op_type=EVQL.Operator.from_str(qt_condition.operator),
+                    r_operand=create_r_operand(qt_condition.r_operand),
                 )
             )
         return EVQL.Clause(conditions=conditions)
@@ -125,7 +139,7 @@ def convert_grouping(qt_node: QueryTree.QueryBlock) -> List[EVQL.Clause]:
     groupings = list(filter(lambda k: type(k) == QueryTreeOperator.Grouping, qt_node.operations))
     if groupings:
         for grouping in groupings:
-            evql_clauses.append(EVQL.Clause(conditions=[EVQL.Grouping(header_id=grouping.column_id)]))
+            evql_clauses.append(EVQL.Clause(conditions=[EVQL.Grouping(header_id=grouping.column_id + 1)]))
     return evql_clauses
 
 
@@ -135,7 +149,9 @@ def convert_ordering(qt_node: QueryTree.QueryBlock) -> List[EVQL.Clause]:
     if orderings:
         for ordering in orderings:
             evql_clauses.append(
-                EVQL.Clause(conditions=[EVQL.Ordering(header_id=ordering.column_id, ascending=ordering.ascending)])
+                EVQL.Clause(
+                    conditions=[EVQL.Ordering(header_id=ordering.column_id + 1, is_ascending=ordering.ascending)]
+                )
             )
     return evql_clauses
 

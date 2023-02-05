@@ -1,4 +1,5 @@
 import abc
+import copy
 from enum import IntEnum
 from typing import List
 
@@ -12,6 +13,22 @@ class Operator(IntEnum):
     greaterThan = 3
     exists = 4
     notExists = 5
+
+    @staticmethod
+    def from_str(op_type: str) -> IntEnum:
+        op_type = op_type.lower()
+        if op_type == "=":
+            return Operator.equal
+        elif op_type == "<":
+            return Operator.lessThan
+        elif op_type == ">":
+            return Operator.greaterThan
+        elif op_type == "EXISTS":
+            return Operator.exists
+        elif op_type == "NOT EXISTS":
+            return Operator.notExists
+        else:
+            raise ValueError(f"Unknown operator type: {op_type}")
 
     @staticmethod
     def to_str(op_type):
@@ -69,7 +86,7 @@ class Aggregator(IntEnum):
     max = 5
 
     @staticmethod
-    def to_str(agg_type):
+    def to_str(agg_type: IntEnum) -> str:
         if agg_type == Aggregator.count:
             return "COUNT"
         elif agg_type == Aggregator.sum:
@@ -83,27 +100,31 @@ class Aggregator(IntEnum):
         else:
             raise ValueError(f"Unknown aggregator: {agg_type}")
 
-
-class Projection:
-    def __init__(self, headers=None):
-        self.headers = headers if headers else []
-
-    def dump_json(self):
-        return {"headers": [header.dump_json() for header in self.headers]}
-
-    @property
-    def headers_with_agg(self):
-        return [header for header in self.headers if header.is_agg]
-
     @staticmethod
-    def load_json(json_obj):
-        return Projection([Header.load_json(header) for header in json_obj["headers"]])
+    def from_str(agg_type: str) -> IntEnum:
+        agg_type_lower = agg_type.lower()
+        if agg_type_lower == "count":
+            return Aggregator.count
+        elif agg_type_lower == "sum":
+            return Aggregator.sum
+        elif agg_type_lower == "avg":
+            return Aggregator.avg
+        elif agg_type_lower == "min":
+            return Aggregator.min
+        elif agg_type_lower == "max":
+            return Aggregator.max
+        else:
+            raise ValueError(f"Unknown aggregator: {agg_type}")
 
 
 class Header:
     def __init__(self, id, agg_type=None):
         self.id = id
         self.agg_type = agg_type
+
+    def __eq__(self, other):
+        assert isinstance(other, Header), f"expected type Header but found: {type(other)}"
+        return self.id == other.id and self.agg_type == other.agg_type
 
     @property
     def is_agg(self):
@@ -117,9 +138,35 @@ class Header:
         return Header(json_obj["id"], json_obj["agg_type"])
 
 
+class Projection:
+    def __init__(self, headers: List[Header] = None):
+        self.headers: List[Header] = headers if headers else []
+
+    def __eq__(self, other):
+        assert isinstance(other, Projection), f"Expected type Projection, but found {type(other)}"
+        return all([header in other.headers for header in self.headers])
+
+    def dump_json(self):
+        return {"headers": [header.dump_json() for header in self.headers]}
+
+    @property
+    def headers_with_agg(self):
+        return [header for header in self.headers if header.is_agg]
+
+    @staticmethod
+    def load_json(json_obj):
+        return Projection([Header.load_json(header) for header in json_obj["headers"]])
+
+
 class Function(metaclass=abc.ABCMeta):
     def __init__(self, header_id):
         self.header_id = header_id
+
+    def __eq__(self, other):
+        assert isinstance(other, Function), f"Expected type of Function, but found: {type(other)}"
+        if type(self) != type(other):
+            return False
+        return self.header_id == other.header_id
 
     def dump_json(self):
         return {"header_id": self.header_id, "func_type": type(self).__name__}
@@ -144,6 +191,12 @@ class Ordering(Function):
         super().__init__(header_id)
         self.is_ascending = is_ascending
 
+    def __eq__(self, other):
+        assert isinstance(other, Function), f"Expected type Ordering, but found: {type(other)}"
+        if type(other) != Ordering:
+            return False
+        return self.header_id == other.header_id and self.is_ascending == other.is_ascending
+
     def dump_json(self):
         json_obj = super().dump_json()
         json_obj["is_ascending"] = self.is_ascending
@@ -162,6 +215,12 @@ class Selecting(Function):
         # Can be either a value or header_id
         self.r_operand = r_operand
 
+    def __eq__(self, other):
+        assert isinstance(other, Function), f"Expected type Selecting, but found: {type(other)}"
+        if type(other) != Selecting:
+            return False
+        return self.header_id == other.header_id and self.op_type == other.op_type and self.r_operand == other.r_operand
+
     @property
     def used_columns(self):
         if type(self.r_operand) == int:
@@ -178,6 +237,13 @@ class Selecting(Function):
 class Predicate:
     def __init__(self, clauses=None):
         self.clauses: List[Clause] = clauses if clauses else []
+
+    def __eq__(self, other):
+        assert isinstance(other, Predicate), f"Expected type Predicate, but found: {type(other)}"
+        return all(clause in other.clauses for clause in self.clauses)
+
+    def __len__(self):
+        return len(self.clauses)
 
     @staticmethod
     def load_json(json_obj):
@@ -197,9 +263,6 @@ class Predicate:
             tmp += clause.used_columns
         return tmp
 
-    def __len__(self):
-        return len(self.clauses)
-
     # Helper functions
     def add(self, clause):
         self.clauses.append(clause)
@@ -214,6 +277,10 @@ class Predicate:
 class Clause:
     def __init__(self, conditions=None):
         self.conditions: List[Function] = conditions if conditions else []
+
+    def __eq__(self, other):
+        assert isinstance(other, Clause), f"Expected type Clause, but found: {type(other)}"
+        return all(condition in other.conditions for condition in self.conditions)
 
     @staticmethod
     def load_json(json_obj):
@@ -247,6 +314,10 @@ class EVQLNode:
         self._projection = Projection()
         # Predicates follow DNF form. Hence, within each clause, conditions are joined with AND.
         self._predicate = Predicate()
+
+    def __eq__(self, other):
+        assert isinstance(other, EVQLNode), f"Expected type EVQLNode, but found:{type(EVQLNode)}"
+        return self.predicate == other.predicate and self.projection == other.projection
 
     @staticmethod
     def to_table_excerpt_header_idx(evql_header_idx):
@@ -300,6 +371,10 @@ class EVQLTree:
     def __init__(self, node, children=None):
         self.node: EVQLNode = node
         self.children: List[EVQLTree] = children if children else []
+
+    def __eq__(self, other):
+        assert isinstance(other, EVQLTree), f"Expected type EVQLTree, but found: {type(other)}"
+        return self.node == other.node and all(child in other.children for child in self.children)
 
     @property
     def table_name(self):
@@ -403,9 +478,9 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
             # Save string to list
             att_str_list.append(att_str)
         # Get all headers for grouping as well
-        if not bool(correlation_cond_str):
-            for hid in tree.node.predicate.columns_for_grouping:
-                att_str_list.append(tree.get_var_name(hid, use_t_alias=bool(correlation_cond_str)))
+        # if not bool(correlation_cond_str):
+        #     for hid in tree.node.predicate.columns_for_grouping:
+        #         att_str_list.append(tree.get_var_name(hid, use_t_alias=bool(correlation_cond_str)))
         return f"SELECT {', '.join(att_str_list)}"
 
     def create_clause_str(formatted_conditions):
@@ -613,6 +688,72 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
 
     # Return composed SQL string
     return compose_clauses(select_clause, from_clause, where_clause, group_by_clause, having_clause, order_by_clause)
+
+
+# Helper Functions
+def check_evql_equivalence(evqlTree1: EVQLTree, evqlTree2: EVQLTree) -> bool:
+    def check_and_remove_same_header(target_proj_header: Header, proj_headers: List[Header]):
+        """Check if there are any same header and remove from the list if found"""
+        found_idx = None
+        # Find the matching index
+        for idx, proj_header in enumerate(proj_headers):
+            if proj_header == target_proj_header:
+                found_idx = idx
+        # Remove from list if found
+        if found_idx is not None:
+            proj_headers.pop(found_idx)
+        return found_idx is not None
+
+    # Check num of
+    if evqlTree1.children and len(evqlTree1.children) == len(evqlTree2.children):
+        is_same_children = all(
+            check_evql_equivalence(child1, child2) for child1, child2 in zip(evqlTree1.children, evqlTree2.children)
+        )
+    else:
+        is_same_children = not bool(evqlTree1.children)
+
+    # Check headers
+    is_same_headers = evqlTree1.node.headers[1:] == evqlTree2.node.headers[1:]
+
+    # Check predicate
+    is_same_predicate = evqlTree1.node.predicate == evqlTree2.node.predicate
+
+    # Check projection
+    # is_same_projection = True
+    # tmp_header_list = copy.deepcopy(evqlTree2.node.projection.headers)
+    # for header in evqlTree1.node.projection.headers:
+    #     is_same_projection &= check_and_remove_same_header(header, tmp_header_list)
+    # is_same_projection &= len(tmp_header_list) == 0
+    is_same_projection = evqlTree1.node.projection == evqlTree2.node.projection
+
+    # Check is_groupby
+    is_same_groupby = evqlTree1.is_groupby == evqlTree2.is_groupby
+
+    # Check is_having
+    is_same_having = evqlTree1.is_having == evqlTree2.is_having
+
+    # Check is_nested
+    is_same_nested = evqlTree1.is_nested == evqlTree2.is_nested
+
+    # Check is_nested_with_correlation
+    is_same_correlated_nesting = evqlTree1.is_nested_with_correlation == evqlTree2.is_nested_with_correlation
+
+    # Check level
+    is_same_level = evqlTree1.level == evqlTree2.level
+
+    return all(
+        [
+            is_same_children,
+            is_same_headers,
+            is_same_predicate,
+            is_same_projection,
+            is_same_groupby,
+            is_same_having,
+            is_same_nested,
+            is_same_correlated_nesting,
+            is_same_level,
+        ]
+    )
 
 
 if __name__ == "__main__":

@@ -217,6 +217,4 @@ def type_detection(value: Any) -> str:
 
 
 if __name__ == "__main__":
-    from src.table_excerpt.examples.car_table import car_table
-
     stop = 1

@@ -1,6 +1,17 @@
 import unittest
-from VQL.example_queries import SelectionQueryWithAnd, SelectionQueryWithOr, OrderByQuery, GroupByQuery, HavingQuery, NestedQuery, CorrelatedNestedQuery, CorrelatedNestedQuery2, MultipleSublinksQuery
-from VQL.EVQL import EVQLTree
+from src.utils.example_queries import (
+    SelectionQueryWithAnd,
+    SelectionQueryWithOr,
+    OrderByQuery,
+    GroupByQuery,
+    HavingQuery,
+    NestedQuery,
+    CorrelatedNestedQuery,
+    CorrelatedNestedQuery2,
+    MultipleSublinksQuery,
+)
+from src.VQL.EVQL import EVQLTree
+
 
 class Test_data_consistency(unittest.TestCase):
     def _test_consistency(self, query):
@@ -8,7 +19,10 @@ class Test_data_consistency(unittest.TestCase):
         new_query_obj = EVQLTree.load_json(json_obj)
         ori = query.evql.to_sql
         new = new_query_obj.to_sql
-        self.assertTrue(query.evql.to_sql == new_query_obj.to_sql, f'\nExpected: "{query.evql.to_sql}". \nGot: "{new_query_obj.to_sql}"')
+        self.assertTrue(
+            query.evql.to_sql == new_query_obj.to_sql,
+            f'\nExpected: "{query.evql.to_sql}". \nGot: "{new_query_obj.to_sql}"',
+        )
 
     def test_selection_with_or(self):
         self._test_consistency(SelectionQueryWithOr())
@@ -33,8 +47,10 @@ class Test_data_consistency(unittest.TestCase):
 
     def test_correlated_nested2(self):
         self._test_consistency(CorrelatedNestedQuery2())
+
     def test_multiple_sublinks(self):
         self._test_consistency(MultipleSublinksQuery())
+
 
 if __name__ == "__main__":
     unittest.main()

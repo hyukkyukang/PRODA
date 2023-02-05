@@ -1,5 +1,5 @@
 import unittest
-from VQL.example_queries import (
+from src.utils.example_queries import (
     ProjectionQuery,
     MinMaxQuery,
     CountAvgSumQuery,

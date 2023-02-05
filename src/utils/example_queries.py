@@ -4,10 +4,11 @@ import json
 
 from hkkang_utils import misc as misc_utils
 
-from src.query_tree.operator import Aggregation, Foreach, Grouping, Ordering, Projection, Selection, Condition, Clause
+import src.query_tree.operator as qt_operator
+from src.query_tree.operator import Aggregation, Clause, Condition, Foreach, Projection, Selection
 from src.query_tree.query_tree import Attach, BaseTable, QueryBlock, QueryTree, Refer, get_global_index
-from src.table_excerpt.examples.car_table import car_table
 from src.table_excerpt.table_excerpt import TableExcerpt
+from src.utils.example_table_excerpt import car_table
 from src.VQL.EVQL import Aggregator, Clause, EVQLNode, EVQLTree, Grouping, Header, Operator, Ordering, Selecting
 
 
@@ -31,7 +32,7 @@ class TestQuery(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def evql(self):
+    def evql(self) -> EVQLTree:
         pass
 
     @property
@@ -46,7 +47,7 @@ class ProjectionQuery(TestQuery):
         self._sql = "SELECT id FROM cars"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node
         node = EVQLNode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(car_table.table_excerpt_headers.index("id")))
@@ -74,7 +75,7 @@ class MinMaxQuery(TestQuery):
         self._sql = "SELECT max(horsepower), min(max_speed) FROM cars"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node
         node = EVQLNode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("horsepower"), agg_type=Aggregator.max))
@@ -106,7 +107,7 @@ class CountAvgSumQuery(TestQuery):
         self._sql = "SELECT count(id), avg(max_speed), sum(price) FROM cars"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node
         node = EVQLNode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("id"), agg_type=Aggregator.count))
@@ -141,7 +142,7 @@ class SelectionQuery(TestQuery):
         self._sql = "SELECT id FROM cars WHERE year = 2010"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node
         node = EVQLNode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("id")))
@@ -185,7 +186,7 @@ class AndOrQuery(TestQuery):
         self._sql = "SELECT id, price FROM cars WHERE (model = 'tesla model x' and year = 2011) or (model = 'tesla model x' and year = 2012)"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node
         node = EVQLNode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("id")))
@@ -258,7 +259,7 @@ class SelectionQueryWithOr(TestQuery):
         self._sql = "SELECT id FROM cars WHERE (max_speed > 2000) OR (year = 2010)"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node
         node = EVQLNode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("id")))
@@ -318,7 +319,7 @@ class SelectionQueryWithAnd(TestQuery):
         self._sql = "SELECT id FROM cars WHERE max_speed > 2000 AND year = 2010"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node
         node = EVQLNode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("id")))
@@ -365,7 +366,7 @@ class OrderByQuery(TestQuery):
         self._sql = "SELECT id FROM cars WHERE year = 2010 ORDER BY horsepower DESC"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node
         node = EVQLNode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("id")))
@@ -388,7 +389,7 @@ class OrderByQuery(TestQuery):
                 Selection(
                     clauses=[Clause(conditions=[Condition(get_global_index(base_tables, 0, "year"), "=", "2010")])]
                 ),
-                Ordering(get_global_index(base_tables, 0, "horsepower"), is_ascending=False),
+                qt_operator.Ordering(get_global_index(base_tables, 0, "horsepower"), ascending=False),
             ],
         )
         return QueryTree(root=node, sql=self.sql)
@@ -400,10 +401,11 @@ class GroupByQuery(TestQuery):
         self._sql = "SELECT count(*), model FROM cars GROUP BY model"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node
         node = EVQLNode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("cars"), agg_type=Aggregator.count))
+        node.add_projection(Header(node.headers.index("model")))
         # Create conditions for the node
         cond = Grouping(node.headers.index("model"))
         clause = Clause([cond])
@@ -421,7 +423,7 @@ class GroupByQuery(TestQuery):
                 Projection(get_global_index(base_tables, 0, "*")),
                 Projection(get_global_index(base_tables, 0, "model")),
                 Aggregation(get_global_index(base_tables, 0, "*"), "count"),
-                Grouping(get_global_index(base_tables, 0, "model")),
+                qt_operator.Grouping(get_global_index(base_tables, 0, "model")),
             ],
         )
         return QueryTree(root=node, sql=self.sql)
@@ -433,9 +435,10 @@ class HavingQuery(TestQuery):
         self._sql = "SELECT model FROM cars GROUP BY model HAVING AVG(max_speed) > 400"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node 1
         node_1 = EVQLNode(f"{car_table.name}_query", car_table)
+        node_1.add_projection(Header(node_1.headers.index("model")))
         node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
         # Create conditions for the node
         cond1_2 = Grouping(node_1.headers.index("model"))
@@ -487,9 +490,9 @@ class HavingQuery(TestQuery):
             child_tables=list(map(lambda t: Refer(t), base_tables)),
             operations=[
                 Projection(get_global_index(base_tables, 0, "model")),
-                Projection(get_global_index(base_tables, 0, "max_speed"), "avg_max_speed"),
+                Projection(get_global_index(base_tables, 0, "max_speed"), "max_speed"),
                 Aggregation(get_global_index(base_tables, 0, "max_speed"), "avg"),
-                Grouping(get_global_index(base_tables, 0, "model")),
+                qt_operator.Grouping(get_global_index(base_tables, 0, "model")),
             ],
         )
         # Create node2
@@ -499,9 +502,7 @@ class HavingQuery(TestQuery):
             operations=[
                 Projection(get_global_index(node2_tables, 0, "model")),
                 Selection(
-                    clauses=[
-                        Clause(conditions=[Condition(get_global_index(node2_tables, 0, "avg_max_speed"), ">", "400")])
-                    ]
+                    clauses=[Clause(conditions=[Condition(get_global_index(node2_tables, 0, "max_speed"), ">", "400")])]
                 ),
             ],
         )
@@ -514,7 +515,7 @@ class NestedQuery(TestQuery):
         self._sql = "SELECT id FROM cars WHERE max_speed > (SELECT AVG(max_speed) FROM cars WHERE year = 2010)"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node 1
         node_1 = EVQLNode(f"{car_table.name}_query", car_table)
         node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
@@ -590,7 +591,7 @@ class CorrelatedNestedQuery(TestQuery):
         self._sql = "SELECT T2.id FROM cars AS T2 WHERE T2.max_speed > (SELECT avg(T1.max_speed) FROM cars AS T1 WHERE T1.model = T2.model)"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node 1
         node_1 = EVQLNode(f"{car_table.name}_query", car_table)
         node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
@@ -700,7 +701,7 @@ class CorrelatedNestedQuery2(TestQuery):
         self._sql = "SELECT T2.id FROM cars AS T2 WHERE T2.max_speed > (SELECT avg(T1.max_speed) FROM cars AS T1 WHERE T1.model = T2.model) GROUP BY T2.model HAVING AVG(T2.max_speed) > 300"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node 1
         node_1 = EVQLNode(f"{car_table.name}_query", car_table)
         node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
@@ -775,7 +776,7 @@ class MultipleSublinksQuery(TestQuery):
         self._sql = "SELECT id FROM cars WHERE max_speed > (SELECT avg(max_speed) FROM cars WHERE model = 'hyundai') AND horsepower > (SELECT avg(horsepower) FROM cars WHERE model = 'genesis')"
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         # Create tree node 1
         node_1 = EVQLNode(f"{car_table}_query1", car_table)
         node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
@@ -852,7 +853,7 @@ class MultipleSublinksQuery2(TestQuery):
                     """
 
     @misc_utils.property_with_cache
-    def evql(self):
+    def evql(self) -> EVQLTree:
         raise NotImplementedError
 
     @misc_utils.property_with_cache

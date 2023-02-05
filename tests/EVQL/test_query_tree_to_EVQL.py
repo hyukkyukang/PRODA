@@ -1,5 +1,5 @@
 import unittest
-from VQL.example_queries import (
+from src.utils.example_queries import (
     ProjectionQuery,
     MinMaxQuery,
     CountAvgSumQuery,
@@ -12,14 +12,20 @@ from VQL.example_queries import (
     CorrelatedNestedQuery,
 )
 
-from VQL.query_tree_to_EVQL import convert_queryTree_to_EVQLTree
+from src.VQL.query_tree_to_EVQL import convert_queryTree_to_EVQLTree
+from src.VQL.EVQL import check_evql_equivalence
 
 
 class Test_QueryTree_to_EVQL(unittest.TestCase):
     def _test_translation(self, query):
         query_tree = query.query_tree
-        object_EVQL = convert_queryTree_to_EVQLTree(query_tree)
-        self.assertTrue(object_EVQL != None, f'\nExpected: "{object_EVQL}". \nGot: "{object_EVQL}"')
+        converted_evql = convert_queryTree_to_EVQLTree(query_tree)
+
+        self.assertTrue(
+            check_evql_equivalence(query.evql, converted_evql),
+            "EVQL converted from query tree is different from the original EVQL",
+        )
+        self.assertTrue(query.evql == converted_evql)
 
     def test_projection(self):
         self._test_translation(ProjectionQuery())

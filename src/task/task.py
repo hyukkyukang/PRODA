@@ -1,8 +1,10 @@
 from enum import IntEnum
 
+
 class TaskTypes(IntEnum):
     Simplification = 1
     Validation = 2
+
 
 class Task:
     def __init__(self, nl, sql, evql, table_excerpt, result_table, query_type, db_name, task_type, history=None):
@@ -26,5 +28,8 @@ class Task:
             "queryType": self.query_type,
             "dbName": self.db_name,
             "taskType": self.task_type,
-            "subTasks": [{**history.dump_json(), **{"db_name": self.db_name, "task_type": self.task_type}} for history in self.history],
+            "subTasks": [
+                {**history.dump_json(), **{"db_name": self.db_name, "task_type": self.task_type}}
+                for history in self.history
+            ],
         }
