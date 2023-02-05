@@ -1,3 +1,6 @@
 [submodule "SQLGenerator"]
 	path = SQLGenerator
 	url = https://github.com/hjkim-postechdblab/SQLGenerator.git
+[submodule "logos_python"]
+	path = logos_python
+	url = https://github.com/hyukkyukang/logos_python.git
