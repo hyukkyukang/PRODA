@@ -14,16 +14,17 @@ export const Collection = (props: any) => {
 
     // Local state variables
     const [currentStep, setCurrentStep] = useState(0);
-    const [currentTask, setCurrentTask] = useState<Task>();
-    const currentSubTask = useMemo(() => (currentTask && currentTask.subTasks ? currentTask.subTasks[currentStep] : null), [currentTask, currentStep]);
+    const [receivedTasks, setReceivedTasks] = useState<Task[]>([]);
+    // const [currentTask, setCurrentTask] = useState<Task>();
+    const currentTask = useMemo(() => (receivedTasks && receivedTasks[currentStep] ? receivedTasks[currentStep] : null), [receivedTasks, currentStep]);
 
     const MyStepper: JSX.Element = (
         <React.Fragment>
             <br />
-            {currentTask && currentTask.subTasks ? (
+            {receivedTasks && currentTask ? (
                 <Container maxWidth="xl">
                     <Stepper nonLinear activeStep={currentStep}>
-                        {Array(currentTask.subTasks.length)
+                        {Array(receivedTasks.length)
                             .fill(0)
                             .map((_, idx) => (
                                 <Step key={idx + 1}>
@@ -39,7 +40,7 @@ export const Collection = (props: any) => {
 
     const onSubmitHandler = () => {
         // Send current step's info to the server
-        sendWorkerAnswer({ task: { ...currentSubTask, queryType: currentTask?.queryType, dbName: currentTask?.dbName }, answer: answer, userId: "dummyUser" });
+        sendWorkerAnswer({ task: { ...currentTask, queryType: currentTask?.queryType, dbName: currentTask?.dbName }, answer: answer, userId: "dummyUser" });
         // Change state
         setCurrentStep(currentStep + 1);
         setAnswer({ ...answer, nl: "" });
@@ -47,16 +48,13 @@ export const Collection = (props: any) => {
 
     const fetchTaskHandler = async () => {
         const fetchedTask = await fetchTask();
-        console.log(`fecthed Task: ${fetchedTask}`);
-        setCurrentTask(fetchedTask);
+        console.log(`fecthed Task: ${JSON.stringify(fetchedTask)}`);
+        setReceivedTasks(fetchedTask);
     };
 
     useEffect(() => {
         fetchTaskHandler();
     }, []);
-
-    // console.log(`currentTask: ${JSON.stringify(currentTask)}`);
-    // return <></>;
 
     return (
         <React.Fragment>
@@ -68,12 +66,12 @@ export const Collection = (props: any) => {
                         <Instruction taskType={currentTask?.taskType} />
                         <br />
                         <Paper elevation={2}>
-                            {currentTask && currentSubTask ? (
+                            {receivedTasks && currentTask ? (
                                 <Box style={{ marginLeft: "15px" }}>
                                     <br />
                                     <b>Natural Language Query</b>
                                     <br />
-                                    <span>{currentSubTask?.nl}</span>
+                                    <span>{currentTask?.nl}</span>
                                     <br />
                                     <br />
                                     <Grid container spacing={2}>
@@ -81,7 +79,7 @@ export const Collection = (props: any) => {
                                             <b>EVQL</b>
                                             <br />
                                             <EVQLTable
-                                                evqlRoot={{ node: currentSubTask.evql, children: [] }}
+                                                evqlRoot={{ node: currentTask.evql.node, children: currentTask.evql.children }}
                                                 childListPath={[]}
                                                 editable={false}
                                                 isFirstNode={true}

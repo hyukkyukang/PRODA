@@ -1,4 +1,6 @@
+import json
 import random
+from typing import List
 
 from hkkang_utils.misc import property_with_cache
 from pylogos.translate import translate
@@ -77,7 +79,7 @@ class Task_Generator:
 
         return selected_type
 
-    def __call__(self):
+    def __call__(self) -> List[Task]:
         # Select a query type to generate
         query_type = self.query_type
         task_type = self.task_type
@@ -96,17 +98,21 @@ class Task_Generator:
 
         # Wrap with Task class
         # TODO: handle table_excerpt, result table, and history
-        return Task(
-            nl=nl,
-            sql=sql,
-            evql=evql,
-            query_type=query_type,
-            task_type=task_type,
-            db_name="db_name",
-            table_excerpt=table_excerpt,
-            result_table=None,
-            history=[],
-        )
+        return [
+            Task(
+                nl=nl,
+                sql=sql,
+                evql=evql,
+                query_type=query_type,
+                task_type=task_type,
+                db_name="db_name",
+                table_excerpt=table_excerpt,
+                result_table=None,
+            )
+        ]
+
+    def convert_tasks_into_json_string(self, tasks: List[Task]) -> str:
+        return json.dumps([task.dump_json() for task in tasks])
 
 
 if __name__ == "__main__":
@@ -129,5 +135,5 @@ if __name__ == "__main__":
     }
 
     task_generator = Task_Generator(admin_db_config, data_db_config)
-    new_task = task_generator()
-    print(new_task.dump_json())
+    new_tasks = task_generator()
+    print(task_generator.convert_tasks_into_json_string(new_tasks))
