@@ -33,7 +33,7 @@ function getConfig() {
 /* Fetch information */
 function getEVQL(queryType) {
     var spawnSync = require("child_process").spawnSync;
-    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/VQL/example_queries.py`, "--query_type", queryType]);
+    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/utils/example_queries.py`, "--query_type", queryType]);
     var json_dumped_evql = spawnedProcess.stdout.toString();
 
     // Try to parse string into JSON
@@ -49,7 +49,7 @@ function getEVQL(queryType) {
 
 function getTask() {
     var spawnSync = require("child_process").spawnSync;
-    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/task/example_tasks.py`]);
+    var spawnedProcess = spawnSync("python3.10", [`${PathToPythonSrc}/task/generator.py`]);
     var result = spawnedProcess.stdout.toString();
     // Parse JSON string
     var taskData = null;
