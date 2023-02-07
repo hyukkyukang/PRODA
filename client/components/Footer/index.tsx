@@ -13,7 +13,7 @@ export const Footer = () => {
     return (
         <>
             <Box sx={style}>
-                <p>&copy; POSTECH DSLab 2022</p>
+                <p>&copy; POSTECH DSLab 2023</p>
             </Box>
         </>
     );

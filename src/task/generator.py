@@ -6,12 +6,14 @@ from hkkang_utils.misc import property_with_cache
 from pylogos.translate import translate
 
 from src.task import Task
-from src.utils.example_queries import SelectionQuery
+from src.utils.example_queries import CorrelatedNestedQuery, SelectionQuery
 from src.utils.pg_connector import PostgresConnector
 
-TASK_TYPES = [0, 1]
+# TASK_TYPES = [1, 2]
+TASK_TYPES = [1]
 
-dummpy_query = SelectionQuery()
+dummy_query = CorrelatedNestedQuery()
+dummy_query = SelectionQuery()
 
 
 class Task_Generator:
@@ -85,16 +87,17 @@ class Task_Generator:
         task_type = self.task_type
 
         # Generate SQL
-        sql = dummpy_query.sql
-        evql = dummpy_query.evql
-        table_excerpt = dummpy_query.evql.node.table_excerpt
-        query_tree = dummpy_query.query_tree
+        sql = dummy_query.sql
+        evql = dummy_query.evql
+        table_excerpt = dummy_query.evql.node.table_excerpt
+        query_tree = dummy_query.query_tree
 
         # Generate EVQL
-        evql = dummpy_query.evql
+        evql = dummy_query.evql
 
         # Generate NL
-        nl = "This is a dummy NL sentence"  # generate_nl(None)
+        # nl = "This is a dummy NL sentence"  # generate_nl(None)
+        nl = "What are the id of cars whose manufactured year is 2010?"
 
         # Wrap with Task class
         # TODO: handle table_excerpt, result table, and history

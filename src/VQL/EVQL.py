@@ -1,5 +1,6 @@
 import abc
 import copy
+import attrs
 from enum import IntEnum
 from typing import List
 
@@ -307,13 +308,13 @@ class Clause:
         return {"conditions": [condition.dump_json() for condition in self.conditions]}
 
 
+@attrs.define
 class EVQLNode:
-    def __init__(self, name, table_excerpt):
-        self.name = name
-        self.table_excerpt = table_excerpt
-        self._projection = Projection()
-        # Predicates follow DNF form. Hence, within each clause, conditions are joined with AND.
-        self._predicate = Predicate()
+    name: str = attrs.field()
+    table_excerpt: TableExcerpt = attrs.field()
+    sql = attrs.field(default="")
+    _projection: Projection = attrs.field(default=attrs.Factory(Projection))
+    _predicate: Predicate = attrs.field(default=attrs.Factory(Predicate))
 
     def __eq__(self, other):
         assert isinstance(other, EVQLNode), f"Expected type EVQLNode, but found:{type(EVQLNode)}"

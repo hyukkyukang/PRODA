@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Container, Box, Paper, Button, Step, Stepper, StepLabel, Grid } from "@mui/material";
+import { Box, Button, Container, Grid, Paper, Step, StepLabel, Stepper } from "@mui/material";
+import React, { useEffect, useMemo, useState } from "react";
 
-import { Instruction } from "../components/Collection/instruction";
-import { Task } from "../components/Collection/task";
-import { TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
-import { EVQLTable } from "../components/VQL/EVQLTable";
-import { UserAnswer, AnswerSheet } from "../components/Collection/answerSheet";
 import { fetchTask, sendWorkerAnswer } from "../api/connect";
+import { AnswerSheet, UserAnswer } from "../components/Collection/answerSheet";
+import { Task } from "../components/Collection/task";
+import { Header } from "../components/Header/collectionHeader";
+import { EVQLTable } from "../components/VQL/EVQLTable";
 
 export const Collection = (props: any) => {
     // Global state variables
@@ -58,25 +57,23 @@ export const Collection = (props: any) => {
 
     return (
         <React.Fragment>
-            <Grid container sx={{ background: "white", color: "black" }}>
+            <Grid container sx={{ background: "#f6efe8", color: "black" }}>
                 <Grid item xs={12}>
-                    <h1 style={{ marginLeft: "10px" }}>Data Collection</h1>
-                    {MyStepper}
+                    <Header />
                     <div style={{ marginLeft: "1%", width: "98%" }}>
-                        <Instruction taskType={currentTask?.taskType} />
-                        <br />
+                        {/* <Instruction taskType={currentTask?.taskType} /> */}
+                        {MyStepper}
+                        <AnswerSheet taskType={currentTask?.taskType} answer={answer} setAnswer={setAnswer} />
                         <Paper elevation={2}>
                             {receivedTasks && currentTask ? (
-                                <Box style={{ marginLeft: "15px" }}>
+                                <Box style={{ marginLeft: "15px", marginRight: "15px" }}>
                                     <br />
-                                    <b>Natural Language Query</b>
+                                    <b>Sentence</b>
                                     <br />
                                     <span>{currentTask?.nl}</span>
                                     <br />
-                                    <br />
                                     <Grid container spacing={2}>
-                                        <Grid item xs={12} sm={6}>
-                                            <b>EVQL</b>
+                                        <Grid item xs={12} sm={12}>
                                             <br />
                                             <EVQLTable
                                                 evqlRoot={{ node: currentTask.evql.node, children: currentTask.evql.children }}
@@ -97,8 +94,6 @@ export const Collection = (props: any) => {
                                 </Box>
                             ) : null}
                         </Paper>
-                        <br />
-                        <AnswerSheet taskType={currentTask?.taskType} answer={answer} setAnswer={setAnswer} />
                         <br />
                         <Button variant="contained" color="success" onClick={onSubmitHandler}>
                             Submit

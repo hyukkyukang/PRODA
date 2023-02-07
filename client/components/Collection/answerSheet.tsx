@@ -1,5 +1,7 @@
 import React, { useEffect } from "react";
-import { Typography, Input, Paper, Switch, FormGroup, FormControlLabel, createTheme, ThemeProvider } from "@mui/material";
+import { pink } from "@mui/material/colors";
+import Checkbox from "@mui/material/Checkbox";
+import { Typography, Input, Paper, FormGroup, FormControlLabel, createTheme, ThemeProvider } from "@mui/material";
 
 import { TaskTypes } from "./instruction";
 
@@ -46,11 +48,22 @@ const theme = createTheme({
 
 export const YesNoAnswerSheet = (props: { answer: UserAnswer; setAnswer: React.Dispatch<React.SetStateAction<UserAnswer>> }) => {
     const { answer, setAnswer } = props;
-    const [ischecked, setIsChecked] = React.useState<boolean>(false);
+    const [yesIsChecked, setYesIsChecked] = React.useState<boolean>(false);
+    const [noIsChecked, setNoIsChecked] = React.useState<boolean>(false);
 
-    const handleSwitchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setIsChecked(event.target.checked);
+    const handleIsYesClicked = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setYesIsChecked(event.target.checked);
+        if (event.target.checked) {
+            setNoIsChecked(false);
+        }
         setAnswer({ ...answer, isCorrect: event.target.checked });
+    };
+    const handleIsNoClicked = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setNoIsChecked(event.target.checked);
+        if (event.target.checked) {
+            setYesIsChecked(false);
+        }
+        setAnswer({ ...answer, isCorrect: !event.target.checked });
     };
 
     const inputHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,7 +77,16 @@ export const YesNoAnswerSheet = (props: { answer: UserAnswer; setAnswer: React.D
     const Button = (
         <ThemeProvider theme={theme}>
             <FormGroup>
-                <FormControlLabel control={<Switch onChange={handleSwitchChange} />} label={ischecked ? "Is Correct" : "Is not correct"} />
+                <div style={{ display: "inline", paddingLeft: "10px" }}>
+                    <div style={{ display: "inline-block" }}>
+                        Is correct
+                        <Checkbox color="success" checked={yesIsChecked} onChange={handleIsYesClicked} />
+                    </div>
+                    <div style={{ display: "inline-block", paddingLeft: "10px" }}>
+                        Is not correct
+                        <Checkbox sx={{ color: pink[600], "&.Mui-checked": { color: pink[600] } }} checked={noIsChecked} onChange={handleIsNoClicked} />
+                    </div>
+                </div>
             </FormGroup>
         </ThemeProvider>
     );
@@ -72,25 +94,35 @@ export const YesNoAnswerSheet = (props: { answer: UserAnswer; setAnswer: React.D
         <React.Fragment>
             <Paper elevation={2}>
                 <div style={{ marginLeft: "10px" }}>
-                    <Typography sx={{ paddingTop: "10px" }} variant="h6">
-                        Is the given natural language query correct?
-                    </Typography>
-                    <div style={{ marginLeft: "10px" }}>{Button}</div>
+                    <div style={{ display: "inline" }}>
+                        <div style={{ display: "inline-block" }}>
+                            <Typography sx={{ paddingTop: "10px" }} variant="h7">
+                                Does the given sentence correctly describe the given query?
+                            </Typography>
+                        </div>
+                        <div style={{ display: "inline-block" }}>
+                            <div style={{ marginLeft: "10px" }}>{Button}</div>
+                        </div>
+                    </div>
                 </div>
             </Paper>
             <br />
-            <br />
-            {!ischecked ? (
-                <Paper elevation={2}>
-                    <div style={{ marginLeft: "10px" }}>
-                        <Typography sx={{ paddingTop: "10px" }} variant="h6">
-                            What is the correct natural language query?
-                        </Typography>
-                        <Input value={answer.nl} placeholder="Type correct natural language query" sx={{ width: "98%" }} onChange={inputHandler} />
-                        <br />
-                        <br />
-                    </div>
-                </Paper>
+            {noIsChecked ? (
+                <>
+                    <Paper elevation={2}>
+                        <div style={{ marginLeft: "10px", display: "inline" }}>
+                            <div style={{ display: "inline-block" }}>
+                                <Typography sx={{ paddingTop: "10px" }} variant="h7">
+                                    What is the correct sentence? Please type it below.
+                                </Typography>
+                            </div>
+                            <div style={{ display: "inline-block", paddingLeft: "10px" }}>
+                                <Input value={answer.nl} placeholder="Type correct natural language query" sx={{ width: "400%" }} onChange={inputHandler} />
+                            </div>
+                        </div>
+                    </Paper>
+                    <br />
+                </>
             ) : null}
         </React.Fragment>
     );
@@ -112,7 +144,7 @@ export const AugmentationAnswerSheet = (props: { answer: UserAnswer; setAnswer: 
             <Paper elevation={2}>
                 <div style={{ marginLeft: "10px" }}>
                     <Typography sx={{ paddingTop: "10px" }} variant="h6">
-                        Please rephrase the given natural language query
+                        Please rephrase the given sentence so that it correctly describes the query
                     </Typography>
                     <Input defaultValue={answer.nl} placeholder="Type rephrased natural language query" sx={{ width: "98%" }} onChange={inputHandler} />
                     <br />
@@ -125,6 +157,7 @@ export const AugmentationAnswerSheet = (props: { answer: UserAnswer; setAnswer: 
 
 export const AnswerSheet = (props: AnswerSheetProps) => {
     const { taskType, answer, setAnswer } = props;
+    console.log("taskType", taskType);
     if (taskType === TaskTypes.YesNo) {
         return <YesNoAnswerSheet answer={answer} setAnswer={setAnswer} />;
     } else if (taskType === TaskTypes.NLAugmentation) {

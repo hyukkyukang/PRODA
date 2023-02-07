@@ -1,16 +1,15 @@
-import { useEffect, useState, MouseEventHandler } from "react";
-import { Divider, Button, Grid } from "@mui/material";
-
+import { Button, Divider, Grid } from "@mui/material";
+import { MouseEventHandler, useEffect, useState } from "react";
+import { fetchEVQL, runEVQL, runSQL } from "../api/connect";
+import { PGResultToTableExcerpt } from "../components/TableExcerpt/Postgres";
+import { ITableExcerpt, TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
+import { ITutorialSection } from "../components/Tutorial/sections/abstractSection";
+import { allTutorialSections, ProjectionSection } from "../components/Tutorial/sections/allSections";
+import { SideBar } from "../components/Tutorial/sidebar";
+import { EVQLTree } from "../components/VQL/EVQL";
+import { EVQLTables } from "../components/VQL/EVQLTable";
 import { demoDBName } from "../config";
 import { isEmptyObject } from "../utils";
-import { fetchEVQL, runEVQL, runSQL } from "../api/connect";
-import { EVQLTables } from "../components/VQL/EVQLTable";
-import { EVQLTree } from "../components/VQL/EVQL";
-import { ITableExcerpt, TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
-import { SideBar } from "../components/Tutorial/sidebar";
-import { allTutorialSections, ProjectionSection } from "../components/Tutorial/sections/allSections";
-import { ITutorialSection } from "../components/Tutorial/sections/abstractSection";
-import { PGResultToTableExcerpt } from "../components/TableExcerpt/Postgres";
 
 const DividerWithMargin: JSX.Element = (
     <>
