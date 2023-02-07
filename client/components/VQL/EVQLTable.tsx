@@ -73,7 +73,7 @@ export const EVQLColumnIndicator: ColumnIndicatorComponent = ({ column, label, s
             <>
                 <>{evqlTableHeader.name}</>
                 <br />
-                <div style={{ fontSize: "14px" }}>{"(" + aggFuncs.join(", ") + ")"}</div>
+                {aggFuncs.join(", ") == "none" ? <></> : <div style={{ fontSize: "14px" }}>{"(" + aggFuncs.join(", ") + ")"}</div>}
             </>
         );
     }
@@ -339,7 +339,7 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
                               setSelectedCoordinate={setSelectedCoordinate}
                               childListPath={path}
                               editable={editable && index + 1 == childPathLists.length}
-                              isFirstNode={index > 0 ? childPathLists[index - 1] : null}
+                              isFirstNode={Boolean(index > 0) ? Boolean(childPathLists[index - 1]) : null}
                           />
                           <br />
                           <br />

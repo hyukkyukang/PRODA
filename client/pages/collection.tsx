@@ -1,4 +1,4 @@
-import { Box, Button, Container, Grid, Paper, Step, StepLabel, Stepper } from "@mui/material";
+import { Box, Container, Grid, Paper, Step, StepLabel, Stepper } from "@mui/material";
 import React, { useEffect, useMemo, useState } from "react";
 
 import { fetchTask, sendWorkerAnswer } from "../api/connect";
@@ -61,9 +61,14 @@ export const Collection = (props: any) => {
                 <Grid item xs={12}>
                     <Header />
                     <div style={{ marginLeft: "1%", width: "98%" }}>
-                        {/* <Instruction taskType={currentTask?.taskType} /> */}
                         {MyStepper}
-                        <AnswerSheet taskType={currentTask?.taskType} answer={answer} setAnswer={setAnswer} />
+                        <AnswerSheet
+                            taskType={currentTask?.taskType}
+                            taskNL={currentTask?.nl}
+                            answer={answer}
+                            setAnswer={setAnswer}
+                            onSubmitHandler={onSubmitHandler}
+                        />
                         <Paper elevation={2}>
                             {receivedTasks && currentTask ? (
                                 <Box style={{ marginLeft: "15px", marginRight: "15px" }}>
@@ -82,23 +87,11 @@ export const Collection = (props: any) => {
                                                 isFirstNode={true}
                                             />
                                         </Grid>
-                                        {/* <Grid item xs={12} sm={6}>
-                                            currentSubTask.tableExcerpt && ? (<b>Table Excerpt</b>
-                                            <TableExcerpt queryResult={currentSubTask.tableExcerpt} />
-                                            <br />
-                                            <b>Query Result</b>
-                                            <TableExcerpt queryResult={currentSubTask.resultTable} />) : null
-                                        </Grid> */}
                                     </Grid>
                                     <br />
                                 </Box>
                             ) : null}
                         </Paper>
-                        <br />
-                        <Button variant="contained" color="success" onClick={onSubmitHandler}>
-                            Submit
-                        </Button>
-                        <br />
                         <br />
                     </div>
                 </Grid>
