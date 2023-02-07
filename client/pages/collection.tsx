@@ -1,5 +1,5 @@
 import { Box, Container, Grid, Paper, Step, StepLabel, Stepper } from "@mui/material";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useContext } from "react";
 
 import { fetchTask, sendWorkerAnswer } from "../api/connect";
 import { AnswerSheet, UserAnswer } from "../components/Collection/answerSheet";
@@ -7,7 +7,12 @@ import { Task } from "../components/Collection/task";
 import { Header } from "../components/Header/collectionHeader";
 import { EVQLTable } from "../components/VQL/EVQLTable";
 
+import { RefContext } from "../pages/_app";
+
 export const Collection = (props: any) => {
+    // Ref
+    const { targetRef } = useContext(RefContext);
+
     // Global state variables
     const [answer, setAnswer] = useState<UserAnswer>({ nl: "", type: 0 });
 
@@ -57,45 +62,47 @@ export const Collection = (props: any) => {
 
     return (
         <React.Fragment>
-            <Grid container sx={{ background: "#f6efe8", color: "black" }}>
-                <Grid item xs={12}>
-                    <Header />
-                    <div style={{ marginLeft: "1%", width: "98%" }}>
-                        {MyStepper}
-                        <AnswerSheet
-                            taskType={currentTask?.taskType}
-                            taskNL={currentTask?.nl}
-                            answer={answer}
-                            setAnswer={setAnswer}
-                            onSubmitHandler={onSubmitHandler}
-                        />
-                        <Paper elevation={2}>
-                            {receivedTasks && currentTask ? (
-                                <Box style={{ marginLeft: "15px", marginRight: "15px" }}>
-                                    <br />
-                                    <b>Sentence</b>
-                                    <br />
-                                    <span>{currentTask?.nl}</span>
-                                    <br />
-                                    <Grid container spacing={2}>
-                                        <Grid item xs={12} sm={12}>
-                                            <br />
-                                            <EVQLTable
-                                                evqlRoot={{ node: currentTask.evql.node, children: currentTask.evql.children }}
-                                                childListPath={[]}
-                                                editable={false}
-                                                isFirstNode={true}
-                                            />
+            <div ref={targetRef}>
+                <Grid container sx={{ background: "#f6efe8", color: "black" }}>
+                    <Grid item xs={12}>
+                        <Header />
+                        <div style={{ marginLeft: "1%", width: "98%" }}>
+                            {MyStepper}
+                            <AnswerSheet
+                                taskType={currentTask?.taskType}
+                                taskNL={currentTask?.nl}
+                                answer={answer}
+                                setAnswer={setAnswer}
+                                onSubmitHandler={onSubmitHandler}
+                            />
+                            <Paper elevation={2}>
+                                {receivedTasks && currentTask ? (
+                                    <Box style={{ marginLeft: "15px", marginRight: "15px" }}>
+                                        <br />
+                                        <b>Sentence</b>
+                                        <br />
+                                        <span>{currentTask?.nl}</span>
+                                        <br />
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} sm={12}>
+                                                <br />
+                                                <EVQLTable
+                                                    evqlRoot={{ node: currentTask.evql.node, children: currentTask.evql.children }}
+                                                    childListPath={[]}
+                                                    editable={false}
+                                                    isFirstNode={true}
+                                                />
+                                            </Grid>
                                         </Grid>
-                                    </Grid>
-                                    <br />
-                                </Box>
-                            ) : null}
-                        </Paper>
-                        <br />
-                    </div>
+                                        <br />
+                                    </Box>
+                                ) : null}
+                            </Paper>
+                            <br />
+                        </div>
+                    </Grid>
                 </Grid>
-            </Grid>
+            </div>
         </React.Fragment>
     );
 };
