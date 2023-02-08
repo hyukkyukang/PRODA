@@ -231,7 +231,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     if (!isEmptyObject(tableContext)) {
         return (
             <div style={{ overflow: "scroll" }}>
-                {evqlNode.table_excerpt ? <b>Table</b> : null}
+                {evqlNode.table_excerpt ? <b>Table:</b> : null}
                 {evqlNode.table_excerpt ? <TableExcerpt queryResult={evqlNode.table_excerpt} /> : null}
                 <b>EVQL:</b>
                 <br />

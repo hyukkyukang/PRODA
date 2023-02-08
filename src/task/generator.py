@@ -13,7 +13,7 @@ from src.utils.pg_connector import PostgresConnector
 TASK_TYPES = [1]
 
 dummy_query = CorrelatedNestedQuery()
-dummy_query = SelectionQuery()
+# dummy_query = SelectionQuery()
 
 
 class Task_Generator:

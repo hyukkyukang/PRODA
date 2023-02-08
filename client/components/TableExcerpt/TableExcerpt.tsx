@@ -151,7 +151,7 @@ export const TableExcerpt = (props: React.ComponentProps<any>) => {
     if (isEmptyObject(tableExcerpt)) {
         return <></>;
     } else if (isEmptyRow(tableExcerpt)) {
-        return <div style={{ marginLeft: "10px" }}>(0 rows)</div>;
+        return <div style={{ marginLeft: "10px" }}>No result (0 rows)</div>;
     }
     return (
         <Table
