@@ -378,6 +378,18 @@ class EVQLTree:
         return self.node == other.node and all(child in other.children for child in self.children)
 
     @property
+    def height(self):
+        if not self.children:
+            return 1
+        return max([child.height for child in self.children]) + 1
+
+    @property
+    def num_nodes(self):
+        if not self.children:
+            return 1
+        return sum([child.num_nodes for child in self.children]) + 1
+
+    @property
     def table_name(self):
         if self.children:
             return self.children[0].table_name

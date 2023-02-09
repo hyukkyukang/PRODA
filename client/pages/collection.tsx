@@ -21,7 +21,6 @@ export const Collection = (props: any) => {
     // Local state variables
     const [currentStep, setCurrentStep] = useState(0);
     const [receivedTasks, setReceivedTasks] = useState<Task[]>([]);
-    // const [currentTask, setCurrentTask] = useState<Task>();
     const currentTask = useMemo(() => (receivedTasks && receivedTasks[currentStep] ? receivedTasks[currentStep] : null), [receivedTasks, currentStep]);
 
     const MyStepper: JSX.Element = (
@@ -64,32 +63,22 @@ export const Collection = (props: any) => {
 
     const collectionBody = (
         <div style={{ marginLeft: "1%", width: "98%" }}>
-            {MyStepper}
+            {/* Show query information for the current task */}
             <AnswerSheet taskType={currentTask?.taskType} taskNL={currentTask?.nl} answer={answer} setAnswer={setAnswer} onSubmitHandler={onSubmitHandler} />
             <Paper elevation={2}>
                 <QuerySheet currentTask={currentTask} />
-                {/* {receivedTasks && currentTask ? (
-                    <Box style={{ marginLeft: "15px", marginRight: "15px" }}>
-                        <br />
-                        <b>Sentence:</b>
-                        <br />
-                        <span>{currentTask?.nl}</span>
-                        <br />
-                        <Grid container spacing={2}>
-                            <Grid item xs={12} sm={12}>
-                                <br />
-                                <EVQLTable
-                                    evqlRoot={{ node: currentTask.evql.node, children: currentTask.evql.children }}
-                                    childListPath={[]}
-                                    editable={false}
-                                    isFirstNode={true}
-                                />
-                            </Grid>
-                        </Grid>
-                        <br />
-                    </Box>
-                ) : null} */}
             </Paper>
+            {/* Show query information for the previous tasks (to complete the current task) */}
+            {currentTask?.history.map((prevTask, idx) => {
+                return (
+                    <React.Fragment>
+                        <br />
+                        <Paper elevation={2}>
+                            <QuerySheet currentTask={prevTask} />
+                        </Paper>
+                    </React.Fragment>
+                );
+            })}
             <br />
         </div>
     );

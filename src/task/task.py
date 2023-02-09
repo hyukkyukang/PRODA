@@ -22,6 +22,7 @@ class Task:
     db_name: str
     table_excerpt: TableExcerpt
     result_table: TableExcerpt
+    history: List["Task"] = attrs.field(default=[])
     block_id: str = attrs.field(default="1")
 
     def dump_json(self):
@@ -34,6 +35,7 @@ class Task:
             "dbName": self.db_name,
             "tableExcerpt": self.table_excerpt.dump_json() if self.table_excerpt else None,
             "resultTable": self.result_table.dump_json() if self.result_table else None,
+            "history": [task.dump_json() for task in self.history],
             "blockId": self.block_id,
         }
 
@@ -49,4 +51,5 @@ class Task:
             table_excerpt=TableExcerpt.load_json(json_obj["tableExcerpt"]) if json_obj["tableExcerpt"] else None,
             result_table=TableExcerpt.load_json(json_obj["resultTable"]) if json_obj["resultTable"] else None,
             block_id=json_obj["blockId"],
+            history=[Task.load_json(task) for task in json_obj["history"]],
         )

@@ -8,6 +8,8 @@ from pylogos.translate import translate
 from src.task import Task
 from src.utils.example_queries import CorrelatedNestedQuery, SelectionQuery
 from src.utils.pg_connector import PostgresConnector
+from src.VQL.EVQL import EVQLTree
+from src.query_tree.query_tree import Node, QueryBlock
 
 # TASK_TYPES = [1, 2]
 TASK_TYPES = [1]
@@ -81,38 +83,57 @@ class Task_Generator:
 
         return selected_type
 
-    def __call__(self) -> List[Task]:
+    def _query_to_task(self, evql: EVQLTree, query_tree: Node, is_recursive_call=False):
         # Select a query type to generate
         query_type = self.query_type
         task_type = self.task_type
 
         # Generate SQL
-        sql = dummy_query.sql
-        evql = dummy_query.evql
-        table_excerpt = dummy_query.evql.node.table_excerpt
-        query_tree = dummy_query.query_tree
-
-        # Generate EVQL
-        evql = dummy_query.evql
+        sql = evql.node.sql
+        table_excerpt = evql.node.table_excerpt
 
         # Generate NL
         # nl = "This is a dummy NL sentence"  # generate_nl(None)
         nl = "What are the id of cars whose manufactured year is 2010?"
 
+        # Create history
+        child_query_blocks = [edge.child for edge in query_tree.child_tables if type(edge.child) == QueryBlock]
+        assert len(child_query_blocks) == len(evql.children), f"{len(child_query_blocks)} != {len(evql.children)}"
+        history = (
+            []
+            if is_recursive_call
+            else [
+                self._query_to_task(child_node, child_block)
+                for child_node, child_block in zip(evql.children, child_query_blocks)
+            ]
+        )
+
+        # For each evql node
+
         # Wrap with Task class
         # TODO: handle table_excerpt, result table, and history
-        return [
-            Task(
-                nl=nl,
-                sql=sql,
-                evql=evql,
-                query_type=query_type,
-                task_type=task_type,
-                db_name="db_name",
-                table_excerpt=table_excerpt,
-                result_table=None,
-            )
-        ]
+        return Task(
+            nl=nl,
+            sql=sql,
+            evql=evql,
+            query_type=query_type,
+            task_type=task_type,
+            db_name="db_name",
+            table_excerpt=table_excerpt,
+            result_table=None,
+            history=history,
+        )
+
+    def __call__(self) -> List[Task]:
+        # Generate SQL
+        evql = dummy_query.evql
+        query_tree_root_node = dummy_query.query_tree.root
+
+        # For each evql node
+
+        # Wrap with Task class
+        # TODO: handle table_excerpt, result table, and history
+        return [self._query_to_task(evql, query_tree_root_node)]
 
     def convert_tasks_into_json_string(self, tasks: List[Task]) -> str:
         return json.dumps([task.dump_json() for task in tasks])

@@ -15,6 +15,16 @@ class Node(metaclass=abc.ABCMeta):
     def get_rows(self) -> List[List[Any]]:
         pass
 
+    @property
+    @abc.abstractmethod
+    def height(self) -> List[List[Any]]:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def num_nodes(self) -> List[List[Any]]:
+        pass
+
 
 class Edge(metaclass=abc.ABCMeta):
     def __init__(self, child: Node):
@@ -39,6 +49,14 @@ class BaseTable(Node):
     def __len__(self):
         return len(self.header)
 
+    @property
+    def height(self):
+        return 0
+
+    @property
+    def num_nodes(self):
+        return 0
+
     def get_headers(self) -> List[str]:
         return self.header
 
@@ -62,6 +80,14 @@ class QueryBlock(Node):
 
     def __len__(self):
         return sum(len(op) for op in self.operations if type(op) in [Projection, Foreach])
+
+    @property
+    def height(self):
+        return 1 + max(edge.child.height for edge in self.child_tables)
+
+    @property
+    def num_nodes(self) -> List[List[Any]]:
+        return 1 + sum(edge.child.num_nodes for edge in self.child_tables)
 
     def get_headers(self) -> List[str]:
         # Get header names
@@ -106,6 +132,14 @@ class QueryTree:
     def __init__(self, root: Node, sql: str):
         self.root: Node = root
         self.sql: str = sql
+
+    @property
+    def height(self):
+        return self.root.height
+
+    @property
+    def num_nodes(self):
+        return self.root.num_nodes
 
 
 # Helper functions
