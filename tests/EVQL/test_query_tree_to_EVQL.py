@@ -20,7 +20,14 @@ class Test_QueryTree_to_EVQL(unittest.TestCase):
     def _test_translation(self, query):
         query_tree = query.query_tree
         converted_evql = convert_queryTree_to_EVQLTree(query_tree)
-
+        self.assertTrue(
+            query_tree.height == converted_evql.height,
+            f"Height of query tree and EVQL tree are different, {query_tree.height} vs {converted_evql.height}",
+        )
+        self.assertTrue(
+            query_tree.num_nodes == converted_evql.num_nodes,
+            f"Number of nodes of query tree and EVQL tree are different, {query_tree.num_nodes} vs {converted_evql.num_nodes}",
+        )
         self.assertTrue(
             check_evql_equivalence(query.evql, converted_evql),
             "EVQL converted from query tree is different from the original EVQL",

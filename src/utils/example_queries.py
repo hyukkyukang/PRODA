@@ -593,7 +593,7 @@ class CorrelatedNestedQuery(TestQuery):
     @misc_utils.property_with_cache
     def evql(self) -> EVQLTree:
         # Create tree node 1
-        node_1 = EVQLNode(f"{car_table.name}_query", car_table)
+        node_1 = EVQLNode(f"{car_table.name}_query", car_table, "SELECT avg(max_speed) FROM cars")
         node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
         cond1 = Grouping(node_1.headers.index("model"))
         node_1.add_predicate(Clause([cond1]))
@@ -622,7 +622,7 @@ class CorrelatedNestedQuery(TestQuery):
         new_car_table = TableExcerpt.concatenate("cars2", car_table, result_table)
 
         # Create tree node 2
-        node_2 = EVQLNode(f"{new_car_table.name}_query", new_car_table)
+        node_2 = EVQLNode(f"{new_car_table.name}_query", new_car_table, self.sql)
         node_2.add_projection(Header(node_2.headers.index("id")))
         # Create conditions for the node
         cond2_1 = Selecting(
