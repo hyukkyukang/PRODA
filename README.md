@@ -7,6 +7,13 @@ This is a software to collect natural language and SQL pair data
 [![PRODA:EVQL Unittest](https://github.com/hyukkyukang/proda/actions/workflows/test_EVQL.yml/badge.svg)](https://github.com/hyukkyukang/PRODA/actions/workflows/test_EVQL.yml)
 [![PRODA:Deployment](https://github.com/hyukkyukang/proda/actions/workflows/deployment_main.yml/badge.svg)](https://github.com/hyukkyukang/PRODA/actions/workflows/deployment_main.yml)
 
+# How to run
+
+1. Setup docker container 
+2. Install and setup database
+3. Run server and client programs
+
+
 # Docker
 
 Using Dockerfile
@@ -23,6 +30,14 @@ docker-compose up -d
 ```
 
 # Setting system Databases
+
+0. Install and start Postgresql
+```
+apt update
+apt install postgresql postgresql-contrib
+service postgresql start
+```
+
 
 1. change user to get privilege
 
@@ -62,7 +77,3 @@ sh setup.sh
 1. cd ./server
 2. npm install
 3. node app.js
-
-# Docker Image
-
-docker pull hyukkyukang/proda:0.4
