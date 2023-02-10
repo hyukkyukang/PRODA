@@ -1,14 +1,26 @@
-import '../styles/globals.css'
-import type { AppProps } from 'next/app'
-import {Footer} from "../components/Footer/index";
+import "../styles/globals.css";
+import type { AppProps } from "next/app";
+import { Footer } from "../components/Footer/index";
+import { useRef } from "react";
+import React, { createContext } from "react";
 
-function MyApp({ Component, pageProps }: AppProps) {
-  return (
-  <>
-    <Component {...pageProps} />
-    <Footer/>
-  </>
-  );
+export interface IRefContext {
+    targetRef: React.LegacyRef<HTMLDivElement>;
 }
 
-export default MyApp
+export const RefContext = createContext({} as IRefContext);
+
+function MyApp({ Component, pageProps }: AppProps) {
+    const targetRef = useRef();
+
+    return (
+        <>
+            <RefContext.Provider value={{ targetRef }}>
+                <Component {...pageProps} />
+                <Footer targetRef={targetRef} />
+            </RefContext.Provider>
+        </>
+    );
+}
+
+export default MyApp;

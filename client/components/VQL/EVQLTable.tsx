@@ -73,7 +73,7 @@ export const EVQLColumnIndicator: ColumnIndicatorComponent = ({ column, label, s
             <>
                 <>{evqlTableHeader.name}</>
                 <br />
-                <div style={{ fontSize: "14px" }}>{"(" + aggFuncs.join(", ") + ")"}</div>
+                {aggFuncs.join(", ") == "none" ? <></> : <div style={{ fontSize: "14px" }}>{"(" + aggFuncs.join(", ") + ")"}</div>}
             </>
         );
     }
@@ -231,9 +231,10 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     if (!isEmptyObject(tableContext)) {
         return (
             <div style={{ overflow: "scroll" }}>
-                {evqlNode.table_excerpt ? <p>Table Excerpt:</p> : null}
+                {evqlNode.table_excerpt ? <b>Table:</b> : null}
                 {evqlNode.table_excerpt ? <TableExcerpt queryResult={evqlNode.table_excerpt} /> : null}
-                <p>EVQL:</p>
+                <b>EVQL:</b>
+                <br />
                 <div style={{ display: "inline-block" }}>
                     <Spreadsheet
                         className="table_sketch"
@@ -264,7 +265,9 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                         ))}
                     </div>
                 </div>
-                {resultTable ? <p>Result Table:</p> : null}
+                <br />
+                <br />
+                {resultTable ? <b>Result Table:</b> : null}
                 {resultTable ? <TableExcerpt queryResult={resultTable} /> : null}
             </div>
         );
@@ -336,7 +339,7 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
                               setSelectedCoordinate={setSelectedCoordinate}
                               childListPath={path}
                               editable={editable && index + 1 == childPathLists.length}
-                              isFirstNode={index > 0 ? childPathLists[index - 1] : null}
+                              isFirstNode={Boolean(index > 0) ? Boolean(childPathLists[index - 1]) : null}
                           />
                           <br />
                           <br />

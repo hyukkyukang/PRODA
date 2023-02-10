@@ -33,31 +33,39 @@ function getConfig() {
 /* Fetch information */
 function getEVQL(queryType) {
     var spawnSync = require("child_process").spawnSync;
-    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/VQL/example_queries.py`, "--query_type", queryType]);
+    var spawnedProcess = spawnSync("python3.10", [`${PathToPythonSrc}/utils/example_queries.py`, "--query_type", queryType]);
     var json_dumped_evql = spawnedProcess.stdout.toString();
-
-    // Try to parse string into JSON
     var evql = null;
-    try {
-        evql = JSON.parse(json_dumped_evql);
-    } catch (err) {
-        console.warn(`Error parsing JSON: ${err}`);
-        console.warn(`JSON string: ${json_dumped_evql}`);
+    // Check if empty
+    if (!json_dumped_evql) {
+        console.warn("No EVQL returned from Python script.");
+    } else {
+        // Try to parse string into JSON
+        try {
+            evql = JSON.parse(json_dumped_evql);
+        } catch (err) {
+            console.warn(`Error parsing JSON: ${err}`);
+            console.warn(`JSON string: ${json_dumped_evql}`);
+        }
     }
     return evql;
 }
 
 function getTask() {
     var spawnSync = require("child_process").spawnSync;
-    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/task/example_tasks.py`]);
+    var spawnedProcess = spawnSync("python3.10", [`${PathToPythonSrc}/task/generator.py`]);
     var result = spawnedProcess.stdout.toString();
     // Parse JSON string
     var taskData = null;
-    try {
-        taskData = JSON.parse(result);
-    } catch (err) {
-        console.warn(`Error parsing JSON: ${err}`);
-        console.warn(`JSON string: ${result}`);
+    if (!result) {
+        console.warn("No task returned from Python script.");
+    } else {
+        try {
+            taskData = JSON.parse(result);
+        } catch (err) {
+            console.warn(`Error parsing JSON: ${err}`);
+            console.warn(`JSON string: ${result}`);
+        }
     }
     return taskData;
 }

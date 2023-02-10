@@ -38,6 +38,7 @@ const toAntdColumns = (tableExcerpt: ITableExcerpt, flatRows: Cell[][]): Columns
         }
         // Add definiition for column
         columns.push({
+            key: colIdx,
             title: headerName,
             dataIndex: colIdx,
             render: (text) => <a>{text}</a>,
@@ -150,17 +151,15 @@ export const TableExcerpt = (props: React.ComponentProps<any>) => {
     if (isEmptyObject(tableExcerpt)) {
         return <></>;
     } else if (isEmptyRow(tableExcerpt)) {
-        return <div style={{ marginLeft: "10px" }}>(0 rows)</div>;
+        return <div style={{ marginLeft: "10px" }}>No result (0 rows)</div>;
     }
     return (
-        <>
-            <Table
-                columns={toAntdColumns(tableExcerpt, flatRows)}
-                dataSource={toAntdDataSource(flatRows)}
-                bordered
-                rowClassName={(record, index) => (index % 2 === 0 ? "table-row-light" : "table-row-dark")}
-            />
-        </>
+        <Table
+            columns={toAntdColumns(tableExcerpt, flatRows)}
+            dataSource={toAntdDataSource(flatRows)}
+            bordered
+            rowClassName={(record, index) => (index % 2 === 0 ? "table-row-light" : "table-row-dark")}
+        />
     );
 };
 

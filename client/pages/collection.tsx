@@ -1,29 +1,36 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Container, Box, Paper, Button, Step, Stepper, StepLabel, Grid } from "@mui/material";
+import { Box, Container, Grid, Paper, Step, StepLabel, Stepper } from "@mui/material";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 
-import { Instruction } from "../components/Collection/instruction";
-import { Task } from "../components/Collection/task";
-import { TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
-import { EVQLTable } from "../components/VQL/EVQLTable";
-import { UserAnswer, AnswerSheet } from "../components/Collection/answerSheet";
+import CircularProgress from "@mui/material/CircularProgress";
 import { fetchTask, sendWorkerAnswer } from "../api/connect";
+import { AnswerSheet, UserAnswer } from "../components/Collection/answerSheet";
+import { Task } from "../components/Collection/task";
+import { Header } from "../components/Header/collectionHeader";
+import { EVQLTable } from "../components/VQL/EVQLTable";
+
+import { QuerySheet } from "../components/Collection/querySheet";
+import { RefContext } from "../pages/_app";
 
 export const Collection = (props: any) => {
+    // Ref
+    const { targetRef } = useContext(RefContext);
+
     // Global state variables
     const [answer, setAnswer] = useState<UserAnswer>({ nl: "", type: 0 });
 
     // Local state variables
     const [currentStep, setCurrentStep] = useState(0);
-    const [currentTask, setCurrentTask] = useState<Task>();
-    const currentSubTask = useMemo(() => (currentTask && currentTask.subTasks ? currentTask.subTasks[currentStep] : null), [currentTask, currentStep]);
+    const [receivedTasks, setReceivedTasks] = useState<Task[]>([]);
+    // const [currentTask, setCurrentTask] = useState<Task>();
+    const currentTask = useMemo(() => (receivedTasks && receivedTasks[currentStep] ? receivedTasks[currentStep] : null), [receivedTasks, currentStep]);
 
     const MyStepper: JSX.Element = (
         <React.Fragment>
             <br />
-            {currentTask && currentTask.subTasks ? (
+            {receivedTasks && currentTask ? (
                 <Container maxWidth="xl">
                     <Stepper nonLinear activeStep={currentStep}>
-                        {Array(currentTask.subTasks.length)
+                        {Array(receivedTasks.length)
                             .fill(0)
                             .map((_, idx) => (
                                 <Step key={idx + 1}>
@@ -39,7 +46,7 @@ export const Collection = (props: any) => {
 
     const onSubmitHandler = () => {
         // Send current step's info to the server
-        sendWorkerAnswer({ task: { ...currentSubTask, queryType: currentTask?.queryType, dbName: currentTask?.dbName }, answer: answer, userId: "dummyUser" });
+        sendWorkerAnswer({ task: { ...currentTask, queryType: currentTask?.queryType, dbName: currentTask?.dbName }, answer: answer, userId: "dummyUser" });
         // Change state
         setCurrentStep(currentStep + 1);
         setAnswer({ ...answer, nl: "" });
@@ -47,69 +54,67 @@ export const Collection = (props: any) => {
 
     const fetchTaskHandler = async () => {
         const fetchedTask = await fetchTask();
-        console.log(`fecthed Task: ${fetchedTask}`);
-        setCurrentTask(fetchedTask);
+        console.log(`fecthed Task: ${JSON.stringify(fetchedTask)}`);
+        setReceivedTasks(fetchedTask);
     };
 
     useEffect(() => {
         fetchTaskHandler();
     }, []);
 
-    // console.log(`currentTask: ${JSON.stringify(currentTask)}`);
-    // return <></>;
+    const collectionBody = (
+        <div style={{ marginLeft: "1%", width: "98%" }}>
+            {MyStepper}
+            <AnswerSheet taskType={currentTask?.taskType} taskNL={currentTask?.nl} answer={answer} setAnswer={setAnswer} onSubmitHandler={onSubmitHandler} />
+            <Paper elevation={2}>
+                <QuerySheet currentTask={currentTask} />
+                {/* {receivedTasks && currentTask ? (
+                    <Box style={{ marginLeft: "15px", marginRight: "15px" }}>
+                        <br />
+                        <b>Sentence:</b>
+                        <br />
+                        <span>{currentTask?.nl}</span>
+                        <br />
+                        <Grid container spacing={2}>
+                            <Grid item xs={12} sm={12}>
+                                <br />
+                                <EVQLTable
+                                    evqlRoot={{ node: currentTask.evql.node, children: currentTask.evql.children }}
+                                    childListPath={[]}
+                                    editable={false}
+                                    isFirstNode={true}
+                                />
+                            </Grid>
+                        </Grid>
+                        <br />
+                    </Box>
+                ) : null} */}
+            </Paper>
+            <br />
+        </div>
+    );
+
+    const waitingBody = (
+        <div style={{ height: "100px", display: "flex", textAlign: "center", justifyContent: "center", alignItems: "center" }}>
+            <div style={{ display: "inline-block" }}>
+                <p> Loading data... </p>
+            </div>
+            <div style={{ display: "inline-block", paddingLeft: "3px", paddingBottom: "10px" }}>
+                <CircularProgress color="inherit" size="20px" />
+            </div>
+        </div>
+    );
 
     return (
         <React.Fragment>
-            <Grid container sx={{ background: "white", color: "black" }}>
-                <Grid item xs={12}>
-                    <h1 style={{ marginLeft: "10px" }}>Data Collection</h1>
-                    {MyStepper}
-                    <div style={{ marginLeft: "1%", width: "98%" }}>
-                        <Instruction taskType={currentTask?.taskType} />
-                        <br />
-                        <Paper elevation={2}>
-                            {currentTask && currentSubTask ? (
-                                <Box style={{ marginLeft: "15px" }}>
-                                    <br />
-                                    <b>Natural Language Query</b>
-                                    <br />
-                                    <span>{currentSubTask?.nl}</span>
-                                    <br />
-                                    <br />
-                                    <Grid container spacing={2}>
-                                        <Grid item xs={12} sm={6}>
-                                            <b>EVQL</b>
-                                            <br />
-                                            <EVQLTable
-                                                evqlRoot={{ node: currentSubTask.evql, children: [] }}
-                                                childListPath={[]}
-                                                editable={false}
-                                                isFirstNode={true}
-                                            />
-                                        </Grid>
-                                        {/* <Grid item xs={12} sm={6}>
-                                            currentSubTask.tableExcerpt && ? (<b>Table Excerpt</b>
-                                            <TableExcerpt queryResult={currentSubTask.tableExcerpt} />
-                                            <br />
-                                            <b>Query Result</b>
-                                            <TableExcerpt queryResult={currentSubTask.resultTable} />) : null
-                                        </Grid> */}
-                                    </Grid>
-                                    <br />
-                                </Box>
-                            ) : null}
-                        </Paper>
-                        <br />
-                        <AnswerSheet taskType={currentTask?.taskType} answer={answer} setAnswer={setAnswer} />
-                        <br />
-                        <Button variant="contained" color="success" onClick={onSubmitHandler}>
-                            Submit
-                        </Button>
-                        <br />
-                        <br />
-                    </div>
+            <div ref={targetRef}>
+                <Grid container sx={{ background: "#f6efe8", color: "black" }}>
+                    <Grid item xs={12}>
+                        <Header />
+                        {receivedTasks.length > 0 ? collectionBody : waitingBody}
+                    </Grid>
                 </Grid>
-            </Grid>
+            </div>
         </React.Fragment>
     );
 };

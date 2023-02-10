@@ -1,4 +1,10 @@
 from enum import IntEnum
+from typing import List
+
+import attrs
+
+from src.table_excerpt.table_excerpt import TableExcerpt
+from src.VQL.EVQL import EVQLTree
 
 
 class TaskTypes(IntEnum):
@@ -6,30 +12,41 @@ class TaskTypes(IntEnum):
     Validation = 2
 
 
+@attrs.define
 class Task:
-    def __init__(self, nl, sql, evql, table_excerpt, result_table, query_type, db_name, task_type, history=None):
-        self.nl = nl
-        self.sql = sql
-        self.evql = evql
-        self.query_type = query_type
-        self.task_type = task_type
-        self.db_name = db_name
-        self.table_excerpt = table_excerpt
-        self.result_table = result_table
-        self.history = history if history else []
+    nl: str
+    sql: str
+    evql: EVQLTree
+    query_type: IntEnum
+    task_type: IntEnum
+    db_name: str
+    table_excerpt: TableExcerpt
+    result_table: TableExcerpt
+    block_id: str = attrs.field(default="1")
 
     def dump_json(self):
         return {
             "nl": self.nl,
             "sql": self.sql,
             "evql": self.evql.dump_json(),
-            "table_excerpt": self.table_excerpt.dump_json() if self.table_excerpt else None,
-            "result_table": self.result_table.dump_json() if self.result_table else None,
             "queryType": self.query_type,
-            "dbName": self.db_name,
             "taskType": self.task_type,
-            "subTasks": [
-                {**history.dump_json(), **{"db_name": self.db_name, "task_type": self.task_type}}
-                for history in self.history
-            ],
+            "dbName": self.db_name,
+            "tableExcerpt": self.table_excerpt.dump_json() if self.table_excerpt else None,
+            "resultTable": self.result_table.dump_json() if self.result_table else None,
+            "blockId": self.block_id,
         }
+
+    @staticmethod
+    def load_json(json_obj):
+        return Task(
+            nl=json_obj["nl"],
+            sql=json_obj["sql"],
+            evql=EVQLTree.load_json(json_obj["evql"]),
+            query_type=json_obj["queryType"],
+            task_type=json_obj["taskType"],
+            db_name=json_obj["dbName"],
+            table_excerpt=TableExcerpt.load_json(json_obj["tableExcerpt"]) if json_obj["tableExcerpt"] else None,
+            result_table=TableExcerpt.load_json(json_obj["resultTable"]) if json_obj["resultTable"] else None,
+            block_id=json_obj["blockId"],
+        )
