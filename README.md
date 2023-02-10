@@ -12,7 +12,10 @@ This is a software to collect natural language and SQL pair data
 1. Setup docker container 
 2. Install and setup database
 3. Run server and client programs
-
+4. Access through web browser:
+    - localhost:3000/collection
+    - localhost:3000/tutorial
+    - localhost:3000/admin
 
 # Docker
 
