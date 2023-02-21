@@ -8,8 +8,9 @@ import { getNode, EVQLNodeToEVQLTable, getTreeTraversingPaths, parseExpressions,
 import { isEmptyObject } from "../../utils";
 import { runEVQL, runSQL } from "../../api/connect";
 import { ITableExcerpt, TableExcerpt } from "../TableExcerpt/TableExcerpt";
-import { demoDBName } from "../../config";
 import { PGResultToTableExcerpt } from "../TableExcerpt/Postgres";
+
+const demoDBName = process.env.NEXT_PUBLIC_DemoDBName
 
 // This is from react-spreadsheet-custom/src/selection.ts
 export enum EntireType {
@@ -41,7 +42,7 @@ export interface IEVQLVisualizationContext {
     setSelectedCoordinate?: React.Dispatch<React.SetStateAction<Coordinate | undefined>>;
     childListPath: number[];
     editable: boolean;
-    isFirstNode: boolean;
+    isFirstNode: boolean | undefined;
 }
 
 export interface EVQLTreeWrapperProps {
@@ -339,7 +340,7 @@ export const EVQLTables = (props: EVQLTreeWrapperProps) => {
                               setSelectedCoordinate={setSelectedCoordinate}
                               childListPath={path}
                               editable={editable && index + 1 == childPathLists.length}
-                              isFirstNode={Boolean(index > 0) ? Boolean(childPathLists[index - 1]) : null}
+                              isFirstNode={Boolean(index > 0) ? Boolean(childPathLists[index - 1]) : undefined}
                           />
                           <br />
                           <br />

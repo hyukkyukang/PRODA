@@ -11,7 +11,7 @@ export interface IRefContext {
 export const RefContext = createContext({} as IRefContext);
 
 function MyApp({ Component, pageProps }: AppProps) {
-    const targetRef = useRef();
+    const targetRef = useRef() as React.MutableRefObject<HTMLInputElement>;;
 
     return (
         <>

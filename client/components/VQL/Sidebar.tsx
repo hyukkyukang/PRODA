@@ -77,7 +77,7 @@ export const SideBar = (props: ISideBar) => {
         [selectedClauses, selectedCoordinate]
     );
     const selectedHeaderName = useMemo(
-        () => (selectedEVQLNode && selectedCoordinate ? selectedEVQLNode.header_names[selectedCoordinate.colIdx] : ""),
+        () => (selectedEVQLNode && selectedCoordinate ? selectedEVQLNode.headers[selectedCoordinate.colIdx] : ""),
         [selectedCoordinate, selectedEVQLNode, evqlRoot]
     );
     const [selectedExpressions, setSelectedExpressions] = React.useState<IExpressionData[]>([]);
@@ -139,7 +139,7 @@ export const SideBar = (props: ISideBar) => {
         conditionArrayToUse.length = 0;
         // Parse expression
         selectedExpressions.forEach((expressionData) => {
-            const newcondition = parseExpression(expressionData.expression, selectedEVQLNode.header_names);
+            const newcondition = parseExpression(expressionData.expression, selectedEVQLNode.headers);
             // If successfully parsed, add it to the condition array
             if (newcondition) conditionArrayToUse.push(newcondition);
         });
@@ -253,7 +253,7 @@ export const SideBar = (props: ISideBar) => {
             const existingExpressions: IExpressionData[] = selectedConditions
                 ? selectedConditions.map((condition) => ({
                       colIdx: condition.header_id,
-                      expression: conditionToExpression(condition, selectedEVQLNode.header_names),
+                      expression: conditionToExpression(condition, selectedEVQLNode.headers),
                   }))
                 : [];
             // Add default textfield if there are no expressions

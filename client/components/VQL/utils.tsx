@@ -1,8 +1,7 @@
-import { EVQLTree, EVQLNode, Header, Function, operators, unaryOperators, binaryOperators, aggFunctions } from "./EVQL";
-import { createEmptyMatrix, Matrix, CellBase } from "react-spreadsheet-custom";
+import { CellBase, createEmptyMatrix, Matrix } from "react-spreadsheet-custom";
+import { isArrayEqual, isEmptyObject, isNumber, removeMultipleSpaces, stripQutations } from "../../utils";
+import { aggFunctions, binaryOperators, EVQLNode, EVQLTree, Function, Header, operators, unaryOperators } from "./EVQL";
 import { IEVQLTable, IEVQLTableHeader } from "./EVQLTable";
-import { isEmptyObject, removeMultipleSpaces, isNumber, stripQutations, isArrayEqual } from "../../utils";
-import { Table, Row, Cell } from "../TableExcerpt/TableExcerpt";
 
 export const createEmptyValueMatrix = (numOfRow: number, numOfCol: number, readOnly?: boolean): Matrix<CellBase> => {
     var rows = createEmptyMatrix<CellBase>(numOfRow, numOfCol);
@@ -201,9 +200,15 @@ export const addEVQLNode = (evqlTree: EVQLTree, newHeaders: string[]): EVQLTree 
     // TODO: modify header_names if necessary in the parent node
     // TODO: Need to get result table from the previous query and make a new table excerpt
     const newNode: EVQLNode = {
-        table_excerpt: { headers: [...newHeaders] },
+        name: "dummy_name",
+        table_excerpt: { 
+            name: "new_node",
+            headers: [...newHeaders],
+            col_types: [],
+            rows: [],
+            base_table_names: [],
+        },
         headers: [...newHeaders],
-        foreach: null,
         projection: {
             headers: [],
         },
@@ -260,15 +265,3 @@ export const getProjectedNames = (evqlTree: EVQLTree, childListPath: number[]): 
     });
     return projectedNames;
 };
-
-// export const tableExcerptToVisualizableRows = (tableExceprt: Table): any[][] => {
-//     const rows: any[][] = [];
-//     tableExceprt.rows.forEach((row: Row) => {
-//         const rowDict: any = {};
-//         row.cells.forEach((cell: Cell, col_idx: number) => {
-//             rowDict[tableExceprt.headers[col_idx]] = cell.value;
-//         });
-//         rows.push(rowDict);
-//     });
-//     return rows;
-// };

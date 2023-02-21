@@ -1,4 +1,5 @@
 import { ITableExcerpt } from "./TableExcerpt";
+import {isNumber} from "../../utils";
 
 export interface PGResultFieldInterface {
     name: string;
@@ -34,10 +35,14 @@ export const PGResultToTableExcerpt = (pgResult: PGResultInterface): ITableExcer
                 cells: row.map((cell) => {
                     return {
                         value: cell,
+                        dtype: isNumber(cell) ? "number" : "string",
+                        is_repeating: false,
                     };
                 }),
             };
         }),
+        base_table_names: [],
     };
     return table;
 };
+
