@@ -10,20 +10,20 @@ import sqlite3
 from glob import glob
 from tqdm import tqdm
 from pandas.api.types import is_string_dtype,is_numeric_dtype
-import query_graph
-import utils
-import experiments
-import common
-import datasets
-import join_utils
-from gen_schema_new import SCHEMA as spider_schema
-from gen_schema import SCHEMA as original_schema
-from sql_genetion_modules import query_generator
-from sql_genetion_utils import  alias_generator, \
+import sql_gen_utils.query_graph
+import sql_gen_utils.utils
+import tools.experiments
+import sampler.common
+import datasets.datasets
+import sql_gen_utils.join_utils
+from tools.gen_schema_new import SCHEMA as spider_schema
+from tools.gen_schema import SCHEMA as original_schema
+from ssql_gen_utils.ql_genetion_modules import query_generator
+from sql_gen_utils.sql_genetion_utils import  alias_generator, \
                                     TEXTUAL_AGGS, \
                                     NUMERIC_AGGS
-from type_dicts import imdbDtypeDict, tpcdsDtypeDict
-from factorized_sampler import FactorizedSamplerIterDataset, JoinCountTableActor
+from datasets.type_dicts import imdbDtypeDict, tpcdsDtypeDict
+from sampler.factorized_sampler import FactorizedSamplerIterDataset, JoinCountTableActor
 
 SCHEMA = {k: v for k, v in list(spider_schema.items()) + list(original_schema.items())}
 #SCHEMA = {k: v for k, v in list(original_schema.items())}
@@ -147,7 +147,7 @@ def decode_key_column (df, db_id):
 
 
 def main(schema, dvs, column_dtype_dict, num_queries, output_path,log_path,log_step = 1,sep='#',SEED=1234,join_key_pred=True,only_executable=False):
-
+    
     all_table_set =  set(schema['join_tables'])
     join_clause_list = schema['join_clauses']
     join_keys = schema['join_keys']
@@ -213,7 +213,8 @@ def main(schema, dvs, column_dtype_dict, num_queries, output_path,log_path,log_s
         							dtype_dict, dvs, inner_query_objs, inner_query_graphs)
         except Exception as e:
             print(e)
-            continue
+            break
+            #continue
         n += 1
 
         do_write = True
