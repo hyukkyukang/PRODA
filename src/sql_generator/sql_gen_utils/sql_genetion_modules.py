@@ -1433,8 +1433,7 @@ def nested_query_generator (args, df, n, rng,
     # Step 1. Outer query generation
     select_columns, agg_cols, (used_tables, use_agg_sel) = select_generator(args, rng, table_columns_projection, dtype_dict, join_key_list, tables, group=sql_type_dict['group'], outer_inner='outer')
     if sql_type_dict['where']:
-        where_predicates, _, used_tables, _, tree_predicates_origin, predicates_origin= where_generator(args, rng, table_columns, dtype_dict, join_key_list, 6ㅅㄷㄹㅆㅆㅆㅆㅆㅅㅈㅆㅆㅆㅆㅅㅈㄹㄹㅉㅈㄹㄹㄹㄹㄹㄹㅉㅊㅅ ㄹ
-                        all_table_set, join_clause_list, join_key_pred, df, dvs, n, used_tables)
+        where_predicates, _, used_tables, _, tree_predicates_origin, predicates_origin= where_generator(args, rng, table_columns, dtype_dict, join_key_list, join_clause_list, join_key_pred, df, dvs, n, used_tables)
     else:
         where_predicates = []
         result_tuples = df

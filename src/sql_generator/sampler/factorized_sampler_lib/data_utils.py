@@ -7,7 +7,7 @@ import glog as log
 import numpy as np
 import pandas as pd
 
-import datasets
+import datasets.datasets as datasets
 
 CACHE_DIR = "./cache"
 

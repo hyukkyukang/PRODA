@@ -11,7 +11,7 @@ import glog as log
 import numpy as np
 import pandas as pd
 
-import sampler.common
+import sampler.common as common
 import datasets.datasets
 import tools.experiments
 import sampler.factorized_sampler_lib.data_utils as data_utils

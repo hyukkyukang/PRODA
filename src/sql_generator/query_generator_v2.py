@@ -9,14 +9,14 @@ from glob import glob
 from tqdm import tqdm
 from pandas.api.types import is_string_dtype,is_numeric_dtype
 import sql_gen_utils.query_graph
-import sql_gen_utils.utils
+import sql_gen_utils.utils as utils
 import tools.experiments
 import sampler.common
-import datasets.datasets
-import sql_gen_utils.join_utils
+import datasets.datasets as datasets
+import sql_gen_utils.join_utils as join_utils
 from tools.gen_schema_new import SCHEMA as spider_schema
 from tools.gen_schema import SCHEMA as original_schema
-from ssql_gen_utils.ql_genetion_modules import query_generator
+from sql_gen_utils.sql_genetion_modules import query_generator
 from sql_gen_utils.sql_genetion_utils import  alias_generator, \
                                     TEXTUAL_AGGS, \
                                     NUMERIC_AGGS
