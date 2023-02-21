@@ -1,5 +1,5 @@
 #import sql_genetion_utils
-from sql_gen_utils.sql_genetion_utils import *
+from sql_genetion_utils import *
 
 def nesting_type_selector (args, rng, only_nested=False, only_nonnested=False, inner_query_obj=None):
     assert not( only_nested and only_nonnested ), "Only nested and only nonnested options cannot be activated at the same time."

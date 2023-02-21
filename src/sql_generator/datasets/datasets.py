@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 import collections
-from common import CsvTable
+from sampler.common import CsvTable
 
 dataset_list = ['imdb', 'tpcds','toy','synthetic']
 
