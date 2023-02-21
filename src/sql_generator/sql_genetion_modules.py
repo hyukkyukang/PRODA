@@ -1,279 +1,12 @@
-from hashlib import new
-import numpy as np
-from numpy.lib.shape_base import column_stack
-import pandas as pd
-import json
+#import sql_genetion_utils
+from sql_genetion_utils import *
 
-# if is_null_support:
-# TEXTUAL_OPERATORS = ['=','!=','LIKE','NOT LIKE','IN','NOT IN','IS_NOT_NULL']
-TEXTUAL_OPERATORS = ['=','!=','LIKE','NOT LIKE','IN','NOT IN']
-NUMERIC_OPERATORS = ['<=','<','>=','>','=','!=']
-KEY_OPERATORS = ['=','!=']
-# else:
-# 	TEXTUAL_OPERATORS = ['=','!=','LIKE','NOT LIKE','IN','NOT IN']
-POSSIBLE_AGGREGATIONS_PER_OPERATOR = {
-    '=': ['MIN', 'MAX', 'AVG', 'SUM'],
-    '!=': ['MIN', 'MAX', 'AVG', 'SUM'],
-    '=_w': ['MIN', 'MAX', 'AVG', 'SUM'],
-    '!=_w': ['MIN', 'MAX', 'AVG', 'SUM'],
-    '<=': ['AVG', 'SUM'],
-    '<': ['MAX', 'AVG', 'SUM'],
-    '>=': ['AVG', 'SUM'],
-    '>': ['MIN', 'AVG', 'SUM'],
-    '<=_w': ['MAX', 'AVG', 'SUM'],
-    '<_w': ['MAX', 'AVG', 'SUM'],
-    '>=_w': ['MIN', 'AVG', 'SUM'],
-    '>_w': ['MIN', 'AVG', 'SUM'],
-}
-# (CONSIDERATION) larger/smaller than sum without condition is wierd? what if negative values exist
-
-NUMERIC_AGGS = ['MIN', 'MAX', 'AVG', 'SUM', 'COUNT']
-TEXTUAL_AGGS = ['COUNT']
-KEY_AGGS = ['MIN', 'MAX', 'COUNT']
-
-LOGICAL_OPERATORS = ['AND', 'OR']
-
-imdb_col_info = json.load(open('imdb_dtypedict.json'))
-HASH_CODES = imdb_col_info['hash_codes']
-NOTES = imdb_col_info['notes']
-IDS = imdb_col_info['ids']
-PRIMARY_KEYS = imdb_col_info['primary_keys']
-
-
-def alias_generator(args):
-    if args.db == 'imdb':
-        ALIAS_TO_TABLE_NAME = None
-        # ALIAS_TO_TABLE_NAME = {
-        #         'n':'name',
-        #         'mc':'movie_companies',
-        #         'an':'aka_name',
-        #         'mi':'movie_info',
-        #         'mk':'movie_keyword',
-        #         'pi':'person_info',
-        #         'cct':'comp_cast_type',
-        #         'cc':'complete_cast',
-        #         'ch_n':'char_name', 
-        #         'ml':'movie_link',
-        #         'ct':'company_type',
-        #         'ci':'cast_info',
-        #         'it':'info_type',
-        #         'cn':'company_name',
-        #         'at':'aka_title',
-        #         'kt':'kind_type',
-        #         'rt':'role_type',
-        #         'mi_idx':'movie_info_idx',
-        #         'k':'keyword',
-        #         'lt':'link_type',
-        #         't':'title',
-        #     }
-    elif args.db == 'tpcds':
-        ALIAS_TO_TABLE_NAME = {
-                'ss': 'store_sales',
-                'sr': 'store_returns',
-                'cs': 'catalog_sales',
-                'cr': 'catalog_returns',
-                'ws': 'web_sales',
-                'wr': 'web_returns',
-                'inv': 'inventory',
-                's': 'store',
-                'cc': 'call_center',
-                'cp': 'catalog_page',
-                'web': 'web_site',
-                'wp': 'web_page',
-                'w': 'warehouse',
-                'c': 'customer',
-                'ca': 'customer_address',
-                'cd': 'customer_demographics',
-                'd': 'date_dim',
-                'hd': 'household_demographics',
-                'i': 'item',
-                'ib': 'income_band',
-                'p': 'promotion',
-                'r': 'reason',
-                'sm': 'ship_mode',
-                't': 'time_dim',
-            }	
-    else:
-        ALIAS_TO_TABLE_NAME = None
-
-    if ALIAS_TO_TABLE_NAME:
-        TABLE_NAME_TO_ALIAS = dict()
-        for k,v in ALIAS_TO_TABLE_NAME.items():
-            TABLE_NAME_TO_ALIAS[v] = k
-    else:
-        TABLE_NAME_TO_ALIAS = None
-
-    return ALIAS_TO_TABLE_NAME, TABLE_NAME_TO_ALIAS
-
-
-def get_str_op_values(op,val,distinct_values,rng,num_in_max):
-    if op == '=':
-        return val
-    elif op == '!=':
-        v = rng.choice(distinct_values)
-        while (len(distinct_values) > 1) and (v is val): v = rng.choice(distinct_values) # not test yet
-        return str(v).strip()
-    elif op == 'LIKE':
-        val = str(rng.choice(val.split(' ')))
-        candidate_op_idx = rng.choice([0,1,2])
-        if len(val) > 7:
-            if candidate_op_idx == 0:
-                val = val[:7]
-            elif candidate_op_idx == 1:
-                val = val[-7:]
-            elif candidate_op_idx == 2:
-                start_idx = rng.randint(0,len(val)-7)
-                val = val[start_idx:start_idx+7]
-
-        candidate_vals = [f"{val}%",f"%{val}",f"%{val}%"]
-
-        # val = val.replace('"', '\\\"')
-        # return rng.choice([f"{val}%",f"%{val}",f"%{val}%"])
-
-        return candidate_vals[candidate_op_idx].replace('"', '\\\"')
-    elif op == 'NOT LIKE':
-        for i in range(10): #param
-            if len(distinct_values) == 1:
-                return rng.choice([f"{val}%",f"%{val}",f"%{val}%"])
-            distinct_values = distinct_values
-            candidate_val = str(rng.choice(distinct_values)).strip()
-
-            candidate_val = str(rng.choice(candidate_val.split(' ')))
-            if len(candidate_val) > 7:
-                start_idx = rng.randint(0,len(candidate_val)-7)
-                candidate_val = candidate_val[start_idx:start_idx+7]
-
-            candidate_op_idx = rng.choice([0,1,2])
-            candidate_vals = [f"{candidate_val}%",f"%{candidate_val}",f"%{candidate_val}%"]
-
-            if candidate_op_idx == 0:
-                if val.startswith(candidate_val):
-                    continue
-            elif candidate_op_idx == 1 :
-                if val.endswith(candidate_val):
-                    continue
-            elif candidate_op_idx == 2 :
-                if candidate_val in val:
-                    continue
-                
-            return candidate_vals[candidate_op_idx].replace('"', '\\\"')
-
-        return candidate_vals[candidate_op_idx].replace('"', '\\\"')
-    elif op == 'IN':
-        num_in_values = rng.randint(1, num_in_max+1) #param
-        index = np.argwhere(distinct_values==val)
-        distinct_values = np.delete(distinct_values, index)
-        candidate_val = rng.choice(distinct_values,size=min(len(distinct_values),num_in_values-1),replace=False)
-        in_values = np.insert(candidate_val,0,val)
-        num_in_values = len(in_values)
-        
-        if type(in_values[0]) == str:
-            in_value_txt = ','.join(["'%s'"%(v.strip().replace("'", "\\\'").replace('"', '\\\"')) for v in in_values])
-        else :
-            in_values = list(map(lambda i: "'%s'"%(str(i).strip().replace("'", "\\\'").replace('"', '\\\"')), in_values))
-            in_value_txt = ','.join(in_values)
-        in_value_txt = f"({in_value_txt})"
-        return in_value_txt, num_in_values
-
-    elif op == 'NOT IN':
-        num_in_values = rng.randint(1, num_in_max+1) #param
-        index = np.argwhere(distinct_values==val)
-        distinct_values = np.delete(distinct_values, index)
-        in_values = rng.choice(distinct_values,size=min(len(distinct_values),num_in_values),replace=False)
-        num_in_values = len(in_values)
-        
-        if type(in_values[0]) == str:
-            in_value_txt = ','.join(["'%s'"%(v.strip().replace("'", "\\\'").replace('"', '\\\"')) for v in in_values])
-        else :
-            in_values = list(map(lambda i: "'%s'"%(str(i).strip().replace("'", "\\\'").replace('"', '\\\"')), in_values))
-            in_value_txt = ','.join(in_values)
-        in_value_txt = f"({in_value_txt})"
-        return in_value_txt, num_in_values
-    elif op == 'IS_NULL':
-        return 'None'
-    elif op == 'IS_NOT_NULL':
-        return 'None'
-
-
-def split_predicate_tree_with_condition (predicates):
-    if not isinstance(predicates, list) or len(predicates) < 2:
-        return
-    if predicates[1] not in ['AND', 'OR']:
-        return
-    
-    parent_cond = True
-    if len(predicates) == 4:
-        parent_cond = predicates[3]
-    
-    if predicates[1] == 'AND':
-        predicates[0].append(parent_cond)
-        predicates[2].append(parent_cond)
-    else:
-        predicates[0].append(parent_cond)
-        predicates[2].append(False)
-
-    split_predicate_tree_with_condition (predicates[0])
-    split_predicate_tree_with_condition (predicates[2])
-
-
-def flatten_condition_predicate_tree (predicates):
-    if not isinstance(predicates, list) or len(predicates) <= 2:
-        return [predicates]
-    if predicates[1] not in ['AND', 'OR']:
-        return [predicates]
-
-    p1 = flatten_condition_predicate_tree(predicates[0])
-    p2 = flatten_condition_predicate_tree(predicates[2])
-
-    return p1 + p2
-
-
-def build_predicate_tree (rng, predicates):
-    while len(predicates) > 1:
-        selected_idx = rng.choice(range(len(predicates)), 2, replace=False)
-        selected_predicates = [predicates[i] for i in selected_idx]
-        op = rng.choice(LOGICAL_OPERATORS)
-
-        connected_predicates = [selected_predicates[0], op, selected_predicates[1]]
-
-        new_predicates = [p for idx, p in enumerate(predicates) if idx not in selected_idx] + [connected_predicates]
-        predicates = new_predicates
-
-    return predicates[0]
-
-
-def restore_predicate_tree (tree, predicates):
-    if len(tree) <= 2:
-        idx = tree[0]
-        return predicates[idx]
-
-    left = restore_predicate_tree (tree[0], predicates)
-    right = restore_predicate_tree (tree[2], predicates)
-
-    return [left, tree[1], right]
-
-
-def preorder_traverse (tree):
-    if not isinstance(tree, tuple) and not isinstance(tree, list):
-        return tree
-
-    assert len(tree) == 3 or len(tree) == 1
-
-    if len(tree) == 1:
-        assert len(tree[0]) == 3
-        left, op, right = tree[0]
-    elif len(tree) == 3:
-        left, op, right = tree
-
-    return '(' + preorder_traverse(left) + ' ' + op + ' ' + preorder_traverse(right) + ')'
-
-
-def nesting_type_selector (args, rng, only_nested=False, only_nonnested=False):
+def nesting_type_selector (args, rng, only_nested=False, only_nonnested=False, inner_query_obj=None):
     assert not( only_nested and only_nonnested ), "Only nested and only nonnested options cannot be activated at the same time."
 
     nesting_type_origin = ['non-nested', 'type-n', 'type-a', 'type-j', 'type-ja']
     if args.set_nested_query_type:
-        nesting_type_origin = ['non_nested']
+        nesting_type_origin = ['non-nested']
         if args.has_type_n:
             nesting_type_origin.append('type-n')
         if args.has_type_a:
@@ -282,6 +15,19 @@ def nesting_type_selector (args, rng, only_nested=False, only_nonnested=False):
             nesting_type_origin.append('type-j')
         if args.has_type_ja:
             nesting_type_origin.append('type-ja')
+
+    if inner_query_obj:
+        if inner_query_obj['use_agg_sel']:
+            if '*' in inner_query_obj['select'][0]:
+                nesting_type_origin = ['non-nested', 'type-ja']
+            else:
+                nesting_type_origin = ['non-nested', 'type-a', 'type-ja']
+        else:
+            if inner_query_obj['select'][0] == '*':
+                nesting_type_origin = ['non-nested', 'type-j']
+            else:
+                nesting_type_origin = ['non-nested', 'type-n', 'type-j']
+
     if only_nested:
         nesting_type = nesting_type_origin[rng.randint(1, len(nesting_type_origin))]
     elif only_nonnested:
@@ -291,8 +37,7 @@ def nesting_type_selector (args, rng, only_nested=False, only_nonnested=False):
 
     return nesting_type
 
-
-def nesting_position_selector (args, rng, nesting_type):
+def nesting_position_selector (args, rng, nesting_type, inner_query_obj=None):
     # Nesting Types:
     # - WHERE <column> <operator> <Inner query>
     # - WHERE <column> <IN/NOT IN> <Inner query>
@@ -306,16 +51,19 @@ def nesting_position_selector (args, rng, nesting_type):
         return 0
 
     elif nesting_type == 'type-j':
+        if inner_query_obj:
+            if inner_query_obj['select'][0] == '*':
+                return 2
         return rng.randint(0, 4)
 
     elif nesting_type == 'type-ja':
+        if inner_query_obj:
+            if '*' in inner_query_obj['select'][0]:
+                return 3
         return rng.choice([0, 3])
 
-
 def non_nested_query_form_selector (args, rng):
-    
     only_spj = args.query_type in ['spj-non-nested', 'spj-nested', 'spj-mix']
-    
     if only_spj:
         sql_type = {
             'where': bool(rng.randint(0, 2)),
@@ -352,8 +100,6 @@ def non_nested_query_form_selector (args, rng):
                 'limit': bool(rng.randint(0, 2))
             }
                 
-        
-    
     if not sql_type['group']:
         sql_type['having'] = False
 
@@ -361,7 +107,6 @@ def non_nested_query_form_selector (args, rng):
         sql_type['limit'] = False
 
     return sql_type
-
 
 def agg_selector (rng, use_agg, dtype_dict, join_key_list, col, outer_nesting_position=-1, outer_operator=None):
     if use_agg:
@@ -382,7 +127,6 @@ def agg_selector (rng, use_agg, dtype_dict, join_key_list, col, outer_nesting_po
         agg = 'NONE'
     
     return agg
-
 
 def select_generator (args, rng, cols, dtype_dict, join_key_list, tables,
                         group=False, outer_inner=None,
@@ -468,7 +212,6 @@ def select_generator (args, rng, cols, dtype_dict, join_key_list, tables,
 
     return columns, agg_cols, (used_tables, use_agg)
 
-
 def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
                         all_table_set, join_clause_list, join_key_pred,
                         df, dvs, n, used_tables,
@@ -485,7 +228,8 @@ def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
     # cols = predicates_cols
     # vals = list(df[predicates_cols].iloc[n])
 
-    tree_predicates = build_predicate_tree(rng, [[x] for x in range(num_predicate)])
+    tree_predicates = build_predicate_tree_cnf(rng, [[x] for x in range(num_predicate)])
+    tree_predicates_origin = copy.deepcopy(tree_predicates)
     if len(tree_predicates) == 1:
         tree_predicates.append(True)
     else:
@@ -494,6 +238,7 @@ def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
     sorted_conditions = sorted(flatten_tree, key=lambda x: x[0])
 
     predicates = list()
+    predicates_origin = list()
     nesting_col = None
     cond_idx = 0
 
@@ -557,7 +302,7 @@ def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
                     if op == 'IS_NOT_NULL':
                         vals[0] = v
                     else:
-                        vals[0] =  f"""\"{v}\""""
+                        vals[0] =  f'''\"{v}\"'''
 
         elif dtype_dict[col] == 'date' :
             if val == 'nan' or pd.isnull(val) :
@@ -609,15 +354,22 @@ def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
         used_tables.add(col.split('.')[0])
         if op in ['IS_NULL', 'IS_NOT_NULL']:
             predicate_str = prefix + col + ' ' + op
+            predicate_tuple = ( prefix_col, op, None )
         else:
             predicate_str = prefix + col + ' ' + op + ' ' + str(vals[0])
+            predicate_tuple = ( prefix+col, op, str(vals[0]) )
+        predicates_origin.append( predicate_tuple )
         predicates.append(predicate_str)
         cond_idx += 1
 
     if nesting_position != -1: # If nested query needs to be generated
         result_condition = sorted_conditions[-1][1]
         done = False
+        continue_count = 0
         while not done:
+            if continue_count > 100000:
+                raise Exception("Too many continue")
+            continue_count += 1
             if nesting_type in ['type-j', 'type-ja']:
                 correlation_column = rng.choice(table_columns)
             else:
@@ -639,7 +391,7 @@ def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
                 else:
                     op = rng.choice(NUMERIC_OPERATORS)
 
-                inner_query, inner_query_result = inner_query_generator(args, df, n, rng,
+                inner_query, inner_query_result, inner_obj = inner_query_generator(args, df, n, rng,
                                                     all_table_set, join_key_list, join_clause_list, join_key_pred,
                                                     dtype_dict, dvs,
                                                     nesting_position=nesting_position, nesting_type=nesting_type,
@@ -688,11 +440,17 @@ def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
                     num_result = len(new_result_guarantee_tuples)
                     if num_result < 1:
                         continue
+                    if num_result > 1:
+                        if "=" in op or "LIKE" in op:
+                            op += " ANY"
+                        else:
+                            op += rng.choice([" ANY", " ALL"])
                     result_guarantee_tuples = new_result_guarantee_tuples
                     # result_guarantee_predicates.append(query_predicate)
 
                 used_tables.add(col.split('.')[0])
                 predicate_str = prefix + col + ' ' + op + ' (' + inner_query + ')'
+                predicate_tuple = ( prefix+col, op, '(' + inner_query + ')', inner_obj )
                 nesting_col = col
                 done = True
             
@@ -703,7 +461,7 @@ def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
                     continue
                 op = rng.choice(['IN', 'NOT IN'])
 
-                inner_query, inner_query_result = inner_query_generator(args, df, n, rng,
+                inner_query, inner_query_result, inner_obj = inner_query_generator(args, df, n, rng,
                                                     all_table_set, join_key_list, join_clause_list, join_key_pred,
                                                     dtype_dict, dvs,
                                                     nesting_position=nesting_position, nesting_type=nesting_type,
@@ -746,13 +504,14 @@ def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
 
                 used_tables.add(col.split('.')[0])
                 predicate_str = prefix + col + ' ' + op + ' (' + inner_query + ')'
+                predicate_tuple = ( prefix+col, op, '(' + inner_query + ')', inner_obj )
                 nesting_col = col
                 done = True
                 break
 
             elif nesting_position == 2:
-                op = rng.choice(['EXIST', 'NOT EXIST'])
-                inner_query, inner_query_result = inner_query_generator(args, df, n, rng,
+                op = rng.choice(['EXISTS', 'NOT EXISTS'])
+                inner_query, inner_query_result, inner_obj = inner_query_generator(args, df, n, rng,
                                                     all_table_set, join_key_list, join_clause_list, join_key_pred,
                                                     dtype_dict, dvs,
                                                     nesting_position=nesting_position, nesting_type=nesting_type,
@@ -771,7 +530,7 @@ def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
                                 break
 
                         num_result = len(cur_group) if cur_group is not None else 0
-                        if (num_result > 0 and op == 'EXIST') or (num_result < 1 and op == 'NOT EXIST'):
+                        if (num_result > 0 and op == 'EXISTS') or (num_result < 1 and op == 'NOT EXISTS'):
                             new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl.iloc[0])
 
                     num_result = len(new_result_guarantee_tuples)
@@ -779,6 +538,7 @@ def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
                         continue
 
                 predicate_str = op + ' (' + inner_query + ')'
+                predicate_tuple = ( None, op, '(' + inner_query + ')', inner_obj )
                 done = True
                 break
 
@@ -795,7 +555,7 @@ def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
 
                 # val = randomly_select_value_from_column()
 
-                inner_query, inner_query_result = inner_query_generator(args, df, n, rng,
+                inner_query, inner_query_result, inner_obj = inner_query_generator(args, df, n, rng,
                                                     all_table_set, join_key_list, join_clause_list, join_key_pred,
                                                     dtype_dict, dvs,
                                                     nesting_position=nesting_position, nesting_type=nesting_type,
@@ -855,48 +615,15 @@ def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
                     # result_guarantee_predicates.append(query_predicate)
                 
                 predicate_str = '(' + inner_query + ') ' + op + ' ' + str(val)
+                predicate_tuple = ( '(' + inner_query + ')', op, str(val), inner_obj )
                 done = True
                 break
 
-        # for i, val in enumerate(vals):
-        #     if nesting_position == 1:
-        #         op = rng.choice(['IN', 'NOT IN'])
-        #         used_tables.add(col.split('.')[0])
-        #         predicate_str = col + ' ' + op + ' ' + '|INNER_QUERY|'
-        #         nesting_col = col
-        #         done = True
-        #         break
-
-        #     elif nesting_position == 0:
-        #         # (FIX #5) Non-textual column for type-a, type-ja nested query
-        #         # for <col> <op> <inner query> form
-        #         if nesting_type in ['type-a', 'type-ja'] and dtype_dict[col] == 'str':
-        #             continue
-        #         if dtype_dict[col] == 'str':
-        #             op = rng.choice(TEXTUAL_OPERATORS[0:3])
-        #         else:
-        #             op = rng.choice(NUMERIC_OPERATORS)
-
-        #         used_tables.add(col.split('.')[0])
-        #         predicate_str = col + ' ' + op + ' ' + '|INNER_QUERY|'
-        #         nesting_col = col
-        #         done = True
-        #         break
-
-        #     elif nesting_position == 2:
-        #         op = rng.choice(['EXIST', 'NOT EXIST'])
-        #         predicate_str = op + ' ' + '|INNER_QUERY|'
-        #         done = True
-        #         break
-
-        #     else:
-        #         predicate_str = '|INNER_QUERY| |OP| |VAL|'
-        #         done = True
-        #         break
-        
         if not done:
             raise Exception()
+        print(inner_query)
         predicates.append(predicate_str)
+        predicates_origin.append( predicate_tuple )
 
     tree_predicates = restore_predicate_tree(tree_predicates, predicates)
 
@@ -905,29 +632,370 @@ def where_generator (args, rng, table_columns, dtype_dict, join_key_list,
         correlation_predicate = 'O_' + outer_correlation_column + ' = I_' + outer_correlation_column
         tree_predicates = [(correlation_predicate, 'AND', tree_predicates)]
         result_guarantee_tuples = result_guarantee_tuples.groupby(outer_correlation_column)
+        used_tables.add(outer_correlation_column.split('.')[0])
 
-    return tree_predicates, nesting_col, used_tables, result_guarantee_tuples
+    return tree_predicates, nesting_col, used_tables, result_guarantee_tuples, tree_predicates_origin, predicates_origin
+
+def nested_predicate_generator (args, rng, table_columns, dtype_dict, join_key_list,
+                        all_table_set, join_clause_list, join_key_pred,
+                        df, dvs, n, used_tables,
+                        outer_inner=None,
+                        nesting_position=-1, nesting_type='non-nested',
+                        outer_correlation_column=None, inner_query_obj=None):
+    
+    num_predicate = 1
+
+    tree_predicates = build_predicate_tree_cnf(rng, [[x] for x in range(num_predicate)])
+    if len(tree_predicates) == 1:
+        tree_predicates.append(True)
+    else:
+        split_predicate_tree_with_condition(tree_predicates)
+    flatten_tree = flatten_condition_predicate_tree(tree_predicates)
+    sorted_conditions = sorted(flatten_tree, key=lambda x: x[0])
+
+    predicates = list()
+    nesting_col = None
+    cond_idx = 0
+
+    result_guarantee_predicates = list()
+    result_guarantee_tuples = df
+
+    if outer_inner == 'outer':
+        prefix = 'O_'
+    elif outer_inner == 'inner':
+        prefix = 'I_'
+    else:
+        prefix = ''
+
+    continue_cnt = 0
+    
+    result_condition = sorted_conditions[-1][1]
+    done = False
+    while not done:
+        if nesting_type in ['type-j', 'type-ja']:
+            if inner_query_obj:
+                inner_query_tables = inner_query_obj['tables']
+                inner_query_columns = [table_column for table_column in table_columns if table_column.split('.')[0] in inner_query_tables]
+                correlation_column = rng.choice(inner_query_columns)
+            else:
+                correlation_column = rng.choice(table_columns)
+        else:
+            correlation_column = None
+        if nesting_position == 0:
+            if inner_query_obj:
+                assert len(inner_query_obj['agg_cols']) == 1
+                col = inner_query_obj['agg_cols'][0][1] #col
+            else:
+                column_idx = rng.randint(0, len(table_columns))
+                col = table_columns[column_idx]
+            if correlation_column and col == correlation_column:
+                continue
+
+            # (FIX #5) Non-textual column for type-a, type-ja nested query
+            # for <col> <op> <inner query> form
+
+            if nesting_type in ['type-a', 'type-ja'] and dtype_dict[col] == 'str':
+                continue
+            if nesting_type in ['type-a', 'type-ja'] and col in IDS:
+                continue
+            if dtype_dict[col] == 'str' and nesting_type not in ['type-a', 'type-ja']:
+                op = rng.choice(TEXTUAL_OPERATORS[0:3])
+            else:
+                op = rng.choice(NUMERIC_OPERATORS)
+            
+            if inner_query_obj is None:
+                inner_query, inner_query_result, _ = inner_query_generator(args, df, n, rng,
+                                                all_table_set, join_key_list, join_clause_list, join_key_pred,
+                                                dtype_dict, dvs,
+                                                nesting_position=nesting_position, nesting_type=nesting_type,
+                                                outer_table_pool=None,
+                                                nesting_column=col, correlation_column=correlation_column,
+                                                outer_operator=op)
+            else:
+                inner_query, inner_query_result = inner_query_obj_to_inner_query(args, df, n, rng, inner_query_obj, dtype_dict, dvs, nesting_column=col, correlation_column=correlation_column)
+            # assert len(inner_query_result) == 1, "The number of result of inner query should be 1"
+
+            if result_condition:
+                if nesting_type in ['type-j', 'type-ja']:
+                    new_result_guarantee_tuples = pd.DataFrame([], columns=result_guarantee_tuples.columns)
+                    for tid in range(len(result_guarantee_tuples)):
+                        tpl = result_guarantee_tuples.iloc[[tid]]
+
+                        cur_group = None
+                        for key, item in inner_query_result:
+                            if key == tpl[correlation_column].iloc[0]:
+                                cur_group = item
+                                break
+                        if cur_group is None or (type(cur_group.iloc[0,1]) != str and np.isnan(cur_group.iloc[0,1])):
+                            continue
+
+                        result_val = cur_group.iloc[0, 1]
+                        if dtype_dict[col] == 'str' and nesting_type != 'type-ja':
+                            if op in ['=', '!=']:
+                                result_val = '"' + result_val + '"'
+                            else:
+                                result_val = '"' + rng.choice(['%', '']) + result_val + rng.choice(['%', '']) + '"'
+                        query_predicate = predicate_generator(col, op, str(result_val))
+                        query_result = tpl.query(query_predicate)
+                        if len(query_result) > 0:
+                            new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl.iloc[0])
+                else:
+                    result_val = inner_query_result.iloc[0, 0] # Get the value of the inner query
+                    if type(result_val) != str and np.isnan(result_val):
+                        continue
+
+                    if dtype_dict[col] == 'str' and nesting_type != 'type-a':
+                        if op in ['=', '!=']:
+                            result_val = '"' + result_val + '"'
+                        else:
+                            result_val = '"' + rng.choice(['%', '']) + result_val + rng.choice(['%', '']) + '"'
+                    query_predicate = predicate_generator(col, op, str(result_val))
+                    new_result_guarantee_tuples = result_guarantee_tuples.query(query_predicate)
+
+                num_result = len(new_result_guarantee_tuples)
+                if num_result < 1:
+                    continue
+                result_guarantee_tuples = new_result_guarantee_tuples
+                # result_guarantee_predicates.append(query_predicate)
+
+            used_tables.add(col.split('.')[0])
+            predicate_str = prefix + col + ' ' + op + ' (' + inner_query + ')'
+            nesting_col = col
+            done = True
+        
+        elif nesting_position == 1:
+            if inner_query_obj:
+                assert len(inner_query_obj['agg_cols']) == 1
+                col = inner_query_obj['agg_cols'][0][1] #col
+            else:
+                column_idx = rng.randint(0, len(table_columns))
+                col = table_columns[column_idx]
+
+            if correlation_column and col == correlation_column:
+                continue
+            op = rng.choice(['IN', 'NOT IN'])
+
+            if inner_query_obj is None:
+                inner_query, inner_query_result, _ = inner_query_generator(args, df, n, rng,
+                                                all_table_set, join_key_list, join_clause_list, join_key_pred,
+                                                dtype_dict, dvs,
+                                                nesting_position=nesting_position, nesting_type=nesting_type,
+                                                outer_table_pool=None,
+                                                nesting_column=col, correlation_column=correlation_column)
+            else:
+                inner_query, inner_query_result = inner_query_obj_to_inner_query(args, df, n, rng, inner_query_obj, dtype_dict, dvs, nesting_column=col, correlation_column=correlation_column)
+            # assert len(inner_query_result) == 1, "The number of column of inner query should be 1"
+            if result_condition:
+                new_result_guarantee_tuples = pd.DataFrame([], columns=result_guarantee_tuples.columns)
+                if nesting_type in ['type-j', 'type-ja']:
+                    for tid in range(len(result_guarantee_tuples)):
+                        tpl = result_guarantee_tuples.iloc[[tid]]
+
+                        cur_group = None
+                        for key, item in inner_query_result:
+                            if key == tpl[correlation_column].iloc[0]:
+                                cur_group = item
+                                break
+                        if cur_group is None:
+                            continue
+                        result_val = list(cur_group.iloc[:,1])
+
+                        column_value = tpl[col].iloc[0]
+                        if (column_value in result_val and op == 'IN') or (column_value not in result_val and op == 'NOT IN'):
+                            new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl.iloc[0])
+
+                else:
+                    result_val = list(inner_query_result.iloc[:, 0]) # Get the values of the inner query
+                    for tid in range(len(result_guarantee_tuples)):
+                        tpl = result_guarantee_tuples.iloc[[tid]]
+                        column_value = tpl[col].iloc[0]
+                        if column_value in result_val:
+                            new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl)
+
+                num_result = len(new_result_guarantee_tuples)
+                if num_result < 1:
+                    continue
+                result_guarantee_tuples = new_result_guarantee_tuples
+                # result_guarantee_predicates.append(query_predicate)
 
 
-def group_generator (args, rng, cols, dtype_dict, group=False):
+            used_tables.add(col.split('.')[0])
+            predicate_str = prefix + col + ' ' + op + ' (' + inner_query + ')'
+            nesting_col = col
+            done = True
+            break
+
+        elif nesting_position == 2:
+            op = rng.choice(['EXISTS', 'NOT EXISTS'])
+            if inner_query_obj is None:
+                inner_query, inner_query_result, _ = inner_query_generator(args, df, n, rng,
+                                                all_table_set, join_key_list, join_clause_list, join_key_pred,
+                                                dtype_dict, dvs,
+                                                nesting_position=nesting_position, nesting_type=nesting_type,
+                                                outer_table_pool=None,
+                                                correlation_column=correlation_column)
+            else:
+                inner_query, inner_query_result = inner_query_obj_to_inner_query(args, df, n, rng, inner_query_obj, dtype_dict, dvs, correlation_column=correlation_column)
+
+            if result_condition: # Always correlation condition
+                new_result_guarantee_tuples = pd.DataFrame([], columns=result_guarantee_tuples.columns)
+                for tid in range(len(result_guarantee_tuples)):
+                    tpl = result_guarantee_tuples.iloc[[tid]]
+
+                    cur_group = None
+                    for key, item in inner_query_result:
+                        if key == tpl[correlation_column].iloc[0]:
+                            cur_group = item
+                            break
+
+                    num_result = len(cur_group) if cur_group is not None else 0
+                    if (num_result > 0 and op == 'EXISTS') or (num_result < 1 and op == 'NOT EXISTS'):
+                        new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl.iloc[0])
+
+                num_result = len(new_result_guarantee_tuples)
+                if num_result < 1:
+                    continue
+
+            predicate_str = op + ' (' + inner_query + ')'
+            done = True
+            break
+
+        elif nesting_position == 3:
+            if inner_query_obj:
+                assert len(inner_query_obj['agg_cols']) == 1
+                col = inner_query_obj['agg_cols'][0][1] #col
+            else:
+                column_idx = rng.randint(0, len(table_columns))
+                col = table_columns[column_idx]
+            if correlation_column and col == correlation_column:
+                continue
+
+            if '*' not in col and dtype_dict[col] == 'str' and nesting_type not in ['type-a', 'type-ja']:
+                op = rng.choice(TEXTUAL_OPERATORS[0:3])
+            else:
+                op = rng.choice(NUMERIC_OPERATORS)
+
+            # val = randomly_select_value_from_column()
+
+            if inner_query_obj is None:
+                inner_query, inner_query_result, _ = inner_query_generator(args, df, n, rng,
+                                                all_table_set, join_key_list, join_clause_list, join_key_pred,
+                                                dtype_dict, dvs,
+                                                nesting_position=nesting_position, nesting_type=nesting_type,
+                                                outer_table_pool=None,
+                                                nesting_column=col, correlation_column=correlation_column)
+            else:
+                inner_query, inner_query_result = inner_query_obj_to_inner_query(args, df, n, rng, inner_query_obj, dtype_dict, dvs, nesting_column=col, correlation_column=correlation_column)
+            # Always correlation condition
+        
+            if len(inner_query_result) == 0:
+                continue
+
+            if op in ['=', '>=', '<=']:
+                cur_group = None
+                for key, item in inner_query_result:
+                    if key == result_guarantee_tuples[correlation_column].iloc[0]:
+                        cur_group = item
+                        break
+                if cur_group is None:
+                    continue
+                val = cur_group[col].iloc[0]
+                if type(val) != str and np.isnan(val):
+                    continue
+            else:
+                tid = rng.randint(0, len(inner_query_result))
+                val = inner_query_result[tid][1].iloc[0,1]
+                if type(val) != str and np.isnan(val):
+                    continue
+
+            if '*' not in col and dtype_dict[col] == 'str' and nesting_type not in ['type-a', 'type-ja']:
+                if op in ['=', '!=']:
+                    val = '"' + val + '"'
+                else:
+                    val = '"' + rng.choice(['%', '']) + val + rng.choice(['%', '']) + '"'
+
+            if result_condition: # (TODO) Add correlation checker
+                new_result_guarantee_tuples = pd.DataFrame([], columns=result_guarantee_tuples.columns)
+                for tid in range(len(result_guarantee_tuples)):
+                    tpl = result_guarantee_tuples.iloc[[tid]]
+
+                    cur_group = None
+                    for key, item in inner_query_result:
+                        if key == tpl[correlation_column].iloc[0]:
+                            cur_group = item
+                            break
+                    if cur_group is None:
+                        continue
+
+                    query_predicate = predicate_generator(col, op, str(val))
+                    predicate_result = cur_group.query(query_predicate)
+                    num_result = len(predicate_result)
+                    if num_result > 0:
+                        new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl.iloc[0])
+
+                num_result = len(new_result_guarantee_tuples)
+                if num_result < 1:
+                    continue
+                result_guarantee_tuples = new_result_guarantee_tuples
+                # result_guarantee_predicates.append(query_predicate)
+            
+            predicate_str = '(' + inner_query + ') ' + op + ' ' + str(val)
+            done = True
+            break
+        
+    if not done:
+        raise Exception()
+    predicates.append(predicate_str)
+
+    tree_predicates = restore_predicate_tree(tree_predicates, predicates)
+    
+
+    query_graph = None
+
+    return tree_predicates, nesting_col, used_tables, result_guarantee_tuples, query_graph
+
+def group_generator (args, rng, cols, dtype_dict, group=False, outer_inner = 'non-nested'):
     min_group, max_group = args.num_group_min, args.num_group_max
     num_group = rng.randint(min_group, max_group)
 
+    if outer_inner == 'outer':
+        prefix = 'O_'
+    elif outer_inner == 'inner':
+        prefix = 'I_'
+    else:
+        prefix = ''
+
     columns = rng.choice(cols, num_group, replace=False)
 
-    return columns
+    columns_with_prefix = [prefix + col for col in columns]
 
+    return columns, columns_with_prefix
 
-def hainvg_generator (args, rng, table_columns, group_columns, dtype_dict, df, dvs, n):
+def hainvg_generator (args, rng, table_columns, group_columns, dtype_dict, df, dvs, n, used_tables, outer_inner = 'non-nested'):
     min_pred_num = args.num_having_min
     max_pred_num = args.num_having_max
 
-    num_predicate = rng.randint(min_pred_num, min(len(table_columns),max_pred_num)+1)
-    predicates_cols = list(rng.choice(table_columns, num_predicate, replace=True))
+    having_candidate_columns = [table_column for table_column in table_columns if table_column not in list(group_columns)] + ["*"]
+    num_predicate = rng.randint(min_pred_num, min(len(having_candidate_columns),max_pred_num)+1)
+    predicates_cols = list(rng.choice(having_candidate_columns, num_predicate, replace=True))
 
-    
+    if outer_inner == 'outer':
+        prefix = 'O_'
+    elif outer_inner == 'inner':
+        prefix = 'I_'
+    else:
+        prefix = ''
+
+    # [TODO] 
     cols = predicates_cols
-    vals = list(df[predicates_cols].iloc[n])
+    # vals for *
+    # vals for specific columns
+    vals = list()
+    for predicates_col in  predicates_cols:
+        if predicates_col == "*":
+             vals.append(n)
+        else:
+             vals.append( df[predicates_col].iloc[n])
     ops = list()
 
     predicates = list()
@@ -935,14 +1003,17 @@ def hainvg_generator (args, rng, table_columns, group_columns, dtype_dict, df, d
     for i,val in enumerate(vals):
         col = cols[i]
         v = val
+        if col != '*':
+            used_tables.add(col.split('.')[0])
 
         if col not in list(group_columns):
-            if dtype_dict[col] == 'str':
+            if col == "*" or dtype_dict[col] == 'str':
                 agg = rng.choice(TEXTUAL_AGGS)
             else:
                 agg = rng.choice(NUMERIC_AGGS)
         else:
             agg = 'NONE'
+            assert False
 
         new_dtype = None
         if agg in ['NONE', 'MAX', 'MIN', 'AVG', 'SUM']:
@@ -968,7 +1039,7 @@ def hainvg_generator (args, rng, table_columns, group_columns, dtype_dict, df, d
                     if op == 'IS_NOT_NULL':
                         vals[i] = v
                     else:
-                        vals[i] =  f"""\"{v}\""""
+                        vals[i] =  f'''\"{v}\"'''
 
         elif new_dtype == 'date' :
             if val == 'nan' or pd.isnull(val) :
@@ -1000,22 +1071,33 @@ def hainvg_generator (args, rng, table_columns, group_columns, dtype_dict, df, d
                         vals[i] = int(v)
 
         ops.append(op)
-        predicates.append(agg + '(' + col + ') ' + op + ' ' + str(vals[i]) if agg != 'NONE' else col + ' ' + op + ' ' + str(vals[i]))
+        if col == "*":
+            predicates.append(agg + '(' + col + ') ' + op + ' ' + str(vals[i]) if agg != 'NONE' else col + ' ' + op + ' ' + str(vals[i]))
+        else:
+            predicates.append(agg + '(' + prefix + col + ') ' + op + ' ' + str(vals[i]) if agg != 'NONE' else prefix + col + ' ' + op + ' ' + str(vals[i]))
 
-    tree_predicates = build_predicate_tree(rng, predicates)
+    tree_predicates = build_predicate_tree_cnf(rng, predicates)
 
-    return tree_predicates, (cols, vals, ops)
+    return tree_predicates, (cols, vals, ops), used_tables
 
-
-def order_generator (args, rng, cols, dtype_dict, group=False, group_columns=False):
+def order_generator (args, rng, cols, dtype_dict, group=False, group_columns=False, outer_inner='non-nested'):
     min_order, max_order = args.num_order_min, args.num_order_max
     num_order = rng.randint(min_order, max_order)
 
     columns = []
+    if outer_inner == 'outer':
+        prefix = 'O_'
+    elif outer_inner == 'inner':
+        prefix = 'I_'
+    else:
+        prefix = ''
+    
+    columns_with_prefix = []
 
     while len(columns) < num_order:
         col = rng.choice(cols)
-        use_agg = bool(rng.randint(0, 2))
+        # use_agg = bool(rng.randint(0, 2))
+        use_agg = False
         if not group or col in group_columns:
             use_agg = False
 
@@ -1028,13 +1110,14 @@ def order_generator (args, rng, cols, dtype_dict, group=False, group_columns=Fal
             agg = 'NONE'
 
         col_rep = agg + '(' + col + ')' if agg != 'NONE' else col
+        col_rep_with_prefix = agg + '(' + prefix + col + ')' if agg != 'NONE' else prefix + col
         if col_rep in columns:
             continue
         else:
             columns.append(col_rep)
+            columns_with_prefix.append(col_rep_with_prefix)
 
-    return columns
-
+    return columns, columns_with_prefix
 
 def limit_generator (args, rng):
     min_limit, max_limit = args.num_limit_min, args.num_limit_max
@@ -1042,110 +1125,26 @@ def limit_generator (args, rng):
 
     return num_limit
 
+def inner_query_obj_to_inner_query(args, df, n, rng, inner_query_obj, dtype_dict, dvs, nesting_column=None, correlation_column=None):
 
-def non_nested_query_generator (args, df, n, rng,
-                                all_table_set, join_key_list, join_clause_list, join_key_pred,
-                                dtype_dict, dvs):
+    # obj to sql
+    sql_type_dict = inner_query_obj['type']
+    agg_cols = inner_query_obj['agg_cols']
+    use_agg_sel = inner_query_obj['use_agg_sel']
+    select_columns = inner_query_obj['select']
+    where_predicates = inner_query_obj['where']
+    group_columns = inner_query_obj['group']
+    having_predicates = inner_query_obj['having']
+    order_columns = inner_query_obj['order']
+    limit_num = inner_query_obj['limit']
+    necessary_tables = inner_query_obj['tables']
+    necessary_joins = inner_query_obj['joins']
 
-    df_columns_not_null = df.columns[df.notna().iloc[n]]
-    tables,joins,table_columns_projection, table_columns = get_query_token(all_table_set,join_key_list,df.columns,df_columns_not_null,join_clause_list,rng,join_key_pred=join_key_pred)
+    # [TODO] Add correlated columns
 
-    sql_type_dict = non_nested_query_form_selector(args, rng)
-    
-    select_columns, _, (used_tables, use_agg_sel) = select_generator(args, rng, table_columns_projection, dtype_dict, join_key_list, tables, group=sql_type_dict['group'])
-    where_predicates, _, used_tables, _= where_generator(args, rng, table_columns, dtype_dict, join_key_list, 
-                        all_table_set, join_clause_list, join_key_pred, df, dvs, n, used_tables)
-    group_columns = group_generator(args, rng,  table_columns, dtype_dict, group=sql_type_dict['group'])
-    having_predicates, _ = hainvg_generator(args, rng, table_columns, group_columns, dtype_dict, df, dvs, n)
-    order_columns = order_generator(args, rng, table_columns, dtype_dict, group=sql_type_dict['group'], group_columns=group_columns)
-    limit_num = limit_generator(args, rng)
+    line, _ = sql_formation(args, sql_type_dict, necessary_tables, necessary_joins, 'inner', select_columns, where_predicates, group_columns, having_predicates, order_columns, limit_num)
 
-    # d1_tables = determine_degree_1_table(tables, joins)
-
-    # if not is_inner_query:
-    #     for d1t in d1_tables:
-    #         if d1t not in used_tables:
-    #             cols_in_d1t = [col for col in table_columns if col.split('.')[0] == d1t]
-    #             col = rng.choice(cols_in_d1t)
-    #             if use_agg_sel:
-    #                 if dtype_dict[col] == 'str':
-    #                     agg = rng.choice(TEXTUAL_AGGS)
-    #                 else:
-    #                     agg = rng.choice(NUMERIC_AGGS)
-    #             else:
-    #                 agg = 'NONE'
-
-    #             col_rep = agg + '(' + col + ')' if agg != 'NONE' else col
-
-    #             if col_rep in select_columns:
-    #                 continue
-    #             else:
-    #                 select_columns.append(col_rep)
-
-    necessary_tables, necessary_joins = find_join_path(joins, tables, used_tables)
-
-    line = sql_formation(args, sql_type_dict, necessary_tables, necessary_joins, 'non-nested', select_columns, where_predicates, group_columns, having_predicates, order_columns, limit_num)
-
-    return line
-
-
-def nested_query_generator (args, df, n, rng,
-                                all_table_set, join_key_list, join_clause_list, join_key_pred,
-                                dtype_dict, dvs, nesting_type):
-    nesting_position = nesting_position_selector(args, rng, nesting_type)
-
-    sql_type_dict = non_nested_query_form_selector(args, rng)
-    # Always generate where clause for nested query
-    sql_type_dict['where'] = True
-    
-    # Step 1. Outer query generation
-    df_columns_not_null = df.columns[df.notna().iloc[n]]
-    tables,joins, table_columns_projection, table_columns = get_query_token(all_table_set,join_key_list,df.columns,df_columns_not_null,join_clause_list,rng,join_key_pred=join_key_pred)
-
-    select_columns, _, (used_tables, use_agg_sel) = select_generator(args, rng, table_columns_projection, dtype_dict, join_key_list, tables, group=sql_type_dict['group'], outer_inner='outer')
-    if sql_type_dict['where']:
-        where_predicates, nesting_column, used_tables, _= where_generator(args, rng, table_columns, dtype_dict, join_key_list, 
-                        all_table_set, join_clause_list, join_key_pred, df, dvs, n, used_tables, outer_inner='outer', nesting_position=nesting_position, nesting_type=nesting_type)
-    else:
-        where_predicates = []
-        result_tuples = df
-    group_columns = group_generator(args, rng,  table_columns, dtype_dict, group=sql_type_dict['group'])
-    if sql_type_dict['having']:
-        having_predicates, _ = hainvg_generator(args, rng, table_columns, group_columns, dtype_dict, df, dvs, n)
-    else:
-        having_predicates = []
-    order_columns = order_generator(args, rng, table_columns, dtype_dict, group=sql_type_dict['group'], group_columns=group_columns)
-    limit_num = limit_generator(args, rng)
-
-    # d1_tables = determine_degree_1_table(tables, joins)
-
-    # for d1t in d1_tables:
-    #     if d1t not in used_tables:
-    #         cols_in_d1t = [col for col in table_columns if col.split('.')[0] == d1t]
-    #         col = rng.choice(cols_in_d1t)
-    #         if use_agg_sel:
-    #             if dtype_dict[col] == 'str':
-    #                 agg = rng.choice(TEXTUAL_AGGS)
-    #             else:
-    #                 agg = rng.choice(NUMERIC_AGGS)
-    #         else:
-    #             agg = 'NONE'
-
-    #         col_rep = agg + '(' + col + ')' if agg != 'NONE' else col
-
-    #         if col_rep in select_columns:
-    #             continue
-    #         else:
-    #             select_columns.append(col_rep)
-
-
-    # (FIX C4) Remove unncessary tables & joins
-    necessary_tables, necessary_joins = find_join_path(joins, tables, used_tables)
-
-    line = sql_formation(args, sql_type_dict, necessary_tables, necessary_joins, 'outer', select_columns, where_predicates, group_columns, having_predicates, order_columns, limit_num)
-
-    return line
-
+    return line, None
 
 def inner_query_generator (args, df, n, rng,
                             all_table_set, join_key_list, join_clause_list, join_key_pred,
@@ -1182,6 +1181,13 @@ def inner_query_generator (args, df, n, rng,
     if outer_table_pool and set(tables) == set(outer_table_pool) and nesting_position == 1:
         sql_type_dict['where'] = True
     
+    if nesting_position == 3:
+        sql_type_dict['group'] = False
+        sql_type_dict['having'] = False
+    
+    if sql_type_dict['order']:
+        sql_type_dict['limit'] = True
+    
     # (FIX C8) One of where/group/order/agg must be in nested query
     while True:
         one_cond = sql_type_dict['where'] or sql_type_dict['group'] or sql_type_dict['order'] or nesting_type in ['type-a', 'type-ja']
@@ -1189,6 +1195,13 @@ def inner_query_generator (args, df, n, rng,
             break
 
         sql_type_dict = non_nested_query_form_selector(args, rng)
+        if nesting_position == 3:
+            sql_type_dict['group'] = False
+            sql_type_dict['having'] = False
+
+        if sql_type_dict['order']:
+            sql_type_dict['limit'] = True
+    
 
     # (FIX C9) Fix possible operator - aggregation pair
     if outer_operator is not None and sql_type_dict['where']:
@@ -1199,23 +1212,49 @@ def inner_query_generator (args, df, n, rng,
                                                                 nesting_type=nesting_type, nesting_column=nesting_column, 
                                                                 outer_nesting_position=nesting_position, outer_operator=outer_operator)
     if sql_type_dict['where']:
-        where_predicates, nesting_column, used_tables, result_tuples = where_generator(args, rng, table_columns, dtype_dict, join_key_list, 
-                            all_table_set, join_clause_list, join_key_pred, df, dvs, n, used_tables, outer_inner='inner', outer_correlation_column=correlation_column)
+        where_predicates, nesting_column, used_tables, result_tuples, tree_predicates_origin, predicates_origin = where_generator(args, rng, table_columns, dtype_dict, join_key_list, all_table_set, join_clause_list, join_key_pred, df, dvs, n, used_tables, outer_inner='inner', outer_correlation_column=correlation_column)
     else:
         where_predicates = []
+        tree_predicates_origin = []
+        predicates_origin = []
         result_tuples = df
-    group_columns = group_generator(args, rng,  table_columns, dtype_dict, group=sql_type_dict['group'])
+    group_columns_origin, group_columns = group_generator(args, rng,  table_columns, dtype_dict, group=sql_type_dict['group'], outer_inner='inner')
     if sql_type_dict['having']:
-        having_predicates, _ = hainvg_generator(args, rng, table_columns, group_columns, dtype_dict, df, dvs, n)
+        having_predicates, _, used_tables = hainvg_generator(args, rng, table_columns, group_columns_origin, dtype_dict, df, dvs, n, used_tables, outer_inner='inner')
     else:
         having_predicates = []
-    order_columns = order_generator(args, rng, table_columns, dtype_dict, group=sql_type_dict['group'], group_columns=group_columns)
+    order_columns_origin, order_columns = order_generator(args, rng, table_columns, dtype_dict, group=sql_type_dict['group'], group_columns=group_columns_origin, outer_inner='inner')
     limit_num = limit_generator(args, rng)
+
+    used_tables = get_updated_used_tables(used_tables, group_columns_origin)
+    used_tables = get_updated_used_tables(used_tables, order_columns_origin)
 
     # (FIX C4) Remove unncessary tables & joins
     necessary_tables, necessary_joins = find_join_path(joins, tables, used_tables)
 
-    line = sql_formation(args, sql_type_dict, necessary_tables, necessary_joins, 'inner', select_columns, where_predicates, group_columns, having_predicates, order_columns, limit_num)
+    #if sql_type_dict['group']:
+    #    select_columns = list(group_columns) + select_columns
+    #    agg_cols = [ ('NONE', group_col) for group_col in group_columns_origin ] + agg_cols
+
+    line, _ = sql_formation(args, sql_type_dict, necessary_tables, necessary_joins, 'inner', select_columns, where_predicates, group_columns, having_predicates, order_columns, limit_num)
+
+    obj = {
+        "type": sql_type_dict,
+        "select": select_columns,
+        "where": where_predicates,
+        "group": group_columns,
+        "having": having_predicates,
+        "order": order_columns,
+        "limit": limit_num,
+        "tables": necessary_tables,
+        "joins": necessary_joins,
+        "agg_cols": agg_cols,
+        "use_agg_sel": use_agg_sel,
+        "tree_predicates_origin": tree_predicates_origin,
+        "predicates_origin": predicates_origin,
+        "correlation_column": correlation_column
+    }
+
 
     if correlation_column is not None:
         if not use_agg_sel:
@@ -1248,382 +1287,216 @@ def inner_query_generator (args, df, n, rng,
             result_tuples = new_result_tuples
 
 
-    return line, result_tuples
+    return line, result_tuples, obj
+  
+def non_nested_query_generator (args, df, n, rng,
+                                all_table_set, join_key_list, join_clause_list, join_key_pred,
+                                dtype_dict, dvs):
+
+    df_columns_not_null = df.columns[df.notna().iloc[n]]
+    tables,joins,table_columns_projection, table_columns = get_query_token(all_table_set,join_key_list,df.columns,df_columns_not_null,join_clause_list,rng,join_key_pred=join_key_pred)
+
+    sql_type_dict = non_nested_query_form_selector(args, rng)
     
+    select_columns, agg_cols, (used_tables, use_agg_sel) = select_generator(args, rng, table_columns_projection, dtype_dict, join_key_list, tables, group=sql_type_dict['group'])
+    where_predicates, _, used_tables, _, tree_predicates_origin, predicates_origin= where_generator(args, rng, table_columns, dtype_dict, join_key_list, 
+                        all_table_set, join_clause_list, join_key_pred, df, dvs, n, used_tables)
+    group_columns_origin, group_columns = group_generator(args, rng,  table_columns, dtype_dict, group=sql_type_dict['group'])
+    having_predicates, _, used_tables = hainvg_generator(args, rng, table_columns, group_columns_origin, dtype_dict, df, dvs, n, used_tables)
+    order_columns_origin, order_columns = order_generator(args, rng, table_columns, dtype_dict, group=sql_type_dict['group'], group_columns=group_columns_origin)
+    limit_num = limit_generator(args, rng)
+
+    used_tables = get_updated_used_tables(used_tables, group_columns_origin)
+    used_tables = get_updated_used_tables(used_tables, order_columns_origin)
+  
+    necessary_tables, necessary_joins = find_join_path(joins, tables, used_tables)
+
+    if sql_type_dict['group']:
+        select_columns = list(group_columns) + select_columns
+        agg_cols = [ ('NONE', group_col) for group_col in group_columns ] + agg_cols
+
+    line, graph = sql_formation(args, sql_type_dict, necessary_tables, necessary_joins, 'non-nested', select_columns, where_predicates, group_columns, having_predicates, order_columns, limit_num, make_graph=True, select_agg_cols=agg_cols, tree_predicates_origin = tree_predicates_origin, predicates_origin=predicates_origin)
+    obj = {
+        "type": sql_type_dict,
+        "select": select_columns,
+        "where": where_predicates,
+        "group": group_columns,
+        "having": having_predicates,
+        "order": order_columns,
+        "limit": limit_num,
+        "tables": necessary_tables,
+        "joins": necessary_joins,
+        "agg_cols": agg_cols,
+        "use_agg_sel": use_agg_sel,
+        "tree_predicates_origin": tree_predicates_origin,
+        "predicates_origin": predicates_origin
+    }
+
+    return line, graph, obj
+
+def nested_query_generator_from_scratch (args, df, n, rng,
+                                all_table_set, join_key_list, join_clause_list, join_key_pred,
+                                dtype_dict, dvs, nesting_type):
+    nesting_position = nesting_position_selector(args, rng, nesting_type)
+
+    sql_type_dict = non_nested_query_form_selector(args, rng)
+    # Always generate where clause for nested query
+    sql_type_dict['where'] = True
+    
+    # Step 1. Outer query generation
+    df_columns_not_null = df.columns[df.notna().iloc[n]]
+    tables,joins, table_columns_projection, table_columns = get_query_token(all_table_set,join_key_list,df.columns,df_columns_not_null,join_clause_list,rng,join_key_pred=join_key_pred)
+
+    select_columns, agg_cols, (used_tables, use_agg_sel) = select_generator(args, rng, table_columns_projection, dtype_dict, join_key_list, tables, group=sql_type_dict['group'], outer_inner='outer')
+    if sql_type_dict['where']:
+        where_predicates, nesting_column, used_tables, _, tree_predicates_origin, predicates_origin= where_generator(args, rng, table_columns, dtype_dict, join_key_list, 
+                        all_table_set, join_clause_list, join_key_pred, df, dvs, n, used_tables, outer_inner='outer', nesting_position=nesting_position, nesting_type=nesting_type)
+    else:
+        where_predicates = []
+        result_tuples = df
+    group_columns_origin, group_columns = group_generator(args, rng,  table_columns, dtype_dict, group=sql_type_dict['group'], outer_inner='outer')
+    if sql_type_dict['having']:
+        having_predicates, _, used_tables = hainvg_generator(args, rng, table_columns, group_columns_origin, dtype_dict, df, dvs, n, used_tables, outer_inner='outer')
+    else:
+        having_predicates = []
+    order_columns_origin, order_columns = order_generator(args, rng, table_columns, dtype_dict, group=sql_type_dict['group'], group_columns=group_columns_origin, outer_inner='outer')
+    limit_num = limit_generator(args, rng)
+    
+    used_tables = get_updated_used_tables(used_tables, group_columns_origin)
+    used_tables = get_updated_used_tables(used_tables, order_columns_origin)
+
+    # (FIX C4) Remove unncessary tables & joins
+    necessary_tables, necessary_joins = find_join_path(joins, tables, used_tables)
+
+    if sql_type_dict['group']:
+        select_columns = list(group_columns) + select_columns
+        agg_cols = [ ('NONE', group_col) for group_col in group_columns_origin ] + agg_cols
+
+    line, graph = sql_formation(args, sql_type_dict, necessary_tables, necessary_joins, 'outer', select_columns, where_predicates, group_columns, having_predicates, order_columns, limit_num, make_graph = True, select_agg_cols = agg_cols, tree_predicates_origin = tree_predicates_origin, predicates_origin = predicates_origin)
+    #graph = []
+    obj = {
+        "type": sql_type_dict,
+        "select": select_columns,
+        "where": where_predicates,
+        "group": group_columns,
+        "having": having_predicates,
+        "order": order_columns,
+        "limit": limit_num,
+        "tables": necessary_tables,
+        "joins": necessary_joins,
+        "agg_cols": agg_cols,
+        "use_agg_sel": use_agg_sel,
+        "tree_predicates_origin": tree_predicates_origin,
+        "predicates_origin": predicates_origin
+    }
+
+    return line, graph, obj
+
+def nested_query_generator (args, df, n, rng,
+                                all_table_set, join_key_list, join_clause_list, join_key_pred,
+                                dtype_dict, dvs, nesting_type, inner_query_objs = None, inner_query_graphs = None):
+    
+    if inner_query_objs is None:
+        line, graph, obj = nested_query_generator_from_scratch(args, df, n, rng,
+                                all_table_set, join_key_list, join_clause_list, join_key_pred,
+                                dtype_dict, dvs, nesting_type)
+        return line, graph, obj
+
+    df_columns_not_null = df.columns[df.notna().iloc[n]]
+    tables,joins, table_columns_projection, table_columns = get_query_token(all_table_set,join_key_list,df.columns,df_columns_not_null,join_clause_list,rng, join_key_pred=join_key_pred)
+
+    # Random select the number of inner queries
+    min_nested_pred_num = args.num_nestd_pred_min
+    max_nested_pred_num = args.num_nested_pred_max
+
+    candidate_idxs = get_possbie_inner_query_idxs(args, inner_query_objs) # [TODO] If it projects multiple columns, modify the SELECT clause
+    num_nested_predicate = rng.randint(min_nested_pred_num, min(len(candidate_idxs),max_nested_pred_num)+1)
+    chosen_inner_queries = rng.choice(candidate_idxs, num_nested_predicate, replace=False)
+
+    nested_predicates = []
+    nested_predicate_graphs = []
+
+    for i in range(num_nesetd_predicates):
+        inner_query_idx = chosen_inner_queries[i]
+        nesting_type = nesting_type_selector(args, rng, only_nested=only_nested, only_nonnested=only_nonnested, inner_query_obj=inner_query_objs[inner_query_idx])
+        nesting_position = nesting_position_selector(args, rng, nesting_type, inner_query_obj=inner_query_objs[inner_query_idx])
+        nested_predicate, nesting_column, used_tables, _, nested_predicate_graph = nested_predicate_generator(args, rng, table_columns, dtype_dict, join_key_list, 
+                all_table_set, join_clause_list, join_key_pred, df, dvs, n, used_tables, 
+                outer_inner='outer', nesting_position=nesting_position, nesting_type=nesting_type, inner_query_obj = inner_query_objs[inner_query_idx], inner_query_graph = inner_query_graphs[inner_query_idx])
+        if i != 0:
+            nested_predicates.append('AND')
+        nested_predicates.append(nested_predicate)
+        nested_predicate_graphs.append(nested_predicate_graph)
+
+    sql_type_dict = non_nested_query_form_selector(args, rng)
+    
+    # Step 1. Outer query generation
+    select_columns, agg_cols, (used_tables, use_agg_sel) = select_generator(args, rng, table_columns_projection, dtype_dict, join_key_list, tables, group=sql_type_dict['group'], outer_inner='outer')
+    if sql_type_dict['where']:
+        where_predicates, _, used_tables, _, tree_predicates_origin, predicates_origin= where_generator(args, rng, table_columns, dtype_dict, join_key_list, 6ㅅㄷㄹㅆㅆㅆㅆㅆㅅㅈㅆㅆㅆㅆㅅㅈㄹㄹㅉㅈㄹㄹㄹㄹㄹㄹㅉㅊㅅ ㄹ
+                        all_table_set, join_clause_list, join_key_pred, df, dvs, n, used_tables)
+    else:
+        where_predicates = []
+        result_tuples = df
+    
+    # Always generate where clause for nested query
+    sql_type_dict['where'] = True
+    if len(where_predicates) > 0:
+        where_predicates += ['AND']
+    where_predicates += nested_predicates
+
+    group_columns_origin, group_columns = group_generator(args, rng,  table_columns, dtype_dict, group=sql_type_dict['group'])
+    if sql_type_dict['having']:
+        having_predicates, _, used_tables = hainvg_generator(args, rng, table_columns, group_columns_origin, dtype_dict, df, dvs, n, used_tables)
+    else:
+        having_predicates = []
+    order_columns_origin, order_columns = order_generator(args, rng, table_columns, dtype_dict, group=sql_type_dict['group'], group_columns=group_columns_origin)
+    limit_num = limit_generator(args, rng)
+
+    used_tables = get_updated_used_tables(used_tables, group_columns_origin)
+    used_tables = get_updated_used_tables(used_tables, order_columns_origin)
+
+    # (FIX C4) Remove unncessary tables & joins
+    necessary_tables, necessary_joins = find_join_path(joins, tables, used_tables)
+
+    line, _ = sql_formation(args, sql_type_dict, necessary_tables, necessary_joins, 'outer', select_columns, where_predicates, group_columns, having_predicates, order_columns, limit_num, select_agg_cols=agg_cols)
+    graph = []
+    obj = {
+        "type": sql_type_dict,
+        "select": select_columns,
+        "where": where_predicates,
+        "group": group_columns,
+        "having": having_predicates,
+        "order": order_columns,
+        "limit": limit_num,
+        "tables": necessary_tables,
+        "joins": necessary_joins,
+        "agg_cols": agg_cols,
+        "use_agg_sel": use_agg_sel,
+        "tree_predicates_origin": tree_predicates_origin,
+        "predicates_origin": predicates_origin
+    }
 
 
+
+    return line, graph, obj
+
+  
 def query_generator (args, df, n, rng,
                         all_table_set, join_key_list, join_clause_list, join_key_pred,
-                        dtype_dict, dvs):
+                        dtype_dict, dvs, inner_query_objs=None, inner_query_graphs=None):
     only_nested = args.query_type in ['spj-nested', 'nested']
     only_nonnested = args.query_type in ['spj-non-nested', 'non-nested']
     nesting_type = nesting_type_selector(args, rng, only_nested=only_nested, only_nonnested=only_nonnested)
 
     if nesting_type == 'non-nested':
-        query = non_nested_query_generator(args, df, n, rng,
+        query, graph, obj = non_nested_query_generator(args, df, n, rng,
                                                 all_table_set, join_key_list, join_clause_list, join_key_pred,
                                                 dtype_dict, dvs)
-
     else:
-        query = nested_query_generator(args, df, n, rng,
+        query, graph, obj = nested_query_generator(args, df, n, rng,
                                         all_table_set, join_key_list, join_clause_list, join_key_pred,
-                                        dtype_dict, dvs, nesting_type)
+                                        dtype_dict, dvs, nesting_type, inner_query_objs, inner_query_graphs)
+        graph = []
 
-    # else:
-    #     nesting_position = nesting_position_selector(args, rng, nesting_type)
-    #     outer_query, correlation_column, nesting_column, outer_table_pool = non_nested_query_generator(args, df, n, rng,
-    #                                                 all_table_set, join_key_list, join_clause_list, join_key_pred,
-    #                                                 dtype_dict, dvs,
-    #                                                 nesting_position=nesting_position, nesting_type=nesting_type)
-
-    #     inner_query, _, _, _ = non_nested_query_generator(args, df, n, rng,
-    #                                                 all_table_set, join_key_list, join_clause_list, join_key_pred,
-    #                                                 dtype_dict, dvs,
-    #                                                 is_inner_query=True,
-    #                                                 outer_nesting_position=nesting_position, outer_nesting_type=nesting_type,
-    #                                                 outer_table_pool=outer_table_pool,
-    #                                                 nesting_column=nesting_column,
-    #                                                 correlation_column=correlation_column)
-
-    #     query = outer_query.replace('|INNER_QUERY|', '(' + inner_query + ')')
-
-    return query
-
-
-def sql_formation (args, sql_type_dict, tables, joins, outer_inner, select, where=None, group=None, having=None, order=None, limit=None):
-    ALIAS_TO_TABLE_NAME, TABLE_NAME_TO_ALIAS = alias_generator(args)
-
-	# SELECT clause generation
-    if sql_type_dict['group']:
-        select = list(group) + select
-    select_clause = 'SELECT ' + ', '.join(select)
-
-    if outer_inner == 'outer':
-        prefix = 'O_'
-    elif outer_inner == 'inner':
-        prefix = 'I_'
-    else:
-        prefix = ''
-
-    # FROM clause generation
-    if TABLE_NAME_TO_ALIAS:
-        table_token = sorted([f'{table} {prefix}{TABLE_NAME_TO_ALIAS[table]}' for table in tables])
-    else:
-        if prefix:
-            table_token = sorted([f'{table} {prefix}{table}' for table in tables])
-        else:
-            table_token = sorted([f'{table}' for table in tables])
-
-    table_string = ' JOIN '.join(table_token)
-
-    join_token = sorted([alias_join_clause(join_c, TABLE_NAME_TO_ALIAS, prefix) for join_c in joins ])
-    join_string = ' AND '.join(join_token)
-
-    from_clause = ' FROM ' + table_string
-    if len(join_token) >= 1:
-        from_clause += ' ON ' + join_string
-
-    # WHERE clause generation
-    if sql_type_dict['where']:
-        where_clause = ' WHERE ' + preorder_traverse(where)
-    else:
-        where_clause = ''
-
-    # GROUP BY clause generation
-    if sql_type_dict['group']:
-        group_clause = ' GROUP BY ' + ', '.join(group)
-    else:
-        group_clause = ''
-
-    # HAVING clause generation
-    if sql_type_dict['having']:
-        having_clause = ' HAVING ' + preorder_traverse(having)
-    else:
-        having_clause = ''
-
-    # ORDER BY clause generation
-    if sql_type_dict['order']:
-        order_clause = ' ORDER BY ' + ', '.join(order)
-    else:
-        order_clause = ''
-
-    # LIMIT clause generation
-    if sql_type_dict['limit']:
-        limit_clause = ' LIMIT ' + str(limit)
-    else:
-        limit_clause = ''
-
-    line = select_clause + \
-            from_clause + \
-            where_clause + \
-            group_clause + \
-            having_clause + \
-            order_clause + \
-            limit_clause
-    
-    return line
-
-
-def get_table_from_clause(join_clause):
-	A,B = join_clause.split('=')
-	return A.split('.')[0],B.split('.')[0]
-
-
-def get_possible_join(selected_joins,avaliable_joins):
-	result = list()
-	for join_clause in avaliable_joins:
-		A,B = join_clause.split('=')
-		t1,t2 = A.split('.')[0],B.split('.')[0]
-		for selected_clause in selected_joins:
-			A,B = selected_clause.split('=')
-			t3,t4 = A.split('.')[0],B.split('.')[0]
-			if t1 == t3 or t1==t4 or t2 == t3 or t2==t4:
-				result.append(join_clause)
-	return result
-
-
-def get_query_token(all_table_set, join_key_list,df_columns,df_columns_not_null,join_clause_list, rng,join_key_pred =True):
-    avaliable_join_keys = list()
-    avaliable_pred_cols = list(df_columns)
-    for col in df_columns_not_null:
-        if col in join_key_list:
-            avaliable_join_keys.append(col)
-
-
-    avaliable_join_list = list()
-    avaliable_table_set = set()
-    for join_clause in join_clause_list:
-        A,B = join_clause.split('=')
-        if A in avaliable_join_keys and B in avaliable_join_keys:
-            avaliable_table_set.add(A.split('.')[0])
-            avaliable_table_set.add(B.split('.')[0])
-            avaliable_join_list.append(join_clause)
-
-
-    if len(avaliable_table_set) == 0:
-        for col in df_columns_not_null:
-            table = col.split('.')[0]
-            avaliable_table_set.add(table)
-
-    avaliable_tables = list(avaliable_table_set)    
-    num_join_clause = rng.randint(0,len(avaliable_join_list)+1)
-
-    table_set = set()
-    tables = list()
-    joins = list()
-    candiate_cols = list()
-    predicates_cols = list()
-    candidate_cols_projection = list()
-    prob = 0.5
-
-    table = rng.choice(avaliable_tables)
-    table_set.add(table)
-    cont = rng.choice([0, 1], p=[1-prob, prob])
-
-    if cont == 1:
-        available_init_join = []
-        for join_clause in avaliable_join_list:
-            t1, t2 = get_table_from_clause(join_clause)
-            if t1 == table or t2 == table:
-                available_init_join.append(join_clause)
-
-        init_join = rng.choice(available_init_join)
-        avaliable_join_list.remove(init_join)
-        joins.append(init_join)
-
-        t1,t2 = get_table_from_clause(init_join)
-        table_set.add(t1)
-        table_set.add(t2)
-  
-        cont = rng.choice([0, 1], p=[1-prob, prob])
-        while cont == 1:
-            candidate_joins = get_possible_join(joins,avaliable_join_list)
-            if len(candidate_joins) == 0:
-                break
-            next_join = rng.choice(candidate_joins)
-            avaliable_join_list.remove(next_join)
-            joins.append(next_join)
-
-            t1,t2 = get_table_from_clause(next_join)
-            table_set.add(t1)
-            table_set.add(t2)
-
-            cont = rng.choice([0, 1], p=[1-prob, prob])
-
-    for col in avaliable_pred_cols:
-        if col.split('.')[0] in table_set:
-            candidate_cols_projection.append(col)
-            if (not join_key_pred) and col in join_key_list:
-                continue
-            candiate_cols.append(col)
-    
-    tables = list(table_set)
-
-
-
-
-    # if num_join_clause == 0 : # single table
-    #     table = rng.choice(avaliable_tables)
-    #     tables.append(table)
-
-    #     for col in avaliable_pred_cols:
-    #         if col.split('.')[0] == table:
-    #             if (not join_key_pred) and col in join_key_list:
-    #                 continue
-    #             candiate_cols.append(col)
-    #     # num_predicate = rng.randint(min_pred_num, min(len(candiate_cols),max_pred_num)+1)
-    #     # predicates_cols = list(rng.choice(candiate_cols,num_predicate))
-
-    # else:
-    #     init_join = rng.choice(avaliable_join_list)
-    #     avaliable_join_list.remove(init_join)
-    #     joins.append(init_join)
-
-    #     t1,t2 = get_table_from_clause(init_join)
-    #     table_set.add(t1)
-    #     table_set.add(t2)
-
-    #     for i in range(num_join_clause-1):
-    #     	candidate_joins = get_possible_join(joins,avaliable_join_list)
-    #     	if len(candidate_joins) == 0:
-    #     		break
-    #     	next_join = rng.choice(candidate_joins)
-    #     	avaliable_join_list.remove(next_join)
-    #     	joins.append(next_join)
-
-    #     	t1,t2 = get_table_from_clause(next_join)
-    #     	table_set.add(t1)
-    #     	table_set.add(t2)
-
-    #     for col in avaliable_pred_cols:
-    #         if col.split('.')[0] in table_set:
-    #             if (not join_key_pred) and col in join_key_list:
-    #                 continue
-    #             candiate_cols.append(col)
-    #     # num_predicate = rng.randint(min_pred_num, min(len(candiate_cols),max_pred_num)+1)
-    #     # predicates_cols = list(rng.choice(candiate_cols,num_predicate))
-    #     tables = list(table_set)
-
-    return tables,joins,candidate_cols_projection, candiate_cols
-    #return tables,joins,candiate_cols, candiate_cols
-
-
-def determine_degree_1_table (tables, joins):
-	degrees = {k: 0 for k in tables}
-	for join_c in joins:
-		tc1, tc2 = join_c.split('=')
-		t1, c1 = tc1.split('.')
-		t2, c2 = tc2.split('.')
-
-		degrees[t1] += 1
-		degrees[t2] += 1
-
-
-	d1_table = [k for k in degrees.keys() if degrees[k] == 1]
-
-	return d1_table
-
-
-def alias_join_clause(txt, TABLE_NAME_TO_ALIAS, prefix):
-	token = txt.split('=')
-	assert len(token)==2
-	t1,k1 = token[0].split('.')
-	t2,k2 = token[1].split('.')
-	if TABLE_NAME_TO_ALIAS:
-		t1 = TABLE_NAME_TO_ALIAS[t1]
-		t2 = TABLE_NAME_TO_ALIAS[t2]
-	return f"{prefix}{t1}.{k1}={prefix}{t2}.{k2}"
-
-
-def bfs (edges, parents, observed, targets):
-    candidates = []
-    cp_condition = {}
-    for p in parents:
-        childs = edges[p]
-        for c, join_clause in childs:
-            if c in targets:
-                return [c, p], [join_clause]
-            else:
-                if c in observed:
-                    continue
-                else:
-                    candidates.append(c)
-                    observed.append(c)
-                    cp_condition[c] = (p, join_clause)
-    path, joins = bfs(edges, candidates, observed, targets)
-    src_parent, src_join = cp_condition[path[-1]]
-    path.append(src_parent)
-    joins.append(src_join)
-    return path, joins
-
-
-def find_join_path (joins, tables, used_tables):
-    # Step 1. Draw schema graph
-    edges = {}
-    for join_clause in joins:
-        t1, t2 = get_table_from_clause(join_clause)
-        if t1 in edges:
-            edges[t1].append((t2, join_clause))
-        else:
-            edges[t1] = [(t2, join_clause)]
-        if t2 in edges:
-            edges[t2].append((t1, join_clause))
-        else:
-            edges[t2] = [(t1, join_clause)]
-
-    used_tables = list(used_tables)
-    found_tables = [used_tables[0]]
-    found_joins = []
-    for tab in used_tables[1:]:
-        path, joins = bfs(edges, [tab], [], found_tables)
-        found_tables = list(set(found_tables) | set(path))
-        found_joins = list(set(found_joins) | set(joins))
-
-    return found_tables, found_joins
-
-
-def convert_agg_to_func(agg):
-    if agg == 'AVG':
-        return 'mean'
-    else:
-        return agg.lower()
-
-
-def is_numeric(val):
-    try:
-        float(val)
-    except ValueError:
-        return False
-    else:
-        return True
-
-
-def predicate_generator(col, op, val):
-    if op == 'IS_NULL':
-        query_predicate = '`' + col + '`.isnull()'
-    elif op == 'IS_NOT_NULL':
-        query_predicate = 'not `' + col + '`.isnull()'
-    elif op == 'LIKE' or op == 'NOT LIKE':
-        if val[1] == '%' and val[-2] == '%':
-            query_predicate = '`' + col + '`.str.contains("' + eval('"' + val[2:-2] + '"') + '", na=False)'
-        elif val[1] == '%':
-            query_predicate = '`' + col + '`.str.endswith("' + eval('"' + val[2:]) + '", na=False)'
-        elif val[-2] == '%':
-            query_predicate = '`' + col + '`.str.startswith("' + eval(val[:-2] + '"') + '", na=False)'
-        else:
-            query_predicate = '`' + col + '` == ' + val
-        if op == 'NOT LIKE':
-            query_predicate = 'not ' + query_predicate
-    elif op == '=':
-        if not is_numeric(val) and not (val[0] == '"' and val[-1] == '"'):
-            query_predicate = '`' + col + '` == "' + val + '"'
-        else:
-            query_predicate = '`' + col + '` == ' + val
-    elif op == 'IN':
-        query_predicate = '`' + col + '` == ' + str(list(eval(val[1:-1])))
-    elif op == 'NOT IN':
-        query_predicate = '`' + col + '` != ' + str(list(eval(val[1:-1])))
-    else:
-        query_predicate = '`' + col + '` ' + op + ' ' + val
-
-    return query_predicate
+    return query, graph, obj
