@@ -5,8 +5,8 @@
     "scripts": {
         "dev": "next dev",
         "dev-https": "node next-server.js",
-        "build": "next build",
-        "start": "next start",
+        "build": "HTTPS=true next build",
+        "start": "HTTPS=true next start",
         "lint": "next lint"
     },
     "dependencies": {

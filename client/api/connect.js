@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Set configs
-const protocol = process.env.NEXT_PUBLIC_Protocol;
+const protocol = process.env.HTTPS ? "https" : process.env.NEXT_PUBLIC_Protocol;
 const ip = process.env.NEXT_PUBLIC_ServerIP;
 const serverPort = process.env.NEXT_PUBLIC_ServerPort;
 const config = { headers: { "content-type": "application/json" } };
