@@ -8,7 +8,7 @@ services:
         network_mode: "host"
         ports:
             - "3000:3000"
-            - "4000:4000"
+            - "4001:4001"
             - "5432:5432"
         volumes:
             - .:/home/proda

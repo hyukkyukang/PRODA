@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Grid, Button } from "@mui/material";
 
-import { demoDBName } from "../config";
 import { isEmptyObject } from "../utils";
 import { runEVQL, fetchEVQL, runSQL } from "../api/connect";
 import { EVQLTree } from "../components/VQL/EVQL";
 import { EVQLTables, Coordinate } from "../components/VQL/EVQLTable";
 import { TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
 import { SideBar } from "../components/VQL/Sidebar";
+
+// Load environment variables
+const demoDBName = process.env.NEXT_PUBLIC_DemoDBName;
 
 const HandsOnEVQL = (props: any) => {
     // Global variables (to children)

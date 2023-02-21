@@ -60,3 +60,4 @@ saved_model/
 .swp
 *.ipynb
 launch.json
+certificates/

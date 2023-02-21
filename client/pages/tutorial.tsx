@@ -8,8 +8,9 @@ import { allTutorialSections, ProjectionSection } from "../components/Tutorial/s
 import { SideBar } from "../components/Tutorial/sidebar";
 import { EVQLTree } from "../components/VQL/EVQL";
 import { EVQLTables } from "../components/VQL/EVQLTable";
-import { demoDBName } from "../config";
 import { isEmptyObject } from "../utils";
+
+const demoDBName = process.env.NEXT_PUBLIC_DemoDBName;
 
 const DividerWithMargin: JSX.Element = (
     <>

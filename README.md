@@ -13,9 +13,9 @@ This is a software to collect natural language and SQL pair data
 2. Install and setup database
 3. Run server and client programs
 4. Access through web browser:
-    - localhost:3000/collection
-    - localhost:3000/tutorial
-    - localhost:3000/admin
+    - {ip}:{port}/collection
+    - {ip}:{port}/tutorial
+    - {ip}:{port}/admin
 
 # Docker
 
@@ -23,7 +23,7 @@ Using Dockerfile
 
 ```bash
 docker pull hyukkyukang/proda:latest
-docker run -it -p 3000:3000 -p 4000:4000 -p 5432:5432 -v ./:/app --name proda hyukkyukang/proda:latest /bin/bash
+docker run -it -p 3000:3000 -p 4001:4001 -p 5432:5432 -v ./:/app --name proda hyukkyukang/proda:latest /bin/bash
 ```
 
 or using docker-compose
@@ -32,13 +32,14 @@ or using docker-compose
 docker-compose up -d
 ```
 
-# Setting system Databases
+# Setting system DBs
 
 0. Install and start Postgresql
 ```
 apt update
 apt install postgresql postgresql-contrib
 service postgresql start
+pip install -r src/requirements.txt
 ```
 
 
@@ -69,14 +70,26 @@ cd database/dataCollection
 sh setup.sh
 ```
 
-# Web Client
+# Web Server (Front-end)
 
-1. cd ./client
-2. yarn install
-3. yarn start
+The code for the Front-end server are in the `client` directory.
+Please change the working directory `cd ./client` and follow the below instructions.
+## Setup configs
 
-# Web Server
+Please check the environment variables in the `.env` file and change them if necessary.
 
-1. cd ./server
-2. npm install
-3. node app.js
+## Run the server
+
+1. yarn install
+2. yarn start
+
+## Development
+Please use `yarn dev` or `yarn dev-https`, according to the protocol you desire.
+
+# API Server (Back-end)
+
+The code for the Front-end server are in the `server` directory.
+Please change the working directory `cd ./client` and follow the below instructions.
+
+1. npm install
+2. node app.js

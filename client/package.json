@@ -4,6 +4,7 @@
     "private": true,
     "scripts": {
         "dev": "next dev",
+        "dev-https": "node next-server.js",
         "build": "next build",
         "start": "next start",
         "lint": "next lint"
@@ -17,8 +18,10 @@
         "@nivo/core": "^0.78.0",
         "@nivo/line": "^0.78.0",
         "antd": "^4.23.6",
+        "aws-sdk": "^2.1319.0",
         "axios": "^0.27.2",
         "classnames": "^2.3.1",
+        "dotenv": "^16.0.3",
         "next": "12.2.5",
         "react": "18.2.0",
         "react-bootstrap": "^2.5.0",
