@@ -1,5 +1,5 @@
-from query_graph import Relation, Attribute, Value, Function, Query_graph
-from query_graph import OperatorType, AggregationType, operatorNameToType, aggregationNameToType
+from sql_gen_utils.query_graph import Relation, Attribute, Value, Function, Query_graph
+from sql_gen_utils.query_graph import OperatorType, AggregationType, operatorNameToType, aggregationNameToType
 from hashlib import new
 import numpy as np
 from numpy.lib.shape_base import column_stack
