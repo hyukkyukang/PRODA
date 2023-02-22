@@ -3,10 +3,10 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "dev": "next dev",
-        "dev-https": "node next-server.js",
-        "build": "HTTPS=true next build",
-        "start": "HTTPS=true next start",
+        "dev": "next dev -p 3001",
+        "dev-https": "node next-server.js -p 3001",
+        "build": "HTTPS=true next build -p 3001",
+        "start": "HTTPS=true next start -p 3001",
         "lint": "next lint"
     },
     "dependencies": {

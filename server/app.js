@@ -1,7 +1,9 @@
 console.log("Begin server");
 
+const fs = require("fs");
 const config = require("./config");
 const func = require("./function.js");
+const https = require('https');
 var express = require("express");
 var cors = require("cors");
 
@@ -11,6 +13,8 @@ app.use(express.json());
 
 app.get("/", function (req, res) {
     console.log("app.get./");
+    console.log(`query: ${JSON.stringify(req.query)}`);
+    res.send("Hello World!");
 });
 
 /* Handling Config Request */
@@ -22,7 +26,7 @@ app.post("/fetchConfig", function (req, res) {
 
 /* Handling Request */
 app.post("/fetchEVQL", function (req, res) {
-    console.log("app.post./fetchEVQL");
+    console.log(`app.post./fetchEVQL  with query: ${JSON.stringify(req.query)}`);
     const queryType = req.body.params.queryType;
     console.log(`queryType: ${queryType}`);
     const evql = func.getEVQL(queryType);
@@ -30,7 +34,7 @@ app.post("/fetchEVQL", function (req, res) {
 });
 
 app.post("/runEVQL", async function (req, res) {
-    console.log("app.post./runEVQL");
+    console.log(`app.post./runEVQL with query: ${JSON.stringify(req.query)}`);
     const evqlStr = req.body.params.evqlStr;
     const dbName = req.body.params.dbName;
     const sql = func.EVQLToSQL(evqlStr);
@@ -41,7 +45,7 @@ app.post("/runEVQL", async function (req, res) {
 });
 
 app.post("/runSQL", async function (req, res) {
-    console.log("app.posts.runSQL");
+    console.log(`app.posts.runSQL  with query: ${JSON.stringify(req.query)}`);
     const sql = req.body.params.sql;
     const dbName = req.body.params.dbName;
     const queryResult = await func.queryDB(sql, dbName);
@@ -49,7 +53,7 @@ app.post("/runSQL", async function (req, res) {
 });
 
 app.post("/fetchTask", function (req, res) {
-    console.log("app.post./fetchask");
+    console.log(`app.post./fetchask  with query: ${JSON.stringify(req.query)}`);
     const taskData = func.getTask();
     console.log(`task data: ${JSON.stringify(taskData)}`);
     res.send(taskData);
@@ -82,6 +86,12 @@ app.post("/updateConfig", function (req, res) {
     res.send({ status: "success" });
 });
 
-app.listen(config.serverPort);
+
+https.createServer({
+    key: fs.readFileSync('../certificates/thawte_postech_key_nopass.pem'),
+    cert: fs.readFileSync('../certificates/thawte_postech.pem')
+}, app).listen(config.serverPort);
+
+// app.listen(config.serverPort);
 
 console.log(`Server is running on port ${config.serverPort}`);

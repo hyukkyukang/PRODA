@@ -146,7 +146,7 @@ const isEmptyRow = (tableExcerpt: ITableExcerpt): boolean => {
 
 export const TableExcerpt = (props: React.ComponentProps<any>) => {
     const tableExcerpt: ITableExcerpt = props.queryResult;
-    const flatRows: Cell[][] = toFlatRows(tableExcerpt.rows);
+    const flatRows: Cell[][] = isEmptyObject(tableExcerpt) ? [] : toFlatRows(tableExcerpt.rows);
     // Handle empty table
     if (isEmptyObject(tableExcerpt)) {
         return <></>;
