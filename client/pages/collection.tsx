@@ -14,14 +14,18 @@ import { RefContext } from "../pages/_app";
 export const Collection = (props: any) => {
     // Ref
     const { targetRef } = useContext(RefContext);
-
     // Global state variables
     const [answer, setAnswer] = useState<UserAnswer>({ nl: "", type: 0 });
-
     // Local state variables
     const [currentStep, setCurrentStep] = useState(0);
     const [receivedTasks, setReceivedTasks] = useState<Task[]>([]);
     const currentTask = useMemo(() => (receivedTasks && receivedTasks[currentStep] ? receivedTasks[currentStep] : null), [receivedTasks, currentStep]);
+    // AMT informations
+    const [hitId, setHitId] = useState("")
+    const [assignmentId, setAssignmentId] = useState("")
+    const [turkSubmitTo, setTurkSubmitTo] = useState("")
+    const [workerId, setWorkerId] = useState("")
+
 
     const MyStepper: JSX.Element = (
         <React.Fragment>
@@ -43,6 +47,11 @@ export const Collection = (props: any) => {
         </React.Fragment>
     );
 
+    <form action="https://workersandbox.mturk.com/mturk/externalSubmit">
+    <input type='hidden' value={assignmentId} name='assignmentId' id='assignmentId'/>
+    <input type='submit' id='submitButton' value='Submit'/>
+  </form>
+
     const onSubmitHandler = () => {
         // Send current step's info to the server
         sendWorkerAnswer({ task: { ...currentTask, queryType: currentTask?.queryType, dbName: currentTask?.dbName }, answer: answer, userId: "dummyUser" });
@@ -57,7 +66,30 @@ export const Collection = (props: any) => {
         setReceivedTasks(fetchedTask);
     };
 
+    const getAMTInfo = () => {
+        // Parse URL parameters
+        const queryParams = new URLSearchParams(window.location.search)
+        const hitId = queryParams.get("hitId") ? queryParams.get("hitId") : "";
+        const assignmentId = queryParams.get("assignmentId") ? queryParams.get("assignmentId") : "";
+        const turkSubmitTo = queryParams.get("turkSubmitTo") ? queryParams.get("turkSubmitTo") : "";
+        const workerId = queryParams.get("workerId") ? queryParams.get("workerId") : "";
+
+        // Debugging
+        console.log(`hitId: ${hitId}`);
+        console.log(`assignmentId: ${assignmentId}`);
+        console.log(`turkSubmitTo: ${turkSubmitTo}`);
+        console.log(`workerId: ${workerId}`);
+
+        // Set AMT information
+        setHitId(hitId === null ? "" : hitId);
+        setAssignmentId(assignmentId === null ? "" : assignmentId);
+        setTurkSubmitTo(turkSubmitTo === null ? "" : turkSubmitTo);
+        setWorkerId(workerId === null ? "" : workerId);
+    };
+
     useEffect(() => {
+        getAMTInfo();
+        // Fetch task from the API server
         fetchTaskHandler();
     }, []);
 
