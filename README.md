@@ -93,3 +93,12 @@ Please change the working directory `cd ./client` and follow the below instructi
 
 1. npm install
 2. node app.js
+
+# Creating Human Intelligence Tasks (HITs) with Amazon Mechanical Turk (AMT)
+
+Below script will create a new HIT and its address will be printed on the console.
+```
+cd src/task/
+python hit_generator.py
+```
+
