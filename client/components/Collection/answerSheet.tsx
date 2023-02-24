@@ -178,7 +178,6 @@ export const AugmentationAnswerSheet = (props: { answer: UserAnswer; setAnswer: 
 
 export const AnswerSheet = (props: AnswerSheetProps) => {
     const { taskType, taskNL, answer, setAnswer, onSubmitHandler } = props;
-    console.log("taskType", taskType);
     if (taskType === TaskTypes.YesNo) {
         return <YesNoAnswerSheet answer={answer} setAnswer={setAnswer} taskNL={taskNL ? taskNL : ""} onSubmitHandler={onSubmitHandler} />;
     } else if (taskType === TaskTypes.NLAugmentation) {

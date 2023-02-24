@@ -106,6 +106,9 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     const { isLoading, isError, data, error } = useQuery(["runEVQL", subTree_str, "proda_demo"], () => runEVQL({ evqlStr: subTree_str, dbName: "proda_demo" }));
     const resultTable = useMemo<ITableExcerpt>(() => PGResultToTableExcerpt(data?.result), [data]);
 
+    // To get selected cell information
+    const [selectedCell, setSelectedCell] = useState<Coordinate>({ tableIndices: [], colIdx: -1, rowIdx: -1 });
+
     const dataViewer: DataViewerComponent<CellBase<any>> = (cellData) => {
         if (cellData.cell) {
             const value = cellData.cell.value;
@@ -171,7 +174,19 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
         } else {
             return;
         }
+        console.log(`Selected cell: ${JSON.stringify(newCoordinate)}`);
         if (editable && setSelectedCoordinate) setSelectedCoordinate(newCoordinate);
+    };
+
+    console.log(`Selected cell!: ${JSON.stringify(selectedCell)}`);
+
+    const onClickHandler = (points: Point[], selection: any) => {
+        if (points.length != 0) {
+            var newCoordinate = { tableIndices: [], rowIdx: -1, colIdx: -1 };
+            newCoordinate["rowIdx"] = points[0].row;
+            newCoordinate["colIdx"] = points[0].column;
+            setSelectedCell(newCoordinate);
+        }
     };
 
     const addRowHandler: React.MouseEventHandler = () => {
@@ -204,13 +219,6 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                         runEVQL({ evqlStr: prevSubtree_str, dbName: "proda_demo" })
                     );
                     node.table_excerpt = PGResultToTableExcerpt(data["result"]);
-                    // runEVQL({ evqlStr: JSON.stringify(prevSubtree), dbName: "proda_demo" })
-                    //     .then((tmpQueryResult) => {
-                    //         node.table_excerpt = PGResultToTableExcerpt(tmpQueryResult["result"]);
-                    //     })
-                    //     .catch((err) => {
-                    //         console.warn(`error:${err}`);
-                    //     });
                 } else {
                     // Get default table
                     runSQL({ sql: `SELECT * FROM cars`, dbName: demoDBName })
@@ -254,7 +262,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                                   }
                                 : undefined
                         }
-                        onSelect={editable ? onSelectHandler : undefined}
+                        onSelect={editable ? onSelectHandler : onClickHandler}
                         ColumnIndicator={EVQLColumnIndicator}
                         DataViewer={(e) => dataViewer(e)}
                     />

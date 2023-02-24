@@ -162,7 +162,6 @@ export const parseExpressions = (cellValue: string, header_names: string[], igno
 
 export const conditionToExpression = (condition: Function, names: string[]): string => {
     const l_op = names[condition.header_id];
-    console.log(`condition: ${JSON.stringify(condition)}`);
     if (condition.func_type == "Selecting") {
         if (!condition.op_type) {
             console.error("op_type is not defined");
@@ -201,7 +200,7 @@ export const addEVQLNode = (evqlTree: EVQLTree, newHeaders: string[]): EVQLTree 
     // TODO: Need to get result table from the previous query and make a new table excerpt
     const newNode: EVQLNode = {
         name: "dummy_name",
-        table_excerpt: { 
+        table_excerpt: {
             name: "new_node",
             headers: [...newHeaders],
             col_types: [],

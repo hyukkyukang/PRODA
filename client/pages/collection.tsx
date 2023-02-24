@@ -48,10 +48,10 @@ export const Collection = (props: any) => {
         const workerId = queryParams.get("workerId") ? queryParams.get("workerId") : "";
 
         // Debugging
-        console.log(`hitId: ${hitId}`);
-        console.log(`assignmentId: ${assignmentId}`);
-        console.log(`turkSubmitTo: ${turkSubmitTo}`);
-        console.log(`workerId: ${workerId}`);
+        // console.log(`hitId: ${hitId}`);
+        // console.log(`assignmentId: ${assignmentId}`);
+        // console.log(`turkSubmitTo: ${turkSubmitTo}`);
+        // console.log(`workerId: ${workerId}`);
 
         // Set AMT information
         setHitId(hitId === null ? "" : hitId);
@@ -75,8 +75,6 @@ export const Collection = (props: any) => {
         </React.Fragment>
     );
 
-    console.log(`data: ${JSON.stringify(data)}`);
-
     const collectionBody = (
         <div style={{ marginLeft: "1%", width: "98%" }}>
             {/* Show saquery information for the current task */}
@@ -85,7 +83,7 @@ export const Collection = (props: any) => {
                 <QuerySheet currentTask={data} />
             </Paper>
             {/* Show query information for the previous tasks (to complete the current task) */}
-            {data?.history.map((prevTask, idx) => {
+            {data?.history?.map((prevTask, idx) => {
                 return (
                     <React.Fragment>
                         <br />
