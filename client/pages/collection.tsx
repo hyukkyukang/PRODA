@@ -1,12 +1,11 @@
-import { Box, Container, Grid, Paper, Step, StepLabel, Stepper } from "@mui/material";
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import { Container, Grid, Paper, Step, StepLabel, Stepper } from "@mui/material";
+import React, { useContext, useEffect, useMemo, useState, useRef } from "react";
 
 import CircularProgress from "@mui/material/CircularProgress";
 import { fetchTask, sendWorkerAnswer } from "../api/connect";
 import { AnswerSheet, UserAnswer } from "../components/Collection/answerSheet";
 import { Task } from "../components/Collection/task";
 import { Header } from "../components/Header/collectionHeader";
-import { EVQLTable } from "../components/VQL/EVQLTable";
 
 import { QuerySheet } from "../components/Collection/querySheet";
 import { RefContext } from "../pages/_app";
@@ -26,6 +25,8 @@ export const Collection = (props: any) => {
     const [turkSubmitTo, setTurkSubmitTo] = useState("")
     const [workerId, setWorkerId] = useState("")
 
+    // To handle submission
+    const formRef = useRef<HTMLFormElement>(null);
 
     const MyStepper: JSX.Element = (
         <React.Fragment>
@@ -47,17 +48,17 @@ export const Collection = (props: any) => {
         </React.Fragment>
     );
 
-    <form action="https://workersandbox.mturk.com/mturk/externalSubmit">
-    <input type='hidden' value={assignmentId} name='assignmentId' id='assignmentId'/>
-    <input type='submit' id='submitButton' value='Submit'/>
-  </form>
-
     const onSubmitHandler = () => {
         // Send current step's info to the server
         sendWorkerAnswer({ task: { ...currentTask, queryType: currentTask?.queryType, dbName: currentTask?.dbName }, answer: answer, userId: "dummyUser" });
-        // Change state
-        setCurrentStep(currentStep + 1);
-        setAnswer({ ...answer, nl: "" });
+        
+        // Submit assignment
+        if (formRef.current){
+            formRef.current.submit();
+        }
+        // // Change state
+        // setCurrentStep(currentStep + 1);
+        // setAnswer({ ...answer, nl: "" });
     };
 
     const fetchTaskHandler = async () => {
@@ -93,6 +94,17 @@ export const Collection = (props: any) => {
         fetchTaskHandler();
     }, []);
 
+    const AMTSubmissionForm = (
+        <React.Fragment>
+            <form action="https://workersandbox.mturk.com/mturk/externalSubmit" ref={formRef}>
+                <input type='hidden' value={assignmentId} name='assignmentId' id='assignmentId'/>
+                <input type='hidden' value={answer.type} name='taskType' id='taskType'/>
+                <input type='hidden' value={answer.nl} name='answerNL' id='answerNL'/>
+                <input type='hidden' value={answer.isCorrect === undefined ? 'true' : answer.isCorrect.toString()} name='isCorrect' id='isCorrect'/>
+            </form>
+        </React.Fragment>
+    );
+
     const collectionBody = (
         <div style={{ marginLeft: "1%", width: "98%" }}>
             {/* Show query information for the current task */}
@@ -112,6 +124,7 @@ export const Collection = (props: any) => {
                 );
             })}
             <br />
+            {AMTSubmissionForm}
         </div>
     );
 
