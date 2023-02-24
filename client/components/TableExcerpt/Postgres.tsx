@@ -1,5 +1,6 @@
 import { ITableExcerpt } from "./TableExcerpt";
-import {isNumber} from "../../utils";
+import { isNumber } from "../../utils";
+import { getEmptyTableExcerpt } from "./TableExcerpt";
 
 export interface PGResultFieldInterface {
     name: string;
@@ -25,11 +26,13 @@ export interface PGResultInterface {
 }
 
 export const PGResultToTableExcerpt = (pgResult: PGResultInterface): ITableExcerpt => {
-    const table = {
+    if (pgResult === undefined || pgResult == null) {
+        return getEmptyTableExcerpt();
+    }
+    return {
         name: "result",
         headers: pgResult.fields.map((field) => field.name),
         col_types: pgResult.fields.map((field) => field.format),
-        allow_null: true,
         rows: pgResult.rows.map((row) => {
             return {
                 cells: row.map((cell) => {
@@ -43,6 +46,4 @@ export const PGResultToTableExcerpt = (pgResult: PGResultInterface): ITableExcer
         }),
         base_table_names: [],
     };
-    return table;
 };
-

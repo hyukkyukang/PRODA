@@ -1,16 +1,17 @@
 import classNames from "classnames";
-import React, { useEffect, useState } from "react";
-import { Spreadsheet, DataViewerComponent, Matrix, CellBase, ColumnIndicatorComponent, Point } from "react-spreadsheet-custom";
-import { AiOutlinePlusSquare, AiOutlineMinusSquare } from "react-icons/ai";
+import React, { useEffect, useMemo, useState } from "react";
+import { AiOutlineMinusSquare, AiOutlinePlusSquare } from "react-icons/ai";
+import { CellBase, ColumnIndicatorComponent, DataViewerComponent, Matrix, Point, Spreadsheet } from "react-spreadsheet-custom";
 
-import { EVQLTree, EVQLNode, aggFunctions, Function, Clause } from "./EVQL";
-import { getNode, EVQLNodeToEVQLTable, getTreeTraversingPaths, parseExpressions, getProjectedNames, addEVQLNode, getSubtree } from "./utils";
-import { isEmptyObject } from "../../utils";
+import { useQuery } from "react-query";
 import { runEVQL, runSQL } from "../../api/connect";
-import { ITableExcerpt, TableExcerpt } from "../TableExcerpt/TableExcerpt";
+import { isEmptyObject } from "../../utils";
 import { PGResultToTableExcerpt } from "../TableExcerpt/Postgres";
+import { ITableExcerpt, TableExcerpt } from "../TableExcerpt/TableExcerpt";
+import { aggFunctions, Clause, EVQLNode, EVQLTree, Function } from "./EVQL";
+import { addEVQLNode, EVQLNodeToEVQLTable, getNode, getProjectedNames, getSubtree, getTreeTraversingPaths, parseExpressions } from "./utils";
 
-const demoDBName = process.env.NEXT_PUBLIC_DemoDBName
+const demoDBName = process.env.NEXT_PUBLIC_DemoDBName;
 
 // This is from react-spreadsheet-custom/src/selection.ts
 export enum EntireType {
@@ -100,12 +101,10 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     const [evqlNode, setEVQLNode] = useState({} as EVQLNode);
     const [rowLabels, setRowLabels] = useState<string[]>(["1"]);
     const [tableContext, setTableContext] = useState<IEVQLTable>({} as IEVQLTable);
-    const [resultTable, setResultTable] = useState<ITableExcerpt>({} as ITableExcerpt);
 
-    const getResultTable = async (subTree: EVQLTree) => {
-        const tmpQueryResult = await runEVQL({ evqlStr: JSON.stringify(subTree), dbName: "proda_demo" });
-        setResultTable(PGResultToTableExcerpt(tmpQueryResult["result"]));
-    };
+    const [subTree_str, setSubTree_str] = useState("");
+    const { isLoading, isError, data, error } = useQuery(["runEVQL", subTree_str, "proda_demo"], () => runEVQL({ evqlStr: subTree_str, dbName: "proda_demo" }));
+    const resultTable = useMemo<ITableExcerpt>(() => PGResultToTableExcerpt(data?.result), [data]);
 
     const dataViewer: DataViewerComponent<CellBase<any>> = (cellData) => {
         if (cellData.cell) {
@@ -200,13 +199,18 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                 // Get from prev node
                 if (!isFirstNode) {
                     const prevSubtree = getSubtree(evqlRoot, [...childListPath]);
-                    runEVQL({ evqlStr: JSON.stringify(prevSubtree), dbName: "proda_demo" })
-                        .then((tmpQueryResult) => {
-                            node.table_excerpt = PGResultToTableExcerpt(tmpQueryResult["result"]);
-                        })
-                        .catch((err) => {
-                            console.warn(`error:${err}`);
-                        });
+                    const prevSubtree_str = JSON.stringify(prevSubtree);
+                    const { isLoading, isError, data, error } = useQuery(["runEVQL", prevSubtree_str, "proda_demo"], () =>
+                        runEVQL({ evqlStr: prevSubtree_str, dbName: "proda_demo" })
+                    );
+                    node.table_excerpt = PGResultToTableExcerpt(data["result"]);
+                    // runEVQL({ evqlStr: JSON.stringify(prevSubtree), dbName: "proda_demo" })
+                    //     .then((tmpQueryResult) => {
+                    //         node.table_excerpt = PGResultToTableExcerpt(tmpQueryResult["result"]);
+                    //     })
+                    //     .catch((err) => {
+                    //         console.warn(`error:${err}`);
+                    //     });
                 } else {
                     // Get default table
                     runSQL({ sql: `SELECT * FROM cars`, dbName: demoDBName })
@@ -221,7 +225,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
             if (!editable) {
                 // Get and show result table
                 const subtree = getSubtree(evqlRoot, [...childListPath]);
-                getResultTable(subtree);
+                setSubTree_str(JSON.stringify(subtree));
             }
             setEVQLNode(node);
             setTableContext(tmpTableContext);

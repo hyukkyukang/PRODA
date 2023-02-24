@@ -136,7 +136,7 @@ class Task_Generator:
         return [self._query_to_task(evql, query_tree_root_node)]
 
     def convert_tasks_into_json_string(self, tasks: List[Task]) -> str:
-        return json.dumps([task.dump_json() for task in tasks])
+        return json.dumps([task.dump_json() for task in tasks][0])
 
 
 if __name__ == "__main__":

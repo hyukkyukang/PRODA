@@ -6,7 +6,7 @@ import React, { useState } from "react";
 import { EVQLTable } from "../VQL/EVQLTable";
 import { Task } from "./task";
 
-export const QuerySheet = (props: { currentTask: Task | null }) => {
+export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
     const { currentTask } = props;
     const [isCollapse, setIsCollapse] = useState<boolean>(true);
 

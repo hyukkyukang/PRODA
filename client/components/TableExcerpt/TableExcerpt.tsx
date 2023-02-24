@@ -144,6 +144,16 @@ const isEmptyRow = (tableExcerpt: ITableExcerpt): boolean => {
     return isEmptyObject(tableExcerpt) || isEmptyObject(tableExcerpt.headers) || isEmptyObject(tableExcerpt.rows) || tableExcerpt.rows.length == 0;
 };
 
+export const getEmptyTableExcerpt = (): ITableExcerpt => {
+    return {
+        name: "",
+        headers: [],
+        col_types: [],
+        rows: [],
+        base_table_names: [],
+    };
+};
+
 export const TableExcerpt = (props: React.ComponentProps<any>) => {
     const tableExcerpt: ITableExcerpt = props.queryResult;
     const flatRows: Cell[][] = isEmptyObject(tableExcerpt) ? [] : toFlatRows(tableExcerpt.rows);

@@ -3,7 +3,7 @@ console.log("Begin server");
 const fs = require("fs");
 const config = require("./config");
 const func = require("./function.js");
-const https = require('https');
+const https = require("https");
 var express = require("express");
 var cors = require("cors");
 
@@ -33,6 +33,20 @@ app.post("/fetchEVQL", function (req, res) {
     res.send(evql);
 });
 
+app.post("/fetchTask", function (req, res) {
+    console.log(`app.post./fetchTask  with query: ${JSON.stringify(req.query)}`);
+    const taskData = func.getTask();
+    console.log(`task data: ${JSON.stringify(taskData)}`);
+    res.send(taskData);
+});
+
+app.post("/fetchLogData", function (req, res) {
+    console.log("app.post./fetchLogData");
+    const logData = func.getLogData();
+    console.log(`log data: ${JSON.stringify(logData)}`);
+    res.send(logData);
+});
+
 app.post("/runEVQL", async function (req, res) {
     console.log(`app.post./runEVQL with query: ${JSON.stringify(req.query)}`);
     const evqlStr = req.body.params.evqlStr;
@@ -50,20 +64,6 @@ app.post("/runSQL", async function (req, res) {
     const dbName = req.body.params.dbName;
     const queryResult = await func.queryDB(sql, dbName);
     res.send(queryResult);
-});
-
-app.post("/fetchTask", function (req, res) {
-    console.log(`app.post./fetchask  with query: ${JSON.stringify(req.query)}`);
-    const taskData = func.getTask();
-    console.log(`task data: ${JSON.stringify(taskData)}`);
-    res.send(taskData);
-});
-
-app.post("/fetchLogData", function (req, res) {
-    console.log("app.post./fetchLogData");
-    const logData = func.getLogData();
-    console.log(`log data: ${JSON.stringify(logData)}`);
-    res.send(logData);
 });
 
 /* Handling Response */
@@ -86,11 +86,15 @@ app.post("/updateConfig", function (req, res) {
     res.send({ status: "success" });
 });
 
-
-https.createServer({
-    key: fs.readFileSync('../certificates/thawte_postech_key_nopass.pem'),
-    cert: fs.readFileSync('../certificates/thawte_postech.pem')
-}, app).listen(config.serverPort);
+https
+    .createServer(
+        {
+            key: fs.readFileSync("../certificates/thawte_postech_key_nopass.pem"),
+            cert: fs.readFileSync("../certificates/thawte_postech.pem"),
+        },
+        app
+    )
+    .listen(config.serverPort);
 
 // app.listen(config.serverPort);
 
