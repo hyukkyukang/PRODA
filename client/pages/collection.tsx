@@ -27,7 +27,7 @@ export const Collection = (props: any) => {
     const formRef = useRef<HTMLFormElement>(null);
 
     // Fetching Data
-    const { isLoading, isError, data, error } = useQuery<Task>("todos", fetchTask);
+    const { isLoading, isError, data, error } = useQuery<Task>("fetchTask", fetchTask);
 
     const onSubmitHandler = () => {
         // Send current step's info to the server

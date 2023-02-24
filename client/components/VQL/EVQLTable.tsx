@@ -103,7 +103,11 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     const [tableContext, setTableContext] = useState<IEVQLTable>({} as IEVQLTable);
 
     const [subTree_str, setSubTree_str] = useState("");
-    const { isLoading, isError, data, error } = useQuery(["runEVQL", subTree_str, "proda_demo"], () => runEVQL({ evqlStr: subTree_str, dbName: "proda_demo" }));
+    const { isLoading, isError, data, error } = useQuery(
+        ["runEVQL", subTree_str, "proda_demo"],
+        () => runEVQL({ evqlStr: subTree_str, dbName: "proda_demo" }),
+        { enabled: !!subTree_str }
+    );
     const resultTable = useMemo<ITableExcerpt>(() => PGResultToTableExcerpt(data?.result), [data]);
 
     const dataViewer: DataViewerComponent<CellBase<any>> = (cellData) => {
@@ -200,17 +204,13 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                 if (!isFirstNode) {
                     const prevSubtree = getSubtree(evqlRoot, [...childListPath]);
                     const prevSubtree_str = JSON.stringify(prevSubtree);
-                    const { isLoading, isError, data, error } = useQuery(["runEVQL", prevSubtree_str, "proda_demo"], () =>
-                        runEVQL({ evqlStr: prevSubtree_str, dbName: "proda_demo" })
-                    );
-                    node.table_excerpt = PGResultToTableExcerpt(data["result"]);
-                    // runEVQL({ evqlStr: JSON.stringify(prevSubtree), dbName: "proda_demo" })
-                    //     .then((tmpQueryResult) => {
-                    //         node.table_excerpt = PGResultToTableExcerpt(tmpQueryResult["result"]);
-                    //     })
-                    //     .catch((err) => {
-                    //         console.warn(`error:${err}`);
-                    //     });
+                    if (prevSubtree_str) {
+                        throw new Error("Not implemented. Need to check if using useQuery is OK.");
+                        const { isLoading, isError, data, error } = useQuery(["runEVQL", prevSubtree_str, "proda_demo"], () =>
+                            runEVQL({ evqlStr: prevSubtree_str, dbName: "proda_demo" })
+                        );
+                        node.table_excerpt = PGResultToTableExcerpt(data["result"]);
+                    }
                 } else {
                     // Get default table
                     runSQL({ sql: `SELECT * FROM cars`, dbName: demoDBName })
