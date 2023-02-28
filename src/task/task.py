@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import List
+from typing import Any, Dict, List
 
 import attrs
 
@@ -15,6 +15,7 @@ class TaskTypes(IntEnum):
 @attrs.define
 class Task:
     nl: str
+    nl_mapping: Dict[str, Any]
     sql: str
     evql: EVQLTree
     query_type: IntEnum
@@ -28,6 +29,7 @@ class Task:
     def dump_json(self):
         return {
             "nl": self.nl,
+            "nl_mapping": self.nl_mapping,
             "sql": self.sql,
             "evql": self.evql.dump_json(),
             "queryType": self.query_type,
@@ -43,6 +45,7 @@ class Task:
     def load_json(json_obj):
         return Task(
             nl=json_obj["nl"],
+            nl_mapping=json_obj["nl_mapping"],
             sql=json_obj["sql"],
             evql=EVQLTree.load_json(json_obj["evql"]),
             query_type=json_obj["queryType"],

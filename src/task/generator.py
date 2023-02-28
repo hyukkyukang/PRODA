@@ -3,19 +3,19 @@ import random
 from typing import List
 
 from hkkang_utils.misc import property_with_cache
+from pylogos.query_graph.koutrika_query_graph import Query_graph
 from pylogos.translate import translate
 
+from src.query_tree.query_tree import Node, QueryBlock
 from src.task import Task
-from src.utils.example_queries import CorrelatedNestedQuery, SelectionQuery
+from src.utils.example_queries import CorrelatedNestedQuery
 from src.utils.pg_connector import PostgresConnector
 from src.VQL.EVQL import EVQLTree
-from src.query_tree.query_tree import Node, QueryBlock
 
 # TASK_TYPES = [1, 2]
 TASK_TYPES = [1]
 
 dummy_query = CorrelatedNestedQuery()
-# dummy_query = SelectionQuery()
 
 
 class Task_Generator:
@@ -83,7 +83,9 @@ class Task_Generator:
 
         return selected_type
 
-    def _query_to_task(self, evql: EVQLTree, query_tree: Node, is_recursive_call=False):
+    def _query_to_task(
+        self, evql: EVQLTree, query_tree: Node, query_graphs: List[Query_graph], is_recursive_call=False
+    ):
         # Select a query type to generate
         query_type = self.query_type
         task_type = self.task_type
@@ -93,8 +95,15 @@ class Task_Generator:
         table_excerpt = evql.node.table_excerpt
 
         # Generate NL
-        # nl = "This is a dummy NL sentence"  # generate_nl(None)
-        nl = "What are the id of cars whose manufactured year is 2010?"
+        generated_nl, mapping_info = translate(query_graphs[0])
+
+        # Add Alignment annotation
+        nl_mapping = []
+        for x, y, value in evql.node.mapping:
+            key_str = f"{x},{y}"
+            for item in filter(lambda k: value in [k["table"], k["column"]], mapping_info):
+                nl_mapping.append((key_str, item["start"], item["end"]))
+        nl_mapping = sorted(nl_mapping, key=lambda x: x[1])
 
         # Create history
         child_query_blocks = [edge.child for edge in query_tree.child_tables if type(edge.child) == QueryBlock]
@@ -103,7 +112,7 @@ class Task_Generator:
             []
             if is_recursive_call
             else [
-                self._query_to_task(child_node, child_block)
+                self._query_to_task(child_node, child_block, query_graphs[1:])
                 for child_node, child_block in zip(evql.children, child_query_blocks)
             ]
         )
@@ -113,7 +122,8 @@ class Task_Generator:
         # Wrap with Task class
         # TODO: handle table_excerpt, result table, and history
         return Task(
-            nl=nl,
+            nl=generated_nl,
+            nl_mapping=nl_mapping,
             sql=sql,
             evql=evql,
             query_type=query_type,
@@ -128,12 +138,13 @@ class Task_Generator:
         # Generate SQL
         evql = dummy_query.evql
         query_tree_root_node = dummy_query.query_tree.root
+        query_graphs = dummy_query.query_graphs
 
         # For each evql node
 
         # Wrap with Task class
         # TODO: handle table_excerpt, result table, and history
-        return [self._query_to_task(evql, query_tree_root_node)]
+        return [self._query_to_task(evql, query_tree_root_node, query_graphs)]
 
     def convert_tasks_into_json_string(self, tasks: List[Task]) -> str:
         return json.dumps([task.dump_json() for task in tasks][0])

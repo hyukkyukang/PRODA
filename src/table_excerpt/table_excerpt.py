@@ -1,4 +1,5 @@
-from typing import List, Any, Optional, Union
+from typing import Any, List, Optional, Union
+
 from hkkang_utils import string as string_utils
 
 
@@ -127,7 +128,11 @@ class TableExcerpt:
         ]
         new_rows = [Row(row.cells + columns_to_concatenate) for row in base_table.rows]
         return TableExcerpt(
-            new_table_name, new_headers, new_col_types, rows=new_rows, base_table_names=base_table_names
+            new_table_name,
+            new_headers,
+            new_col_types,
+            rows=new_rows,
+            base_table_names=base_table_names,
         )
 
     @staticmethod

@@ -2,14 +2,33 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Box, Grid } from "@mui/material";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { isEmptyObject } from "../../utils";
 import { EVQLTable } from "../VQL/EVQLTable";
 import { Task } from "./task";
+
+export interface ICoordinateContext {
+    selectedCoordinate: { x: number; y: number };
+    SetSelectedCoordinate: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
+}
+
+export const CoordinateContext = React.createContext<ICoordinateContext>({} as ICoordinateContext);
+
+const spanSplicer = (str: string, last_idx: number, start_idx: number, end_idx: number): JSX.Element => {
+    return (
+        <React.Fragment>
+            {last_idx < start_idx ? str.slice(last_idx, start_idx) : null}
+            <span className="highlight">{str.slice(start_idx, end_idx)}</span>
+        </React.Fragment>
+    );
+};
 
 export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
     const { currentTask } = props;
     const [isCollapse, setIsCollapse] = useState<boolean>(true);
-
+    const [selectedCoordinate, SetSelectedCoordinate] = useState<{ x: number; y: number }>({ x: -1, y: -1 });
+    const [highlightList, setHighlightList] = useState<Array<[number, number]>>([]);
+    const nl_mapping = useMemo(() => currentTask?.nl_mapping, [currentTask]);
     const expandCollapseHandler = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         setIsCollapse(!isCollapse);
     };
@@ -19,24 +38,52 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
         transition: "transform 150ms ease", // smooth transition
     };
 
+    const highlightedNL = (nl: string, highlightIndices: Array<[number, number]>) => {
+        let last_idx = 0;
+        const list_of_fragments: Array<JSX.Element> = [];
+        highlightIndices.forEach((spanIndices: [number, number]) => {
+            const tmp = spanSplicer(nl, last_idx, spanIndices[0], spanIndices[1]);
+            list_of_fragments.push(tmp);
+            last_idx = spanIndices[1];
+        });
+        // Append last span
+        if (last_idx < nl.length) {
+            list_of_fragments.push(<span>{nl.slice(last_idx)}</span>);
+        }
+
+        return list_of_fragments;
+    };
+
+    useEffect(() => {
+        if (!isEmptyObject(nl_mapping)) {
+            const selectedSpan = nl_mapping?.filter((value) => {
+                return value[0] == `${selectedCoordinate.x},${selectedCoordinate.y}`;
+            });
+            const spanOnly: Array<[number, number]> = selectedSpan ? selectedSpan.map((value) => value.slice(1)) : [];
+            setHighlightList(spanOnly);
+        }
+    }, [nl_mapping, selectedCoordinate]);
+
     return (
         <React.Fragment>
             {currentTask ? (
                 <Box style={{ marginLeft: "15px", marginRight: "15px", paddingTop: "15px" }}>
                     <b>Sentence:</b>
                     <br />
-                    <span>{currentTask?.nl}</span>
+                    <span>{highlightedNL(currentTask?.nl, highlightList)}</span>
                     <Collapse in={isCollapse}>
                         <br />
                         <Grid container spacing={2}>
                             <Grid item xs={12} sm={12}>
                                 <br />
-                                <EVQLTable
-                                    evqlRoot={{ node: currentTask.evql.node, children: currentTask.evql.children }}
-                                    childListPath={[]}
-                                    editable={false}
-                                    isFirstNode={true}
-                                />
+                                <CoordinateContext.Provider value={{ selectedCoordinate, SetSelectedCoordinate }}>
+                                    <EVQLTable
+                                        evqlRoot={{ node: currentTask.evql.node, children: currentTask.evql.children }}
+                                        childListPath={[]}
+                                        editable={false}
+                                        isFirstNode={true}
+                                    />
+                                </CoordinateContext.Provider>
                             </Grid>
                         </Grid>
                         <br />

@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useContext } from "react";
 import { AiOutlineMinusSquare, AiOutlinePlusSquare } from "react-icons/ai";
 import { CellBase, ColumnIndicatorComponent, DataViewerComponent, Matrix, Point, Spreadsheet } from "react-spreadsheet-custom";
 
@@ -10,6 +10,7 @@ import { PGResultToTableExcerpt } from "../TableExcerpt/Postgres";
 import { ITableExcerpt, TableExcerpt } from "../TableExcerpt/TableExcerpt";
 import { aggFunctions, Clause, EVQLNode, EVQLTree, Function } from "./EVQL";
 import { addEVQLNode, EVQLNodeToEVQLTable, getNode, getProjectedNames, getSubtree, getTreeTraversingPaths, parseExpressions } from "./utils";
+import { CoordinateContext } from "../Collection/querySheet";
 
 const demoDBName = process.env.NEXT_PUBLIC_DemoDBName;
 
@@ -111,7 +112,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     const resultTable = useMemo<ITableExcerpt>(() => PGResultToTableExcerpt(data?.result), [data]);
 
     // To get selected cell information
-    const [selectedCell, setSelectedCell] = useState<Coordinate>({ tableIndices: [], colIdx: -1, rowIdx: -1 });
+    const { selectedCoordinate, SetSelectedCoordinate } = useContext(CoordinateContext);
 
     const dataViewer: DataViewerComponent<CellBase<any>> = (cellData) => {
         if (cellData.cell) {
@@ -178,18 +179,22 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
         } else {
             return;
         }
-        console.log(`Selected cell: ${JSON.stringify(newCoordinate)}`);
         if (editable && setSelectedCoordinate) setSelectedCoordinate(newCoordinate);
     };
 
-    console.log(`Selected cell!: ${JSON.stringify(selectedCell)}`);
-
     const onClickHandler = (points: Point[], selection: any) => {
-        if (points.length != 0) {
-            var newCoordinate = { tableIndices: [], rowIdx: -1, colIdx: -1 };
-            newCoordinate["rowIdx"] = points[0].row;
-            newCoordinate["colIdx"] = points[0].column;
-            setSelectedCell(newCoordinate);
+        if (points.length == 1) {
+            var newCoordinate = { x: -1, y: -1 };
+            // Figure out if header is selected or not
+            // If selection object has a property "type", header is selected
+            if (selection.hasOwnProperty("type")) {
+                newCoordinate.x = points[0].row;
+                newCoordinate.y = points[0].column;
+            } else {
+                newCoordinate.x = points[0].row + 1;
+                newCoordinate.y = points[0].column;
+            }
+            SetSelectedCoordinate(newCoordinate);
         }
     };
 
@@ -246,7 +251,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
             setTableContext(tmpTableContext);
             setRowLabels(tmpRowLabels);
         }
-    }, [evqlRoot]);
+    }, []);
 
     if (!isEmptyObject(tableContext)) {
         return (

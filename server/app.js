@@ -36,7 +36,7 @@ app.post("/fetchEVQL", function (req, res) {
 app.post("/fetchTask", function (req, res) {
     console.log(`app.post./fetchTask  with query: ${JSON.stringify(req.query)}`);
     const taskData = func.getTask();
-    console.log(`task data: ${JSON.stringify(taskData)}`);
+    console.log(`task data1: ${taskData}`);
     res.send(taskData);
 });
 

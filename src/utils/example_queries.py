@@ -1,8 +1,18 @@
 import abc
 import argparse
 import json
+from typing import List
 
 from hkkang_utils import misc as misc_utils
+from pylogos.query_graph.koutrika_query_graph import (
+    Attribute,
+    Function,
+    FunctionType,
+    OperatorType,
+    Query_graph,
+    Relation,
+    Value,
+)
 
 import src.query_tree.operator as qt_operator
 from src.query_tree.operator import Aggregation, Clause, Condition, Foreach, Projection, Selection
@@ -460,13 +470,13 @@ class HavingQuery(TestQuery):
             ["kia", 1030],
             ["genesis", (1130 + 1140) / 2],
         ]
-        result_table = TableExcerpt("cars2", result_headers, result_col_types, result_rows)
+        result_table = TableExcerpt("cars2", result_headers, result_col_types, rows=result_rows)
 
         # Next Table Excerpt
         new_car_headers = result_headers
         new_col_types = result_col_types
         new_rows = result_rows
-        new_table_excerpt = TableExcerpt("cars", new_car_headers, new_col_types, new_rows)
+        new_table_excerpt = TableExcerpt("cars", new_car_headers, new_col_types, rows=new_rows)
 
         # Create tree node 2
         # TODO: Need to discuss about how to name variables from previous step
@@ -527,7 +537,7 @@ class NestedQuery(TestQuery):
         result_headers = ["avg_max_speed"]
         result_col_types = ["number"]
         result_rows = [[280]]
-        result_table = TableExcerpt(node_1.name, result_headers, result_col_types, result_rows)
+        result_table = TableExcerpt(node_1.name, result_headers, result_col_types, rows=result_rows)
 
         # New table excerpt
         new_table_excerpt = TableExcerpt.concatenate("cars3", car_table, result_table)
@@ -593,13 +603,19 @@ class CorrelatedNestedQuery(TestQuery):
     @misc_utils.property_with_cache
     def evql(self) -> EVQLTree:
         # Create tree node 1
-        node_1 = EVQLNode(f"{car_table.name}_query", car_table, "SELECT avg(max_speed) FROM cars")
+        mapping1 = [
+            (0, car_table.headers.index("max_speed") + 1, "max_speed"),
+            (1, car_table.headers.index("model") + 1, "model"),
+        ]
+        node_1 = EVQLNode(
+            f"{car_table.name}_query", car_table, "SELECT avg(max_speed) FROM cars GROUP BY model", mapping=mapping1
+        )
         node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
         cond1 = Grouping(node_1.headers.index("model"))
         node_1.add_predicate(Clause([cond1]))
 
         # Query Result w/o concatenation
-        result_headers = ["model", "avg_max_speed"]
+        result_headers = ["g_model", "avg_max_speed"]
         result_col_types = [
             TableExcerpt._str_to_dtype("string"),
             TableExcerpt._str_to_dtype("number"),
@@ -616,13 +632,25 @@ class CorrelatedNestedQuery(TestQuery):
             ["kia", 1030],
             ["genesis", 1135],
         ]
-        result_table = TableExcerpt(node_1.name, result_headers, result_col_types, result_rows)
+        result_table = TableExcerpt(
+            node_1.name,
+            result_headers,
+            result_col_types,
+            rows=result_rows,
+        )
 
         # Query Result
         new_car_table = TableExcerpt.concatenate("cars2", car_table, result_table)
 
         # Create tree node 2
-        node_2 = EVQLNode(f"{new_car_table.name}_query", new_car_table, self.sql)
+        mapping2 = [
+            (0, new_car_table.headers.index("id") + 1, "id"),
+            (1, new_car_table.headers.index("model") + 1, "model"),
+            (1, new_car_table.headers.index("model") + 1, "g_model"),
+            (1, new_car_table.headers.index("max_speed") + 1, "max_speed"),
+            (1, new_car_table.headers.index("max_speed") + 1, "avg_max_speed"),
+        ]
+        node_2 = EVQLNode(f"{new_car_table.name}_query", new_car_table, self.sql, mapping=mapping2)
         node_2.add_projection(Header(node_2.headers.index("id")))
         # Create conditions for the node
         cond2_1 = Selecting(
@@ -633,7 +661,7 @@ class CorrelatedNestedQuery(TestQuery):
         cond2_2 = Selecting(
             find_nth_occurrence_index(node_2.headers, "model", 1),
             Operator.equal,
-            Operator.add_idx_prefix(find_nth_occurrence_index(node_2.headers, "model", 2)),
+            Operator.add_idx_prefix(find_nth_occurrence_index(node_2.headers, "g_model", 1)),
         )
         node_2.add_predicate(Clause([cond2_1, cond2_2]))
 
@@ -694,6 +722,55 @@ class CorrelatedNestedQuery(TestQuery):
         )
         return QueryTree(root=node2, sql=self.sql)
 
+    @misc_utils.property_with_cache
+    def query_graphs(self) -> List[Query_graph]:
+        def graph_1() -> Query_graph:
+            ## Initialize nodes
+            # Relation
+            cars = Relation("cars", "cars")
+            # Attribute
+            max_speed = Attribute("max_speed", "max_speed")
+            model = Attribute("model", "model")
+            # Function
+            avg = Function(FunctionType.Avg)
+            ## Construct graph
+            query_graph = Query_graph("CorrelatedNestedQuery_subgraph")
+            query_graph.connect_membership(cars, max_speed)
+            query_graph.connect_transformation(avg, max_speed)
+            query_graph.connect_grouping(cars, model)
+            return query_graph
+
+        def graph_2() -> Query_graph:
+            ## Initialize nodes
+            # Relation
+            cars_1 = Relation("cars", "cars")
+            cars_2 = Relation("cars_t2", "cars", is_primary=True)
+            # Attribute
+            cars_id = Attribute("id", "id")
+            cars_max_speed_t1 = Attribute("max_speed", "max_speed")
+            cars_max_speed_t2 = Attribute("avg_max_speed", "max_speed")
+            cars_model_t1 = Attribute("model", "model")
+            cars_model_t2 = Attribute("g_model", "model")
+            # Function
+            avg = Function(FunctionType.Avg)
+
+            ## Construct graph
+            query_graph = Query_graph("CorrelatedNestedQuery")
+            query_graph.connect_membership(cars_2, cars_id)
+            # Nesting
+            query_graph.connect_selection(cars_2, cars_max_speed_t2)
+            query_graph.connect_predicate(cars_max_speed_t2, avg, OperatorType.GreaterThan)
+            query_graph.connect_transformation(avg, cars_max_speed_t1)
+            query_graph.connect_membership(cars_1, cars_max_speed_t1)
+            # Correlation condition
+            query_graph.connect_selection(cars_1, cars_model_t1)
+            query_graph.connect_predicate(cars_model_t1, cars_model_t2, OperatorType.Equal)
+            # Correlation back to the outer query
+            query_graph.connect_selection(cars_model_t2, cars_2)
+            return query_graph
+
+        return [graph_2(), graph_1()]
+
 
 class CorrelatedNestedQuery2(TestQuery):
     def __init__(self):
@@ -727,7 +804,7 @@ class CorrelatedNestedQuery2(TestQuery):
             ["kia", 1030],
             ["genesis", 1135],
         ]
-        result_table = TableExcerpt(node_1.name, result_headers, result_col_types, result_rows)
+        result_table = TableExcerpt(node_1.name, result_headers, result_col_types, rows=result_rows)
 
         # Create tree node 2
         new_table_excerpt = TableExcerpt.concatenate("cars2", car_table, result_table)
@@ -755,7 +832,7 @@ class CorrelatedNestedQuery2(TestQuery):
             TableExcerpt._str_to_dtype("float"),
         ]
         result_rows_2 = [[1, 350]]
-        result_table_2 = TableExcerpt(node_2.name, result_headers_2, result_col_types_2, result_rows_2)
+        result_table_2 = TableExcerpt(node_2.name, result_headers_2, result_col_types_2, rows=result_rows_2)
 
         # Create tree node 3
         node_3 = EVQLNode(f"{result_table_2.name}_query", result_table_2)
@@ -788,7 +865,7 @@ class MultipleSublinksQuery(TestQuery):
         result_headers = ["max_speed"]
         result_col_types = [TableExcerpt._str_to_dtype("float")]
         result_rows = [[935]]
-        result_table1 = TableExcerpt(node_1.name, result_headers, result_col_types, result_rows)
+        result_table1 = TableExcerpt(node_1.name, result_headers, result_col_types, rows=result_rows)
 
         # Create tree node 2
         node_2 = EVQLNode(f"{car_table}_query2", car_table)
@@ -801,7 +878,7 @@ class MultipleSublinksQuery(TestQuery):
         result_headers = ["horsepower"]
         result_col_types = [TableExcerpt._str_to_dtype("float")]
         result_rows = [[10.5]]
-        result_table2 = TableExcerpt(node_2.name, result_headers, result_col_types, result_rows)
+        result_table2 = TableExcerpt(node_2.name, result_headers, result_col_types, rows=result_rows)
 
         new_car_table1 = TableExcerpt.concatenate("cars2", car_table, result_table1)
         new_car_table2 = TableExcerpt.concatenate("cars3", new_car_table1, result_table2)
@@ -996,6 +1073,200 @@ class MultipleSublinksQuery2(TestQuery):
         )
 
         return QueryTree(node_b4, self.sql)
+
+
+import re
+
+
+def compare_string_without_newline(str1, str2):
+    str1 = re.sub(" +", " ", str1)
+    str2 = re.sub(" +", " ", str2)
+    return str1.replace("\n", "") == str2.replace("\n", "")
+
+
+def query_graph_to_generic_templates(query_graph):
+    """
+    input:
+        - query_graph
+    output:
+        - list of generic template graphs
+    Assumption:
+        - a relation must exists in a generic template
+    """
+
+    def get_all_paths(cur_relation, visited_edges):
+        return get_all_outgoing_paths_to_adj_relations(
+            cur_relation, visited_edges
+        ) + get_all_incoming_paths_from_adj_relations(cur_relation, visited_edges)
+
+    def get_all_outgoing_paths_to_adj_relations(cur_relation, visited_edges):
+        all_paths = []
+        for src, dst in query_graph.out_edges(cur_relation):
+            if (src, dst) not in visited_edges:
+                visited_edges.append((src, dst))
+                if isinstance(dst, Relation):
+                    all_paths.append([(src, dst)])
+                else:
+                    rec_paths = get_all_paths(dst, visited_edges)
+                    rec_paths = [[(src, dst)] + p for p in rec_paths] if rec_paths else [[(src, dst)]]
+                    all_paths += rec_paths
+        return all_paths
+
+    def get_all_incoming_paths_from_adj_relations(cur_relation, visited_edges):
+        all_paths = []
+        for src, dst in query_graph.in_edges(cur_relation):
+            if (src, dst) not in visited_edges:
+                visited_edges.append((src, dst))
+                if isinstance(dst, Relation):
+                    all_paths.append([(src, dst)])
+                else:
+                    rec_paths = get_all_paths(dst, visited_edges)
+                    rec_paths = [p + [(src, dst)] for p in rec_paths] if rec_paths else [[(src, dst)]]
+                    all_paths += rec_paths
+        return all_paths
+
+    visited_edges = []
+    generic_templates = []
+    paths_for_generic_templates = []
+    # Get all paths for generic templates
+    for relation in query_graph.relations:
+        paths_for_generic_templates += get_all_paths(relation, visited_edges)
+    for path in paths_for_generic_templates:
+        graph = Query_graph()
+        for src, dst in path:
+            edge = query_graph.edges[src, dst]["data"]
+            graph.unidirectional_connect(src, edge, dst)
+        generic_template = Generic_template(graph, query_graph)
+        print(generic_template.nl_description)
+        generic_templates.append(generic_template)
+    return generic_templates
+
+
+# class Query(metaclass=abc.ABCMeta):
+#     # To cache graph
+#     _graph = None
+
+#     @property
+#     def generic_templates(self):
+#         if not hasattr(self, "_generic_templates"):
+#             self._generic_templates = query_graph_to_generic_templates(self.graph)
+#         return self._generic_templates
+
+#     @property
+#     @abc.abstractmethod
+#     def sql(self) -> str:
+#         pass
+
+#     @property
+#     @abc.abstractmethod
+#     def graph(self) -> Query_graph:
+#         pass
+
+#     @property
+#     @abc.abstractmethod
+#     def nl(self) -> str:
+#         pass
+
+#     @property
+#     @abc.abstractmethod
+#     def BST_nl(self) -> str:
+#         pass
+
+#     @property
+#     @abc.abstractmethod
+#     def MRP_nl(self) -> str:
+#         pass
+
+#     @property
+#     @abc.abstractmethod
+#     def TMT_nl(self) -> str:
+#         pass
+
+
+# class GroupBy_query(Query):
+#     @property
+#     def sql(self):
+#         return """  SELECT year, term, max(grade)
+#                     FROM studentHistory
+#                     GROUP BY year, term
+#                     HAVING avg(grade) > 3
+#                """
+
+#     @property
+#     def graph(self):
+#         if not GroupBy_query._graph:
+#             # Relation
+#             studentHistory = Relation("StudentHistory", "student history")
+
+#             # Attribute
+#             year_prj = Attribute("year")
+#             year_grp = Attribute("year")
+#             term_prj = Attribute("term")
+#             term_grp = Attribute("term")
+#             grade1 = Attribute("grade")
+#             grade2 = Attribute("grade")
+#             avg = Function(FunctionType.Avg)
+#             max = Function(FunctionType.Max)
+#             v_3 = Value("3")
+
+#             query_graph = Query_graph("group-by query")
+#             query_graph.connect_membership(studentHistory, grade1)
+#             query_graph.connect_transformation(max, grade1)
+#             query_graph.connect_grouping(studentHistory, year_grp)
+#             query_graph.connect_grouping(year_grp, term_grp)
+#             query_graph.connect_membership(studentHistory, year_prj)
+#             query_graph.connect_membership(studentHistory, term_prj)
+#             query_graph.connect_having(studentHistory, grade2)
+#             query_graph.connect_transformation(grade2, avg)
+#             query_graph.connect_predicate(avg, v_3)
+#             GroupBy_query._graph = query_graph
+#         return GroupBy_query._graph
+
+#     @property
+#     def simplified_graph(self):
+#         if not GroupBy_query._graph:
+#             # Relation
+#             studentHistory = Relation("StudentHistory", "student history")
+
+#             # Attribute
+#             year_prj = Attribute("year_p", "year")
+#             year_grp = Attribute("year_g", "year")
+#             term_prj = Attribute("term_p", "term")
+#             term_grp = Attribute("term_g", "term")
+#             grade1 = Attribute("grade_p", "grade")
+#             grade2 = Attribute("grade_h", "grade")
+#             avg = Function(FunctionType.Avg)
+#             max = Function(FunctionType.Max)
+#             v_3 = Value("3")
+
+#             query_graph = Query_graph("group-by query")
+#             query_graph.connect_membership(studentHistory, grade1)
+#             query_graph.connect_transformation(max, grade1)
+#             query_graph.connect_grouping(studentHistory, year_grp)
+#             query_graph.connect_grouping(year_grp, term_grp)
+#             query_graph.connect_membership(studentHistory, year_prj)
+#             query_graph.connect_membership(studentHistory, term_prj)
+#             query_graph.connect_having(studentHistory, grade2)
+#             query_graph.connect_transformation(grade2, avg)
+#             query_graph.connect_predicate(avg, v_3, OperatorType.GreaterThan)
+#             GroupBy_query._graph = query_graph
+#         return GroupBy_query._graph
+
+#     @property
+#     def nl(self):
+#         return " "
+
+#     @property
+#     def BST_nl(self) -> str:
+#         return """ """
+
+#     @property
+#     def MRP_nl(self) -> str:
+#         return "find maximum grade, year, and term of student history for each year and term of student history, considering only those groups whose average grade of student history is greater than 3."
+
+#     @property
+#     def TMT_nl(self) -> str:
+#         return """ """
 
 
 def parse_args():

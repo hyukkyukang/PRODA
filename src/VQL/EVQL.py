@@ -1,8 +1,8 @@
 import abc
-import copy
-import attrs
 from enum import IntEnum
-from typing import List
+from typing import List, Tuple
+
+import attrs
 
 import src.VQL.utils as utils
 from src.table_excerpt.table_excerpt import TableExcerpt
@@ -313,6 +313,7 @@ class EVQLNode:
     name: str = attrs.field()
     table_excerpt: TableExcerpt = attrs.field()
     sql = attrs.field(default="")
+    mapping: List[Tuple[int, int, str]] = attrs.field(default=attrs.Factory([]))
     _projection: Projection = attrs.field(default=attrs.Factory(Projection))
     _predicate: Predicate = attrs.field(default=attrs.Factory(Predicate))
 
@@ -732,11 +733,6 @@ def check_evql_equivalence(evqlTree1: EVQLTree, evqlTree2: EVQLTree) -> bool:
     is_same_predicate = evqlTree1.node.predicate == evqlTree2.node.predicate
 
     # Check projection
-    # is_same_projection = True
-    # tmp_header_list = copy.deepcopy(evqlTree2.node.projection.headers)
-    # for header in evqlTree1.node.projection.headers:
-    #     is_same_projection &= check_and_remove_same_header(header, tmp_header_list)
-    # is_same_projection &= len(tmp_header_list) == 0
     is_same_projection = evqlTree1.node.projection == evqlTree2.node.projection
 
     # Check is_groupby

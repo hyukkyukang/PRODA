@@ -2,6 +2,7 @@ import { EVQLTree, EVQLNode } from "../VQL/EVQL";
 
 export interface Task {
     nl: string;
+    nl_mapping: Array<[string, number, number]>;
     sql: string;
     evql: EVQLTree;
     queryType: number;
