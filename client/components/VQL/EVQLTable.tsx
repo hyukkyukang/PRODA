@@ -1,16 +1,17 @@
-import classNames from "classnames";
-import React, { useEffect, useMemo, useState, useContext } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { AiOutlineMinusSquare, AiOutlinePlusSquare } from "react-icons/ai";
-import { CellBase, ColumnIndicatorComponent, DataViewerComponent, Matrix, Point, Spreadsheet } from "react-spreadsheet-custom";
+import { CellBase, DataViewerComponent, Matrix, Point, Spreadsheet } from "react-spreadsheet-custom";
 
 import { useQuery } from "react-query";
 import { runEVQL, runSQL } from "../../api/connect";
 import { isEmptyObject } from "../../utils";
+import { CoordinateContext } from "../Collection/querySheet";
 import { PGResultToTableExcerpt } from "../TableExcerpt/Postgres";
 import { ITableExcerpt, TableExcerpt } from "../TableExcerpt/TableExcerpt";
-import { aggFunctions, Clause, EVQLNode, EVQLTree, Function } from "./EVQL";
+import { Clause, EVQLNode, EVQLTree, Function } from "./EVQL";
+import { EVQLCell } from "./EVQLCell";
+import { EVQLColumnIndicator, IEVQLTableHeader } from "./EVQLColumnIndicator";
 import { addEVQLNode, EVQLNodeToEVQLTable, getNode, getProjectedNames, getSubtree, getTreeTraversingPaths, parseExpressions } from "./utils";
-import { CoordinateContext } from "../Collection/querySheet";
 
 const demoDBName = process.env.NEXT_PUBLIC_DemoDBName;
 
@@ -25,12 +26,6 @@ export interface Coordinate {
     tableIndices: number[];
     colIdx: number;
     rowIdx: number;
-}
-
-export interface IEVQLTableHeader {
-    name: string;
-    aggFuncs: number[];
-    isToProject: boolean;
 }
 
 export interface IEVQLTable {
@@ -53,47 +48,6 @@ export interface EVQLTreeWrapperProps {
     setSelectedCoordinate?: React.Dispatch<React.SetStateAction<Coordinate | undefined>>;
     editable?: boolean;
 }
-
-export const EVQLColumnIndicator: ColumnIndicatorComponent = ({ column, label, selected, onSelect }) => {
-    // column is the id
-    const handleClick = React.useCallback(
-        (event: React.MouseEvent) => {
-            onSelect(column, event.shiftKey);
-        },
-        [onSelect, column]
-    );
-    const evqlTableHeader = label as unknown as IEVQLTableHeader;
-
-    // If isToProject,
-    var headerStyle = {};
-    var componentToDisplay: React.ReactElement = isEmptyObject(evqlTableHeader) ? <>{String(column)}</> : <>{evqlTableHeader.name}</>;
-    if (!isEmptyObject(evqlTableHeader) && evqlTableHeader.isToProject) {
-        // Highlight the header background
-        headerStyle = { background: "#FFDDA7", color: "black" };
-        // Get all aggregation functions applied to this column
-        const aggFuncs = evqlTableHeader.aggFuncs.map((aggFuncId) => aggFunctions[aggFuncId]);
-        componentToDisplay = (
-            <>
-                <>{evqlTableHeader.name}</>
-                <br />
-                {aggFuncs.join(", ") == "none" ? <></> : <div style={{ fontSize: "14px" }}>{"(" + aggFuncs.join(", ") + ")"}</div>}
-            </>
-        );
-    }
-
-    return (
-        <th
-            className={classNames("Spreadsheet__header", {
-                "Spreadsheet__header--selected": selected,
-            })}
-            onClick={handleClick}
-            tabIndex={0}
-            style={headerStyle}
-        >
-            {componentToDisplay}
-        </th>
-    );
-};
 
 export const EVQLTable = (props: IEVQLVisualizationContext) => {
     const { evqlRoot, setEVQLRoot, setSelectedCoordinate, childListPath, editable, isFirstNode } = props;
@@ -277,6 +231,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                         onSelect={editable ? onSelectHandler : onClickHandler}
                         ColumnIndicator={EVQLColumnIndicator}
                         DataViewer={(e) => dataViewer(e)}
+                        Cell={EVQLCell}
                     />
                     <div style={{ display: "inline-block" }}>
                         {evqlNode?.predicate?.clauses.map((clause, idx) => (
