@@ -247,7 +247,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
             <div style={{ overflow: "scroll" }}>
                 {evqlNode.table_excerpt ? <b>Table:</b> : null}
                 {evqlNode.table_excerpt ? <TableExcerpt queryResult={evqlNode.table_excerpt} /> : null}
-                <b>EVQL:</b>
+                <b>EVQA:</b>
                 <br />
                 <div style={{ display: "inline-block" }}>
                     <TableHeaderContext.Provider value={{ headerNames: headerNames }}>
