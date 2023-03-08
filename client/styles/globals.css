@@ -26,6 +26,14 @@ a {
     background: #b9f3bc;
 }
 
+.EVQL-description {
+    color: black;
+    position: absolute;
+    background: rgba(241, 241, 241, 0.7);
+    white-space: pre-line;
+    width: 500px;
+}
+
 @media (prefers-color-scheme: dark) {
     html {
         color-scheme: dark;

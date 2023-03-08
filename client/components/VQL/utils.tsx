@@ -2,6 +2,7 @@ import { CellBase, createEmptyMatrix, Matrix } from "react-spreadsheet-custom";
 import { isArrayEqual, isEmptyObject, isNumber, removeMultipleSpaces, stripQutations } from "../../utils";
 import { aggFunctions, binaryOperators, EVQLNode, EVQLTree, Function, Header, operators, unaryOperators } from "./EVQL";
 import { IEVQLTable, IEVQLTableHeader } from "./EVQLTable";
+import { operatorDescriptions } from "./operatorDescriptions";
 
 export const createEmptyValueMatrix = (numOfRow: number, numOfCol: number, readOnly?: boolean): Matrix<CellBase> => {
     var rows = createEmptyMatrix<CellBase>(numOfRow, numOfCol);
@@ -113,8 +114,8 @@ export const parseExpression = (expression: string, header_names: string[], igno
         tmpCondition.func_type = "Selecting";
         tmpCondition.op_type = operators.indexOf(literals[1]) + 1;
     }
-    // If unary operator
-    else if (literals.length == 2) {
+    // If unary or functional operator
+    else if (literals.length == 1) {
         // Check function style input
         const lIdx = cleanExpression.indexOf("(");
         const rIdx = cleanExpression.indexOf(")");
@@ -263,4 +264,37 @@ export const getProjectedNames = (evqlTree: EVQLTree, childListPath: number[]): 
         }
     });
     return projectedNames;
+};
+
+export const getCellDescription = (expressions: Function[]): string => {
+    const descriptions: Array<string | undefined> = expressions.map((expression) => {
+        if (expression.func_type == "Selecting") {
+            const op_type: number = expression?.op_type ? expression.op_type : 0;
+            const op_type_str: string = operators[op_type - 1];
+            if (Object.keys(operatorDescriptions).includes(op_type_str)) {
+                return operatorDescriptions[op_type_str as keyof typeof operatorDescriptions];
+            } else {
+                return "";
+            }
+        } else if (expression.func_type == "Grouping") {
+            return operatorDescriptions["Group"];
+        } else if (expression.func_type == "Ordering") {
+            return operatorDescriptions["Order"];
+        }
+    });
+    const filterEmptyString = (str: string | undefined) => str != "" && str != undefined;
+    const filteredDescriptions = descriptions.filter(filterEmptyString);
+    return filteredDescriptions.join("\n");
+};
+
+export const getHeaderDescription = (header: IEVQLTableHeader): string => {
+    const descriptions: Array<string | undefined> = [];
+    if (header.isToProject) {
+        descriptions.push("Highlighted header indicates that the corresponding column has been chosen to be displayed in the output.");
+    }
+    header.aggFuncs.forEach((aggFunc) => {
+        const aggFuncStr = aggFunctions[aggFunc];
+        descriptions.push(operatorDescriptions[aggFuncStr as keyof typeof operatorDescriptions]);
+    });
+    return descriptions.join("\n");
 };

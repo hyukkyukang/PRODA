@@ -1,7 +1,8 @@
 import { ITableExcerpt } from "../TableExcerpt/TableExcerpt";
 
-// Operators
-export const operators = ["=", "<", ">", "EXISTS", "NOT EXISTS"];
+// All the operators
+export const operators = ["=", "<", ">", "<=", ">=", "EXISTS", "NOT EXISTS", "GROUP", "none", "count", "sum", "avg", "min", "max"];
+// Specific types of operators
 export const binaryOperators = ["=", "<", ">"];
 export const unaryOperators = ["EXISTS", "NOT EXISTS"];
 export const aggFunctions = ["none", "count", "sum", "avg", "min", "max"];

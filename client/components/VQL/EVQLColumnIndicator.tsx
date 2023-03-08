@@ -1,17 +1,16 @@
 import classNames from "classnames";
 import React from "react";
 import { ColumnIndicatorComponent } from "react-spreadsheet-custom";
-
+import { HoveringDescriptionContext, IEVQLTableHeader } from "./EVQLTable";
+import { operatorDescriptions } from "./operatorDescriptions";
 import { isEmptyObject } from "../../utils";
 import { aggFunctions } from "./EVQL";
-
-export interface IEVQLTableHeader {
-    name: string;
-    aggFuncs: number[];
-    isToProject: boolean;
-}
+import { getHeaderDescription } from "./utils";
 
 export const EVQLColumnIndicator: ColumnIndicatorComponent = ({ column, label, selected, selectedPoint, active, onSelect, activate }) => {
+    const { setX, setY, setDescription, setIsActive } = React.useContext(HoveringDescriptionContext);
+    const description = React.useMemo(() => (label ? getHeaderDescription(label as unknown as IEVQLTableHeader) : ""), [label]);
+
     // column is the id
     const handleClick = React.useCallback(
         (event: React.MouseEvent) => {
@@ -44,6 +43,24 @@ export const EVQLColumnIndicator: ColumnIndicatorComponent = ({ column, label, s
     }
     const handleMouseOver = React.useCallback((event: React.MouseEvent<HTMLTableCellElement>) => {
         activate({ row: -1, column: column });
+        // Set operator description
+        setDescription(operatorDescriptions["="]);
+        setDescription(description);
+        setIsActive(true);
+    }, []);
+
+    // Add mouse move listener
+    React.useEffect(() => {
+        const handleMouseMove = (event: any) => {
+            setX(event.clientX + window.pageXOffset);
+            setY(event.clientY + window.pageYOffset);
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+        };
     }, []);
 
     return (

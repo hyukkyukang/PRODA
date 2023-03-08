@@ -14,7 +14,7 @@ app.use(express.json());
 app.get("/", function (req, res) {
     console.log("app.get./");
     console.log(`query: ${JSON.stringify(req.query)}`);
-    res.send("Hello World!");
+    res.send("Hello World!\nThis is back-end Server responding!");
 });
 
 /* Handling Config Request */
@@ -86,16 +86,19 @@ app.post("/updateConfig", function (req, res) {
     res.send({ status: "success" });
 });
 
-https
-    .createServer(
-        {
-            key: fs.readFileSync("../certificates/thawte_postech_key_nopass.pem"),
-            cert: fs.readFileSync("../certificates/thawte_postech.pem"),
-        },
-        app
-    )
-    .listen(config.serverPort);
-
-// app.listen(config.serverPort);
+const use_https = true;
+if (use_https) {
+    https
+        .createServer(
+            {
+                key: fs.readFileSync("../certificates/thawte_postech_key_nopass.pem"),
+                cert: fs.readFileSync("../certificates/thawte_postech.pem"),
+            },
+            app
+        )
+        .listen(config.serverPort);
+} else {
+    app.listen(config.serverPort);
+}
 
 console.log(`Server is running on port ${config.serverPort}`);

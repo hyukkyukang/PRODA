@@ -10,7 +10,7 @@ import { PGResultToTableExcerpt } from "../TableExcerpt/Postgres";
 import { ITableExcerpt, TableExcerpt } from "../TableExcerpt/TableExcerpt";
 import { Clause, EVQLNode, EVQLTree, Function } from "./EVQL";
 import { EVQLCell } from "./EVQLCell";
-import { EVQLColumnIndicator, IEVQLTableHeader } from "./EVQLColumnIndicator";
+import { EVQLColumnIndicator } from "./EVQLColumnIndicator";
 import { addEVQLNode, EVQLNodeToEVQLTable, getNode, getProjectedNames, getSubtree, getTreeTraversingPaths, parseExpressions } from "./utils";
 
 const demoDBName = process.env.NEXT_PUBLIC_DemoDBName;
@@ -20,6 +20,26 @@ export enum EntireType {
     Row = "row",
     Column = "column",
     Table = "table",
+}
+
+export interface ITableHeaderContext {
+    headerNames: string[];
+}
+export interface IHoveringDescriptionContext {
+    x: number;
+    setX: React.Dispatch<React.SetStateAction<number>>;
+    y: number;
+    setY: React.Dispatch<React.SetStateAction<number>>;
+    description: string;
+    setDescription: React.Dispatch<React.SetStateAction<string>>;
+    isActive: boolean;
+    setIsActive: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export interface IEVQLTableHeader {
+    name: string;
+    aggFuncs: number[];
+    isToProject: boolean;
 }
 
 export interface Coordinate {
@@ -49,8 +69,17 @@ export interface EVQLTreeWrapperProps {
     editable?: boolean;
 }
 
+export const TableHeaderContext = React.createContext({} as ITableHeaderContext);
+export const HoveringDescriptionContext = React.createContext({} as IHoveringDescriptionContext);
+
 export const EVQLTable = (props: IEVQLVisualizationContext) => {
     const { evqlRoot, setEVQLRoot, setSelectedCoordinate, childListPath, editable, isFirstNode } = props;
+
+    // Context for the provider
+    const [x, setX] = useState(0);
+    const [y, setY] = useState(0);
+    const [description, setDescription] = useState("");
+    const [isActive, setIsActive] = useState(false);
 
     // Local context to visualize table
     const [evqlNode, setEVQLNode] = useState({} as EVQLNode);
@@ -65,6 +94,8 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     );
     const resultTable = useMemo<ITableExcerpt>(() => PGResultToTableExcerpt(data?.result), [data]);
 
+    const headerNames = useMemo<string[]>(() => tableContext?.headers?.map((h) => h.name), [tableContext]);
+
     // To get selected cell information
     const { selectedCoordinate, SetSelectedCoordinate } = useContext(CoordinateContext);
 
@@ -74,6 +105,10 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
             return <>{value}</>;
         }
         return <></>;
+    };
+
+    const onMouseLeave = () => {
+        setIsActive(false);
     };
 
     const onChangeHandler = (newRows: Matrix<CellBase<any>>): void => {
@@ -215,24 +250,29 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                 <b>EVQL:</b>
                 <br />
                 <div style={{ display: "inline-block" }}>
-                    <Spreadsheet
-                        className="table_sketch"
-                        data={tableContext.rows}
-                        columnLabels={tableContext.headers}
-                        rowLabels={rowLabels}
-                        onChange={editable ? onChangeHandler : undefined}
-                        onKeyDown={
-                            editable
-                                ? (event) => {
-                                      if (event.key == "Enter" && setEVQLRoot) setEVQLRoot(Object.assign({}, evqlRoot));
-                                  }
-                                : undefined
-                        }
-                        onSelect={editable ? onSelectHandler : onClickHandler}
-                        ColumnIndicator={EVQLColumnIndicator}
-                        DataViewer={(e) => dataViewer(e)}
-                        Cell={EVQLCell}
-                    />
+                    <TableHeaderContext.Provider value={{ headerNames: headerNames }}>
+                        <HoveringDescriptionContext.Provider value={{ x, setX, y, setY, description, setDescription, isActive, setIsActive }}>
+                            <Spreadsheet
+                                className="table_sketch"
+                                data={tableContext.rows}
+                                columnLabels={tableContext.headers}
+                                rowLabels={rowLabels}
+                                onChange={editable ? onChangeHandler : undefined}
+                                onKeyDown={
+                                    editable
+                                        ? (event) => {
+                                              if (event.key == "Enter" && setEVQLRoot) setEVQLRoot(Object.assign({}, evqlRoot));
+                                          }
+                                        : undefined
+                                }
+                                onSelect={editable ? onSelectHandler : onClickHandler}
+                                ColumnIndicator={EVQLColumnIndicator}
+                                DataViewer={(e) => dataViewer(e)}
+                                Cell={EVQLCell}
+                                onMouseLeave={onMouseLeave}
+                            />
+                        </HoveringDescriptionContext.Provider>
+                    </TableHeaderContext.Provider>
                     <div style={{ display: "inline-block" }}>
                         {evqlNode?.predicate?.clauses.map((clause, idx) => (
                             <div key={idx}>
@@ -249,6 +289,11 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                 <br />
                 {resultTable ? <b>Result Table:</b> : null}
                 {resultTable ? <TableExcerpt queryResult={resultTable} /> : null}
+                {isActive ? (
+                    <p className="EVQL-description" style={{ left: x + 10, top: y + 10 }}>
+                        {description}
+                    </p>
+                ) : null}
             </div>
         );
     }
