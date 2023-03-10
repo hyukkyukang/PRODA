@@ -2,18 +2,14 @@ import React, { useContext, useEffect, useMemo, useState } from "react";
 import { AiOutlineMinusSquare, AiOutlinePlusSquare } from "react-icons/ai";
 import { CellBase, DataViewerComponent, Matrix, Point, Spreadsheet } from "react-spreadsheet-custom";
 
-import { useQuery } from "react-query";
-import { runEVQL, runSQL } from "../../api/connect";
+// import { runEVQL, runSQL } from "../../api/connect";
 import { isEmptyObject } from "../../utils";
 import { CoordinateContext } from "../Collection/querySheet";
-import { PGResultToTableExcerpt } from "../TableExcerpt/Postgres";
-import { ITableExcerpt, TableExcerpt } from "../TableExcerpt/TableExcerpt";
+import { TableExcerpt } from "../TableExcerpt/TableExcerpt";
 import { Clause, EVQLNode, EVQLTree, Function } from "./EVQL";
 import { EVQLCell } from "./EVQLCell";
 import { EVQLColumnIndicator } from "./EVQLColumnIndicator";
 import { addEVQLNode, EVQLNodeToEVQLTable, getNode, getProjectedNames, getSubtree, getTreeTraversingPaths, parseExpressions } from "./utils";
-
-const demoDBName = process.env.NEXT_PUBLIC_DemoDBName;
 
 // This is from react-spreadsheet-custom/src/selection.ts
 export enum EntireType {
@@ -87,13 +83,6 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     const [tableContext, setTableContext] = useState<IEVQLTable>({} as IEVQLTable);
 
     const [subTree_str, setSubTree_str] = useState("");
-    const { isLoading, isError, data, error } = useQuery(
-        ["runEVQL", subTree_str, "proda_demo"],
-        () => runEVQL({ evqlStr: subTree_str, dbName: "proda_demo" }),
-        { enabled: !!subTree_str }
-    );
-    const resultTable = useMemo<ITableExcerpt>(() => PGResultToTableExcerpt(data?.result), [data]);
-
     const headerNames = useMemo<string[]>(() => tableContext?.headers?.map((h) => h.name), [tableContext]);
 
     // To get selected cell information
@@ -207,30 +196,6 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
             const node = getNode(evqlRoot, [...childListPath]);
             const tmpTableContext = EVQLNodeToEVQLTable(node, editable);
             const tmpRowLabels = Array.from({ length: tmpTableContext.rows.length }, (x, i) => i + 1).map((x) => x.toString());
-            // Get table excerpt
-            if (isEmptyObject(node.table_excerpt)) {
-                // Get from prev node
-                if (!isFirstNode) {
-                    const prevSubtree = getSubtree(evqlRoot, [...childListPath]);
-                    const prevSubtree_str = JSON.stringify(prevSubtree);
-                    if (prevSubtree_str) {
-                        throw new Error("Not implemented. Need to check if using useQuery is OK.");
-                        const { isLoading, isError, data, error } = useQuery(["runEVQL", prevSubtree_str, "proda_demo"], () =>
-                            runEVQL({ evqlStr: prevSubtree_str, dbName: "proda_demo" })
-                        );
-                        node.table_excerpt = PGResultToTableExcerpt(data["result"]);
-                    }
-                } else {
-                    // Get default table
-                    runSQL({ sql: `SELECT * FROM cars`, dbName: demoDBName })
-                        .then((result) => {
-                            node.table_excerpt = PGResultToTableExcerpt(result);
-                        })
-                        .catch((err) => {
-                            console.warn(`error:${err}`);
-                        });
-                }
-            }
             if (!editable) {
                 // Get and show result table
                 const subtree = getSubtree(evqlRoot, [...childListPath]);
@@ -286,9 +251,6 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                     </div>
                 </div>
                 <br />
-                <br />
-                {resultTable ? <b>Result Table:</b> : null}
-                {resultTable ? <TableExcerpt queryResult={resultTable} /> : null}
                 {isActive ? (
                     <p className="EVQL-description" style={{ left: x + 10, top: y + 10 }}>
                         {description}

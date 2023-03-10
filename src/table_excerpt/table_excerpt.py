@@ -106,6 +106,14 @@ class TableExcerpt:
             self.add_rows(rows)
 
     @staticmethod
+    def fake_join(new_table_name: str, tables: List[Any]):
+        headers = [header for item in tables for header in item.headers]
+        col_types = [col_type for item in tables for col_type in item.col_types]
+        # Fake join
+        rows = []
+        return TableExcerpt(new_table_name, headers, col_types, rows)
+
+    @staticmethod
     def concatenate(new_table_name, base_table, new_table):
         def retrieve_col_items(rows, col_id, list_num):
             tmp = [row[col_id].value for row in rows]

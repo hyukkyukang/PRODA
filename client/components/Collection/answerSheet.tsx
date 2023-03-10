@@ -3,7 +3,7 @@ import { Button, createTheme, FormGroup, Input, Paper, ThemeProvider, Typography
 import Checkbox from "@mui/material/Checkbox";
 import { pink } from "@mui/material/colors";
 import { Icon, SvgIcon } from "@mui/material";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { TaskTypes } from "./instruction";
 
 export interface UserAnswer {
@@ -88,10 +88,6 @@ export const YesNoAnswerSheet = (props: {
         </Button>
     );
 
-    useEffect(() => {
-        setAnswer({ ...answer, type: TaskTypes.NLAugmentation });
-    }, []);
-
     const yesNoButtons = (
         <ThemeProvider theme={theme}>
             <FormGroup>
@@ -125,7 +121,7 @@ export const YesNoAnswerSheet = (props: {
             </Paper>
             <br />
             {noIsChecked ? (
-                <>
+                <React.Fragment>
                     <Paper elevation={2} style={{ height: "55px", overflowX: "scroll" }}>
                         <div style={{ marginLeft: "10px" }}>
                             <div style={{ display: "inline-block" }}>
@@ -143,35 +139,50 @@ export const YesNoAnswerSheet = (props: {
                         </div>
                     </Paper>
                     <br />
-                </>
+                </React.Fragment>
             ) : null}
         </React.Fragment>
     );
 };
 
-export const AugmentationAnswerSheet = (props: { answer: UserAnswer; setAnswer: React.Dispatch<React.SetStateAction<UserAnswer>> }) => {
-    const { answer, setAnswer } = props;
+export const AugmentationAnswerSheet = (props: {
+    answer: UserAnswer;
+    setAnswer: React.Dispatch<React.SetStateAction<UserAnswer>>;
+    onSubmitHandler: () => void;
+}) => {
+    const { answer, setAnswer, onSubmitHandler } = props;
+
+    const submitButton = useMemo(
+        () =>
+            answer?.nl ? (
+                <Button size="small" variant="contained" color="success" onClick={onSubmitHandler}>
+                    Submit
+                </Button>
+            ) : (
+                <Button variant="contained" disabled>
+                    Submit
+                </Button>
+            ),
+        [answer, answer?.nl]
+    );
 
     const inputHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
         setAnswer({ ...answer, nl: event.target.value });
     };
 
-    useEffect(() => {
-        setAnswer({ ...answer, type: TaskTypes.NLAugmentation });
-    }, []);
-
     return (
         <React.Fragment>
-            <Paper elevation={2}>
-                <div style={{ marginLeft: "10px" }}>
+            <br />
+            <Paper elevation={2} style={{ height: "100px" }}>
+                <div style={{ display: "inline-block", marginLeft: "15px" }}>
                     <Typography sx={{ paddingTop: "10px" }} variant="h6">
-                        Please rephrase the given sentence so that it correctly describes the query
+                        Please rephrase the given sentence below
                     </Typography>
-                    <Input defaultValue={answer.nl} placeholder="Type rephrased natural language query" sx={{ width: "98%" }} onChange={inputHandler} />
-                    <br />
-                    <br />
+                    <Input value={answer.nl} placeholder="Type rephrased natural language query" sx={{ width: "100%" }} onChange={inputHandler} />
                 </div>
+                <div style={{ display: "inline-block", paddingLeft: "10px" }}>{submitButton}</div>
             </Paper>
+            <br />
         </React.Fragment>
     );
 };
@@ -181,7 +192,7 @@ export const AnswerSheet = (props: AnswerSheetProps) => {
     if (taskType === TaskTypes.YesNo) {
         return <YesNoAnswerSheet answer={answer} setAnswer={setAnswer} taskNL={taskNL ? taskNL : ""} onSubmitHandler={onSubmitHandler} />;
     } else if (taskType === TaskTypes.NLAugmentation) {
-        return <AugmentationAnswerSheet answer={answer} setAnswer={setAnswer} />;
+        return <AugmentationAnswerSheet answer={answer} setAnswer={setAnswer} onSubmitHandler={onSubmitHandler} />;
     } else {
         return <></>;
     }

@@ -11,6 +11,8 @@ var app = express();
 app.use(cors());
 app.use(express.json());
 
+const workerTaskMapping = {};
+
 app.get("/", function (req, res) {
     console.log("app.get./");
     console.log(`query: ${JSON.stringify(req.query)}`);
@@ -34,10 +36,31 @@ app.post("/fetchEVQL", function (req, res) {
 });
 
 app.post("/fetchTask", function (req, res) {
-    console.log(`app.post./fetchTask  with query: ${JSON.stringify(req.query)}`);
-    const taskData = func.getTask();
-    console.log(`task data1: ${taskData}`);
-    res.send(taskData);
+    const workerID = req.body.workerId;
+    console.log(`/fetchTask; workerID:${workerID}) has requested a task`);
+    var taskData = null;
+    // Check if worker has already been assigned a task
+    if (workerID in workerTaskMapping) {
+        // Return the same task
+        const taskID = workerTaskMapping[workerID];
+        console.log(`workerID:${workerID} has already been assigned to taskID:${taskID}`);
+        taskData = func.getTask(taskID);
+    } else {
+        // Allocate a new task
+        taskData = func.getTask();
+        if (taskData) {
+            const taskID = taskData["taskId"];
+            workerTaskMapping[workerID] = taskID;
+            console.log(`workerID:${workerID} has been assigned to taskID:${taskID}`);
+        }
+    }
+    if (taskData === null) {
+        console.log(`No task is retrieved and sent to workerID:${workerID}\n`);
+        res.send({ isTaskReturned: false, task: null });
+    } else {
+        console.log(`task is retrieved and sent to workerID:${workerID}\n`);
+        res.send({ isTaskReturned: true, task: taskData });
+    }
 });
 
 app.post("/fetchLogData", function (req, res) {
@@ -85,6 +108,16 @@ app.post("/updateConfig", function (req, res) {
     func.setNewConfig(formattedConfig);
     res.send({ status: "success" });
 });
+
+// Error handler
+function errorHandler(err, req, res, next) {
+    console.log("Handling error");
+    console.error(err);
+    // clear the task mapping
+    for (var member in workerTaskMapping) delete workerTaskMapping[member];
+    res.status(500).send({ error: err });
+}
+app.use(errorHandler);
 
 const use_https = true;
 if (use_https) {

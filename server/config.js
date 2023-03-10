@@ -12,6 +12,7 @@ exports.collectionDBIP = "localhost";
 exports.collectionDBPort = "5432";
 exports.collectionDBName = "proda_collection";
 exports.collectionDBTableName = "collection";
+exports.collectionDBTaskTableName = "task";
 exports.collectionDBUserID = "collection_user";
 exports.collectionDBUserPW = "collection_user_pw";
 

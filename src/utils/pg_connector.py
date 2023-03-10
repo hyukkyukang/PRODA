@@ -47,6 +47,7 @@ class PostgresConnector(DBConnector):
     def __init__(self, user_id: str, passwd: str, host: str, port: str, db_id: str):
         super(PostgresConnector, self).__init__(db_id=db_id)
         self.connect(user_id, passwd, host, port, db_id)
+        self.conn.autocommit = True
 
     def __new__(cls, user_id, passwd, host, port, db_id):
         return super(PostgresConnector, cls).__new__(cls, db_id)

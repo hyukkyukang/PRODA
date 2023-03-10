@@ -3,7 +3,7 @@ import { Box, Paper, Typography } from "@mui/material";
 
 export enum TaskTypes {
     YesNo = 1,
-    NLAugmentation,
+    NLAugmentation = 2,
 }
 
 export const taskTypeToInstruction = (taskType: number | undefined): string => {

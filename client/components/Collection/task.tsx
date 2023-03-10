@@ -1,4 +1,4 @@
-import { EVQLTree, EVQLNode } from "../VQL/EVQL";
+import { EVQLTree } from "../VQL/EVQL";
 
 export interface Task {
     nl: string;
@@ -12,4 +12,5 @@ export interface Task {
     resultTable: { key: string }[];
     history: Task[];
     blockId: string;
+    taskId: number;
 }

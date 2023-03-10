@@ -6,7 +6,7 @@ const ip = process.env.NEXT_PUBLIC_ServerIP;
 const serverPort = process.env.NEXT_PUBLIC_ServerPort;
 const config = { headers: { "content-type": "application/json" } };
 
-console.log(`> Ready on ${protocol}://${ip}:${serverPort}`)
+console.log(`> Ready on ${protocol}://${ip}:${serverPort}`);
 
 /* Fetch configs */
 export const fetchConfig = async (params) => {
@@ -19,7 +19,8 @@ export const fetchEVQL = async (params) => {
 };
 
 export const fetchTask = async (params) => {
-    return (await axios.post(`${protocol}://${ip}:${serverPort}/fetchTask`, { params: params }, config)).data;
+    const [key, workerId] = params.queryKey;
+    return (await axios.post(`${protocol}://${ip}:${serverPort}/fetchTask`, { workerId: workerId }, config)).data;
 };
 
 export const fetchLogData = async (params) => {

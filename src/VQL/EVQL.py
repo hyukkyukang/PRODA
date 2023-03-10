@@ -12,8 +12,12 @@ class Operator(IntEnum):
     equal = 1
     lessThan = 2
     greaterThan = 3
-    exists = 4
-    notExists = 5
+    lessThanOrEqual = 4
+    greaterThanOrEqual = 5
+    exists = 6
+    notExists = 7
+    In = 8
+    NotIn = 9
 
     @staticmethod
     def from_str(op_type: str) -> IntEnum:
@@ -119,9 +123,10 @@ class Aggregator(IntEnum):
 
 
 class Header:
-    def __init__(self, id, agg_type=None):
-        self.id = id
-        self.agg_type = agg_type
+    def __init__(self, id: int, agg_type: int = None, alias: str = None):
+        self.id: int = id
+        self.agg_type: int = agg_type
+        self.alias: str = alias
 
     def __eq__(self, other):
         assert isinstance(other, Header), f"expected type Header but found: {type(other)}"
@@ -313,7 +318,7 @@ class EVQLNode:
     name: str = attrs.field()
     table_excerpt: TableExcerpt = attrs.field()
     sql = attrs.field(default="")
-    mapping: List[Tuple[int, int, str]] = attrs.field(default=attrs.Factory([]))
+    mapping: List[Tuple[int, int, str]] = attrs.field(default=attrs.Factory(list))
     _projection: Projection = attrs.field(default=attrs.Factory(Projection))
     _predicate: Predicate = attrs.field(default=attrs.Factory(Predicate))
 

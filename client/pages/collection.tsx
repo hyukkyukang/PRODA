@@ -1,15 +1,17 @@
 import { Grid, Paper } from "@mui/material";
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "react-query";
 
 import CircularProgress from "@mui/material/CircularProgress";
 import { fetchTask, sendWorkerAnswer } from "../api/connect";
+import { ITaskResponse } from "../api/interface";
 import { AnswerSheet, UserAnswer } from "../components/Collection/answerSheet";
+import { QuerySheet } from "../components/Collection/querySheet";
 import { Task } from "../components/Collection/task";
 import { Header } from "../components/Header/collectionHeader";
-
-import { QuerySheet } from "../components/Collection/querySheet";
 import { RefContext } from "../pages/_app";
+
+const enableAMTSubmission = false;
 
 export const Collection = (props: any) => {
     // Ref
@@ -22,20 +24,27 @@ export const Collection = (props: any) => {
     const [assignmentId, setAssignmentId] = useState("");
     const [turkSubmitTo, setTurkSubmitTo] = useState("");
     const [workerId, setWorkerId] = useState("");
+    const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
 
     // To handle submission
     const formRef = useRef<HTMLFormElement>(null);
 
     // Fetching Data
-    const { isLoading, isError, data, error } = useQuery<Task>("fetchTask", fetchTask);
+    const { isLoading, isError, data, error } = useQuery<ITaskResponse>(["fetchTask", workerId], fetchTask, { enabled: workerId !== "" });
+    const currentTask = useMemo<Task | null>(() => (data?.isTaskReturned ? data.task : null), [data]);
 
     const onSubmitHandler = () => {
-        // Send current step's info to the server
-        sendWorkerAnswer({ task: { ...data, queryType: data?.queryType, dbName: data?.dbName }, answer: answer, userId: "dummyUser" });
+        // This should be called only when data is not null
+        if (currentTask) {
+            // Send current step's info to the server
+            const task: Task = currentTask;
+            sendWorkerAnswer({ task: task, answer: answer, workerId: workerId });
 
-        // Submit assignment
-        if (formRef.current) {
-            formRef.current.submit();
+            // Submit assignment
+            if (enableAMTSubmission && formRef.current) {
+                formRef.current.submit();
+            }
+            setIsAnswerSubmitted(true);
         }
     };
 
@@ -45,13 +54,7 @@ export const Collection = (props: any) => {
         const hitId = queryParams.get("hitId") ? queryParams.get("hitId") : "";
         const assignmentId = queryParams.get("assignmentId") ? queryParams.get("assignmentId") : "";
         const turkSubmitTo = queryParams.get("turkSubmitTo") ? queryParams.get("turkSubmitTo") : "";
-        const workerId = queryParams.get("workerId") ? queryParams.get("workerId") : "";
-
-        // Debugging
-        // console.log(`hitId: ${hitId}`);
-        // console.log(`assignmentId: ${assignmentId}`);
-        // console.log(`turkSubmitTo: ${turkSubmitTo}`);
-        // console.log(`workerId: ${workerId}`);
+        const workerId = queryParams.get("workerId") ? queryParams.get("workerId") : "a";
 
         // Set AMT information
         setHitId(hitId === null ? "" : hitId);
@@ -70,6 +73,7 @@ export const Collection = (props: any) => {
                 <input type="hidden" value={assignmentId} name="assignmentId" id="assignmentId" />
                 <input type="hidden" value={answer.type} name="taskType" id="taskType" />
                 <input type="hidden" value={answer.nl} name="answerNL" id="answerNL" />
+                <input type="hidden" value={currentTask?.taskId} name="taskId" id="taskId" />
                 <input type="hidden" value={answer.isCorrect === undefined ? "true" : answer.isCorrect.toString()} name="isCorrect" id="isCorrect" />
             </form>
         </React.Fragment>
@@ -78,12 +82,12 @@ export const Collection = (props: any) => {
     const collectionBody = (
         <div style={{ marginLeft: "1%", width: "98%" }}>
             {/* Show saquery information for the current task */}
-            <AnswerSheet taskType={data?.taskType} taskNL={data?.nl} answer={answer} setAnswer={setAnswer} onSubmitHandler={onSubmitHandler} />
+            <AnswerSheet taskType={currentTask?.taskType} taskNL={currentTask?.nl} answer={answer} setAnswer={setAnswer} onSubmitHandler={onSubmitHandler} />
             <Paper elevation={2}>
-                <QuerySheet currentTask={data} />
+                <QuerySheet currentTask={currentTask} />
             </Paper>
             {/* Show query information for the previous tasks (to complete the current task) */}
-            {data?.history?.map((prevTask, idx) => {
+            {currentTask?.history?.map((prevTask, idx) => {
                 return (
                     <React.Fragment>
                         <br />
@@ -109,13 +113,54 @@ export const Collection = (props: any) => {
         </div>
     );
 
+    const errorBody = (
+        <div style={{ height: "100px", display: "flex", textAlign: "center", justifyContent: "center", alignItems: "center" }}>
+            <div style={{ display: "inline-block" }}>
+                <p> Unexpected Error. Try Refresh! </p>
+            </div>
+        </div>
+    );
+
+    const noTaskBody = (
+        <div style={{ height: "100px", display: "flex", textAlign: "center", justifyContent: "center", alignItems: "center" }}>
+            <div style={{ display: "inline-block" }}>
+                <p> There are no more task left... </p>
+                <p> Please ask the admin to generate more tasks. </p>
+            </div>
+        </div>
+    );
+
+    const answerSubmittedBody = (
+        <div style={{ height: "100px", display: "flex", textAlign: "center", justifyContent: "center", alignItems: "center" }}>
+            <div style={{ display: "inline-block" }}>
+                <p> Answer successfully submitted! </p>
+            </div>
+        </div>
+    );
+
+    const componentBody = useMemo((): JSX.Element => {
+        if (isAnswerSubmitted) {
+            return answerSubmittedBody;
+        } else if (isLoading) {
+            return waitingBody;
+        } else if (isError) {
+            return errorBody;
+        } else if (currentTask === null) {
+            return noTaskBody;
+        } else {
+            return collectionBody;
+        }
+    }, [isLoading, isError, data, error, answer]);
+
     return (
         <React.Fragment>
             <div ref={targetRef}>
                 <Grid container sx={{ background: "#f6efe8", color: "black" }}>
                     <Grid item xs={12}>
-                        <Header />
-                        {data === undefined || data === null ? waitingBody : collectionBody}
+                        <>
+                            <Header />
+                            {componentBody}
+                        </>
                     </Grid>
                 </Grid>
             </div>

@@ -18,8 +18,9 @@ import src.query_tree.operator as qt_operator
 from src.query_tree.operator import Aggregation, Clause, Condition, Foreach, Projection, Selection
 from src.query_tree.query_tree import Attach, BaseTable, QueryBlock, QueryTree, Refer, get_global_index
 from src.table_excerpt.table_excerpt import TableExcerpt
-from src.utils.example_table_excerpt import car_table
+from src.utils.example_table_excerpt import car_table, movie_table, director_table, direction_table, rating_table
 from src.VQL.EVQL import Aggregator, Clause, EVQLNode, EVQLTree, Grouping, Header, Operator, Ordering, Selecting
+from src.VQL.query_tree_to_EVQL import convert_queryTree_to_EVQLTree
 
 
 def find_nth_occurrence_index(lst, item, n):
@@ -931,7 +932,67 @@ class MultipleSublinksQuery2(TestQuery):
 
     @misc_utils.property_with_cache
     def evql(self) -> EVQLTree:
-        raise NotImplementedError
+        # Create tree node 1
+        init_table1 = TableExcerpt.fake_join("movie_rating", [movie_table, rating_table])
+        node_1 = EVQLNode(f"block1", init_table1)
+        node_1.add_projection(Header(node_1.headers.index("id"), alias="m_id"))
+        node_1.add_projection(Header(node_1.headers.index("stars"), agg_type=Aggregator.max, alias="max_stars"))
+        node_1.add_predicate(Clause([Grouping(node_1.headers.index("id"))]))
+        # Query result
+        node_1_result_headers = ["m_id", "max_stars"]
+        node_1_result_col_types = ["number", "number"]
+        node_1_result_rows = [[1, 1.1], [2, 2.2]]
+        node_1_result = TableExcerpt(
+            f"{node_1.name}_result", node_1_result_headers, node_1_result_col_types, rows=node_1_result_rows
+        )
+
+        # Create tree node 2
+        init_table2 = TableExcerpt.fake_join("movie_direction_director", [movie_table, direction_table, director_table])
+        node_2 = EVQLNode(f"block2", init_table2)
+        node_2.add_projection(Header(node_2.headers.index("id"), alias="b2_m_id"))
+        node_2.add_predicate(
+            Clause(
+                [
+                    Selecting(node_2.headers.index("first_name"), Operator.equal, "Spielberg"),
+                    Selecting(node_2.headers.index("last_name"), Operator.equal, "Steven"),
+                ]
+            )
+        )
+        node_2_result_headers = ["b2_m_id"]
+        node_2_result_col_types = ["number"]
+        node_2_result_rows = [[1], [2]]
+        node_2_result = TableExcerpt(
+            f"{node_2.name}_result", node_2_result_headers, node_2_result_col_types, rows=node_2_result_rows
+        )
+
+        # Create tree node 3
+        init_table3 = TableExcerpt.fake_join("tmp", [movie_table, rating_table, node_2_result])
+        init_table3 = TableExcerpt.concatenate("block3_table_excerpt", init_table3, node_1_result)
+        node_3 = EVQLNode(f"block3", init_table3)
+        node_3.add_projection(Header(node_3.headers.index("id"), alias="id"))
+        node_3.add_projection(Header(node_3.headers.index("stars"), agg_type=Aggregator.avg, alias="avg_stars"))
+        node_3.add_predicate(
+            Clause(
+                [
+                    Selecting(node_3.headers.index("id"), Operator.In, node_3.headers.index("b2_m_id")),
+                    Selecting(node_3.headers.index("id"), Operator.equal, node_3.headers.index("m_id")),
+                    Selecting(node_3.headers.index("stars"), Operator.lessThan, node_3.headers.index("max_stars")),
+                ]
+            )
+        )
+        node_3_result_headers = ["id", "avg_stars"]
+        node_3_result_col_types = ["number", "number"]
+        node_3_result_rows = [[1, 1.1]]
+        node_3_result = TableExcerpt(
+            f"{node_3.name}_result", node_3_result_headers, node_3_result_col_types, rows=node_3_result_rows
+        )
+
+        # Create tree node 4
+        node_4 = EVQLNode(f"block4", node_3_result)
+        node_4.add_projection(Header(node_4.headers.index("id"), alias="id"))
+        node_4.add_predicate(Clause([Selecting(node_4.headers.index("avg_stars"), Operator.greaterThanOrEqual, 3)]))
+
+        return EVQLTree(node_4, children=[EVQLTree(node_3, children=[EVQLTree(node_2), EVQLTree(node_1)])])
 
     @misc_utils.property_with_cache
     def query_tree(self):

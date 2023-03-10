@@ -2,8 +2,9 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Box, Grid } from "@mui/material";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { isEmptyObject } from "../../utils";
+import { TableExcerpt } from "../TableExcerpt/TableExcerpt";
 import { EVQLTable } from "../VQL/EVQLTable";
 import { Task } from "./task";
 
@@ -47,7 +48,7 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
             last_idx = spanIndices[1];
         });
         // Append last span
-        if (last_idx < nl.length) {
+        if (nl && last_idx < nl.length) {
             list_of_fragments.push(<span>{nl.slice(last_idx)}</span>);
         }
 
@@ -84,6 +85,9 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
                                         isFirstNode={true}
                                     />
                                 </CoordinateContext.Provider>
+                                <br />
+                                <b>Result Table:</b>
+                                <TableExcerpt queryResult={currentTask.resultTable} />
                             </Grid>
                         </Grid>
                         <br />

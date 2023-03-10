@@ -51,23 +51,76 @@ function getEVQL(queryType) {
     return evql;
 }
 
-function getTask() {
+function getTask(taskID = null) {
+    // Connect to DB and retrieve Task
+    const client = new pg();
+    client.connectSync(
+        `user=${config.collectionDBUserID} password=${config.collectionDBUserPW} port=${config.collectionDBPort} host=${config.collectionDBIP} dbname=${config.collectionDBName}`
+    );
+    // Insert new log
+    var result = null;
+    var results = null;
+    if (taskID === null) {
+        results = client.querySync(`SELECT * FROM ${config.collectionDBTaskTableName} WHERE id NOT IN (SELECT task_id FROM ${config.collectionDBTableName});`);
+    } else {
+        results = client.querySync(`SELECT * FROM ${config.collectionDBTaskTableName} WHERE id = ${taskID};`);
+    }
+    // Get one task
+    if (results.length > 0) {
+        result = results[0];
+    }
+    client.end();
+    console.log(`Retrieved result: ${JSON.stringify(result)}`);
+    // Handle empty result
+    if (result == null) {
+        console.warn("No task returned from DB.");
+        return null;
+    }
+    // Get file paths
+    const evql_path = result.evql_path;
+    const result_table_path = result.result_table_path;
+    const table_excerpt_path = result.table_excerpt_path;
+    // Retrieve data from Python script
+    const evql_object = getJsonDataFromFile(evql_path);
+    const result_table_object = getJsonDataFromFile(result_table_path);
+    const table_excerpt_object = getJsonDataFromFile(table_excerpt_path);
+    // Replace path with the real data
+    delete result.evql_path;
+    delete result.result_table_path;
+    delete result.table_excerpt_path;
+    return {
+        nl: result.nl,
+        nl_mapping: null,
+        sql: result.sql,
+        evql: evql_object,
+        queryType: result.query_type,
+        taskType: result.task_type,
+        dbName: result.db_name,
+        tableExcerpt: table_excerpt_object,
+        resultTable: result_table_object,
+        history: null,
+        blockId: null,
+        taskId: result.id,
+    };
+}
+
+function getJsonDataFromFile(file_path) {
     var spawnSync = require("child_process").spawnSync;
-    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/task/generator.py`]);
+    // Retrieve data from Python script
+    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/utils/data_manager.py`, "--file_path", file_path]);
     var result = spawnedProcess.stdout.toString();
-    // Parse JSON string
-    var taskData = null;
+    var json_object = null;
     if (!result) {
-        console.warn("No task returned from Python script.");
+        console.warn("No Data returned from Python script.");
     } else {
         try {
-            taskData = JSON.parse(result);
+            json_object = JSON.parse(result);
         } catch (err) {
             console.warn(`Error parsing JSON: ${err}`);
             console.warn(`JSON string: ${result}`);
         }
     }
-    return taskData;
+    return json_object;
 }
 
 function getLogData() {
@@ -141,26 +194,17 @@ function setNewConfig(newConfig) {
 
 function logWorkerAnswer(logData) {
     // Get values from answer
-    const given_nl = logData.task.nl.replace(/'/g, "\\'");
-    const given_sql = logData.task.sql.replace(/'/g, "\\'");
-    const given_evql = JSON.stringify(logData.task.evql).replace(/'/g, "\\'");
-    const given_table_excerpt = JSON.stringify(logData.task.tableExcerpt).replace(/'/g, "\\'");
-    const given_result_table = JSON.stringify(logData.task.resultTable).replace(/'/g, "\\'");
-    const given_db_name = logData.task.dbName;
-    const given_task_type = logData.answer.type;
-    const given_query_type = logData.answer.queryType;
-    const user_is_correct = logData.answer.isCorrect ?? null;
-    const user_nl = logData.answer.nl.replace(/'/g, "\\'");
-    const user_id = logData.userId;
+    const task_id = logData.task.taskId;
+    const user_id = logData.workerId;
+    const is_correct = "isCorrect" in logData.answer ? logData.answer.isCorrect : null;
+    const nl = logData.answer.nl.replace(/'/g, "\\'");
 
     const client = new pg();
     client.connectSync(
         `user=${config.collectionDBUserID} password=${config.collectionDBUserPW} port=${config.collectionDBPort} host=${config.collectionDBIP} dbname=${config.collectionDBName}`
     );
     // Insert new log
-    result = client.querySync(
-        `INSERT INTO ${config.collectionDBTableName} VALUES(DEFAULT, E'${given_nl}', E'${given_sql}', E'${given_evql}', '${given_query_type}', E'${given_table_excerpt}', E'${given_result_table}', '${given_db_name}', ${given_task_type}, ${user_is_correct}, E'${user_nl}', '${user_id}', DEFAULT);`
-    );
+    result = client.querySync(`INSERT INTO ${config.collectionDBTableName} VALUES(DEFAULT, ${task_id}, E'${user_id}', ${is_correct}, E'${nl}', DEFAULT);`);
     client.end();
     return result;
 }
