@@ -20,7 +20,6 @@ from src.query_tree.query_tree import Attach, BaseTable, QueryBlock, QueryTree, 
 from src.table_excerpt.table_excerpt import TableExcerpt
 from src.utils.example_table_excerpt import car_table, movie_table, director_table, direction_table, rating_table
 from src.VQL.EVQL import Aggregator, Clause, EVQLNode, EVQLTree, Grouping, Header, Operator, Ordering, Selecting
-from src.VQL.query_tree_to_EVQL import convert_queryTree_to_EVQLTree
 
 
 def find_nth_occurrence_index(lst, item, n):
@@ -934,7 +933,14 @@ class MultipleSublinksQuery2(TestQuery):
     def evql(self) -> EVQLTree:
         # Create tree node 1
         init_table1 = TableExcerpt.fake_join("movie_rating", [movie_table, rating_table])
-        node_1 = EVQLNode(f"block1", init_table1)
+
+        mapping1 = [
+            (0, init_table1.headers.index("id"), "id"),
+            (0, init_table1.headers.index("stars"), "stars"),
+            (1, init_table1.headers.index("id"), "id"),
+        ]
+
+        node_1 = EVQLNode(f"query1", init_table1, mapping=mapping1)
         node_1.add_projection(Header(node_1.headers.index("id"), alias="m_id"))
         node_1.add_projection(Header(node_1.headers.index("stars"), agg_type=Aggregator.max, alias="max_stars"))
         node_1.add_predicate(Clause([Grouping(node_1.headers.index("id"))]))
@@ -947,8 +953,15 @@ class MultipleSublinksQuery2(TestQuery):
         )
 
         # Create tree node 2
-        init_table2 = TableExcerpt.fake_join("movie_direction_director", [movie_table, direction_table, director_table])
-        node_2 = EVQLNode(f"block2", init_table2)
+        init_table2 = TableExcerpt.fake_join("block2", [movie_table, direction_table, director_table])
+
+        mapping2 = [
+            (0, init_table2.headers.index("id"), "id"),
+            (1, init_table2.headers.index("first_name"), "first_name"),
+            (2, init_table2.headers.index("last_name"), "last_name"),
+        ]
+
+        node_2 = EVQLNode(f"query2", init_table2, mapping=mapping2)
         node_2.add_projection(Header(node_2.headers.index("id"), alias="b2_m_id"))
         node_2.add_predicate(
             Clause(
@@ -968,15 +981,35 @@ class MultipleSublinksQuery2(TestQuery):
         # Create tree node 3
         init_table3 = TableExcerpt.fake_join("tmp", [movie_table, rating_table, node_2_result])
         init_table3 = TableExcerpt.concatenate("block3_table_excerpt", init_table3, node_1_result)
-        node_3 = EVQLNode(f"block3", init_table3)
+
+        mapping3 = [
+            (0, init_table3.headers.index("id"), "id"),
+            (0, init_table3.headers.index("stars"), "stars"),
+            (1, init_table3.headers.index("id"), "id"),
+            (1, init_table3.headers.index("stars"), "stars"),
+        ]
+
+        node_3 = EVQLNode(f"query3", init_table3, mapping=mapping3)
         node_3.add_projection(Header(node_3.headers.index("id"), alias="id"))
         node_3.add_projection(Header(node_3.headers.index("stars"), agg_type=Aggregator.avg, alias="avg_stars"))
         node_3.add_predicate(
             Clause(
                 [
-                    Selecting(node_3.headers.index("id"), Operator.In, node_3.headers.index("b2_m_id")),
-                    Selecting(node_3.headers.index("id"), Operator.equal, node_3.headers.index("m_id")),
-                    Selecting(node_3.headers.index("stars"), Operator.lessThan, node_3.headers.index("max_stars")),
+                    Selecting(
+                        node_3.headers.index("id"),
+                        Operator.In,
+                        Operator.add_idx_prefix(node_3.headers.index("b2_m_id")),
+                    ),
+                    Selecting(
+                        node_3.headers.index("id"),
+                        Operator.equal,
+                        Operator.add_idx_prefix(node_3.headers.index("m_id")),
+                    ),
+                    Selecting(
+                        node_3.headers.index("stars"),
+                        Operator.lessThan,
+                        Operator.add_idx_prefix(node_3.headers.index("max_stars")),
+                    ),
                 ]
             )
         )
@@ -988,7 +1021,12 @@ class MultipleSublinksQuery2(TestQuery):
         )
 
         # Create tree node 4
-        node_4 = EVQLNode(f"block4", node_3_result)
+        mapping4 = [
+            (0, node_3_result.headers.index("id"), "id"),
+            (1, node_3_result.headers.index("avg_stars"), "avg_stars"),
+        ]
+
+        node_4 = EVQLNode(f"query4", node_3_result, mapping=mapping4)
         node_4.add_projection(Header(node_4.headers.index("id"), alias="id"))
         node_4.add_predicate(Clause([Selecting(node_4.headers.index("avg_stars"), Operator.greaterThanOrEqual, 3)]))
 
@@ -1134,6 +1172,202 @@ class MultipleSublinksQuery2(TestQuery):
         )
 
         return QueryTree(node_b4, self.sql)
+
+    @misc_utils.property_with_cache
+    def query_graphs(self) -> List[Query_graph]:
+        def graph_1() -> Query_graph:
+            # Relation
+            movie_2 = Relation("movie_t2", "movie", is_primary=True)
+            rating_2 = Relation("rating_t2", "rating")
+
+            # Attribute
+            movie_2_id_1 = Attribute("m2_id_1", "id")
+            movie_2_id_2 = Attribute("m2_id_2", "id")
+            rating_2_stars = Attribute("r2_stars", "stars")
+
+            # Function
+            rating_max = Function(FunctionType.Max)
+
+            ## Construct graph
+            query_graph = Query_graph("CorrelatedNestedQuery1")
+            query_graph.connect_membership(movie_2, movie_2_id_1)
+            query_graph.connect_membership(rating_2, rating_2_stars)
+            query_graph.connect_transformation(rating_2_stars, rating_max)
+            query_graph.connect_simplified_join(rating_2, movie_2, "belongs to", "")
+
+            # Prepare Correlation
+            query_graph.connect_grouping(movie_2, movie_2_id_2)
+
+            return query_graph
+
+        def graph_2() -> Query_graph:
+            # Relation
+            movie_3 = Relation("movie_t3", "movie", is_primary=True)
+            direction = Relation("direction", "direction")
+            director = Relation("director", "director")
+
+            # Attribute
+            movie_3_id = Attribute("m3_id", "id")
+            director_last_name = Attribute("last_name", "last_name")
+            director_first_name = Attribute("first_name", "first_name")
+
+            # Values
+            v_first_name = Value("spielbverg", "spielbverg")
+            v_last_name = Value("steven", "steven")
+
+            ## Construct graph
+            query_graph = Query_graph("CorrelatedNestedQuery3")
+            # Second Nesting
+            query_graph.connect_membership(movie_3, movie_3_id)
+            query_graph.connect_simplified_join(movie_3, direction)
+            query_graph.connect_simplified_join(direction, director)
+            query_graph.connect_selection(director, director_last_name)
+            query_graph.connect_predicate(director_last_name, v_last_name)
+            query_graph.connect_selection(director, director_first_name)
+            query_graph.connect_predicate(director_first_name, v_first_name)
+
+            return query_graph
+
+        def graph_3() -> Query_graph:
+            # Relation
+            movie_1 = Relation("movie", "movie", is_primary=True)
+            movie_2 = Relation("movie_t2", "movie")
+            movie_3 = Relation("movie_t3", "movie")
+            rating_1 = Relation("rating", "rating")
+            rating_2 = Relation("rating_t2", "rating")
+            direction = Relation("direction", "direction")
+            director = Relation("director", "director")
+
+            # Attribute
+            movie_1_id1 = Attribute("m1_id1", "id")
+            movie_1_id2 = Attribute("m1_id2", "id")
+            movie_1_id3 = Attribute("m1_id3", "id")
+            movie_1_id4 = Attribute("m1_id4", "id")
+
+            movie_2_id = Attribute("m2_id", "id")
+            movie_3_id = Attribute("m3_id", "id")
+
+            rating_1_stars1 = Attribute("r1_stars1", "stars")
+            rating_2_stars = Attribute("r2_stars", "stars")
+
+            director_last_name = Attribute("last_name", "last_name")
+            director_first_name = Attribute("first_name", "first_name")
+
+            # Function
+            rating_max = Function(FunctionType.Max)
+
+            # Values
+            v_first_name = Value("spielbverg", "spielbverg")
+            v_last_name = Value("steven", "steven")
+
+            ## Construct graph
+            query_graph = Query_graph("CorrelatedNestedQuery3")
+            query_graph.connect_membership(movie_1, movie_1_id1)
+            query_graph.connect_simplified_join(movie_1, rating_1, "", "belongs to")
+
+            # Nesting
+            query_graph.connect_selection(rating_1, rating_1_stars1)
+            query_graph.connect_predicate(rating_1_stars1, rating_max, OperatorType.LessThan)
+
+            query_graph.connect_transformation(rating_max, rating_2_stars)
+            query_graph.connect_membership(rating_2, rating_2_stars)
+            query_graph.connect_simplified_join(rating_2, movie_2, "belongs to", "")
+
+            # Correlation
+            query_graph.connect_selection(movie_2, movie_2_id)
+            query_graph.connect_predicate(movie_2_id, movie_1_id2)
+            query_graph.connect_selection(movie_1_id2, movie_1)
+
+            # Second Nesting
+            query_graph.connect_selection(movie_1, movie_1_id3)
+            query_graph.connect_predicate(movie_1_id3, movie_3_id, OperatorType.In)
+
+            query_graph.connect_membership(movie_3, movie_3_id)
+            query_graph.connect_simplified_join(movie_3, direction)
+            query_graph.connect_simplified_join(direction, director)
+            query_graph.connect_selection(director, director_last_name)
+            query_graph.connect_predicate(director_last_name, v_last_name)
+            query_graph.connect_selection(director, director_first_name)
+            query_graph.connect_predicate(director_first_name, v_first_name)
+
+            # For grouping and having
+            query_graph.connect_grouping(movie_1, movie_1_id4)
+            return query_graph
+
+        def graph_4() -> Query_graph:
+            ## Initialize nodes
+            # Relation
+            movie_1 = Relation("movie", "movie", is_primary=True)
+            movie_2 = Relation("movie_t2", "movie")
+            movie_3 = Relation("movie_t3", "movie")
+            rating_1 = Relation("rating", "rating")
+            rating_2 = Relation("rating_t2", "rating")
+            direction = Relation("direction", " ")
+            director = Relation("director", "director")
+
+            # Attribute
+            movie_1_id1 = Attribute("m1_id1", "id")
+            movie_1_id2 = Attribute("m1_id2", "id")
+            movie_1_id3 = Attribute("m1_id3", "id")
+            movie_1_id4 = Attribute("m1_id4", "id")
+
+            movie_2_id = Attribute("m2_id", "id")
+            movie_3_id = Attribute("m3_id", "id")
+
+            rating_1_stars1 = Attribute("r1_stars1", "stars")
+            rating_1_stars2 = Attribute("r1_stars2", "stars")
+            rating_2_stars = Attribute("r2_stars", "stars")
+
+            director_last_name = Attribute("last_name", "last_name")
+            director_first_name = Attribute("first_name", "first_name")
+
+            # Function
+            rating_avg = Function(FunctionType.Avg)
+            rating_max = Function(FunctionType.Max)
+
+            # Values
+            v_first_name = Value("spielbverg", "spielbverg")
+            v_last_name = Value("steven", "steven")
+            v_3 = Value("3", "3")
+
+            ## Construct graph
+            query_graph = Query_graph("CorrelatedNestedQuery4")
+            query_graph.connect_membership(movie_1, movie_1_id1)
+            query_graph.connect_simplified_join(movie_1, rating_1, "", "belongs to")
+
+            # Nesting
+            query_graph.connect_selection(rating_1, rating_1_stars1)
+            query_graph.connect_predicate(rating_1_stars1, rating_max, OperatorType.LessThan)
+
+            query_graph.connect_transformation(rating_max, rating_2_stars)
+            query_graph.connect_membership(rating_2, rating_2_stars)
+            query_graph.connect_simplified_join(rating_2, movie_2, "belongs to", "")
+
+            # Correlation
+            query_graph.connect_selection(movie_2, movie_2_id)
+            query_graph.connect_predicate(movie_2_id, movie_1_id2)
+            query_graph.connect_selection(movie_1_id2, movie_1)
+
+            # Second Nesting
+            query_graph.connect_selection(movie_1, movie_1_id3)
+            query_graph.connect_predicate(movie_1_id3, movie_3_id, OperatorType.In)
+
+            query_graph.connect_membership(movie_3, movie_3_id)
+            query_graph.connect_simplified_join(movie_3, direction)
+            query_graph.connect_simplified_join(direction, director)
+            query_graph.connect_selection(director, director_first_name)
+            query_graph.connect_predicate(director_first_name, v_first_name)
+            query_graph.connect_selection(director, director_last_name)
+            query_graph.connect_predicate(director_last_name, v_last_name)
+
+            # For grouping and having
+            query_graph.connect_grouping(movie_1, movie_1_id4)
+            query_graph.connect_having(rating_1, rating_1_stars2)
+            query_graph.connect_transformation(rating_1_stars2, rating_avg)
+            query_graph.connect_predicate(rating_avg, v_3, OperatorType.GEq)
+            return query_graph
+
+        return [graph_4(), graph_3(), graph_2(), graph_1()]
 
 
 import re

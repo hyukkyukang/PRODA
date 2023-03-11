@@ -1,9 +1,12 @@
+import os
 from enum import IntEnum
 from typing import Any, Dict, List
 
 import attrs
+import hkkang_utils.string as string_utils
 
 from src.table_excerpt.table_excerpt import TableExcerpt
+from src.utils.data_manager import save_task_in_db, save_data
 from src.VQL.EVQL import EVQLTree
 
 
@@ -23,8 +26,37 @@ class Task:
     db_name: str
     table_excerpt: TableExcerpt
     result_table: TableExcerpt
-    history: List["Task"] = attrs.field(default=[])
+    history_task_ids: List[int] = attrs.field(default=attrs.Factory(List))
     block_id: str = attrs.field(default="1")
+
+    @staticmethod
+    def save(cls, dir_path):
+        # Generate file paths
+        rand_id = string_utils.generate_random_str(size=10)
+        evql_file_path = os.path.join(dir_path, f"evql/{rand_id}.pkl")
+        table_excerpt_path = os.path.join(dir_path, f"table_excerpt/{rand_id}.pkl")
+        result_table_path = os.path.join(dir_path, f"result_table/{rand_id}.pkl")
+        nl_mapping_path = os.path.join(dir_path, f"nl_mapping/{rand_id}.pkl")
+
+        # Save as file
+        save_data(cls.evql, evql_file_path)
+        save_data(cls.table_excerpt, table_excerpt_path)
+        save_data(cls.result_table, result_table_path)
+        save_data(cls.nl_mapping, nl_mapping_path)
+
+        # Save in DB
+        return save_task_in_db(
+            nl=cls.nl,
+            sql=cls.sql,
+            query_type=cls.query_type,
+            evql_path=evql_file_path,
+            table_excerpt_path=table_excerpt_path,
+            result_table_path=result_table_path,
+            nl_mapping_path=nl_mapping_path,
+            db_name=cls.db_name,
+            task_type=cls.task_type,
+            history_task_ids=cls.history_task_ids,
+        )
 
     def dump_json(self):
         return {
@@ -37,7 +69,7 @@ class Task:
             "dbName": self.db_name,
             "tableExcerpt": self.table_excerpt.dump_json() if self.table_excerpt else None,
             "resultTable": self.result_table.dump_json() if self.result_table else None,
-            "history": [task.dump_json() for task in self.history],
+            "history_task_ids": self.history_task_ids,
             "blockId": self.block_id,
         }
 
@@ -54,5 +86,5 @@ class Task:
             table_excerpt=TableExcerpt.load_json(json_obj["tableExcerpt"]) if json_obj["tableExcerpt"] else None,
             result_table=TableExcerpt.load_json(json_obj["resultTable"]) if json_obj["resultTable"] else None,
             block_id=json_obj["blockId"],
-            history=[Task.load_json(task) for task in json_obj["history"]],
+            history_task_ids=[json_obj["history_task_ids"]],
         )

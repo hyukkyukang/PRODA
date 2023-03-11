@@ -110,8 +110,17 @@ class TableExcerpt:
         headers = [header for item in tables for header in item.headers]
         col_types = [col_type for item in tables for col_type in item.col_types]
         # Fake join
-        rows = []
-        return TableExcerpt(new_table_name, headers, col_types, rows)
+        # Find the smallest number of rows
+        min_row_num = min([len(item.rows) for item in tables])
+
+        new_rows = []
+        for row_idx in range(min_row_num):
+            row = []
+            for table in tables:
+                row.extend(table.rows[row_idx])
+            new_rows.append(Row(row))
+
+        return TableExcerpt(new_table_name, headers, col_types, new_rows)
 
     @staticmethod
     def concatenate(new_table_name, base_table, new_table):

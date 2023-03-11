@@ -51,7 +51,7 @@ function getEVQL(queryType) {
     return evql;
 }
 
-function getTask(taskID = null) {
+function getTask(taskID = null, get_history = true) {
     // Connect to DB and retrieve Task
     const client = new pg();
     client.connectSync(
@@ -61,7 +61,9 @@ function getTask(taskID = null) {
     var result = null;
     var results = null;
     if (taskID === null) {
-        results = client.querySync(`SELECT * FROM ${config.collectionDBTaskTableName} WHERE id NOT IN (SELECT task_id FROM ${config.collectionDBTableName});`);
+        results = client.querySync(
+            `SELECT * FROM ${config.collectionDBTaskTableName} WHERE id NOT IN (SELECT task_id FROM ${config.collectionDBTableName}) ORDER BY id DESC;`
+        );
     } else {
         results = client.querySync(`SELECT * FROM ${config.collectionDBTaskTableName} WHERE id = ${taskID};`);
     }
@@ -80,17 +82,28 @@ function getTask(taskID = null) {
     const evql_path = result.evql_path;
     const result_table_path = result.result_table_path;
     const table_excerpt_path = result.table_excerpt_path;
+    const nl_mapping_path = result.nl_mapping_path;
     // Retrieve data from Python script
     const evql_object = getJsonDataFromFile(evql_path);
     const result_table_object = getJsonDataFromFile(result_table_path);
     const table_excerpt_object = getJsonDataFromFile(table_excerpt_path);
+    const nl_mapping_object = getJsonDataFromFile(nl_mapping_path);
     // Replace path with the real data
     delete result.evql_path;
     delete result.result_table_path;
     delete result.table_excerpt_path;
+    // Append history if there are any
+    const history = [];
+    if (get_history) {
+        for (const task_id of result.history_task_ids) {
+            const history_task = getTask(task_id, false);
+            history.push(history_task);
+        }
+    }
+
     return {
         nl: result.nl,
-        nl_mapping: null,
+        nl_mapping: nl_mapping_object,
         sql: result.sql,
         evql: evql_object,
         queryType: result.query_type,
@@ -98,7 +111,7 @@ function getTask(taskID = null) {
         dbName: result.db_name,
         tableExcerpt: table_excerpt_object,
         resultTable: result_table_object,
-        history: null,
+        history: history,
         blockId: null,
         taskId: result.id,
     };
@@ -111,7 +124,7 @@ function getJsonDataFromFile(file_path) {
     var result = spawnedProcess.stdout.toString();
     var json_object = null;
     if (!result) {
-        console.warn("No Data returned from Python script.");
+        console.warn(`No Data returned from Python script. Check following command: \npython3 ./src/utils/data_manager.py --file_path ${file_path}`);
     } else {
         try {
             json_object = JSON.parse(result);

@@ -8,6 +8,7 @@ import src.VQL.utils as utils
 from src.table_excerpt.table_excerpt import TableExcerpt
 
 
+# ! This must be aligned with the definition in client/components/VQL/EVQL.tsx > operators
 class Operator(IntEnum):
     equal = 1
     lessThan = 2
@@ -318,7 +319,9 @@ class EVQLNode:
     name: str = attrs.field()
     table_excerpt: TableExcerpt = attrs.field()
     sql = attrs.field(default="")
-    mapping: List[Tuple[int, int, str]] = attrs.field(default=attrs.Factory(list))
+    mapping: List[Tuple[int, int, str]] = attrs.field(
+        default=attrs.Factory(list)
+    )  # (evql_row_idx, evql_colum_idx, sql_colum_name)
     _projection: Projection = attrs.field(default=attrs.Factory(Projection))
     _predicate: Predicate = attrs.field(default=attrs.Factory(Predicate))
 

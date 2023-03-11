@@ -28,7 +28,6 @@ if __name__ == "__main__":
     result_table_path = os.path.join(DATA_DIR, "result_table.pkl")
     save_data(result_table, result_table_path)
 
-    save_task_in_db(nl, sql, evql_path, query_type, table_excerpt_path, result_table_path, db_name, task_type)
+    task_id = save_task_in_db(nl, sql, evql_path, query_type, table_excerpt_path, result_table_path, db_name, task_type)
 
-    evql = query.evql
     print("Done!")

@@ -1,9 +1,10 @@
 import { ITableExcerpt } from "../TableExcerpt/TableExcerpt";
 
+// ! This must be aligned with the definition in src/VQL/EVQL.py > Operator
 // All the operators
-export const operators = ["=", "<", ">", "<=", ">=", "EXISTS", "NOT EXISTS", "GROUP", "none", "count", "sum", "avg", "min", "max"];
+export const operators = ["=", "<", ">", "<=", ">=", "EXISTS", "NOT EXISTS", "IN", "NOT IN", "GROUP", "none", "count", "sum", "avg", "min", "max"];
 // Specific types of operators
-export const binaryOperators = ["=", "<", ">"];
+export const binaryOperators = ["=", "<", ">", "<=", ">=", "IN", "NOT IN"];
 export const unaryOperators = ["EXISTS", "NOT EXISTS"];
 export const aggFunctions = ["none", "count", "sum", "avg", "min", "max"];
 

@@ -166,11 +166,11 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
             // Figure out if header is selected or not
             // If selection object has a property "type", header is selected
             if (selection.hasOwnProperty("type")) {
-                newCoordinate.x = points[0].row;
-                newCoordinate.y = points[0].column;
+                newCoordinate.x = points[0].column;
+                newCoordinate.y = points[0].row;
             } else {
-                newCoordinate.x = points[0].row + 1;
-                newCoordinate.y = points[0].column;
+                newCoordinate.x = points[0].column;
+                newCoordinate.y = points[0].row + 1;
             }
             SetSelectedCoordinate(newCoordinate);
         }
@@ -210,8 +210,6 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     if (!isEmptyObject(tableContext)) {
         return (
             <div style={{ overflow: "scroll" }}>
-                {evqlNode.table_excerpt ? <b>Table:</b> : null}
-                {evqlNode.table_excerpt ? <TableExcerpt queryResult={evqlNode.table_excerpt} /> : null}
                 <b>EVQA:</b>
                 <br />
                 <div style={{ display: "inline-block" }}>
@@ -252,7 +250,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                 </div>
                 <br />
                 {isActive ? (
-                    <p className="EVQL-description" style={{ left: x + 10, top: y + 10 }}>
+                    <p className="EVQL-description" style={{ left: x + 10, top: y + 10, zIndex: 1 }}>
                         {description}
                     </p>
                 ) : null}

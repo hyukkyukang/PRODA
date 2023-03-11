@@ -49,6 +49,18 @@ const theme = createTheme({
     },
 });
 
+const enabledSubmitButton = (onSubmitHandler: any) => (
+    <Button variant="contained" color="success" onClick={onSubmitHandler}>
+        Submit
+    </Button>
+);
+
+const disabledSubmitButton = (
+    <Button variant="contained" disabled>
+        Submit
+    </Button>
+);
+
 export const YesNoAnswerSheet = (props: {
     answer: UserAnswer;
     setAnswer: React.Dispatch<React.SetStateAction<UserAnswer>>;
@@ -58,6 +70,11 @@ export const YesNoAnswerSheet = (props: {
     const { answer, setAnswer, taskNL, onSubmitHandler } = props;
     const [yesIsChecked, setYesIsChecked] = React.useState<boolean>(false);
     const [noIsChecked, setNoIsChecked] = React.useState<boolean>(false);
+
+    const submitButton = useMemo(
+        () => (yesIsChecked || answer?.nl ? enabledSubmitButton(onSubmitHandler) : disabledSubmitButton),
+        [noIsChecked, yesIsChecked, answer, answer?.nl, onSubmitHandler]
+    );
 
     const handleIsYesClicked = (event: React.ChangeEvent<HTMLInputElement>) => {
         setYesIsChecked(event.target.checked);
@@ -70,8 +87,9 @@ export const YesNoAnswerSheet = (props: {
         setNoIsChecked(event.target.checked);
         if (event.target.checked) {
             setYesIsChecked(false);
+        } else {
         }
-        setAnswer({ ...answer, isCorrect: !event.target.checked });
+        setAnswer({ ...answer, isCorrect: !event.target.checked, nl: "" });
     };
 
     const inputHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,12 +99,6 @@ export const YesNoAnswerSheet = (props: {
     const pasteClickHandler = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         setAnswer({ ...answer, nl: taskNL });
     };
-
-    const submitButton = (
-        <Button size="small" variant="contained" color="success" onClick={onSubmitHandler}>
-            Submit
-        </Button>
-    );
 
     const yesNoButtons = (
         <ThemeProvider theme={theme}>
@@ -100,13 +112,14 @@ export const YesNoAnswerSheet = (props: {
                         Is not correct
                         <Checkbox sx={{ color: pink[600], "&.Mui-checked": { color: pink[600] } }} checked={noIsChecked} onChange={handleIsNoClicked} />
                     </div>
-                    {yesIsChecked ? <div style={{ display: "inline-block", paddingLeft: "10px" }}>{submitButton}</div> : null}
+                    {noIsChecked ? null : <div style={{ display: "inline-block", paddingLeft: "10px" }}>{submitButton}</div>}
                 </div>
             </FormGroup>
         </ThemeProvider>
     );
     return (
         <React.Fragment>
+            <br />
             <Paper elevation={2} style={{ height: "45px", overflowX: "scroll" }}>
                 <div style={{ marginLeft: "10px" }}>
                     <div>
@@ -135,7 +148,7 @@ export const YesNoAnswerSheet = (props: {
                                     <ContentPasteGoIcon />
                                 </button>
                             </div>
-                            {answer.nl ? <div style={{ display: "inline-block", paddingLeft: "10px" }}>{submitButton}</div> : null}
+                            <div style={{ display: "inline-block", paddingLeft: "15px" }}>{submitButton}</div>
                         </div>
                     </Paper>
                     <br />
@@ -152,19 +165,7 @@ export const AugmentationAnswerSheet = (props: {
 }) => {
     const { answer, setAnswer, onSubmitHandler } = props;
 
-    const submitButton = useMemo(
-        () =>
-            answer?.nl ? (
-                <Button size="small" variant="contained" color="success" onClick={onSubmitHandler}>
-                    Submit
-                </Button>
-            ) : (
-                <Button variant="contained" disabled>
-                    Submit
-                </Button>
-            ),
-        [answer, answer?.nl]
-    );
+    const submitButton = useMemo(() => (answer?.nl ? enabledSubmitButton(onSubmitHandler) : disabledSubmitButton), [answer, answer?.nl]);
 
     const inputHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
         setAnswer({ ...answer, nl: event.target.value });

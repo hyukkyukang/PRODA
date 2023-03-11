@@ -7,5 +7,6 @@
         "DBTaskTableName": "task",
         "DBUserID": "collection_user",
         "DBUserPW": "collection_user_pw"
-    }
+    },
+    "task_save_dir_path": "/home/proda/database/dataCollection/tasks/"
 }

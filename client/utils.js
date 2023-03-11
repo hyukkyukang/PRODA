@@ -1,6 +1,18 @@
 // Helper functions for objects
+
+function isString(obj) {
+    return typeof obj === "string" || obj instanceof String;
+}
+
+function isKeyValueObject(obj) {
+    return !isNumber(obj) && !Array.isArray(obj) && !isString(obj);
+}
+
 function isEmptyObject(obj) {
-    return obj == null || obj == undefined || (obj && !Array.isArray(obj) && Object.keys(obj).length === 0) || (obj && Array.isArray(obj) && obj.length === 0);
+    // return obj == null || obj == undefined || (obj && !Array.isArray(obj) && Object.keys(obj).length === 0) || (obj && Array.isArray(obj) && obj.length === 0);
+    return (
+        obj == null || obj == undefined || (obj && isKeyValueObject(obj) && Object.keys(obj).length === 0) || (obj && Array.isArray(obj) && obj.length === 0)
+    );
 }
 
 // Helper functions for string

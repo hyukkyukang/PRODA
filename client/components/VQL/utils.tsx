@@ -170,7 +170,6 @@ export const conditionToExpression = (condition: Function, names: string[]): str
         }
         const op = operators[condition.op_type - 1];
         if (binaryOperators.includes(op)) {
-            const tmp = condition?.r_operand ? condition.r_operand : "";
             // Parse right operand
             var r_op;
             if (isEmptyObject(condition.r_operand)) {

@@ -15,4 +15,7 @@ export const operatorDescriptions = {
     EXISTS: "Exists function is used to test for the existence of a row in a subquery. It is a Boolean function that returns true if the subquery returns any rows, and false otherwise.",
     "NOT EXISTS":
         "Not Exists function is used to test for the non-existence of a row in a subquery. It is a Boolean function that returns true if the subquery returns no rows, and false otherwise.",
+    IN: "In is an operator used to test whether a value is in a list of values. It is a Boolean operator that returns true if the value is in the list of values, and false otherwise.",
+    "NOT IN":
+        "Not In is an operator used to test whether a value is not in a list of values. It is a Boolean operator that returns true if the value is not in the list of values, and false otherwise.",
 };

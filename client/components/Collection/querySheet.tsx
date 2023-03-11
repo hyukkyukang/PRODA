@@ -78,6 +78,9 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
                             <Grid item xs={12} sm={12}>
                                 <br />
                                 <CoordinateContext.Provider value={{ selectedCoordinate, SetSelectedCoordinate }}>
+                                    {currentTask?.tableExcerpt ? <b>Table:</b> : null}
+                                    {currentTask?.tableExcerpt ? <TableExcerpt queryResult={currentTask.tableExcerpt} /> : null}
+                                    <br />
                                     <EVQLTable
                                         evqlRoot={{ node: currentTask.evql.node, children: currentTask.evql.children }}
                                         childListPath={[]}
