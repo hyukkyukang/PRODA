@@ -1,0 +1,32 @@
+frontend:
+    IP: localhost
+    Port: 3000
+    Protocol: http # Either https or http
+    SSLCertPath: "/home/proda/certificates/localhost.crt"
+    SSLKeyPath: "/home/proda/certificates/localhost.key"
+backend:
+    IP: localhost
+    Port: 4001
+    Protocol: http # Either https or http
+    SSLCertPath: "/home/proda/certificates/localhost.crt"
+    SSLKeyPath: "/home/proda/certificates/localhost.key"
+DB:
+    IP: localhost
+    Port: 5432
+    config:
+        DBName: proda_config
+        UserID: config_user
+        UserPW: config_user_pw
+        TableName: config
+        QueryGoalNumsTableName: query_goal
+    demo:
+        DBName: proda_demo
+        UserID: demo_user
+        UserPW: demo_user_pw
+    collection:
+        DBName: proda_collection
+        UserID: collection_user
+        UserPW: collection_user_pw
+        CollectionTableName: collection
+        TaskTableName: task
+taskSaveDirPath: "/home/proda/database/dataCollection/tasks/"

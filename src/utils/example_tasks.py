@@ -23,7 +23,7 @@ def create_nl_and_mapping(query_graph: QueryTree, evql: EVQLTree):
 def example_task_in_the_paper():
     config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.json")
     config = json.load(open(config_file_path, "r"))
-    task_save_dir_path = config["task_save_dir_path"]
+    task_save_dir_path = config["taskSaveDirPath"]
 
     query_object = MultipleSublinksQuery2()
     evql_object = query_object.evql

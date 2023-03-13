@@ -1,11 +1,15 @@
-console.log("Begin server");
-
 const fs = require("fs");
-const config = require("./config");
 const func = require("./function.js");
 const https = require("https");
 var express = require("express");
 var cors = require("cors");
+
+/* Load config */
+console.log("Reading config file...");
+const utils = require("./utils.js");
+const config = utils.loadYamlFile("../config.yml");
+
+console.log("Begin server");
 
 var app = express();
 app.use(cors());
@@ -84,8 +88,7 @@ app.post("/runEVQL", async function (req, res) {
 app.post("/runSQL", async function (req, res) {
     console.log(`app.posts.runSQL  with query: ${JSON.stringify(req.query)}`);
     const sql = req.body.params.sql;
-    const dbName = req.body.params.dbName;
-    const queryResult = await func.queryDB(sql, dbName);
+    const queryResult = await func.queryDB(sql);
     res.send(queryResult);
 });
 
@@ -119,8 +122,8 @@ function errorHandler(err, req, res, next) {
 }
 app.use(errorHandler);
 
-const use_https = true;
-if (use_https) {
+if (config.backend.Protocol == "https") {
+    console.log(`Using https protocol`);
     https
         .createServer(
             {
@@ -129,9 +132,10 @@ if (use_https) {
             },
             app
         )
-        .listen(config.serverPort);
+        .listen(config.backend.Port);
 } else {
-    app.listen(config.serverPort);
+    console.log(`Using http protocol`);
+    app.listen(config.backend.Port);
 }
 
-console.log(`Server is running on port ${config.serverPort}`);
+console.log(`Server is running on ${config.backend.Protocol}:${config.backend.IP}:${config.backend.Port}`);

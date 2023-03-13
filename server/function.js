@@ -1,20 +1,42 @@
 // Globally used variables
-const config = require("./config");
 const pg = require("pg-native");
-var assert = require("assert");
+const assert = require("assert");
 
 /* Add environment variable to Python path */
 const PathToPythonSrc = "../src/";
 process.env["PYTHONPATH"] = "../";
 
+/* Load config */
+const utils = require("./utils.js");
+const config = utils.loadYamlFile("../config.yml");
+
+// DB
+DBIP = config.DB.config.IP;
+DBPort = config.DB.config.Port;
+// ConfigDB
+configDBUserID = config.DB.config.UserID;
+configDBUserPW = config.DB.config.UserPW;
+configDBName = config.DB.config.DBName;
+configDBTableName = config.DB.config.TableName;
+configDBQueryGoalNumsTableName = config.DB.config.QueryGoalNumsTableName;
+// CollectionDB
+collectionDBUserID = config.DB.collection.UserID;
+collectionDBUserPW = config.DB.collection.UserPW;
+collectionDBName = config.DB.collection.DBName;
+collectionDBCollectionTableName = config.DB.collection.CollectionTableName;
+collectionDBTaskTableName = config.DB.collection.TaskTableName;
+// DemoDB
+demoDBUserID = config.DB.demo.UserID;
+demoDBUserPW = config.DB.demo.UserPW;
+demoDBName = config.DB.demo.DBName;
+demoDBTableName = config.DB.demo.tableName;
+
 /* Fetch configs */
 function getConfig() {
     const client = new pg();
-    client.connectSync(
-        `user=${config.configDBUserID} password=${config.configDBUserPW} port=${config.configDBPort} host=${config.configDBIP} dbname=${config.configDBName}`
-    );
-    const fetchedConfigs = client.querySync(`SELECT * FROM ${config.configDBTableName};`);
-    const fetchedQueryGoalNums = client.querySync(`SELECT * FROM ${config.configDBQueryGoalNumsTableName};`);
+    client.connectSync(`user=${configDBUserID} password=${configDBUserPW} port=${DBPort} host=${DBIP} dbname=${configDBName}`);
+    const fetchedConfigs = client.querySync(`SELECT * FROM ${configDBTableName};`);
+    const fetchedQueryGoalNums = client.querySync(`SELECT * FROM ${configDBQueryGoalNumsTableName};`);
 
     // Parse configs into JSON
     assert.equal(fetchedConfigs.length, 1);
@@ -51,21 +73,20 @@ function getEVQL(queryType) {
     return evql;
 }
 
+/* Fetch Task */
 function getTask(taskID = null, get_history = true) {
     // Connect to DB and retrieve Task
     const client = new pg();
-    client.connectSync(
-        `user=${config.collectionDBUserID} password=${config.collectionDBUserPW} port=${config.collectionDBPort} host=${config.collectionDBIP} dbname=${config.collectionDBName}`
-    );
+    client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
     // Insert new log
     var result = null;
     var results = null;
     if (taskID === null) {
         results = client.querySync(
-            `SELECT * FROM ${config.collectionDBTaskTableName} WHERE id NOT IN (SELECT task_id FROM ${config.collectionDBTableName}) ORDER BY id DESC;`
+            `SELECT * FROM ${collectionDBTaskTableName} WHERE id NOT IN (SELECT task_id FROM ${collectionDBCollectionTableName}) ORDER BY id DESC;`
         );
     } else {
-        results = client.querySync(`SELECT * FROM ${config.collectionDBTaskTableName} WHERE id = ${taskID};`);
+        results = client.querySync(`SELECT * FROM ${collectionDBTaskTableName} WHERE id = ${taskID};`);
     }
     // Get one task
     if (results.length > 0) {
@@ -117,6 +138,7 @@ function getTask(taskID = null, get_history = true) {
     };
 }
 
+/* Read in JSON object from file */
 function getJsonDataFromFile(file_path) {
     var spawnSync = require("child_process").spawnSync;
     // Retrieve data from Python script
@@ -136,6 +158,7 @@ function getJsonDataFromFile(file_path) {
     return json_object;
 }
 
+/* Fetch Log data */
 function getLogData() {
     function psqlDateToyymmdd(postgresDate) {
         const months = {
@@ -159,11 +182,9 @@ function getLogData() {
         return `${year}.${month}.${day}`;
     }
     const client = new pg();
-    client.connectSync(
-        `user=${config.collectionDBUserID} password=${config.collectionDBUserPW} port=${config.collectionDBPort} host=${config.collectionDBIP} dbname=${config.collectionDBName}`
-    );
+    client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
     // Insert new log
-    result = client.querySync(`SELECT * FROM ${config.collectionDBTableName};`);
+    result = client.querySync(`SELECT * FROM ${collectionDBCollectionTableName};`);
     client.end();
 
     // Format Log Data for the client
@@ -187,24 +208,22 @@ function getLogData() {
     }
     return parsedResult;
 }
+
 /* Save info */
 function setNewConfig(newConfig) {
     const client = new pg();
-    client.connectSync(
-        `user=${config.configDBUserID} password=${config.configDBUserPW} port=${config.configDBPort} host=${config.configDBIP} dbname=${config.configDBName}`
-    );
+    client.connectSync(`user=${configDBUserID} password=${configDBUserPW} port=${configDBPort} host=${configDBIP} dbname=${configDBName}`);
     // Update system config
-    client.querySync(`UPDATE ${config.configDBTableName} SET original_balance=${newConfig.originalBalance}, price_per_data=${newConfig.pricePerData};`);
+    client.querySync(`UPDATE ${configDBTableName} SET original_balance=${newConfig.originalBalance}, price_per_data=${newConfig.pricePerData};`);
 
     // Update query goal nums
     for (const queryType in newConfig.goalNumOfQueries) {
-        client.querySync(
-            `UPDATE ${config.configDBQueryGoalNumsTableName} SET goal_num=${newConfig.goalNumOfQueries[queryType]} WHERE query_type='${queryType}';`
-        );
+        client.querySync(`UPDATE ${configDBQueryGoalNumsTableName} SET goal_num=${newConfig.goalNumOfQueries[queryType]} WHERE query_type='${queryType}';`);
     }
     client.end();
 }
 
+/* Log worker answer */
 function logWorkerAnswer(logData) {
     // Get values from answer
     const task_id = logData.task.taskId;
@@ -213,11 +232,9 @@ function logWorkerAnswer(logData) {
     const nl = logData.answer.nl.replace(/'/g, "\\'");
 
     const client = new pg();
-    client.connectSync(
-        `user=${config.collectionDBUserID} password=${config.collectionDBUserPW} port=${config.collectionDBPort} host=${config.collectionDBIP} dbname=${config.collectionDBName}`
-    );
+    client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
     // Insert new log
-    result = client.querySync(`INSERT INTO ${config.collectionDBTableName} VALUES(DEFAULT, ${task_id}, E'${user_id}', ${is_correct}, E'${nl}', DEFAULT);`);
+    result = client.querySync(`INSERT INTO ${collectionDBCollectionTableName} VALUES(DEFAULT, ${task_id}, E'${user_id}', ${is_correct}, E'${nl}', DEFAULT);`);
     client.end();
     return result;
 }
@@ -230,14 +247,15 @@ function EVQLToSQL(evql) {
     return result;
 }
 
-async function queryDB(sql, dbName) {
+/* Used for query to demo*/
+async function queryDB(sql) {
     const { Client } = require("pg");
     const client = new Client({
-        host: config.demoDBIP,
-        port: config.demoDBPort,
-        user: config.demoDBUserID,
-        password: config.demoDBUserPW,
-        database: dbName,
+        host: DBIP,
+        port: DBPort,
+        user: demoDBUserID,
+        password: demoDBUserPW,
+        database: demoDBName,
     });
     client.connect();
     result = await client.query({ text: sql, rowMode: "array" });

@@ -7,9 +7,7 @@ import { EVQLTree } from "../components/VQL/EVQL";
 import { EVQLTables, Coordinate } from "../components/VQL/EVQLTable";
 import { TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
 import { SideBar } from "../components/VQL/Sidebar";
-
-// Load environment variables
-const demoDBName = process.env.NEXT_PUBLIC_DemoDBName;
+import { getConfig } from "../utils";
 
 const HandsOnEVQL = (props: any) => {
     // Global variables (to children)
@@ -29,7 +27,7 @@ const HandsOnEVQL = (props: any) => {
     // get sampled DB Rows
     const getRowsOfDemoDB = async () => {
         // Handle data fetching
-        runSQL({ sql: `SELECT * FROM cars LIMIT 5`, dbName: demoDBName })
+        runSQL({ sql: `SELECT * FROM cars LIMIT 5` })
             .then((data) => {
                 setSampledDBRows(data.rows);
             })
@@ -41,9 +39,9 @@ const HandsOnEVQL = (props: any) => {
     // Visualize EVQL
     const doInitSetting = async (queryName: string) => {
         // Fetch example EVQL
-        const tmpEVQL = await fetchEVQL({ queryType: queryName, dbName: demoDBName });
+        const tmpEVQL = await fetchEVQL({ queryType: queryName });
         // Execute EVQL
-        const tmpQueryResult = await runEVQL({ evqlStr: JSON.stringify(tmpEVQL), dbName: demoDBName });
+        const tmpQueryResult = await runEVQL({ evqlStr: JSON.stringify(tmpEVQL) });
         // Set values
         setEVQL(tmpEVQL);
         setSQL(tmpQueryResult["sql"]);
@@ -51,7 +49,7 @@ const HandsOnEVQL = (props: any) => {
     };
 
     const executeQuery: React.MouseEventHandler = (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
-        runEVQL({ evqlStr: JSON.stringify(evql), dbName: demoDBName })
+        runEVQL({ evqlStr: JSON.stringify(evql) })
             .then((data) => {
                 setSQL(data["sql"]);
                 setQueryResult(data["result"]);
