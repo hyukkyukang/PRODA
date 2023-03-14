@@ -140,9 +140,11 @@ class MovieQuery3(TestQuery):
         WHERE T3.name = "Josh Cates" and T2.stars > 4.5;
                     """
         self._DB=MovieDB()
+
     @misc_utils.property_with_cache
     def evql(self) -> EVQLTree:
-        init_table1 = TableExcerpt.fake_join("movie_rating_reviewer", [self._DB.get_table("movie"), self._DB.get_table("rating"), self._DB.get_table("reviewer")], ["movie", "rating", "reviewer"])
+        #init_table1 = TableExcerpt.fake_join("movie_rating_reviewer", [self._DB.get_table("movie"), self._DB.get_table("rating"), self._DB.get_table("reviewer")], ["movie_", "rating_", "reviewer_"])
+        init_table1 = TableExcerpt.fake_join("movie_rating_reviewer", [self._DB.get_table("movie"), self._DB.get_table("rating"), self._DB.get_table("reviewer")])
 
         #mapping1 = [
         #    (0, init_table1.headers.index("id"), "id"),
@@ -152,13 +154,18 @@ class MovieQuery3(TestQuery):
 
         # Create tree node
         node = EVQLNode(f"movie_query_3", init_table1)
+        print(node.headers)
         #node_1 = EVQLNode(f"movie_query_3", init_table1, mapping=mapping1)
-        node.add_projection(Header(node_1.headers.index("movie_title")))
-        node.add_projection(Header(node_1.headers.index("rating_stars")))
+        #node.add_projection(Header(node.headers.index("movie_title")))
+        #node.add_projection(Header(node.headers.index("rating_stars")))
+        node.add_projection(Header(node.headers.index("title")))
+        node.add_projection(Header(node.headers.index("stars")))
 
         # Create conditions for the node
-        cond1 = Selecting(node.headers.index("reviewer_name"), Operator.equal, "Josh Cates")
-        cond2 = Selecting(node.headers.index("rating_stars"), Operator.greaterThan, "4.5")
+        #cond1 = Selecting(node.headers.index("reviewer_name"), Operator.equal, "Josh Cates")
+        #cond2 = Selecting(node.headers.index("rating_stars"), Operator.greaterThan, "4.5")
+        cond1 = Selecting(node.headers.index("name"), Operator.equal, "Josh Cates")
+        cond2 = Selecting(node.headers.index("stars"), Operator.greaterThan, "4.5")
         clause = Clause([cond1, cond2])
         node.add_predicate(clause)
 
@@ -177,15 +184,15 @@ class MovieQuery3(TestQuery):
             # Attribute
             mov_title = Attribute("mov_title", "title")
             rating_stars = Attribute("rating_stars", "stars")
-            mov_id = Attribute("mov_id", "id")
-            rating_mov_id = Attribute("rating_mov_id", "mov_id")
-            rating_rev_id = Attribute("rating_rev_id", "rev_id")
-            rev_id = Attribute("rev_id", "id")
+            #mov_id = Attribute("mov_id", "id")
+            #rating_mov_id = Attribute("rating_mov_id", "mov_id")
+            #rating_rev_id = Attribute("rating_rev_id", "rev_id")
+            #rev_id = Attribute("rev_id", "id")
             rev_name = Attribute("rev_name", "name")
             rating_stars_2 = Attribute("rating_stars_2", "stars")
             
             # Values
-            v_rev_name = Value("Josh Cates", "josh Cates")
+            v_rev_name = Value("Josh Cates", "Josh Cates")
             v_stars = Value("4.5", "4.5")
             
             # Function

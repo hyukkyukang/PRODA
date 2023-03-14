@@ -5,7 +5,7 @@ from pylogos.translate import translate
 
 from src.query_tree.query_tree import QueryTree
 from src.task.task import Task
-from src.utils.user_study_queries import MovieQuery1
+from src.utils.user_study_queries import MovieQuery1, MovieQuery2, MovieQuery3
 from src.VQL.EVQL import EVQLTree
 import hkkang_utils.file as file_utils
 from src.utils.example_tasks import create_nl_and_mapping

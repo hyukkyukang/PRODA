@@ -107,7 +107,7 @@ class TableExcerpt:
 
     @staticmethod
     def fake_join(new_table_name: str, tables: List[Any], prefixes=None):
-        if prefix is not None:
+        if prefixes is not None:
             assert len(prefixes) == len(tables)
             headers=[]
             for table, prefix in zip(tables, prefixes):
