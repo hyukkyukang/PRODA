@@ -18,11 +18,11 @@ export const fetchEVQL = async (params) => {
 };
 
 export const fetchTask = async (params) => {
-    const [key, workerId] = params.queryKey;
+    const [key, workerId, taskID] = params.queryKey;
     const axioscConfig = { headers: { "content-type": "application/json" } };
     console.log(`config: ${JSON.stringify(config)}`);
     console.log(`${protocol}://${ip}:${serverPort}/fetchTask`);
-    return (await axios.post(`${protocol}://${ip}:${serverPort}/fetchTask`, { workerId: workerId }, axioscConfig)).data;
+    return (await axios.post(`${protocol}://${ip}:${serverPort}/fetchTask`, { workerId: workerId, taskID: taskID }, axioscConfig)).data;
 };
 
 export const fetchLogData = async (params) => {

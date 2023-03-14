@@ -6,6 +6,7 @@ export interface IUpdateAnswerRequest {
     task: Task;
     answer: UserAnswer;
     workerId: string;
+    taskID: number;
 }
 
 // Interfaces for response data client <- server

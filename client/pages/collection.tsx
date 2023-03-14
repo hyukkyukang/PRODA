@@ -24,13 +24,14 @@ export const Collection = (props: any) => {
     const [assignmentId, setAssignmentId] = useState("");
     const [turkSubmitTo, setTurkSubmitTo] = useState("");
     const [workerId, setWorkerId] = useState("");
+    const [taskID, setTaskID] = useState(-1);
     const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
 
     // To handle submission
     const formRef = useRef<HTMLFormElement>(null);
 
     // Fetching Data
-    const { isLoading, isError, data, error } = useQuery<ITaskResponse>(["fetchTask", workerId], fetchTask, { enabled: workerId !== "" });
+    const { isLoading, isError, data, error } = useQuery<ITaskResponse>(["fetchTask", workerId, taskID], fetchTask, { enabled: workerId !== "" });
     const currentTask = useMemo<Task | null>(() => (data?.isTaskReturned ? data.task : null), [data]);
 
     const onSubmitHandler = () => {
@@ -55,17 +56,21 @@ export const Collection = (props: any) => {
         const assignmentId = queryParams.get("assignmentId") ? queryParams.get("assignmentId") : "";
         const turkSubmitTo = queryParams.get("turkSubmitTo") ? queryParams.get("turkSubmitTo") : "";
         const workerId = queryParams.get("workerId") ? queryParams.get("workerId") : "a";
+        const taskID = queryParams.get("taskID") ? queryParams.get("taskID") : "";
 
         // Set AMT information
         setHitId(hitId === null ? "" : hitId);
         setAssignmentId(assignmentId === null ? "" : assignmentId);
         setTurkSubmitTo(turkSubmitTo === null ? "" : turkSubmitTo);
         setWorkerId(workerId === null ? "" : workerId);
+        setTaskID(taskID === null ? -1 : parseInt(taskID));
     };
 
     useEffect(() => {
         getAMTInfo();
     }, []);
+
+    console.log(`taskID: ${taskID}`);
 
     const AMTSubmissionForm = (
         <React.Fragment>

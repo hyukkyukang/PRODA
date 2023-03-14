@@ -46,29 +46,37 @@ app.post("/fetchEVQL", function (req, res) {
 
 app.post("/fetchTask", function (req, res) {
     const workerID = req.body.workerId;
-    console.log(`/fetchTask; workerID:${workerID}) has requested a task`);
+    const taskID = req.body.taskID;
+    console.log(`/fetchTask; workerID:${workerID} taskID:${taskID}) has requested a task`);
     var taskData = null;
-    // Check if worker has already been assigned a task
-    if (workerID in workerTaskMapping) {
-        // Return the same task
-        const taskID = workerTaskMapping[workerID];
-        console.log(`workerID:${workerID} has already been assigned to taskID:${taskID}`);
+    // If taskID is given, return the task
+    if (taskID !== null && taskID !== -1) {
         taskData = func.getTask(taskID);
-    } else {
-        // Allocate a new task
-        taskData = func.getTask();
-        if (taskData) {
-            const taskID = taskData["taskId"];
-            workerTaskMapping[workerID] = taskID;
-            console.log(`workerID:${workerID} has been assigned to taskID:${taskID}`);
-        }
-    }
-    if (taskData === null) {
-        console.log(`No task is retrieved and sent to workerID:${workerID}\n`);
-        res.send({ isTaskReturned: false, task: null });
-    } else {
         console.log(`task is retrieved and sent to workerID:${workerID}\n`);
         res.send({ isTaskReturned: true, task: taskData });
+    } else {
+        // Check if worker has already been assigned a task
+        if (workerID in workerTaskMapping) {
+            // Return the same task
+            const taskID = workerTaskMapping[workerID];
+            console.log(`workerID:${workerID} has already been assigned to taskID:${taskID}`);
+            taskData = func.getTask(taskID);
+        } else {
+            // Allocate a new task
+            taskData = func.getTask();
+            if (taskData) {
+                const taskID = taskData["taskId"];
+                workerTaskMapping[workerID] = taskID;
+                console.log(`workerID:${workerID} has been assigned to taskID:${taskID}`);
+            }
+        }
+        if (taskData === null) {
+            console.log(`No task is retrieved and sent to workerID:${workerID}\n`);
+            res.send({ isTaskReturned: false, task: null });
+        } else {
+            console.log(`task is retrieved and sent to workerID:${workerID}\n`);
+            res.send({ isTaskReturned: true, task: taskData });
+        }
     }
 });
 
