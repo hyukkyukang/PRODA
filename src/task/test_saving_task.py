@@ -1,8 +1,11 @@
 import os
 from src.utils.data_manager import save_task_in_db, save_data
 from src.utils.example_queries import MultipleSublinksQuery2
+from hkkang_utils.file import file_utils
 
-DATA_DIR = "/home/proda/database/dataCollection/tasks/"
+config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
+config = file_utils.read_yaml_file(config_file_path)
+DATA_DIR = config["taskSaveDirPath"]
 
 if __name__ == "__main__":
     query = MultipleSublinksQuery2()

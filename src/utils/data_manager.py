@@ -1,5 +1,4 @@
 import argparse
-import yaml
 import json
 import os
 import pickle
@@ -10,7 +9,8 @@ import hkkang_utils.file as file_utils
 from src.utils.pg_connector import PostgresConnector
 
 # Must be given an absolute path
-config = file_utils.read_yaml_file("/home/proda/config.yml")
+config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
+config = file_utils.read_yaml_file(config_file_path)
 
 IP = config["DB"]["IP"]
 port = config["DB"]["Port"]
