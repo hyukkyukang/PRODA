@@ -78,6 +78,7 @@ def MovieTask2(query_object):
         history_task_ids=[],
     )
     task1_id = Task.save(sub_task1, task_save_dir_path)
+    print(task1_id)
 
     # Create and save task2
     sub_task2 = Task(
@@ -93,6 +94,7 @@ def MovieTask2(query_object):
         history_task_ids=[],
     )
     task2_id = Task.save(sub_task2, task_save_dir_path)
+    print(task2_id)
 
     # Create and save task3
     sub_task3 = Task(
@@ -108,6 +110,7 @@ def MovieTask2(query_object):
         history_task_ids=[task2_id, task1_id],
     )
     task3_id = Task.save(sub_task3, task_save_dir_path)
+    print(task3_id)
 
     # Create and save task4
     sub_task4 = Task(
@@ -123,6 +126,7 @@ def MovieTask2(query_object):
         history_task_ids=[task3_id, task2_id, task1_id],
     )
     task4_id = Task.save(sub_task4, task_save_dir_path)
+    print(task4_id)
 
     return sub_task1
 
