@@ -25,8 +25,8 @@ def get_table_col_types(cur, table):
 
 def get_table_rows(cur, table):
     sql_query = """SELECT * FROM {}""".format(table)
+    cur.execute(sql_query)
     rows = list(map(lambda x: list(x), cur.fetchall()))
-
     return rows
     
 def get_result_headers(cur, sql):

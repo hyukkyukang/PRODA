@@ -71,7 +71,7 @@ class Cell:
 
     @property
     def is_null(self):
-        return self.value == None
+        return self.value == None or self.value == ''
 
     def dump_json(self):
         return {"value": self.value}
