@@ -106,9 +106,17 @@ class TableExcerpt:
             self.add_rows(rows)
 
     @staticmethod
-    def fake_join(new_table_name: str, tables: List[Any]):
-        headers = [header for item in tables for header in item.headers]
+    def fake_join(new_table_name: str, tables: List[Any], prefixes=None):
+        if prefix is not None:
+            assert len(prefixes) == len(tables)
+            headers=[]
+            for table, prefix in zip(tables, prefixes):
+                for header in table.headers:
+                    headers.append(prefix + header)
+        else:
+            headers = [header for item in tables for header in item.headers]
         col_types = [col_type for item in tables for col_type in item.col_types]
+        
         # Fake join
         # Find the smallest number of rows
         min_row_num = min([len(item.rows) for item in tables])
