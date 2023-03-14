@@ -211,8 +211,8 @@ def main(schema, dvs, column_dtype_dict, num_queries, output_path,log_path,log_s
         							dtype_dict, dvs, inner_query_objs, inner_query_graphs)
         except Exception as e:
             print(e)
-            break
-            #continue
+            #break
+            continue
         n += 1
 
         do_write = True
