@@ -5,7 +5,7 @@ from pylogos.translate import translate
 
 from src.query_tree.query_tree import QueryTree
 from src.task.task import Task
-from src.utils.user_study_queries import MovieQuery1, MovieQuery2, MovieQuery3, MovieQuery4, MovieQuery5
+from src.utils.user_study_queries import MovieQuery1, MovieQuery2, MovieQuery3, MovieQuery5, MovieQuery6
 from src.VQL.EVQL import EVQLTree
 import hkkang_utils.file as file_utils
 from src.utils.example_tasks import create_nl_and_mapping
@@ -24,11 +24,6 @@ def MovieTask1(query_object):
     evql1 = evql_object
     nl1, mapping1 = create_nl_and_mapping(query_graphs[0], evql1)
     result = query_object.result_tables[0]
-
-    #for row in evql1.node.table_excerpt.rows:
-    #for row in result.rows:
-    #    printable_row = [cell.value for cell in row.cells]
-    #    print(printable_row)
 
     # Create and save task1
     sub_task1 = Task(
@@ -135,14 +130,66 @@ def MovieTask2(query_object):
 
     return sub_task1
 
+
+def MovieTask3(query_object):
+    config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
+    config = file_utils.read_yaml_file(config_file_path)
+    task_save_dir_path = config["taskSaveDirPath"]
+
+    evql_object = query_object.evql
+    query_graphs = query_object.query_graphs
+
+    # Create natural language
+    evql1 = evql_object.children[0]
+    evql2 = evql_object
+
+    result_tables = query_object.result_tables
+
+    nl2, mapping2 = create_nl_and_mapping(query_graphs[0], evql2)
+    nl1, mapping1 = create_nl_and_mapping(query_graphs[1], evql1)
+
+    # Create and save task1
+    sub_task1 = Task(
+        nl=nl1,
+        nl_mapping=mapping1,
+        sql="Sub1",
+        evql=evql1,
+        query_type="GroupbyQuery",
+        task_type=1,
+        db_name="IMDB",
+        table_excerpt=evql1.node.table_excerpt,
+        result_table=result_tables[0],
+        history_task_ids=[],
+    )
+    task1_id = Task.save(sub_task1, task_save_dir_path)
+    print(task1_id)
+
+    # Create and save task2
+    sub_task2 = Task(
+        nl=nl2,
+        nl_mapping=mapping2,
+        sql="Full",
+        evql=evql2,
+        query_type="HavingQuery",
+        task_type=1,
+        db_name="IMDB",
+        table_excerpt=evql2.node.table_excerpt,
+        result_table=result_tables[1],
+        history_task_ids=[],
+    )
+    task2_id = Task.save(sub_task2, task_save_dir_path)
+    print(task2_id)
+
+    return sub_task1
+
 if __name__ == "__main__":
     #query_object = MovieQuery1()
-    #MovieTask1(query_object)
+    #MovieTask1(query_objct)
     #query_object = MovieQuery2()
     #MovieTask1(query_object)
     #query_object = MovieQuery3()
     #MovieTask1(query_object)
-    query_object = MovieQuery4()
-    MovieTask1(query_object)
     #query_object = MovieQuery5()
     #MovieTask2(query_object)
+    query_object = MovieQuery6()
+    MovieTask3(query_object)
