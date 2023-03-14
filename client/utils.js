@@ -1,14 +1,6 @@
+import config from "js-yaml-loader!../config.yml";
+
 // Helper functions for objects
-const fs = require("fs");
-
-// Load environment variable
-const dotenv = require("dotenv");
-dotenv.config();
-
-// Load custom config
-const yenv = require("yenv");
-const config = yenv("../config.yml", { env: "frontend", strict: false });
-
 function isString(obj) {
     return typeof obj === "string" || obj instanceof String;
 }
@@ -48,18 +40,9 @@ function isArrayEqual(arr1, arr2) {
     return true;
 }
 
-function loadYamlFile(path) {
-    try {
-        return yaml.load(fs.readFileSync(path, "utf8"));
-    } catch (e) {
-        console.log(e);
-        return null;
-    }
-}
-
 /* After calling this function, new configs are appended to process.env */
 function getConfig() {
-    return config;
+    return config.visibleToClient;
 }
 
 module.exports = {
@@ -68,6 +51,5 @@ module.exports = {
     isNumber: isNumber,
     stripQutations: stripQutations,
     isArrayEqual: isArrayEqual,
-    loadYamlFile: loadYamlFile,
     getConfig: getConfig,
 };

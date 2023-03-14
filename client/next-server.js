@@ -1,3 +1,15 @@
+function loadYamlFile(path) {
+    const fs = require("fs");
+    const yaml = require("js-yaml");
+    try {
+        return yaml.load(fs.readFileSync(path, "utf8"));
+    } catch (e) {
+        console.log(e);
+        return null;
+    }
+}
+const config = loadYamlFile("../config.yml");
+
 // Read in arguments
 const mode = process.argv[2];
 console.log(`Running in ${mode} mode.`);
@@ -7,15 +19,14 @@ if (!["start", "dev"].includes(mode)) {
 }
 
 // Read in configs
-const { getConfig } = require("./utils");
-const config = getConfig();
+const hostname = config.visibleToClient.frontend.IP;
+const port = config.visibleToClient.frontend.Port;
+const protocol = config.visibleToClient.frontend.Protocol;
+const SSLKeyPath = config.SSLKeyPath;
+const SSLCertPath = config.SSLCertPath;
+// Append configs to process.env
 
-// Setup Server configs
-const hostname = config.IP;
-const port = config.port;
-const dev = process.env.NODE_ENV !== "production";
-
-if (config.Protocol == "http") {
+if (protocol == "http") {
     if (mode == "start") {
         const cli = require("next/dist/cli/next-start");
         cli.nextStart(["-p", port || 3000]);
@@ -23,7 +34,7 @@ if (config.Protocol == "http") {
         const cli = require("next/dist/cli/next-dev");
         cli.nextDev(["-p", port || 3000]);
     }
-} else if (config.Protocol == "https") {
+} else if (protocol == "https") {
     const { createServer } = require("https");
     const { parse } = require("url");
     const next = require("next");
@@ -31,8 +42,8 @@ if (config.Protocol == "http") {
 
     // Create Server
     const httpsOptions = {
-        key: fs.readFileSync(config.SSLKeyPath),
-        cert: fs.readFileSync(config.SSLCertPath),
+        key: fs.readFileSync(SSLKeyPath),
+        cert: fs.readFileSync(SSLCertPath),
     };
 
     const app = next({ dev, hostname, port });

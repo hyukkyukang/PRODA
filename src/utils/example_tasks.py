@@ -7,6 +7,7 @@ from src.query_tree.query_tree import QueryTree
 from src.task.task import Task
 from src.utils.example_queries import MultipleSublinksQuery2
 from src.VQL.EVQL import EVQLTree
+import hkkang_utils.file as file_utils
 
 
 def create_nl_and_mapping(query_graph: QueryTree, evql: EVQLTree):
@@ -21,8 +22,8 @@ def create_nl_and_mapping(query_graph: QueryTree, evql: EVQLTree):
 
 
 def example_task_in_the_paper():
-    config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.json")
-    config = json.load(open(config_file_path, "r"))
+    config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
+    config = file_utils.read_yaml_file(config_file_path)
     task_save_dir_path = config["taskSaveDirPath"]
 
     query_object = MultipleSublinksQuery2()

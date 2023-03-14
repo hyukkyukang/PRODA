@@ -11,8 +11,8 @@ const utils = require("./utils.js");
 const config = utils.loadYamlFile("../config.yml");
 
 // DB
-DBIP = config.DB.config.IP;
-DBPort = config.DB.config.Port;
+DBIP = config.DB.IP;
+DBPort = config.DB.Port;
 // ConfigDB
 configDBUserID = config.DB.config.UserID;
 configDBUserPW = config.DB.config.UserPW;
@@ -77,6 +77,7 @@ function getEVQL(queryType) {
 function getTask(taskID = null, get_history = true) {
     // Connect to DB and retrieve Task
     const client = new pg();
+    console.log(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
     client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
     // Insert new log
     var result = null;
@@ -212,7 +213,7 @@ function getLogData() {
 /* Save info */
 function setNewConfig(newConfig) {
     const client = new pg();
-    client.connectSync(`user=${configDBUserID} password=${configDBUserPW} port=${configDBPort} host=${configDBIP} dbname=${configDBName}`);
+    client.connectSync(`user=${configDBUserID} password=${configDBUserPW} port=${DBPort} host=${DBIP} dbname=${configDBName}`);
     // Update system config
     client.querySync(`UPDATE ${configDBTableName} SET original_balance=${newConfig.originalBalance}, price_per_data=${newConfig.pricePerData};`);
 

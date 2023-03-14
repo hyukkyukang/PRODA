@@ -7,7 +7,6 @@ import { EVQLTree } from "../components/VQL/EVQL";
 import { EVQLTables, Coordinate } from "../components/VQL/EVQLTable";
 import { TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
 import { SideBar } from "../components/VQL/Sidebar";
-import { getConfig } from "../utils";
 
 const HandsOnEVQL = (props: any) => {
     // Global variables (to children)

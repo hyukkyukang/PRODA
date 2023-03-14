@@ -8,6 +8,11 @@ var cors = require("cors");
 console.log("Reading config file...");
 const utils = require("./utils.js");
 const config = utils.loadYamlFile("../config.yml");
+const protocol = config.visibleToClient.backend.Protocol;
+const IP = config.visibleToClient.backend.IP;
+const port = config.visibleToClient.backend.Port;
+const SSLCertPath = config.visibleToClient.backend.SSLCertPath;
+const SSLKeyPath = config.visibleToClient.backend.SSLKeyPath;
 
 console.log("Begin server");
 
@@ -122,20 +127,20 @@ function errorHandler(err, req, res, next) {
 }
 app.use(errorHandler);
 
-if (config.backend.Protocol == "https") {
+if (protocol == "https") {
     console.log(`Using https protocol`);
     https
         .createServer(
             {
-                key: fs.readFileSync("../certificates/thawte_postech_key_nopass.pem"),
-                cert: fs.readFileSync("../certificates/thawte_postech.pem"),
+                key: fs.readFileSync(SSLKeyPath),
+                cert: fs.readFileSync(SSLCertPath),
             },
             app
         )
-        .listen(config.backend.Port);
+        .listen(port);
 } else {
     console.log(`Using http protocol`);
-    app.listen(config.backend.Port);
+    app.listen(port);
 }
 
-console.log(`Server is running on ${config.backend.Protocol}:${config.backend.IP}:${config.backend.Port}`);
+console.log(`Server is running on ${protocol}:${IP}:${port}`);
