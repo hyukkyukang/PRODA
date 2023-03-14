@@ -24,6 +24,7 @@ def MovieTask1():
     # Create natural language
     evql1 = evql_object
     nl1, mapping1 = create_nl_and_mapping(query_graphs[0], evql1)
+    result = query_object.result_tables[0]
 
     # Create and save task1
     sub_task1 = Task(

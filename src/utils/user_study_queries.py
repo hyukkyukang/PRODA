@@ -65,6 +65,13 @@ class MovieQuery1(TestQuery):
         return [graph_1()]
 
     @misc_utils.property_with_cache
+    def result_tables(self) -> List[TableExcerpt]:
+        def result_1() -> TableExcerpt:
+            result_table=MovieDB.get_result_table(self._sql, "MovieQuery1")
+            return result_table
+        return [result_1()]
+        
+    @misc_utils.property_with_cache
     def query_tree(self):
         pass
 
