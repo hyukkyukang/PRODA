@@ -16,7 +16,7 @@ def MovieTask1():
     config = file_utils.read_yaml_file(config_file_path)
     task_save_dir_path = config["taskSaveDirPath"]
 
-    query_object = MovieQuery1()
+    query_object = MovieQuery3()
     evql_object = query_object.evql
     query_graphs = query_object.query_graphs
     sql = query_object.sql
