@@ -60,11 +60,17 @@ export const EVQLCell: CellComponent = ({
     // Handle mouse over
     const handleMouseOver = React.useCallback(
         (event: React.MouseEvent<HTMLTableCellElement>) => {
-            setCellDimensions(point, getOffsetRect(event.currentTarget));
-            activate(point);
+            if (setCellDimensions) {
+                setCellDimensions(point, getOffsetRect(event.currentTarget));
+                activate(point);
+            }
             // Set operator description
-            setDescription(description);
-            setIsActive(true);
+            if (setDescription) {
+                setDescription(description);
+            }
+            if (setIsActive) {
+                setIsActive(true);
+            }
         },
         [setCellDimensions, point, active, description]
     );
@@ -83,8 +89,10 @@ export const EVQLCell: CellComponent = ({
     // Add mouse move listener
     React.useEffect(() => {
         const handleMouseMove = (event: any) => {
-            setX(event.clientX + window.pageXOffset);
-            setY(event.clientY + window.pageYOffset);
+            if (setX && setY) {
+                setX(event.clientX + window.pageXOffset);
+                setY(event.clientY + window.pageYOffset);
+            }
         };
 
         window.addEventListener("mousemove", handleMouseMove);

@@ -243,7 +243,7 @@ function logWorkerAnswer(logData) {
 /* Utils */
 function EVQLToSQL(evql) {
     var spawnSync = require("child_process").spawnSync;
-    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/VQL/EVQL_to_SQL.py`, "--evql_in_json_str", evql]);
+    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/VQL/EVQL_to_SQL.py`, "--evql_in_json_str", JSON.stringify(evql)]);
     var result = spawnedProcess.stdout.toString();
     return result;
 }

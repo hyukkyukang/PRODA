@@ -37,10 +37,10 @@ app.post("/fetchConfig", function (req, res) {
 
 /* Handling Request */
 app.post("/fetchEVQL", function (req, res) {
-    console.log(`app.post./fetchEVQL  with query: ${JSON.stringify(req.query)}`);
-    const queryType = req.body.params.queryType;
-    console.log(`queryType: ${queryType}`);
+    console.log(`app.post./fetchEVQL  with queryType: ${JSON.stringify(req.body.queryType)}`);
+    const queryType = req.body.queryType;
     const evql = func.getEVQL(queryType);
+    console.log(`return evql of type: ${queryType}`);
     res.send(evql);
 });
 
@@ -88,20 +88,36 @@ app.post("/fetchLogData", function (req, res) {
 });
 
 app.post("/runEVQL", async function (req, res) {
-    console.log(`app.post./runEVQL with query: ${JSON.stringify(req.query)}`);
-    const evqlStr = req.body.params.evqlStr;
-    const dbName = req.body.params.dbName;
+    console.log(`app.post./runEVQL`);
+    const evqlStr = req.body.evql;
     const sql = func.EVQLToSQL(evqlStr);
-    const queryResult = await func.queryDB(sql, dbName);
-    console.log("evql:" + evqlStr);
-    console.log("sql: " + sql);
+    if (sql.includes("group by model) AND T2.model = (SELECT AVG(max_speed) FROM cars")) {
+        console.log(`This query causes error, need to fix this issue`);
+        res.send({ sql: sql, result: {} });
+        return;
+    }
+    const queryResult = await func.queryDB(sql);
+    console.log(`sending back result with SQL: ${sql}`);
     res.send({ sql: sql, result: queryResult });
 });
 
 app.post("/runSQL", async function (req, res) {
-    console.log(`app.posts.runSQL  with query: ${JSON.stringify(req.query)}`);
-    const sql = req.body.params.sql;
-    const queryResult = await func.queryDB(sql);
+    console.log(`app.posts.runSQL with query: ${JSON.stringify(req.body.sql)}`);
+    const sql = req.body.sql;
+    console.log(`sql: ${sql}`);
+    if (sql.includes("group by model) AND T2.model = (SELECT AVG(max_speed) FROM cars")) {
+        console.log(`This query causes error, need to fix this issue`);
+        res.send({});
+        return;
+    }
+    var queryResult = {};
+    try {
+        queryResult = await func.queryDB(sql);
+    } catch (err) {
+        console.warn(err);
+    }
+    console.log(`sending back result for SQL: ${sql}`);
+    console.log(`result: ${queryResult}`);
     res.send(queryResult);
 });
 

@@ -70,8 +70,6 @@ export const Collection = (props: any) => {
         getAMTInfo();
     }, []);
 
-    console.log(`taskID: ${taskID}`);
-
     const AMTSubmissionForm = (
         <React.Fragment>
             <form action="https://workersandbox.mturk.com/mturk/externalSubmit" ref={formRef}>

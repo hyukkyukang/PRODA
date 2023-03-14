@@ -14,3 +14,20 @@ export interface ITaskResponse {
     isTaskReturned: boolean;
     task: Task;
 }
+
+export interface IRunEVQL {
+    evqlStr: string;
+}
+
+export interface IRunEVQLResponse {
+    sql: string;
+    result: any[];
+}
+
+export interface IRunSQL {
+    sql: string;
+}
+
+export interface IRunSQLResponse {
+    sql: any[];
+}

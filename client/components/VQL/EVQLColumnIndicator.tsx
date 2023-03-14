@@ -42,18 +42,26 @@ export const EVQLColumnIndicator: ColumnIndicatorComponent = ({ column, label, s
         );
     }
     const handleMouseOver = React.useCallback((event: React.MouseEvent<HTMLTableCellElement>) => {
-        activate({ row: -1, column: column });
+        if (activate) {
+            activate({ row: -1, column: column });
+        }
         // Set operator description
-        setDescription(operatorDescriptions["="]);
-        setDescription(description);
-        setIsActive(true);
+        if (setDescription) {
+            setDescription(operatorDescriptions["="]);
+            setDescription(description);
+        }
+        if (setIsActive) {
+            setIsActive(true);
+        }
     }, []);
 
     // Add mouse move listener
     React.useEffect(() => {
         const handleMouseMove = (event: any) => {
-            setX(event.clientX + window.pageXOffset);
-            setY(event.clientY + window.pageYOffset);
+            if (setX && setY) {
+                setX(event.clientX + window.pageXOffset);
+                setY(event.clientY + window.pageYOffset);
+            }
         };
 
         window.addEventListener("mousemove", handleMouseMove);

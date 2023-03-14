@@ -1,5 +1,5 @@
 import { ITableExcerpt } from "./TableExcerpt";
-import { isNumber } from "../../utils";
+import { isNumber, isEmptyObject } from "../../utils";
 import { getEmptyTableExcerpt } from "./TableExcerpt";
 
 export interface PGResultFieldInterface {
@@ -26,7 +26,7 @@ export interface PGResultInterface {
 }
 
 export const PGResultToTableExcerpt = (pgResult: PGResultInterface): ITableExcerpt => {
-    if (pgResult === undefined || pgResult == null) {
+    if (pgResult === undefined || pgResult == null || isEmptyObject(pgResult)) {
         return getEmptyTableExcerpt();
     }
     return {

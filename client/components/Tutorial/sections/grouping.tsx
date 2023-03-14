@@ -1,7 +1,7 @@
 import Spreadsheet from "react-spreadsheet-custom";
 
 import ITutorialSection from "./abstractSection";
-import { EVQLColumnIndicator } from "../../VQL/EVQLTable";
+import { EVQLColumnIndicator } from "../../VQL/EVQLColumnIndicator";
 import { GroupingSyntaxExample } from "../syntaxExamples";
 
 export const SyntaxDescription = () => {

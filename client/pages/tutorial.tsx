@@ -1,16 +1,14 @@
 import { Button, Divider, Grid } from "@mui/material";
-import { MouseEventHandler, useEffect, useState } from "react";
+import { MouseEventHandler, useEffect, useState, useMemo } from "react";
+import { useQuery } from "react-query";
 import { fetchEVQL, runEVQL, runSQL } from "../api/connect";
-import { PGResultToTableExcerpt } from "../components/TableExcerpt/Postgres";
+import { PGResultToTableExcerpt, PGResultInterface } from "../components/TableExcerpt/Postgres";
 import { ITableExcerpt, TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
 import { ITutorialSection } from "../components/Tutorial/sections/abstractSection";
 import { allTutorialSections, ProjectionSection } from "../components/Tutorial/sections/allSections";
 import { SideBar } from "../components/Tutorial/sidebar";
 import { EVQLTree } from "../components/VQL/EVQL";
 import { EVQLTables } from "../components/VQL/EVQLTable";
-import { isEmptyObject } from "../utils";
-
-const demoDBName = process.env.NEXT_PUBLIC_DemoDBName;
 
 const DividerWithMargin: JSX.Element = (
     <>
@@ -41,35 +39,23 @@ const Tutorial = () => {
     // Global variables
     const [selectedSection, setSelectedSection] = useState<ITutorialSection>(ProjectionSection);
 
-    // Local variables
-    const [evql, setEVQL] = useState({} as EVQLTree);
-    const [sql, setSQL] = useState("");
-    const [demoDBResult, setDemoDBResult] = useState<ITableExcerpt>({} as ITableExcerpt);
-    const [queryResult, setQueryResult] = useState<ITableExcerpt>({} as ITableExcerpt);
-
-    // Perform example settings
-    const doExampleSettings = async (exampleQueryName: String) => {
-        // Get sample EVQL
-        const fetchedEVQL = await fetchEVQL({ queryType: exampleQueryName, dbName: demoDBName });
-        // Execute EVQL
-        const tmpQueryResult = await runEVQL({ evqlStr: JSON.stringify(fetchedEVQL), dbName: demoDBName });
-        // Set values
-        setEVQL(fetchedEVQL);
-        setSQL(tmpQueryResult["sql"]);
-        setQueryResult(PGResultToTableExcerpt(tmpQueryResult["result"]));
-    };
-
-    // get sampled DB Rows
-    const getRowsOfDemoDB = async () => {
-        // Handle data fetching
-        runSQL({ sql: "SELECT * FROM cars", dbName: demoDBName })
-            .then((result) => {
-                setDemoDBResult(PGResultToTableExcerpt(result));
-            })
-            .catch((e) => {
-                console.warn(`error:${e}`);
-            });
-    };
+    // Use Query
+    const demoDBTableQuery = useQuery<ITableExcerpt>(["runSQL", "SELECT * FROM cars"], runSQL);
+    const fetchedEVQLQuery = useQuery<EVQLTree>(["fetchEVQL", selectedSection.exampleQueryName], fetchEVQL, { cacheTime: 0 });
+    const queryResultQuery = useQuery(["runEVQL", fetchedEVQLQuery?.data], runEVQL, { enabled: fetchedEVQLQuery?.data ? true : false });
+    // Use Memo
+    const demoDBResult = useMemo(
+        () => (demoDBTableQuery?.data ? PGResultToTableExcerpt(demoDBTableQuery.data as unknown as PGResultInterface) : {}),
+        [demoDBTableQuery.data]
+    );
+    const evql = useMemo<EVQLTree>(
+        () => (fetchedEVQLQuery?.data ? fetchedEVQLQuery.data : ({} as EVQLTree)),
+        [selectedSection, fetchedEVQLQuery, fetchedEVQLQuery.data]
+    );
+    const queryResult = useMemo<ITableExcerpt>(
+        () => (queryResultQuery?.data ? PGResultToTableExcerpt(queryResultQuery.data.result) : ({} as ITableExcerpt)),
+        [queryResultQuery?.data]
+    );
 
     const navigateToDemoPage: MouseEventHandler = (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
         window.open(`handsOnEVQL?queryName=${selectedSection.exampleQueryName}`, "_blank", "noopener,noreferrer");
@@ -89,20 +75,6 @@ const Tutorial = () => {
         }
     };
 
-    // Once in the start
-    useEffect(() => {
-        if (isEmptyObject(demoDBResult)) {
-            getRowsOfDemoDB();
-        }
-    }, []);
-
-    // when the dependency changes
-    useEffect(() => {
-        if (selectedSection) {
-            doExampleSettings(selectedSection.exampleQueryName);
-        }
-    }, [selectedSection]);
-
     return (
         <>
             <Grid container spacing={2} style={{ whiteSpace: "pre-wrap", lineHeight: "1.5" }}>
@@ -120,9 +92,8 @@ const Tutorial = () => {
                     <TableExcerpt queryResult={demoDBResult} />
                     <h2> {selectedSection.title} Example</h2>
                     <p>{selectedSection.exampleDescription}</p>
-                    <EVQLTables evqlRoot={evql} setEVQLRoot={setEVQL} editable={false} />
+                    <EVQLTables evqlRoot={evql} editable={false} />
                     <p> Below is the query result from the Demo Database: </p>
-                    {/* <p> SQL:{sql} </p> */}
                     <TableExcerpt queryResult={queryResult} />
                     <br />
                     <Button variant="contained" color="success" size="medium" onClick={navigateToDemoPage}>
