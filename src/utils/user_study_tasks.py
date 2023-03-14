@@ -36,7 +36,7 @@ def MovieTask1():
         task_type=1,
         db_name="Movie",
         table_excerpt=evql1.node.table_excerpt,
-        result_table=evql1.node.table_excerpt,
+        result_table=result,
         history_task_ids=[],
     )
     task1_id = Task.save(sub_task1, task_save_dir_path)
