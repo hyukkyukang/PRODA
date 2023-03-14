@@ -8,7 +8,7 @@ export const SyntaxDescription = () => {
     return (
         <>
             <h2>Multiple Sublinks Syntax</h2>
-            <p>Add syntax description here</p>
+            <p>To perform multiple sublinks, we use multiple EVQL queries</p>
             <Spreadsheet
                 className="syntaxExample"
                 data={ProjectionSyntaxExample.rows}
@@ -21,9 +21,10 @@ export const SyntaxDescription = () => {
 
 export const MultipleSublinks: ITutorialSection = {
     title: "Multiple Sublinks",
-    description: "Add description here",
+    description: "EVQL allows you to use mulitple selection results for another selection",
     exampleQueryName: "multipleSublinks",
-    exampleDescription: "Add example description here",
+    exampleDescription:
+        "In the following example, we use two EVQA queries to select average horsepower of model genesis and average max_speed of model hyundai. Then we use the results of these two queries to select cars with horsepower higher than average horsepower of genesis and max_speed higher than average max_speed of hyundai.",
     demoDBName: "cars",
     syntaxExamples: [ProjectionSyntaxExample],
     syntaxDescription: SyntaxDescription(),
