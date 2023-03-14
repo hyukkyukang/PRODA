@@ -132,7 +132,7 @@ def MovieTask2(query_object):
 
 if __name__ == "__main__":
     #query_object = MovieQuery1()
-    #MovieTask1(query_objct)
+    #MovieTask1(query_object)
     #query_object = MovieQuery2()
     #MovieTask1(query_object)
     #query_object = MovieQuery3()

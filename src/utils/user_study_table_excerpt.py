@@ -76,11 +76,6 @@ class BaseDB:
 
         return result_table
 
-
-headers = ["id", "title", "year", "time", "language", "release_date", "country"]
-col_types = ["number", "string", "number", "number", "string", "string", "string"]
-rows = [[1, "The Shawshank Redemption", 1994, 142, "English", "14 October 1994", "USA"]]
-
 class MovieDB(BaseDB):
     def __init__(self):
         self._sqlite3 = "movie.sqlite3"
@@ -95,6 +90,10 @@ class MovieDB(BaseDB):
             headers = get_table_headers(cur, table)
             col_types = get_table_col_types(cur, table)
             rows = get_table_rows(cur, table)
+            if table == "rating":
+                headers=headers[:-1]
+                col_types=col_types[:-1]
+                rows=[row[:-1] for row in rows]
             self._tables[table]=TableExcerpt(table, headers, col_types, rows=rows)
 
 class AdvisingDB(BaseDB):

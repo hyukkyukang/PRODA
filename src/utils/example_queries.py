@@ -615,7 +615,7 @@ class CorrelatedNestedQuery(TestQuery):
         node_1.add_predicate(Clause([cond1]))
 
         # Query Result w/o concatenation
-        result_headers = ["g_model", "avg_max_speed"]
+        result_headers = ["model", "avg_max_speed"]
         result_col_types = [
             TableExcerpt._str_to_dtype("string"),
             TableExcerpt._str_to_dtype("number"),
@@ -646,7 +646,7 @@ class CorrelatedNestedQuery(TestQuery):
         mapping2 = [
             (0, new_car_table.headers.index("id") + 1, "id"),
             (1, new_car_table.headers.index("model") + 1, "model"),
-            (1, new_car_table.headers.index("model") + 1, "g_model"),
+            (1, new_car_table.headers.index("model") + 1, "model"),
             (1, new_car_table.headers.index("max_speed") + 1, "max_speed"),
             (1, new_car_table.headers.index("max_speed") + 1, "avg_max_speed"),
         ]
@@ -661,7 +661,7 @@ class CorrelatedNestedQuery(TestQuery):
         cond2_2 = Selecting(
             find_nth_occurrence_index(node_2.headers, "model", 1),
             Operator.equal,
-            Operator.add_idx_prefix(find_nth_occurrence_index(node_2.headers, "g_model", 1)),
+            Operator.add_idx_prefix(find_nth_occurrence_index(node_2.headers, "model", 1)),
         )
         node_2.add_predicate(Clause([cond2_1, cond2_2]))
 

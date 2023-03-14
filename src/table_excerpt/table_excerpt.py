@@ -1,7 +1,14 @@
 from typing import Any, List, Optional, Union
-
 from hkkang_utils import string as string_utils
 
+def perform_join(table1, table2, key1_idx, key2_idx):
+    df = []
+
+    for row1 in table1.rows:
+        for row2 in table2.rows:
+            if row1[key1_idx] == row2[key2_idx]:
+                df.append(row1 + row2)
+    return df
 
 class DType:
     def __str__(self):
@@ -106,7 +113,7 @@ class TableExcerpt:
             self.add_rows(rows)
 
     @staticmethod
-    def fake_join(new_table_name: str, tables: List[Any], prefixes=None):
+    def fake_join(new_table_name: str, tables: List[Any], prefixes=None, join_atts=None):
         if prefixes is not None:
             assert len(prefixes) == len(tables)
             headers=[]
@@ -117,16 +124,58 @@ class TableExcerpt:
             headers = [header for item in tables for header in item.headers]
         col_types = [col_type for item in tables for col_type in item.col_types]
         
-        # Fake join
-        # Find the smallest number of rows
-        min_row_num = min([len(item.rows) for item in tables])
+        if join_atts is None:
+            # Fake join
+            # Find the smallest number of rows
+            min_row_num = min([len(item.rows) for item in tables])
 
-        new_rows = []
-        for row_idx in range(min_row_num):
-            row = []
-            for table in tables:
-                row.extend(table.rows[row_idx])
-            new_rows.append(Row(row))
+            new_rows = []
+            for row_idx in range(min_row_num):
+                row = []
+                for table in tables:
+                    row.extend(table.rows[row_idx])
+                new_rows.append(Row(row))
+        else:
+            # Real join - left deep join
+            joined_tables=[]
+            df=[]
+            for join_att in join_atts:
+                t1_idx=join_att[0]
+                t2_idx=join_att[1]
+                c1_idx=tables[t1_idx].headers.index(join_att[2])
+                c2_idx=tables[t2_idx].headers.index(join_att[3])
+                if t1_idx in joined_tables and t2_idx not in joined_tables:
+                    offset=0
+                    for i in range(joined_tables.index(t1_idx)):
+                        offset+=len(tables[joined_tables[i]].headers)
+                    df=perform_join(df, tables[t2_idx], offset+c1_idx, c2_idx)
+                    joined_tables.append(t2_idx)
+                elif t2_idx in joined_tables and t1_idx not in joined_tables:
+                    offset=0
+                    for i in range(joined_tables.index(t2_idx)):
+                        offset+=len(tables[joined_tables[i]].headers)
+                    df=perform_join(df, tables[t1_idx], offset+c2_idx, c1_idx)
+                    joined_tables.append(t1_idx)
+                elif len(joined_tables) == 0:
+                    df=perform_join(tables[t1_idx], tables[t2_idx], c1_idx, c2_idx)
+                    joined_tables.append(t1_idx)
+                    joined_tables.append(t2_idx)
+                else:
+                    assert False
+            new_rows = []
+            headers=[]
+            col_types=[]
+            for row in df:
+                new_rows.append(Row(row))
+            for tid in joined_tables:
+                for col_type in tables[tid].col_types:
+                    col_types.append(col_type)
+                for header in tables[tid].headers:
+                    if prefix is not None:
+                        headers.append(prefixes[tid] + header)
+                    else:
+                        headers.append(header)
+            print(headers, new_rows, col_types)
 
         return TableExcerpt(new_table_name, headers, col_types, new_rows)
 

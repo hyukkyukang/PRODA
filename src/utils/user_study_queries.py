@@ -189,6 +189,7 @@ class MovieQuery3(TestQuery):
             #rating_rev_id = Attribute("rating_rev_id", "rev_id")
             #rev_id = Attribute("rev_id", "id")
             rev_name = Attribute("rev_name", "name")
+            rev_name_2 = Attribute("rev_name_2", "name")
             rating_stars_2 = Attribute("rating_stars_2", "stars")
             
             # Values
@@ -206,8 +207,8 @@ class MovieQuery3(TestQuery):
             query_graph.connect_simplified_join(movie, rating)
             query_graph.connect_simplified_join(rating, reviewer)
 
-            query_graph.connect_selection(reviewer, rev_name)
-            query_graph.connect_predicate(rev_name, v_rev_name)
+            query_graph.connect_selection(reviewer, rev_name_2)
+            query_graph.connect_predicate(rev_name_2, v_rev_name)
 
             query_graph.connect_selection(rating, rating_stars_2)
             query_graph.connect_predicate(rating_stars_2, v_stars, OperatorType.GreaterThan)
@@ -422,76 +423,79 @@ class MovieQuery5(TestQuery):
     @misc_utils.property_with_cache
     def evql(self) -> EVQLTree:
         # Create tree node 1
-        init_table1 = TableExcerpt.fake_join("movie_rating", [self._DB.get_table("movie"), self._DB.get_table("rating")])
+        init_table1 = TableExcerpt.fake_join("movie_rating", [self._DB.get_table("movie"), self._DB.get_table("rating")], prefixes=["movie_", "rating_"], join_atts=[[0, 1, "id", "mov_id", "inner"]])
         result_tables=self.result_tables
 
         mapping1 = [
-            (0, init_table1.headers.index("id"), "id"),
-            (0, init_table1.headers.index("stars"), "stars"),
-            (1, init_table1.headers.index("id"), "id"),
+            (0, init_table1.headers.index("movie_id"), "id"),
+            (0, init_table1.headers.index("rating_stars"), "stars"),
+            (1, init_table1.headers.index("movie_id"), "id"),
         ]
 
         node_1 = EVQLNode(f"MovieQuery5_B1", init_table1, mapping=mapping1)
-        node_1.add_projection(Header(node_1.headers.index("id"), alias="movie_id"))
-        node_1.add_projection(Header(node_1.headers.index("stars"), agg_type=Aggregator.max, alias="max_rating_stars"))
-        node_1.add_predicate(Clause([Grouping(node_1.headers.index("id"))]))
+        node_1.add_projection(Header(node_1.headers.index("movie_id"), alias="movie_id"))
+        node_1.add_projection(Header(node_1.headers.index("rating_stars"), agg_type=Aggregator.max, alias="max_rating_stars"))
+        node_1.add_predicate(Clause([Grouping(node_1.headers.index("movie_id"))]))
         # Query result
         node_1_result = result_tables[0]
 
         # Create tree node 2
-        init_table2 = TableExcerpt.fake_join("block2", [self._DB.get_table("movie"), self._DB.get_table("direction"), self._DB.get_table("director")])
+        init_table2 = TableExcerpt.fake_join("movie_direction_director", [self._DB.get_table("movie"), self._DB.get_table("direction"), self._DB.get_table("director")], prefixes=["movie_", "direction_", "director_"], join_atts=[[0,1, "id", "mov_id", "inner"], [1,2, "dir_id", "id", "inner"]])
 
         mapping2 = [
-            (0, init_table2.headers.index("id"), "id"),
-            (1, init_table2.headers.index("first_name"), "first_name"),
-            (2, init_table2.headers.index("last_name"), "last_name"),
+            (0, init_table2.headers.index("movie_id"), "id"),
+            (1, init_table2.headers.index("director_first_name"), "first_name"),
+            (2, init_table2.headers.index("director_last_name"), "last_name"),
         ]
 
         node_2 = EVQLNode(f"MovieQuery5_B2", init_table2, mapping=mapping2)
-        node_2.add_projection(Header(node_2.headers.index("id"), alias="b2_movie_id"))
+        node_2.add_projection(Header(node_2.headers.index("movie_id"), alias="movie_id"))
         node_2.add_predicate(
             Clause(
                 [
-                    Selecting(node_2.headers.index("first_name"), Operator.equal, "Cameron"),
-                    Selecting(node_2.headers.index("last_name"), Operator.equal, "James"),
+                    Selecting(node_2.headers.index("director_first_name"), Operator.equal, "Cameron"),
+                    Selecting(node_2.headers.index("director_last_name"), Operator.equal, "James"),
                 ]
             )
         )
 
         node_2_result = result_tables[1]
-        
+         
 
         # Create tree node 3
-        init_table3 = TableExcerpt.fake_join("tmp", [self._DB.get_table("movie"), self._DB.get_table("rating"), node_2_result])
-        init_table3 = TableExcerpt.concatenate("block3_table_excerpt", init_table3, node_1_result)
+        init_table3 = TableExcerpt.fake_join("movie_rating_B2", [self._DB.get_table("movie"), self._DB.get_table("rating"), node_1_result], prefixes=["movie_", "rating_", "B1_"], join_atts=[ [0,1, "id", "mov_id", "inner"], [0,2, "id", "movie_id", "left_outer"]])
+        init_table3 = TableExcerpt.concatenate("B3_table_excerpt", init_table3, node_2_result, prefixes=['', 'B2_'])
 
+        for row in init_table3.rows:
+            row_printable=[cell.value for cell in row.cells]
+            print(row_printable)
         mapping3 = [
-            (0, init_table3.headers.index("id"), "id"),
-            (0, init_table3.headers.index("stars"), "stars"),
-            (1, init_table3.headers.index("id"), "id"),
-            (1, init_table3.headers.index("stars"), "stars"),
+            (0, init_table3.headers.index("movie_id"), "id"),
+            (0, init_table3.headers.index("rating_stars"), "stars"),
+            (1, init_table3.headers.index("movie_id"), "id"),
+            (1, init_table3.headers.index("rating_stars"), "stars"),
         ]
 
         node_3 = EVQLNode(f"MovieQuery5_B3", init_table3, mapping=mapping3)
-        node_3.add_projection(Header(node_3.headers.index("id"), alias="movie_id"))
-        node_3.add_projection(Header(node_3.headers.index("stars"), agg_type=Aggregator.avg, alias="avg_rating_stars"))
+        node_3.add_projection(Header(node_3.headers.index("movie_id"), alias="movie_id"))
+        node_3.add_projection(Header(node_3.headers.index("rating_stars"), agg_type=Aggregator.avg, alias="avg_rating_stars"))
         node_3.add_predicate(
             Clause(
                 [
                     Selecting(
-                        node_3.headers.index("id"),
+                        node_3.headers.index("movie_id"),
                         Operator.In,
-                        Operator.add_idx_prefix(node_3.headers.index("b2_movie_id")),
+                        Operator.add_idx_prefix(node_3.headers.index("B2_movie_id")),
                     ),
                     Selecting(
-                        node_3.headers.index("id"),
+                        node_3.headers.index("movie_id"),
                         Operator.equal,
-                        Operator.add_idx_prefix(node_3.headers.index("movie_id")),
+                        Operator.add_idx_prefix(node_3.headers.index("B1_movie_id")),
                     ),
                     Selecting(
-                        node_3.headers.index("stars"),
+                        node_3.headers.index("rating_stars"),
                         Operator.lessThan,
-                        Operator.add_idx_prefix(node_3.headers.index("max_rating_stars")),
+                        Operator.add_idx_prefix(node_3.headers.index("B1_max_rating_stars")),
                     ),
                 ]
             )
@@ -856,6 +860,9 @@ class MovieQuery5(TestQuery):
             node_1_result_col_types = ["number", "list.number"]
             node_1_result_rows = [[901, [8.4]], [902, [7.9]], [903, [8.3]], [906, [8.2]], [908, [8.6]], [909, [5]], [910, [6]], [911, [8.1]], [912, [4.4]], [914, [7]],
             [915, [9.7]], [916, [4]], [918, [2]], [920, [8.1]], [921, [8]], [922, [8.4]], [923, [6.7]], [924, [7.3]], [925, [7.7]]]
+            #node_1_result_col_types = ["number", "number"]
+            #node_1_result_rows = [[901, 8.4], [902, 7.9], [903, 8.3], [906, 8.2], [908, 8.6], [909, 5], [910, 6], [911, 8.1], [912, 4.4], [914, 7],
+            #[915, 9.7], [916, 4], [918, 2], [920, 8.1], [921, 8], [922, 8.4], [923, 6.7], [924, 7.3], [925, 7.7]]
             print(node_1_result_rows)
             node_1_result = TableExcerpt(
                 f"{node_1_name}_result", node_1_result_headers, node_1_result_col_types, rows=node_1_result_rows
@@ -864,7 +871,7 @@ class MovieQuery5(TestQuery):
 
         def result_2() -> TableExcerpt:
             node_2_name="MovieQuery5_B2"
-            node_2_result_headers = ["b2_movie_id"]
+            node_2_result_headers = ["movie_id"]
             node_2_result_col_types = ["number"]
             node_2_result_rows = [[915], [922]]
             node_2_result = TableExcerpt(
