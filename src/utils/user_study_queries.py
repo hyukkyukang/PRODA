@@ -258,7 +258,7 @@ GROUP BY T3.id;
         node.add_projection(Header(node.headers.index("director_first_name")))
         node.add_projection(Header(node.headers.index("director_last_name")))
         node.add_projection(Header(node.headers.index("director_last_name")))
-        node.add_projection(Header(node.headers.index("movie_id"), agg_type=Aggregator.count, alias="count"))
+        node.add_projection(Header(node.headers.index("movie_direction_director"), agg_type=Aggregator.count, alias="count"))
         
         # Create conditions for the node
         node.add_predicate(Clause([Grouping(node.headers.index("director_id"))]))
@@ -317,118 +317,6 @@ GROUP BY T3.id;
     @misc_utils.property_with_cache
     def query_tree(self):
         pass
-
-
-class MovieQuery5(TestQuery):
-    def __init__(self):
-        super(MovieQuery2, self).__init__()
-        self._sql = """SELECT T1.first_name, T1.last_name FROM actor T1 ORDER BY first_name
-                    """
-        self._DB=MovieDB()
-    @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
-        # Create tree node
-        node = EVQLNode(f"movie_query_2", self._DB.get_table("actor"))
-        node.add_projection(Header(node.headers.index("first_name")))
-        node.add_projection(Header(node.headers.index("last_name")))
-
-        # Create conditions for the node
-        cond1 = Ordering(node.headers.index("first_name"), is_ascending=True)
-        clause = Clause([cond1])
-        node.add_predicate(clause)
-
-        # Construct tree
-        return EVQLTree(node)
-        
-    @misc_utils.property_with_cache
-    def query_graphs(self) -> List[Query_graph]:
-        def graph_1() -> Query_graph:
-            ## Initialize nodes
-            # Relation
-            actor = Relation("actor", "actor")
-            # Attribute
-            first_name = Attribute("first_name", "first_name")
-            last_name = Attribute("last_name", "last_name")
-            first_name_o = Attribute("first_name", "first_name")
-            # Function
-            # avg = Function(FunctionType.Avg)
-            ## Construct graph
-            query_graph = Query_graph("MovieQuery2")
-            query_graph.connect_membership(actor, first_name)
-            query_graph.connect_membership(actor, last_name)
-            # query_graph.connect_transformation(avg, max_speed)
-            query_graph.connect_order(actor, first_name_o, is_asc=True)
-            return query_graph
-
-        return [graph_1()]
-
-    @misc_utils.property_with_cache
-    def result_tables(self) -> List[TableExcerpt]:
-        def result_1() -> TableExcerpt:
-            result_table=self._DB.get_result_table(self._sql, "MovieQuery1")
-            return result_table
-        return [result_1()]
-        
-    @misc_utils.property_with_cache
-    def query_tree(self):
-        pass
-
-
-
-class MovieQuery6(TestQuery):
-    def __init__(self):
-        super(MovieQuery2, self).__init__()
-        self._sql = """SELECT T1.first_name, T1.last_name FROM actor T1 ORDER BY first_name
-                    """
-        self._DB=MovieDB()
-    @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
-        # Create tree node
-        node = EVQLNode(f"movie_query_2", self._DB.get_table("actor"))
-        node.add_projection(Header(node.headers.index("first_name")))
-        node.add_projection(Header(node.headers.index("last_name")))
-
-        # Create conditions for the node
-        cond1 = Ordering(node.headers.index("first_name"), is_ascending=True)
-        clause = Clause([cond1])
-        node.add_predicate(clause)
-
-        # Construct tree
-        return EVQLTree(node)
-        
-    @misc_utils.property_with_cache
-    def query_graphs(self) -> List[Query_graph]:
-        def graph_1() -> Query_graph:
-            ## Initialize nodes
-            # Relation
-            actor = Relation("actor", "actor")
-            # Attribute
-            first_name = Attribute("first_name", "first_name")
-            last_name = Attribute("last_name", "last_name")
-            first_name_o = Attribute("first_name", "first_name")
-            # Function
-            # avg = Function(FunctionType.Avg)
-            ## Construct graph
-            query_graph = Query_graph("MovieQuery2")
-            query_graph.connect_membership(actor, first_name)
-            query_graph.connect_membership(actor, last_name)
-            # query_graph.connect_transformation(avg, max_speed)
-            query_graph.connect_order(actor, first_name_o, is_asc=True)
-            return query_graph
-
-        return [graph_1()]
-
-    @misc_utils.property_with_cache
-    def result_tables(self) -> List[TableExcerpt]:
-        def result_1() -> TableExcerpt:
-            result_table=self._DB.get_result_table(self._sql, "MovieQuery4")
-            return result_table
-        return [result_1()]
-        
-    @misc_utils.property_with_cache
-    def query_tree(self):
-        pass
-
 
 
 class MovieQuery5(TestQuery):
@@ -941,3 +829,141 @@ class MovieQuery5(TestQuery):
         
 
         
+
+class MovieQuery6(TestQuery):
+    def __init__(self):
+        super(MovieQuery6, self).__init__()
+        self._sql = """SELECT T3.name
+            FROM movie AS T1 JOIN rating AS T2 ON T1.id=T2.mov_id JOIN reviewer AS T3 ON T2.rev_id = T3.id 
+            WHERE T1.time > 130
+            GROUP BY T3.id
+            HAVING count(*) > 1
+                    """
+        self._DB=MovieDB()
+
+    @misc_utils.property_with_cache
+    def evql(self) -> EVQLTree:
+        init_table1 = TableExcerpt.fake_join("movie_rating_reviewer", [self._DB.get_table("movie"), self._DB.get_table("rating"), self._DB.get_table("reviewer")], ["movie_", "rating_", "reviewer_"], join_atts=[[0, 1, "id", "mov_id", "inner"], [1, 2, "rev_id", "id", "inner"]])
+        result_tables = self.result_tables
+        #mapping1 = [
+        #    (0, init_table1.headers.index("id"), "id"),
+        #    (0, init_table1.headers.index("stars"), "stars"),
+        #    (1, init_table1.headers.index("id"), "id"),
+        #]# (evql_row_idx, evql_colum_idx, sql_colum_name)
+
+        # Create tree node
+        node_1 = EVQLNode(f"movie_query_6_B1", init_table1)
+        print(node.headers)
+        node_1.add_projection(Header(node_1.headers.index("reviewer_name")))
+        node_1.add_projection(Header(node_1.headers.index("movie_rating_reviewer", agg_type=Aggregator.count, alias="cnt")))
+
+        # Create conditions for the node
+        cond1 = Selecting(node_1.headers.index("movie_time"), Operator.greaterThan, "130")
+        cond2 = Grouping(node_1.headers.index("reviewer_id"))
+        clause = Clause([cond1, cond2])
+        node_1.add_predicate(clause)
+
+        result_table = result_tables[0]
+
+        node_2 = EVQLNode(f"movie_query_6_B2", result_table)
+        node_2.add_projection(Header(node_2.headers.index("reviewer_name")))
+        cond3 = Selecting(find_nth_occurrence_index(node_2.headers, "cnt", 1), Operator.greaterThan, "1")
+        node_2.add_predicate(Clause([cond3]))
+
+        # Construct tree
+        return EVQLTree(node_2, children=[EVQLTree(node_1)])
+
+        
+    @misc_utils.property_with_cache
+    def query_graphs(self) -> List[Query_graph]:
+        def graph_1() -> Query_graph:
+            ## Initialize nodes
+            # Relation
+            movie = Relation("movie", "movie")
+            rating = Relation("rating", "rating")
+            reviewer = Relation("reviewer", "reviewer")
+
+            # Attribute
+            rev_name = Attribute("rev_name", "name")
+            star_node = Attribute("*", "all")
+            rev_id = Attribute("rev_id", "id")
+            mov_time = Attribute("mov_time", "time")
+            
+            # Values
+            v_130 = Value("130", "130")
+            
+            # Function
+            cnt = Function(FunctionType.Count)
+
+            ## Construct graph
+            query_graph = Query_graph("MovieQuery6_B1")
+            query_graph.connect_membership(reviewer, rev_name)
+            query_graph.connect_membership(movie, star_node)
+            query_graph.connect_transformation(cnt, star_node)
+            
+            query_graph.connect_simplified_join(movie, rating)
+            query_graph.connect_simplified_join(rating, reviewer)
+
+            query_graph.connect_selection(movie, mov_time)
+            query_graph.connect_predicate(mov_time, v_130)
+
+            return query_graph
+
+        def graph_2() -> Query_graph:
+            ## Initialize nodes
+            # Relation
+            movie = Relation("movie", "movie")
+            rating = Relation("rating", "rating")
+            reviewer = Relation("reviewer", "reviewer")
+
+            # Attribute
+            rev_name = Attribute("rev_name", "name")
+            star_node = Attribute("*", "all")
+            rev_id = Attribute("rev_id", "id")
+            mov_time = Attribute("mov_time", "time")
+            
+            # Values
+            v_130 = Value("130", "130")
+            v_1 = Value("1",  "1")
+            
+            # Function
+            cnt = Function(FunctionType.Count)
+
+            ## Construct graph
+            query_graph = Query_graph("MovieQuery6_B1")
+            query_graph.connect_membership(reviewer, rev_name)
+            
+            query_graph.connect_simplified_join(movie, rating)
+            query_graph.connect_simplified_join(rating, reviewer)
+
+            query_graph.connect_selection(movie, mov_time)
+            query_graph.connect_predicate(mov_time, v_130, OperatorType.GreaterThan)
+
+            query_graph.connect_grouping(reviewer, rev_id)
+            query_graph.connect_having(movie, star_node)
+            query_graph.connect_transformation(star_node, cnt)
+            query_graph.connect_predicate(cnt, v_1, OperatorType.GreaterThan)
+
+            return query_graph
+
+        return [graph_2(), graph_1()]
+
+    @misc_utils.property_with_cache
+    def result_tables(self) -> List[TableExcerpt]:
+        def result_1() -> TableExcerpt:
+            sql = """SELECT T3.name as movie_name, count(*) as cnt
+            FROM movie AS T1 JOIN rating AS T2 ON T1.id=T2.mov_id JOIN reviewer AS T3 ON T2.rev_id = T3.id 
+            WHERE T1.time > 130
+            GROUP BY T3.id
+                    """
+            result_table=self._DB.get_result_table(sql, "MovieQuery6")
+            return result_table
+
+        def result_2() -> TableExcerpt:
+            result_table=self._DB.get_result_table(self._sql, "MovieQuery6")
+            return result_table
+        return [result_2(), result_1()]
+        
+    @misc_utils.property_with_cache
+    def query_tree(self):
+        pass
