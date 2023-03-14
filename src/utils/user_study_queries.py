@@ -230,7 +230,7 @@ class MovieQuery3(TestQuery):
 
 class MovieQuery4(TestQuery):
     def __init__(self):
-        super(MovieQuery3, self).__init__()
+        super(MovieQuery4, self).__init__()
         self._sql = """SELECT T3.id, T3.first_name, T3.last_name, count(*) 
 FROM movie AS T1 JOIN direction AS T2 ON T1.id=T2.mov_id JOIN director AS T3 ON T2.dir_id = T3.id 
 GROUP BY T3.id;
@@ -254,11 +254,11 @@ GROUP BY T3.id;
         #node_1 = EVQLNode(f"movie_query_3", init_table1, mapping=mapping1)
         #node.add_projection(Header(node.headers.index("movie_title")))
         #node.add_projection(Header(node.headers.index("rating_stars")))
-        node.add_projection(Header(node.headers.index("movie_id")))
+        node.add_projection(Header(node.headers.index("director_id")))
         node.add_projection(Header(node.headers.index("director_first_name")))
         node.add_projection(Header(node.headers.index("director_last_name")))
         node.add_projection(Header(node.headers.index("director_last_name")))
-        node.add_projection(Header(None, agg_type=Aggregator.count, alias="count"))
+        node.add_projection(Header(node.headers.index("movie_id"), agg_type=Aggregator.count, alias="count"))
         
         # Create conditions for the node
         node.add_predicate(Clause([Grouping(node.headers.index("director_id"))]))
@@ -277,7 +277,7 @@ GROUP BY T3.id;
             director = Relation("director", "director")
 
             # Attribute
-            mov_id = Attribute("mov_id", "id")
+            mov_id = Attribute("dir_id", "id")
             director_first_name = Attribute("director_first_name", "first_name")
             director_last_name = Attribute("director_last_name", "last_name")
             star_node = Attribute("*", "all")
@@ -292,7 +292,7 @@ GROUP BY T3.id;
             count = Function(FunctionType.Count)
             ## Construct graph
             query_graph = Query_graph("MovieQuery4")
-            query_graph.connect_membership(movie, mov_id)
+            query_graph.connect_membership(director, dir_id)
             query_graph.connect_membership(director, director_first_name)
             query_graph.connect_membership(director, director_last_name)
             query_graph.connect_membership(movie, star_node)
@@ -421,7 +421,7 @@ class MovieQuery6(TestQuery):
     @misc_utils.property_with_cache
     def result_tables(self) -> List[TableExcerpt]:
         def result_1() -> TableExcerpt:
-            result_table=self._DB.get_result_table(self._sql, "MovieQuery1")
+            result_table=self._DB.get_result_table(self._sql, "MovieQuery4")
             return result_table
         return [result_1()]
         
@@ -503,7 +503,7 @@ class MovieQuery5(TestQuery):
         init_table3 = TableExcerpt.concatenate("B3_table_excerpt", init_table3, node_2_result, prefixes=['', 'B2_'])
 
         for row in init_table3.rows:
-            row_printable=[cell.value for cell in row.cells]
+            row_printable=[cell.dtype for cell in row.cells]
             print(row_printable)
         mapping3 = [
             (0, init_table3.headers.index("movie_id"), "id"),

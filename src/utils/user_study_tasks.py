@@ -5,7 +5,7 @@ from pylogos.translate import translate
 
 from src.query_tree.query_tree import QueryTree
 from src.task.task import Task
-from src.utils.user_study_queries import MovieQuery1, MovieQuery2, MovieQuery3, MovieQuery5
+from src.utils.user_study_queries import MovieQuery1, MovieQuery2, MovieQuery3, MovieQuery4, MovieQuery5
 from src.VQL.EVQL import EVQLTree
 import hkkang_utils.file as file_utils
 from src.utils.example_tasks import create_nl_and_mapping
@@ -24,6 +24,11 @@ def MovieTask1(query_object):
     evql1 = evql_object
     nl1, mapping1 = create_nl_and_mapping(query_graphs[0], evql1)
     result = query_object.result_tables[0]
+
+    #for row in evql1.node.table_excerpt.rows:
+    #for row in result.rows:
+    #    printable_row = [cell.value for cell in row.cells]
+    #    print(printable_row)
 
     # Create and save task1
     sub_task1 = Task(
@@ -137,5 +142,7 @@ if __name__ == "__main__":
     #MovieTask1(query_object)
     #query_object = MovieQuery3()
     #MovieTask1(query_object)
-    query_object = MovieQuery5()
-    MovieTask2(query_object)
+    query_object = MovieQuery4()
+    MovieTask1(query_object)
+    #query_object = MovieQuery5()
+    #MovieTask2(query_object)
