@@ -28,10 +28,11 @@ class MovieQuery1(TestQuery):
         super(MovieQuery1, self).__init__()
         self._sql = """SELECT T1.title FROM movie T1 WHERE T1.year > 2000
                     """
+        self._DB=MovieDB()
     @misc_utils.property_with_cache
     def evql(self) -> EVQLTree:
         # Create tree node
-        node = EVQLNode(f"movie_query_1", MovieDB.table("movie"))
+        node = EVQLNode(f"movie_query_1", self._DB.get_table("movie"))
         node.add_projection(Header(node.headers.index("title")))
 
         # Create conditions for the node
@@ -67,7 +68,7 @@ class MovieQuery1(TestQuery):
     @misc_utils.property_with_cache
     def result_tables(self) -> List[TableExcerpt]:
         def result_1() -> TableExcerpt:
-            result_table=MovieDB.get_result_table(self._sql, "MovieQuery1")
+            result_table=self._DB.get_result_table(self._sql, "MovieQuery1")
             return result_table
         return [result_1()]
         
@@ -81,10 +82,11 @@ class MovieQuery2(TestQuery):
         super(MovieQuery2, self).__init__()
         self._sql = """SELECT T1.first_name, T1.last_name FROM actor T1 ORDER BY first_name
                     """
+        self._DB=MovieDB()
     @misc_utils.property_with_cache
     def evql(self) -> EVQLTree:
         # Create tree node
-        node = EVQLNode(f"movie_query_2", MovieDB.table("actor"))
+        node = EVQLNode(f"movie_query_2", self._DB.get_table("actor"))
         node.add_projection(Header(node.headers.index("first_name")))
         node.add_projection(Header(node.headers.index("last_name")))
 

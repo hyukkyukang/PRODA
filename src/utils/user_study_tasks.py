@@ -40,6 +40,7 @@ def MovieTask1():
         history_task_ids=[],
     )
     task1_id = Task.save(sub_task1, task_save_dir_path)
+    print(task1_id)
 
     return sub_task1
 
