@@ -91,11 +91,6 @@ app.post("/runEVQL", async function (req, res) {
     console.log(`app.post./runEVQL`);
     const evqlStr = req.body.evql;
     const sql = func.EVQLToSQL(evqlStr);
-    if (sql.includes("group by model) AND T2.model = (SELECT AVG(max_speed) FROM cars")) {
-        console.log(`This query causes error, need to fix this issue`);
-        res.send({ sql: sql, result: {} });
-        return;
-    }
     const queryResult = await func.queryDB(sql);
     console.log(`sending back result with SQL: ${sql}`);
     res.send({ sql: sql, result: queryResult });
