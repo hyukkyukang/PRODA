@@ -83,9 +83,7 @@ function getTask(taskID = null, get_history = true) {
     var result = null;
     var results = null;
     if (taskID === null) {
-        results = client.querySync(
-            `SELECT * FROM ${collectionDBTaskTableName} WHERE id NOT IN (SELECT task_id FROM ${collectionDBCollectionTableName}) ORDER BY id DESC;`
-        );
+        results = client.querySync(`SELECT * FROM ${collectionDBTaskTableName} WHERE id NOT IN (SELECT task_id FROM ${collectionDBCollectionTableName});`);
     } else {
         results = client.querySync(`SELECT * FROM ${collectionDBTaskTableName} WHERE id = ${taskID};`);
     }

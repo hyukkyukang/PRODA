@@ -1,12 +1,16 @@
 visibleToClient:
     frontend:
-        IP: localhost
+        IP: 141.223.197.243
         Port: 3000
         Protocol: http # Either https or http
     backend:
-        IP: localhost
-        Port: 4001
+        IP: 141.223.197.243
+        Port: 40101
         Protocol: http # Either https or http
+backend:
+    IP: localhost
+    Port: 4001
+    Protocol: http # Either https or http
 DB:
     IP: localhost
     Port: 5432

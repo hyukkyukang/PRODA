@@ -10,7 +10,7 @@ import hkkang_utils.file as file_utils
 from src.utils.pg_connector import PostgresConnector
 
 # Must be given an absolute path
-config = file_utils.read_yaml_file("/home/proda/config.yml")
+config = file_utils.read_yaml_file("/home/hjkim/PRODA/config.yml")
 
 IP = config["DB"]["IP"]
 port = config["DB"]["Port"]

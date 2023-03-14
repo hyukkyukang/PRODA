@@ -2,7 +2,7 @@ import os
 from src.utils.data_manager import save_task_in_db, save_data
 from src.utils.example_queries import MultipleSublinksQuery2
 
-DATA_DIR = "/home/proda/database/dataCollection/tasks/"
+DATA_DIR = "/home/hjkim/PRODA/database/dataCollection/tasks/"
 
 if __name__ == "__main__":
     query = MultipleSublinksQuery2()

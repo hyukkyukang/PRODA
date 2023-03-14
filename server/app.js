@@ -8,11 +8,11 @@ var cors = require("cors");
 console.log("Reading config file...");
 const utils = require("./utils.js");
 const config = utils.loadYamlFile("../config.yml");
-const protocol = config.visibleToClient.backend.Protocol;
-const IP = config.visibleToClient.backend.IP;
-const port = config.visibleToClient.backend.Port;
-const SSLCertPath = config.visibleToClient.backend.SSLCertPath;
-const SSLKeyPath = config.visibleToClient.backend.SSLKeyPath;
+const protocol = config.backend.Protocol;
+const IP = config.backend.IP;
+const port = config.backend.Port;
+const SSLCertPath = config.SSLCertPath;
+const SSLKeyPath = config.SSLKeyPath;
 
 console.log("Begin server");
 
