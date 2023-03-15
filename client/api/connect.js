@@ -20,8 +20,8 @@ export const fetchEVQL = async (params) => {
 };
 
 export const fetchTask = async (params) => {
-    const [key, workerId, taskID] = params.queryKey;
-    return (await axios.post(`${protocol}://${ip}:${serverPort}/fetchTask`, { workerId: workerId, taskID: taskID }, axioscConfig)).data;
+    const { workerID, taskSetID, isSkip } = params;
+    return (await axios.post(`${protocol}://${ip}:${serverPort}/fetchTask`, { workerID: workerID, taskSetID: taskSetID, isSkip: isSkip }, axioscConfig)).data;
 };
 
 export const fetchLogData = async (params) => {

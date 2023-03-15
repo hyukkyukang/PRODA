@@ -25,11 +25,14 @@ collectionDBUserPW = config.DB.collection.UserPW;
 collectionDBName = config.DB.collection.DBName;
 collectionDBCollectionTableName = config.DB.collection.CollectionTableName;
 collectionDBTaskTableName = config.DB.collection.TaskTableName;
+collectionDBTaskSetTableName = config.DB.collection.TaskSetTableName;
 // DemoDB
 demoDBUserID = config.DB.demo.UserID;
 demoDBUserPW = config.DB.demo.UserPW;
 demoDBName = config.DB.demo.DBName;
 demoDBTableName = config.DB.demo.tableName;
+
+const spawnSync = require("child_process");
 
 /* Fetch configs */
 function getConfig() {
@@ -37,7 +40,7 @@ function getConfig() {
     client.connectSync(`user=${configDBUserID} password=${configDBUserPW} port=${DBPort} host=${DBIP} dbname=${configDBName}`);
     const fetchedConfigs = client.querySync(`SELECT * FROM ${configDBTableName};`);
     const fetchedQueryGoalNums = client.querySync(`SELECT * FROM ${configDBQueryGoalNumsTableName};`);
-
+    client.end();
     // Parse configs into JSON
     assert.equal(fetchedConfigs.length, 1);
     const systemConfig = {
@@ -54,9 +57,8 @@ function getConfig() {
 
 /* Fetch information */
 function getEVQL(queryType) {
-    var spawnSync = require("child_process").spawnSync;
-    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/utils/example_queries.py`, "--query_type", queryType]);
-    var json_dumped_evql = spawnedProcess.stdout.toString();
+    const spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/utils/example_queries.py`, "--query_type", queryType]);
+    const json_dumped_evql = spawnedProcess.stdout.toString();
     var evql = null;
     // Check if empty
     if (!json_dumped_evql) {
@@ -74,28 +76,18 @@ function getEVQL(queryType) {
 }
 
 /* Fetch Task */
-function getTask(taskID = null, get_history = true) {
+function getTask(taskID, getHistory = true) {
     // Connect to DB and retrieve Task
     const client = new pg();
-    console.log(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
     client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
-    // Insert new log
-    var result = null;
-    var results = null;
-    if (taskID === null) {
-        results = client.querySync(`SELECT * FROM ${collectionDBTaskTableName} WHERE id NOT IN (SELECT task_id FROM ${collectionDBCollectionTableName});`);
-    } else {
-        results = client.querySync(`SELECT * FROM ${collectionDBTaskTableName} WHERE id = ${taskID};`);
-    }
+    results = client.querySync(`SELECT * FROM ${collectionDBTaskTableName} WHERE id = ${taskID};`);
     // Get one task
     if (results.length > 0) {
         result = results[0];
     }
     client.end();
-    console.log(`Retrieved result: ${JSON.stringify(result)}`);
-    // Handle empty result
     if (result == null) {
-        console.warn("No task returned from DB.");
+        console.warn(`Task ${taskID} not found in DB.`);
         return null;
     }
     // Get file paths
@@ -104,23 +96,22 @@ function getTask(taskID = null, get_history = true) {
     const table_excerpt_path = result.table_excerpt_path;
     const nl_mapping_path = result.nl_mapping_path;
     // Retrieve data from Python script
-    const evql_object = getJsonDataFromFile(evql_path);
-    const result_table_object = getJsonDataFromFile(result_table_path);
-    const table_excerpt_object = getJsonDataFromFile(table_excerpt_path);
-    const nl_mapping_object = getJsonDataFromFile(nl_mapping_path);
+    const evql_object = readJsonFile(evql_path);
+    const result_table_object = readJsonFile(result_table_path);
+    const table_excerpt_object = readJsonFile(table_excerpt_path);
+    const nl_mapping_object = readJsonFile(nl_mapping_path);
     // Replace path with the real data
     delete result.evql_path;
     delete result.result_table_path;
     delete result.table_excerpt_path;
     // Append history if there are any
     const history = [];
-    if (get_history) {
+    if (getHistory) {
         for (const task_id of result.history_task_ids) {
-            const history_task = getTask(task_id, false);
+            const history_task = getTask(task_id, false, false);
             history.push(history_task);
         }
     }
-
     return {
         nl: result.nl,
         nl_mapping: nl_mapping_object,
@@ -132,14 +123,54 @@ function getTask(taskID = null, get_history = true) {
         tableExcerpt: table_excerpt_object,
         resultTable: result_table_object,
         history: history,
-        blockId: null,
-        taskId: result.id,
+        blockID: null,
+        taskID: result.id,
+    };
+}
+
+function getTaskSet(taskSetID = null, isSkip = false) {
+    // Connect to DB and retrieve Task
+    const client = new pg();
+    // console.log(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
+    client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
+    // Insert new log
+    var result = null;
+    var results = null;
+    if (taskSetID === null) {
+        results = client.querySync(
+            `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName});`
+        );
+    } else if (isSkip) {
+        results = client.querySync(
+            `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName}) AND id > ${taskSetID};`
+        );
+    } else {
+        results = client.querySync(`SELECT * FROM ${collectionDBTaskSetTableName} WHERE id = ${taskSetID};`);
+    }
+    // Get one task
+    if (results.length > 0) {
+        result = results[0];
+    }
+    client.end();
+    if (result == null) {
+        console.warn("No task returned from DB.");
+        return null;
+    }
+    const task_ids = result.task_ids;
+    const tasks = [];
+    for (const task_id of task_ids) {
+        const task = getTask(task_id);
+        tasks.push(task);
+    }
+    console.log(`Task set ${result.id} with ${tasks.length} number of tasks retrieved.`);
+    return {
+        taskSetID: result.id,
+        tasks: tasks,
     };
 }
 
 /* Read in JSON object from file */
-function getJsonDataFromFile(file_path) {
-    var spawnSync = require("child_process").spawnSync;
+function readPickleFile(file_path) {
     // Retrieve data from Python script
     var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/utils/data_manager.py`, "--file_path", file_path]);
     var result = spawnedProcess.stdout.toString();
@@ -155,6 +186,10 @@ function getJsonDataFromFile(file_path) {
         }
     }
     return json_object;
+}
+
+function readJsonFile(file_path) {
+    return require(file_path);
 }
 
 /* Fetch Log data */
@@ -225,22 +260,24 @@ function setNewConfig(newConfig) {
 /* Log worker answer */
 function logWorkerAnswer(logData) {
     // Get values from answer
-    const task_id = logData.task.taskId;
+    const task_set_id = logData.taskSetID;
+    const task_id = logData.taskID;
     const user_id = logData.workerId;
-    const is_correct = "isCorrect" in logData.answer ? logData.answer.isCorrect : null;
+    const is_correct = logData.answer.isCorrect === undefined ? null : logData.answer.isCorrect;
     const nl = logData.answer.nl.replace(/'/g, "\\'");
 
     const client = new pg();
     client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
     // Insert new log
-    result = client.querySync(`INSERT INTO ${collectionDBCollectionTableName} VALUES(DEFAULT, ${task_id}, E'${user_id}', ${is_correct}, E'${nl}', DEFAULT);`);
+    result = client.querySync(
+        `INSERT INTO ${collectionDBCollectionTableName} VALUES(DEFAULT, ${task_set_id}, ${task_id}, E'${user_id}', ${is_correct}, E'${nl}', DEFAULT);`
+    );
     client.end();
     return result;
 }
 
 /* Utils */
 function EVQLToSQL(evql) {
-    var spawnSync = require("child_process").spawnSync;
     var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/VQL/EVQL_to_SQL.py`, "--evql_in_json_str", JSON.stringify(evql)]);
     var result = spawnedProcess.stdout.toString();
     return result;
@@ -258,13 +295,17 @@ async function queryDB(sql) {
     });
     client.connect();
     result = await client.query({ text: sql, rowMode: "array" });
+    client.end();
     return result;
 }
 
 module.exports = {
+    readPickleFile: readPickleFile,
+    readJsonFile: readJsonFile,
     getConfig: getConfig,
     getEVQL: getEVQL,
     getTask: getTask,
+    getTaskSet: getTaskSet,
     getLogData: getLogData,
     setNewConfig: setNewConfig,
     logWorkerAnswer: logWorkerAnswer,

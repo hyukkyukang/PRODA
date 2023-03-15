@@ -172,7 +172,9 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
                 newCoordinate.x = points[0].column;
                 newCoordinate.y = points[0].row + 1;
             }
-            SetSelectedCoordinate(newCoordinate);
+            if (SetSelectedCoordinate) {
+                SetSelectedCoordinate(newCoordinate);
+            }
         }
     };
 
@@ -210,8 +212,7 @@ export const EVQLTable = (props: IEVQLVisualizationContext) => {
     if (!isEmptyObject(tableContext)) {
         return (
             <div style={{ overflow: "scroll" }}>
-                <b>EVQA:</b>
-                <br />
+                <h3>EVQA:</h3>
                 <div style={{ display: "inline-block" }}>
                     <TableHeaderContext.Provider value={{ headerNames: headerNames }}>
                         <HoveringDescriptionContext.Provider value={{ x, setX, y, setY, description, setDescription, isActive, setIsActive }}>

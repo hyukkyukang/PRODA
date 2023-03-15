@@ -1,23 +1,30 @@
 import ContentPasteGoIcon from "@mui/icons-material/ContentPasteGo";
-import { Button, createTheme, FormGroup, Input, Paper, ThemeProvider, Typography } from "@mui/material";
+import { Button, createTheme, FormGroup, Paper, ThemeProvider, Typography } from "@mui/material";
+import TextField from "@mui/material/TextField";
 import Checkbox from "@mui/material/Checkbox";
 import { pink } from "@mui/material/colors";
-import { Icon, SvgIcon } from "@mui/material";
-import React, { useEffect, useMemo } from "react";
-import { TaskTypes } from "./instruction";
+import Tooltip from "@mui/material/Tooltip";
+import React, { useMemo } from "react";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import SendIcon from "@mui/icons-material/Send";
+import Snackbar from "@mui/material/Snackbar";
+import MuiAlert, { AlertProps } from "@mui/material/Alert";
 
 export interface UserAnswer {
-    type: TaskTypes;
     nl: string;
-    isCorrect?: boolean;
+    isCorrect: boolean | undefined;
 }
 
 export interface AnswerSheetProps {
-    taskType: TaskTypes | undefined;
     taskNL: string | undefined;
     answer: UserAnswer;
     setAnswer: React.Dispatch<React.SetStateAction<UserAnswer>>;
     onSubmitHandler: () => void;
+    onSkipHandler: () => void;
 }
 
 const theme = createTheme({
@@ -49,32 +56,69 @@ const theme = createTheme({
     },
 });
 
-const enabledSubmitButton = (onSubmitHandler: any) => (
-    <Button variant="contained" color="success" onClick={onSubmitHandler}>
-        Submit
-    </Button>
-);
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
+    return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
+
+const enabledSubmitButton = (onSubmitHandler: any) => {
+    return (
+        <Button variant="contained" color="success" endIcon={<SendIcon />} onClick={onSubmitHandler}>
+            Submit
+        </Button>
+    );
+};
 
 const disabledSubmitButton = (
-    <Button variant="contained" disabled>
+    <Button variant="contained" endIcon={<SendIcon />} disabled>
         Submit
     </Button>
 );
 
-export const YesNoAnswerSheet = (props: {
-    answer: UserAnswer;
-    setAnswer: React.Dispatch<React.SetStateAction<UserAnswer>>;
-    taskNL: string;
-    onSubmitHandler: () => void;
-}) => {
-    const { answer, setAnswer, taskNL, onSubmitHandler } = props;
+const firstInstruction =
+    'Does the given sentence correctly summarize all the EVQA blocks above?\nPlease select "is not correct" if the sentence is wrong, ambiguous, or has any missing information.';
+const instructionAskingRephrase = "Please rephrase to a more natural sentence";
+const instructionAskingRevise = "Please write a correct sentence";
+const skipButtonText = "Not sure, skip this task";
+
+export const AnswerSheet = (props: AnswerSheetProps) => {
+    const { taskNL, answer, setAnswer, onSubmitHandler, onSkipHandler } = props;
+    // Answer sheet
     const [yesIsChecked, setYesIsChecked] = React.useState<boolean>(false);
     const [noIsChecked, setNoIsChecked] = React.useState<boolean>(false);
+    const [isDialogOpen, setIsDialogOpen] = React.useState<boolean>(false);
+    const [isSnackbarOpen, setIsSnackbarOpen] = React.useState<boolean>(false);
+
+    const isYesNoButtonClicked = useMemo(() => yesIsChecked || noIsChecked, [yesIsChecked, noIsChecked]);
+    const secondInstruction = useMemo(() => (yesIsChecked ? instructionAskingRephrase : instructionAskingRevise), [yesIsChecked]);
+
+    const openSnackbar = () => {
+        setIsSnackbarOpen(true);
+    };
+
+    const closeSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
+        if (reason === "clickaway") {
+            return;
+        }
+        setIsSnackbarOpen(false);
+    };
+
+    const submitButtonHandler = () => {
+        onSubmitHandler();
+        openSnackbar();
+        // Clear answer fields
+        setYesIsChecked(false);
+        setNoIsChecked(false);
+        setAnswer({ ...answer, nl: "" });
+    };
 
     const submitButton = useMemo(
-        () => (yesIsChecked || answer?.nl ? enabledSubmitButton(onSubmitHandler) : disabledSubmitButton),
+        () => (answer?.nl ? enabledSubmitButton(submitButtonHandler) : disabledSubmitButton),
         [noIsChecked, yesIsChecked, answer, answer?.nl, onSubmitHandler]
     );
+
+    const invertSkipDialogState = () => {
+        setIsDialogOpen(!isDialogOpen);
+    };
 
     const handleIsYesClicked = (event: React.ChangeEvent<HTMLInputElement>) => {
         setYesIsChecked(event.target.checked);
@@ -97,104 +141,123 @@ export const YesNoAnswerSheet = (props: {
     };
 
     const pasteClickHandler = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-        setAnswer({ ...answer, nl: taskNL });
+        setAnswer({ ...answer, nl: taskNL ? taskNL : "" });
     };
+
+    const submissionSnackbar = (
+        <Snackbar open={isSnackbarOpen} autoHideDuration={3000} onClose={closeSnackbar} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+            <Alert onClose={closeSnackbar} severity="success" sx={{ width: "100%" }}>
+                Answer submitted
+            </Alert>
+        </Snackbar>
+    );
 
     const yesNoButtons = (
         <ThemeProvider theme={theme}>
             <FormGroup>
                 <div style={{ display: "inline", paddingLeft: "10px" }}>
                     <div style={{ display: "inline-block" }}>
-                        Is correct
+                        <Typography variant="body1" gutterBottom>
+                            Is correct
+                        </Typography>
+                    </div>
+                    <div style={{ display: "inline-block" }}>
                         <Checkbox color="success" checked={yesIsChecked} onChange={handleIsYesClicked} />
                     </div>
                     <div style={{ display: "inline-block", paddingLeft: "10px" }}>
-                        Is not correct
+                        <Typography variant="body1" gutterBottom>
+                            Is not correct
+                        </Typography>
+                    </div>
+                    <div style={{ display: "inline-block", paddingLeft: "10px" }}>
                         <Checkbox sx={{ color: pink[600], "&.Mui-checked": { color: pink[600] } }} checked={noIsChecked} onChange={handleIsNoClicked} />
                     </div>
-                    {noIsChecked ? null : <div style={{ display: "inline-block", paddingLeft: "10px" }}>{submitButton}</div>}
+                    <div style={{ display: "inline-block", paddingLeft: "20px" }}>
+                        <Button variant="outlined" color="error" onClick={invertSkipDialogState}>
+                            {skipButtonText}
+                        </Button>
+                    </div>
+                    <Dialog
+                        open={isDialogOpen}
+                        onClose={invertSkipDialogState}
+                        aria-labelledby="alert-dialog-title"
+                        aria-describedby="alert-dialog-description"
+                    >
+                        <DialogTitle id="alert-dialog-title">{"Skipping the current task?"}</DialogTitle>
+                        <DialogContent>
+                            <DialogContentText id="alert-dialog-description">Do you want to skip this task and get another one?</DialogContentText>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={invertSkipDialogState}>No</Button>
+                            <Button
+                                onClick={() => {
+                                    onSkipHandler();
+                                    invertSkipDialogState();
+                                }}
+                                autoFocus
+                            >
+                                Yes
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
                 </div>
             </FormGroup>
         </ThemeProvider>
     );
+
+    const pasteButton = (
+        <Tooltip title="Paste given sentence" placement="top">
+            <button style={{ marginTop: "5px", fontSize: 0.5 }} onClick={pasteClickHandler}>
+                <ContentPasteGoIcon />
+            </button>
+        </Tooltip>
+    );
+
     return (
         <React.Fragment>
             <br />
-            <Paper elevation={2} style={{ height: "45px", overflowX: "scroll" }}>
-                <div style={{ marginLeft: "10px" }}>
-                    <div>
-                        <div style={{ display: "inline-block" }}>
-                            <Typography sx={{ paddingTop: "10px" }}>Does the given sentence correctly describe the given query?</Typography>
-                        </div>
-                        <div style={{ display: "inline-block" }}>
-                            <div style={{ marginLeft: "10px" }}>{yesNoButtons}</div>
-                        </div>
+            <Paper elevation={2} style={{ overflowX: "scroll", padding: "18px" }}>
+                <h1>Question</h1>
+                <div>
+                    <div style={{ display: "inline-block" }}>
+                        <Typography variant="h6" sx={{ paddingTop: "10px", whiteSpace: "pre-line" }}>
+                            {firstInstruction}
+                        </Typography>
+                    </div>
+                    <div style={{ display: "inline-block", verticalAlign: "middle" }}>
+                        <div style={{ marginLeft: "10px" }}>{yesNoButtons}</div>
                     </div>
                 </div>
-            </Paper>
-            <br />
-            {noIsChecked ? (
-                <React.Fragment>
-                    <Paper elevation={2} style={{ height: "55px", overflowX: "scroll" }}>
-                        <div style={{ marginLeft: "10px" }}>
+                <br />
+                {isYesNoButtonClicked ? (
+                    <React.Fragment>
+                        <div>
                             <div style={{ display: "inline-block" }}>
-                                <Typography sx={{ paddingTop: "10px" }}>Please type the correct sentence:</Typography>
+                                <Typography variant="h6" sx={{ paddingTop: "10px" }}>
+                                    {secondInstruction}
+                                </Typography>
                             </div>
-                            <div style={{ display: "inline-block", paddingLeft: "10px", width: "500px" }}>
-                                <Input value={answer.nl} placeholder="Type your answer here" sx={{ width: "100%" }} onChange={inputHandler} />
-                            </div>
-                            <div style={{ display: "inline-block" }}>
-                                <button style={{ marginTop: "5px", fontSize: 1 }} onClick={pasteClickHandler}>
-                                    <ContentPasteGoIcon />
-                                </button>
-                            </div>
-                            <div style={{ display: "inline-block", paddingLeft: "15px" }}>{submitButton}</div>
+                            <div style={{ display: "inline-block", paddingLeft: "20px" }}>{pasteButton}</div>
                         </div>
-                    </Paper>
-                    <br />
-                </React.Fragment>
-            ) : null}
-        </React.Fragment>
-    );
-};
-
-export const AugmentationAnswerSheet = (props: {
-    answer: UserAnswer;
-    setAnswer: React.Dispatch<React.SetStateAction<UserAnswer>>;
-    onSubmitHandler: () => void;
-}) => {
-    const { answer, setAnswer, onSubmitHandler } = props;
-
-    const submitButton = useMemo(() => (answer?.nl ? enabledSubmitButton(onSubmitHandler) : disabledSubmitButton), [answer, answer?.nl]);
-
-    const inputHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setAnswer({ ...answer, nl: event.target.value });
-    };
-
-    return (
-        <React.Fragment>
-            <br />
-            <Paper elevation={2} style={{ height: "100px" }}>
-                <div style={{ display: "inline-block", marginLeft: "15px" }}>
-                    <Typography sx={{ paddingTop: "10px" }} variant="h6">
-                        Please rephrase the given sentence below
-                    </Typography>
-                    <Input value={answer.nl} placeholder="Type rephrased natural language query" sx={{ width: "100%" }} onChange={inputHandler} />
-                </div>
-                <div style={{ display: "inline-block", paddingLeft: "10px" }}>{submitButton}</div>
+                        <div>
+                            <div style={{ display: "inline-block", width: "700px" }}>
+                                <TextField
+                                    value={answer.nl}
+                                    id="outlined-multiline-static"
+                                    multiline
+                                    rows={4}
+                                    defaultValue="Type your answer here"
+                                    sx={{ width: "100%" }}
+                                    onChange={inputHandler}
+                                />
+                            </div>
+                            <div style={{ display: "inline-block", paddingLeft: "15px", verticalAlign: "bottom" }}>{submitButton}</div>
+                        </div>
+                        <br />
+                    </React.Fragment>
+                ) : null}
             </Paper>
-            <br />
+            {submissionSnackbar}
         </React.Fragment>
     );
-};
-
-export const AnswerSheet = (props: AnswerSheetProps) => {
-    const { taskType, taskNL, answer, setAnswer, onSubmitHandler } = props;
-    if (taskType === TaskTypes.YesNo) {
-        return <YesNoAnswerSheet answer={answer} setAnswer={setAnswer} taskNL={taskNL ? taskNL : ""} onSubmitHandler={onSubmitHandler} />;
-    } else if (taskType === TaskTypes.NLAugmentation) {
-        return <AugmentationAnswerSheet answer={answer} setAnswer={setAnswer} onSubmitHandler={onSubmitHandler} />;
-    } else {
-        return <></>;
-    }
 };

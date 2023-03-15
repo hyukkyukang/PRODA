@@ -9,6 +9,7 @@ from src.utils.user_study_queries import MovieQuery1, MovieQuery2, MovieQuery3, 
 from src.VQL.EVQL import EVQLTree
 import hkkang_utils.file as file_utils
 from src.utils.example_tasks import create_nl_and_mapping
+from src.utils.data_manager import save_task_set_in_db
 
 
 def MovieTask1(query_object):
@@ -42,6 +43,7 @@ def MovieTask1(query_object):
     print(task1_id)
 
     return sub_task1
+
 
 def MovieTask2(query_object):
     config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
@@ -128,7 +130,7 @@ def MovieTask2(query_object):
     task4_id = Task.save(sub_task4, task_save_dir_path)
     print(task4_id)
 
-    return sub_task1
+    return [task1_id, task2_id, task3_id, task4_id]
 
 
 def MovieTask3(query_object):
@@ -180,16 +182,25 @@ def MovieTask3(query_object):
     task2_id = Task.save(sub_task2, task_save_dir_path)
     print(task2_id)
 
-    return sub_task1
+    return [task1_id, task2_id]
+
+
+def save_task_set(task_ids):
+    task_set_id = save_task_set_in_db(task_ids)
+    print(f"TaskSetID: {task_set_id}")
+
 
 if __name__ == "__main__":
-    #query_object = MovieQuery1()
-    #MovieTask1(query_objct)
-    #query_object = MovieQuery2()
-    #MovieTask1(query_object)
-    #query_object = MovieQuery3()
-    #MovieTask1(query_object)
-    #query_object = MovieQuery5()
-    #MovieTask2(query_object)
-    query_object = MovieQuery6()
-    MovieTask3(query_object)
+    # query_object = MovieQuery1()
+    # MovieTask1(query_objct)
+    # query_object = MovieQuery2()
+    # MovieTask1(query_object)
+    # query_object = MovieQuery3()
+    # MovieTask1(query_object)
+    # query_object = MovieQuery5()
+    # MovieTask2(query_object)
+    # query_object = MovieQuery6()
+    # MovieTask3(query_object)
+    query_object1 = MovieQuery5()
+    task_ids = MovieTask2(query_object1)
+    save_task_set(task_ids)

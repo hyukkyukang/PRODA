@@ -24,6 +24,7 @@ const port = config.visibleToClient.frontend.Port;
 const protocol = config.visibleToClient.frontend.Protocol;
 const SSLKeyPath = config.SSLKeyPath;
 const SSLCertPath = config.SSLCertPath;
+const SSLCaPath = config.SSLCaPath;
 // Append configs to process.env
 
 if (protocol == "http") {
@@ -39,6 +40,8 @@ if (protocol == "http") {
     const { parse } = require("url");
     const next = require("next");
     const fs = require("fs");
+
+    const dev = process.env.NODE_ENV !== "production";
 
     // Create Server
     const httpsOptions = {

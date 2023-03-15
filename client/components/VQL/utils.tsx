@@ -297,3 +297,13 @@ export const getHeaderDescription = (header: IEVQLTableHeader): string => {
     });
     return descriptions.join("\n");
 };
+
+export const flattenEVQLInPostOrder = (evqlTree: EVQLTree): EVQLNode[] => {
+    const flattenedEVQL: EVQLNode[] = [];
+    const traverse = (evqlTree: EVQLTree) => {
+        evqlTree.children.forEach((child) => traverse(child));
+        flattenedEVQL.push(evqlTree.node);
+    };
+    traverse(evqlTree);
+    return flattenedEVQL;
+};
