@@ -1,7 +1,25 @@
 from typing import Any, List, Optional, Union
-
 from hkkang_utils import string as string_utils
 
+def perform_join(table1, table2, key1_idx, key2_idx, join_type, empty_row1, empty_row2):
+    df = []
+    joined_row1 = set()
+    joined_row2 = set()
+    for idx1, row1 in enumerate(table1):
+        for idx2, row2 in enumerate(table2):
+            if row1[key1_idx].value == row2[key2_idx].value:
+                df.append(Row(row1.cells + row2.cells))
+                joined_row1.add(idx1)
+                joined_row2.add(idx2)
+    if join_type in ("left_outer", "full_outer"):
+        for idx, row1 in enumerate(table1):
+            if idx not in joined_row1:
+                df.append(Row(row1.cells + empty_row2.cells))
+    if join_type in ("right_outer", "full_outer"):
+        for idx, row2 in enumerate(table2):
+            if idx not in joined_row2:
+                df.append(Row(empty_row1.cells + row2.cells))
+    return df
 
 class DType:
     def __str__(self):
@@ -54,6 +72,8 @@ class Cell:
 
     @staticmethod
     def to_dtype(value: Any) -> DType:
+        if value == None or value == '':
+            return None
         """Convert value into DType"""
         if type(value) in [int, float]:
             return DNumber()
@@ -71,7 +91,7 @@ class Cell:
 
     @property
     def is_null(self):
-        return self.value == None
+        return self.value == None or self.value == ''
 
     def dump_json(self):
         return {"value": self.value}
@@ -106,24 +126,93 @@ class TableExcerpt:
             self.add_rows(rows)
 
     @staticmethod
-    def fake_join(new_table_name: str, tables: List[Any]):
-        headers = [header for item in tables for header in item.headers]
+    def fake_join(new_table_name: str, tables: List[Any], prefixes=None, join_atts=None):
+        if prefixes is not None:
+            assert len(prefixes) == len(tables)
+            headers=[]
+            for table, prefix in zip(tables, prefixes):
+                for header in table.headers:
+                    headers.append(prefix + header)
+        else:
+            headers = [header for item in tables for header in item.headers]
         col_types = [col_type for item in tables for col_type in item.col_types]
-        # Fake join
-        # Find the smallest number of rows
-        min_row_num = min([len(item.rows) for item in tables])
+        
+        if join_atts is None:
+            # Fake join
+            # Find the smallest number of rows
+            min_row_num = min([len(item.rows) for item in tables])
 
-        new_rows = []
-        for row_idx in range(min_row_num):
-            row = []
-            for table in tables:
-                row.extend(table.rows[row_idx])
-            new_rows.append(Row(row))
+            new_rows = []
+            for row_idx in range(min_row_num):
+                row = []
+                for table in tables:
+                    row.extend(table.rows[row_idx])
+                new_rows.append(Row(row))
+        else:
+            # Real join - left deep join
+            joined_tables=[]
+            df=[]
+            for join_att in join_atts:
+                t1_idx=join_att[0]
+                t2_idx=join_att[1]
+                c1_idx=tables[t1_idx].headers.index(join_att[2])
+                c2_idx=tables[t2_idx].headers.index(join_att[3])
+                join_type=join_att[4]
+                
+                cells_df=[]
+                for table in joined_tables:
+                    for header in tables[table].headers:
+                        cells_df.append(Cell(None))
+                empty_row_df=Row(cells_df)
+
+                cells_t1=[]
+                for header in tables[t1_idx].headers:
+                    cells_t1.append(Cell(None))
+                empty_row_t1=Row(cells_t1)
+                
+                cells_t2=[]
+                for header in tables[t2_idx].headers:
+                    cells_t2.append(Cell(None))
+                empty_row_t2=Row(cells_t2)
+
+                if t1_idx in joined_tables and t2_idx not in joined_tables:
+                    offset=0
+                    for i in range(joined_tables.index(t1_idx)):
+                        offset+=len(tables[joined_tables[i]].headers)
+                    df=perform_join(df, tables[t2_idx].rows, offset+c1_idx, c2_idx, join_type, empty_row_df, empty_row_t2)
+                    joined_tables.append(t2_idx)
+                elif t2_idx in joined_tables and t1_idx not in joined_tables:
+                    offset=0
+                    for i in range(joined_tables.index(t2_idx)):
+                        offset+=len(tables[joined_tables[i]].headers)
+                    if join_type == "left_outer":
+                        join_type = "right_outer"
+                    elif join_type == "right_outer":
+                        join_type = "left_outer"
+                    df=perform_join(df, tables[t1_idx].rows, offset+c2_idx, c1_idx, join_type, empty_row_df, empty_row_t1)
+                    joined_tables.append(t1_idx)
+                elif len(joined_tables) == 0:
+                    df=perform_join(tables[t1_idx].rows, tables[t2_idx].rows, c1_idx, c2_idx, join_type, empty_row_t1, empty_row_t2)
+                    joined_tables.append(t1_idx)
+                    joined_tables.append(t2_idx)
+                else:
+                    assert False
+            new_rows = df
+            headers=[]
+            col_types=[]
+            for tid in joined_tables:
+                for col_type in tables[tid].col_types:
+                    col_types.append(col_type)
+                for header in tables[tid].headers:
+                    if prefix is not None:
+                        headers.append(prefixes[tid] + header)
+                    else:
+                        headers.append(header)
 
         return TableExcerpt(new_table_name, headers, col_types, new_rows)
 
     @staticmethod
-    def concatenate(new_table_name, base_table, new_table):
+    def concatenate(new_table_name, base_table, new_table, prefixes=None):
         def retrieve_col_items(rows, col_id, list_num):
             tmp = [row[col_id].value for row in rows]
             if list_num == 1:
@@ -131,7 +220,12 @@ class TableExcerpt:
             return [tmp for _ in range(list_num)]
 
         """ Cartesian product of two tables """
-        new_headers = base_table.headers + new_table.headers
+        if prefixes is not None:
+            assert len(prefixes) == 2
+            new_headers = [prefixes[0] + header for header in base_table.headers]
+            new_headers += [prefixes[1] + header for header in new_table.headers]
+        else:
+            new_headers = base_table.headers + new_table.headers
         new_col_types = base_table.col_types + [DList(col_type) for col_type in new_table.col_types]
         base_table_names = base_table.base_table_names + new_table.base_table_names
 

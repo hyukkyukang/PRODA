@@ -77,7 +77,7 @@ const toFlatRow = (row: Row): Cell[][] => {
     // Category columns by their types
     for (var colIdx = 0; colIdx < cells.length; colIdx++) {
         const cell = cells[colIdx];
-        if (cell.value instanceof Array) {
+        if (cell.value instanceof Array && cell.value.length > 1) {
             // Check not double
             if (cell.value[0] instanceof Array) {
                 doubleListIndices.push(colIdx);
@@ -169,6 +169,7 @@ export const TableExcerpt = (props: React.ComponentProps<any>) => {
             dataSource={toAntdDataSource(flatRows)}
             bordered
             rowClassName={(record, index) => (index % 2 === 0 ? "table-row-light" : "table-row-dark")}
+            style={{ overflow: "auto" }}
         />
     );
 };
