@@ -10,6 +10,7 @@ import { QuerySheet } from "../components/Collection/querySheet";
 import { Task } from "../components/Collection/task";
 import { Header } from "../components/Header/collectionHeader";
 import { RefContext } from "../pages/_app";
+import { TaskDescription } from "../components/Collection/taskDescription";
 
 const enableAMTSubmission = false;
 
@@ -84,8 +85,12 @@ export const Collection = (props: any) => {
 
     const collectionBody = (
         <div style={{ marginLeft: "1%", width: "98%" }}>
+            <br />
             {/* Show saquery information for the current task */}
-            <AnswerSheet taskType={currentTask?.taskType} taskNL={currentTask?.nl} answer={answer} setAnswer={setAnswer} onSubmitHandler={onSubmitHandler} />
+            <Paper elevation={2}>
+                <TaskDescription evql={currentTask?.evql} />
+            </Paper>
+            <br />
             <Paper elevation={2}>
                 <QuerySheet currentTask={currentTask} />
             </Paper>
@@ -100,6 +105,7 @@ export const Collection = (props: any) => {
                     </React.Fragment>
                 );
             })}
+            <AnswerSheet taskType={currentTask?.taskType} taskNL={currentTask?.nl} answer={answer} setAnswer={setAnswer} onSubmitHandler={onSubmitHandler} />
             <br />
             {AMTSubmissionForm}
         </div>

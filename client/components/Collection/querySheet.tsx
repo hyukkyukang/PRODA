@@ -81,12 +81,14 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
                                     {currentTask?.tableExcerpt ? <b>Table:</b> : null}
                                     {currentTask?.tableExcerpt ? <TableExcerpt queryResult={currentTask.tableExcerpt} /> : null}
                                     <br />
-                                    <EVQLTable
-                                        evqlRoot={{ node: currentTask.evql.node, children: currentTask.evql.children }}
-                                        childListPath={[]}
-                                        editable={false}
-                                        isFirstNode={true}
-                                    />
+                                    {currentTask?.evql ? (
+                                        <EVQLTable
+                                            evqlRoot={{ node: currentTask.evql.node, children: currentTask.evql.children }}
+                                            childListPath={[]}
+                                            editable={false}
+                                            isFirstNode={true}
+                                        />
+                                    ) : null}
                                 </CoordinateContext.Provider>
                                 <br />
                                 <b>Result Table:</b>
