@@ -1,15 +1,13 @@
 import ContentPasteGoIcon from "@mui/icons-material/ContentPasteGo";
-import { Button, createTheme, FormGroup, Input, Paper, ThemeProvider, Typography } from "@mui/material";
+import { Button, createTheme, FormGroup, Paper, ThemeProvider, Typography } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import Checkbox from "@mui/material/Checkbox";
 import { pink } from "@mui/material/colors";
-import React, { useEffect, useMemo } from "react";
-import { TaskTypes } from "./instruction";
+import React, { useMemo } from "react";
 
 export interface UserAnswer {
-    type: TaskTypes;
     nl: string;
-    isCorrect?: boolean;
+    isCorrect: boolean | undefined;
 }
 
 export interface AnswerSheetProps {
@@ -49,15 +47,9 @@ const theme = createTheme({
     },
 });
 
-const enabledSubmitButton = (onSubmitHandler: any, isSubmitted: any, setIsSubmitted: any) => {
-    const handlerWrapper = () => {
-        setIsSubmitted(true);
-        if (!isSubmitted) {
-            onSubmitHandler();
-        }
-    };
+const enabledSubmitButton = (onSubmitHandler: any) => {
     return (
-        <Button variant="contained" color="success" onClick={handlerWrapper}>
+        <Button variant="contained" color="success" onClick={onSubmitHandler}>
             Submit
         </Button>
     );
@@ -77,15 +69,22 @@ export const AnswerSheet = (props: AnswerSheetProps) => {
     // Answer sheet
     const [yesIsChecked, setYesIsChecked] = React.useState<boolean>(false);
     const [noIsChecked, setNoIsChecked] = React.useState<boolean>(false);
-    // To prevent multiple submission
-    const [isSubmitted, setIsSubmitted] = React.useState<boolean>(false);
 
-    const submitButton = useMemo(
-        () => (answer?.nl ? enabledSubmitButton(onSubmitHandler, isSubmitted, setIsSubmitted) : disabledSubmitButton),
-        [noIsChecked, yesIsChecked, answer, answer?.nl, onSubmitHandler, isSubmitted]
-    );
     const isYesNoButtonClicked = useMemo(() => yesIsChecked || noIsChecked, [yesIsChecked, noIsChecked]);
     const instruction2 = useMemo(() => (yesIsChecked ? instructionAskingRephrase : instructionAskingRevise), [yesIsChecked]);
+
+    const submitButtonHandler = () => {
+        onSubmitHandler();
+        // Clear answer fields
+        setYesIsChecked(false);
+        setNoIsChecked(false);
+        setAnswer({ ...answer, nl: "" });
+    };
+
+    const submitButton = useMemo(
+        () => (answer?.nl ? enabledSubmitButton(submitButtonHandler) : disabledSubmitButton),
+        [noIsChecked, yesIsChecked, answer, answer?.nl, onSubmitHandler]
+    );
 
     const handleIsYesClicked = (event: React.ChangeEvent<HTMLInputElement>) => {
         setYesIsChecked(event.target.checked);
@@ -162,7 +161,6 @@ export const AnswerSheet = (props: AnswerSheetProps) => {
                                     sx={{ width: "100%" }}
                                     onChange={inputHandler}
                                 />
-                                {/* <Input value={answer.nl} placeholder="Type your answer here" sx={{ width: "100%" }} onChange={inputHandler} /> */}
                             </div>
                             <div style={{ display: "inline-block" }}>
                                 <button style={{ marginTop: "5px", fontSize: 1 }} onClick={pasteClickHandler}>

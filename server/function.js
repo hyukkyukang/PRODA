@@ -25,6 +25,7 @@ collectionDBUserPW = config.DB.collection.UserPW;
 collectionDBName = config.DB.collection.DBName;
 collectionDBCollectionTableName = config.DB.collection.CollectionTableName;
 collectionDBTaskTableName = config.DB.collection.TaskTableName;
+collectionDBTaskSetTableName = config.DB.collection.TaskSetTableName;
 // DemoDB
 demoDBUserID = config.DB.demo.UserID;
 demoDBUserPW = config.DB.demo.UserPW;
@@ -74,32 +75,18 @@ function getEVQL(queryType) {
 }
 
 /* Fetch Task */
-function getTask(taskID = null, isSkip = false, getHistory = true) {
+function getTask(taskID, getHistory = true) {
     // Connect to DB and retrieve Task
     const client = new pg();
-    // console.log(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
     client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
-    // Insert new log
-    var result = null;
-    var results = null;
-    if (taskID === null) {
-        results = client.querySync(`SELECT * FROM ${collectionDBTaskTableName} WHERE id NOT IN (SELECT task_id FROM ${collectionDBCollectionTableName});`);
-    } else if (isSkip) {
-        results = client.querySync(
-            `SELECT * FROM ${collectionDBTaskTableName} WHERE id NOT IN (SELECT task_id FROM ${collectionDBCollectionTableName}) AND id > ${taskID};`
-        );
-    } else {
-        results = client.querySync(`SELECT * FROM ${collectionDBTaskTableName} WHERE id = ${taskID};`);
-    }
+    results = client.querySync(`SELECT * FROM ${collectionDBTaskTableName} WHERE id = ${taskID};`);
     // Get one task
     if (results.length > 0) {
         result = results[0];
     }
     client.end();
-    // console.log(`Retrieved result: ${JSON.stringify(result)}`);
-    // Handle empty result
     if (result == null) {
-        console.warn("No task returned from DB.");
+        console.warn(`Task ${taskID} not found in DB.`);
         return null;
     }
     // Get file paths
@@ -124,7 +111,6 @@ function getTask(taskID = null, isSkip = false, getHistory = true) {
             history.push(history_task);
         }
     }
-
     return {
         nl: result.nl,
         nl_mapping: nl_mapping_object,
@@ -138,6 +124,47 @@ function getTask(taskID = null, isSkip = false, getHistory = true) {
         history: history,
         blockID: null,
         taskID: result.id,
+    };
+}
+
+function getTaskSet(taskSetID = null, isSkip = false) {
+    // Connect to DB and retrieve Task
+    const client = new pg();
+    // console.log(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
+    client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
+    // Insert new log
+    var result = null;
+    var results = null;
+    if (taskSetID === null) {
+        results = client.querySync(
+            `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName});`
+        );
+    } else if (isSkip) {
+        results = client.querySync(
+            `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName}) AND id > ${taskSetID};`
+        );
+    } else {
+        results = client.querySync(`SELECT * FROM ${collectionDBTaskSetTableName} WHERE id = ${taskSetID};`);
+    }
+    // Get one task
+    if (results.length > 0) {
+        result = results[0];
+    }
+    client.end();
+    if (result == null) {
+        console.warn("No task returned from DB.");
+        return null;
+    }
+    const task_ids = result.task_ids;
+    const tasks = [];
+    for (const task_id of task_ids) {
+        const task = getTask(task_id);
+        tasks.push(task);
+    }
+    console.log(`Task set ${result.id} with ${tasks.length} number of tasks retrieved.`);
+    return {
+        taskSetID: result.id,
+        tasks: tasks,
     };
 }
 
@@ -229,15 +256,18 @@ function setNewConfig(newConfig) {
 /* Log worker answer */
 function logWorkerAnswer(logData) {
     // Get values from answer
-    const task_id = logData.task.taskID;
+    const task_set_id = logData.taskSetID;
+    const task_id = logData.taskID;
     const user_id = logData.workerId;
-    const is_correct = "isCorrect" in logData.answer ? logData.answer.isCorrect : null;
+    const is_correct = logData.answer.isCorrect === undefined ? null : logData.answer.isCorrect;
     const nl = logData.answer.nl.replace(/'/g, "\\'");
 
     const client = new pg();
     client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
     // Insert new log
-    result = client.querySync(`INSERT INTO ${collectionDBCollectionTableName} VALUES(DEFAULT, ${task_id}, E'${user_id}', ${is_correct}, E'${nl}', DEFAULT);`);
+    result = client.querySync(
+        `INSERT INTO ${collectionDBCollectionTableName} VALUES(DEFAULT, ${task_set_id}, ${task_id}, E'${user_id}', ${is_correct}, E'${nl}', DEFAULT);`
+    );
     client.end();
     return result;
 }
@@ -269,6 +299,7 @@ module.exports = {
     getConfig: getConfig,
     getEVQL: getEVQL,
     getTask: getTask,
+    getTaskSet: getTaskSet,
     getLogData: getLogData,
     setNewConfig: setNewConfig,
     logWorkerAnswer: logWorkerAnswer,

@@ -13,3 +13,8 @@ export interface Task {
     blockID: string;
     taskID: number;
 }
+
+export interface TaskSet {
+    taskSetID: number;
+    tasks: Task[];
+}

@@ -19,5 +19,6 @@ GRANT CONNECT ON DATABASE proda_collection TO collection_user;
 \c proda_collection;
 GRANT insert, delete, update, select on collection to collection_user;
 GRANT insert, delete, update, select on task to collection_user;
+GRANT insert, delete, update, select on task_set to collection_user;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO collection_user;
 EOF

@@ -3,6 +3,7 @@ BEGIN;
 -- Table to collect user response
 CREATE TABLE IF NOT EXISTS collection (
     id SERIAL PRIMARY KEY,
+    task_set_id INTEGER NOT NULL,
     task_id INTEGER NOT NULL,
     user_id VARCHAR(64) NOT NULL,
     is_correct BOOLEAN NULL,
@@ -23,6 +24,13 @@ CREATE TABLE IF NOT EXISTS task (
     db_name VARCHAR(128) NOT NULL,
     task_type INTEGER NOT NULL,
     history_task_ids INTEGER[] NULL
+);
+
+-- Table to collect task data
+CREATE TABLE IF NOT EXISTS task_set (
+    id SERIAL PRIMARY KEY,
+    task_ids INTEGER[] NOT NULL,
+    date DATE DEFAULT CURRENT_DATE
 );
 
 END;

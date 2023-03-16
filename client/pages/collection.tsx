@@ -1,10 +1,9 @@
 import { Grid, Paper } from "@mui/material";
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useMutation } from "react-query";
+import { useMutation } from "react-query";
 
 import CircularProgress from "@mui/material/CircularProgress";
 import { fetchTask, sendWorkerAnswer } from "../api/connect";
-import { ITaskResponse } from "../api/interface";
 import { AnswerSheet, UserAnswer } from "../components/Collection/answerSheet";
 import { QuerySheet } from "../components/Collection/querySheet";
 import { Task } from "../components/Collection/task";
@@ -18,15 +17,15 @@ export const Collection = (props: any) => {
     // Ref
     const { targetRef } = useContext(RefContext);
     // Global state variables
-    const [answer, setAnswer] = useState<UserAnswer>({ nl: "", type: 0 });
+    const [answer, setAnswer] = useState<UserAnswer>({ nl: "", isCorrect: undefined });
     // Local state variables
+    const [taskSetIdx, setTaskSetIdx] = useState<number>(0);
     // AMT informations
     const [hitId, setHitId] = useState("");
     const [assignmentId, setAssignmentId] = useState("");
     const [turkSubmitTo, setTurkSubmitTo] = useState("");
     const [workerID, setWorkerID] = useState("");
     const [taskID, setTaskID] = useState(-1);
-    const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
     // Variables to change state step-by-step to call API once
     const [isInitalized, setIsInitalized] = useState(false);
     const [isURLParsed, setIsURLParsed] = useState(false);
@@ -35,7 +34,6 @@ export const Collection = (props: any) => {
     const formRef = useRef<HTMLFormElement>(null);
 
     // Fetching Data
-    // const { isLoading, isError, data, error } = useQuery<ITaskResponse>(["fetchTask", workerId, taskID, isRefetch], fetchTask, { enabled: workerId !== "",  });
     const {
         data,
         isError,
@@ -45,29 +43,27 @@ export const Collection = (props: any) => {
     } = useMutation({
         mutationFn: (params: { workerID: string; taskID: number | undefined; isSkip: boolean }) => fetchTask(params),
     });
-    const currentTask = useMemo<Task | null>(() => (data?.isTaskReturned ? data.task : null), [data]);
+    const taskSet = useMemo<{ taskSetID: number; tasks: Task[] } | null>(() => (data?.isTaskReturned ? data.taskSet : null), [data]);
+    const currentTask = useMemo<Task | null>(() => (taskSet && taskSet.tasks.length > taskSetIdx ? taskSet.tasks[taskSetIdx] : null), [taskSet, taskSetIdx]);
+    const isTaskSetComplete = useMemo<boolean>(() => (taskSet?.tasks ? taskSetIdx >= taskSet?.tasks.length : false), [taskSet, taskSetIdx]);
 
     const onSubmitHandler = () => {
         // This should be called only when data is not null
         if (currentTask) {
             // Send current step's info to the server
-            const task: Task = currentTask;
-            sendWorkerAnswer({ task: task, answer: answer, workerID: workerID });
+            sendWorkerAnswer({ answer: answer, workerID: workerID, taskID: currentTask?.taskID, taskSetID: taskSet?.taskSetID });
 
             // Submit assignment
-            if (enableAMTSubmission && formRef.current) {
+            if (enableAMTSubmission && isTaskSetComplete && formRef.current) {
                 formRef.current.submit();
             }
-            setIsAnswerSubmitted(true);
+            setTaskSetIdx(taskSetIdx + 1);
         }
     };
 
     const onSkipHandler = () => {
-        console.log(`inside taskID:${taskID}`);
         mutate({ workerID: workerID, taskID: taskID, isSkip: true });
     };
-
-    console.log(`outside taskID: ${taskID}`);
 
     const getAMTInfo = () => {
         // Parse URL parameters
@@ -116,9 +112,8 @@ export const Collection = (props: any) => {
         <React.Fragment>
             <form action="https://workersandbox.mturk.com/mturk/externalSubmit" ref={formRef}>
                 <input type="hidden" value={assignmentId} name="assignmentId" id="assignmentId" />
-                <input type="hidden" value={answer.type} name="taskType" id="taskType" />
                 <input type="hidden" value={answer.nl} name="answerNL" id="answerNL" />
-                <input type="hidden" value={currentTask?.taskID} name="taskId" id="taskId" />
+                <input type="hidden" value={taskSet?.taskSetID} name="taskSetID" id="taskSetID" />
                 <input type="hidden" value={answer.isCorrect === undefined ? "true" : answer.isCorrect.toString()} name="isCorrect" id="isCorrect" />
             </form>
         </React.Fragment>
@@ -179,7 +174,7 @@ export const Collection = (props: any) => {
     );
 
     const componentBody = useMemo((): JSX.Element => {
-        if (isAnswerSubmitted) {
+        if (isTaskSetComplete) {
             return answerSubmittedBody;
         } else if (isLoading) {
             return waitingBody;
@@ -190,7 +185,7 @@ export const Collection = (props: any) => {
         } else {
             return collectionBody;
         }
-    }, [isAnswerSubmitted, isLoading, isError, data, answer, taskID, currentTask]);
+    }, [isTaskSetComplete, isLoading, isError, data, answer, taskID, currentTask]);
 
     return (
         <React.Fragment>

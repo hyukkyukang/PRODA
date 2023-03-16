@@ -17,7 +17,8 @@ port = config["DB"]["Port"]
 DBName = config["DB"]["collection"]["DBName"]
 DBUserID = config["DB"]["collection"]["UserID"]
 DBUserPW = config["DB"]["collection"]["UserPW"]
-DBTableName = config["DB"]["collection"]["TaskTableName"]
+DBTaskTableName = config["DB"]["collection"]["TaskTableName"]
+DBTaskSetTableName = config["DB"]["collection"]["TaskSetTableName"]
 
 
 # Save python object files as pickle files.
@@ -27,6 +28,15 @@ def save_data(data: Any, path: str) -> None:
     os.makedirs(dir_path, exist_ok=True)
     with open(path, "wb") as f:
         pickle.dump(data, f)
+
+
+def save_task_set_in_db(
+    task_ids: List[int],
+):
+    pg = PostgresConnector(DBUserID, DBUserPW, IP, port, DBName)
+    task_ids_str = "{" + ",".join(map(lambda k: f'"{str(k)}"', task_ids)) + "}"
+    pg.execute(f"INSERT INTO {DBTaskSetTableName} (task_ids) VALUES ('{task_ids_str}') RETURNING id")
+    return pg.fetchone()[0]
 
 
 def save_task_in_db(
@@ -45,7 +55,7 @@ def save_task_in_db(
     history_task_ids_str = "{" + ",".join(map(lambda k: f'"{str(k)}"', history_task_ids)) + "}"
     sql = sql.replace("'", "\\'")
     pg.execute(
-        f"INSERT INTO {DBTableName} (nl, sql, query_type, evql_path, table_excerpt_path, result_table_path, nl_mapping_path, db_name, task_type, history_task_ids) VALUES (E'{nl}', E'{sql}', '{query_type}', '{evql_path}', '{table_excerpt_path}', '{result_table_path}', '{nl_mapping_path}', '{db_name}', {task_type}, '{history_task_ids_str}') RETURNING id"
+        f"INSERT INTO {DBTaskTableName} (nl, sql, query_type, evql_path, table_excerpt_path, result_table_path, nl_mapping_path, db_name, task_type, history_task_ids) VALUES (E'{nl}', E'{sql}', '{query_type}', '{evql_path}', '{table_excerpt_path}', '{result_table_path}', '{nl_mapping_path}', '{db_name}', {task_type}, '{history_task_ids_str}') RETURNING id"
     )
     return pg.fetchone()[0]
 
