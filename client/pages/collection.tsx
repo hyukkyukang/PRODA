@@ -1,6 +1,6 @@
 import { Grid, Paper } from "@mui/material";
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "react-query";
+import { useQuery, useMutation } from "react-query";
 
 import CircularProgress from "@mui/material/CircularProgress";
 import { fetchTask, sendWorkerAnswer } from "../api/connect";
@@ -24,15 +24,27 @@ export const Collection = (props: any) => {
     const [hitId, setHitId] = useState("");
     const [assignmentId, setAssignmentId] = useState("");
     const [turkSubmitTo, setTurkSubmitTo] = useState("");
-    const [workerId, setWorkerId] = useState("");
+    const [workerID, setWorkerID] = useState("");
     const [taskID, setTaskID] = useState(-1);
     const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
+    // Variables to change state step-by-step to call API once
+    const [isInitalized, setIsInitalized] = useState(false);
+    const [isURLParsed, setIsURLParsed] = useState(false);
 
     // To handle submission
     const formRef = useRef<HTMLFormElement>(null);
 
     // Fetching Data
-    const { isLoading, isError, data, error } = useQuery<ITaskResponse>(["fetchTask", workerId, taskID], fetchTask, { enabled: workerId !== "" });
+    // const { isLoading, isError, data, error } = useQuery<ITaskResponse>(["fetchTask", workerId, taskID, isRefetch], fetchTask, { enabled: workerId !== "",  });
+    const {
+        data,
+        isError,
+        isLoading,
+        isSuccess,
+        mutate: mutate,
+    } = useMutation({
+        mutationFn: (params: { workerID: string; taskID: number | undefined; isSkip: boolean }) => fetchTask(params),
+    });
     const currentTask = useMemo<Task | null>(() => (data?.isTaskReturned ? data.task : null), [data]);
 
     const onSubmitHandler = () => {
@@ -40,7 +52,7 @@ export const Collection = (props: any) => {
         if (currentTask) {
             // Send current step's info to the server
             const task: Task = currentTask;
-            sendWorkerAnswer({ task: task, answer: answer, workerId: workerId });
+            sendWorkerAnswer({ task: task, answer: answer, workerID: workerID });
 
             // Submit assignment
             if (enableAMTSubmission && formRef.current) {
@@ -50,26 +62,55 @@ export const Collection = (props: any) => {
         }
     };
 
+    const onSkipHandler = () => {
+        console.log(`inside taskID:${taskID}`);
+        mutate({ workerID: workerID, taskID: taskID, isSkip: true });
+    };
+
+    console.log(`outside taskID: ${taskID}`);
+
     const getAMTInfo = () => {
         // Parse URL parameters
         const queryParams = new URLSearchParams(window.location.search);
         const hitId = queryParams.get("hitId") ? queryParams.get("hitId") : "";
         const assignmentId = queryParams.get("assignmentId") ? queryParams.get("assignmentId") : "";
         const turkSubmitTo = queryParams.get("turkSubmitTo") ? queryParams.get("turkSubmitTo") : "";
-        const workerId = queryParams.get("workerId") ? queryParams.get("workerId") : "a";
+        const workerID = queryParams.get("workerId") ? queryParams.get("workerId") : "a";
         const taskID = queryParams.get("taskID") ? queryParams.get("taskID") : "";
 
         // Set AMT information
         setHitId(hitId === null ? "" : hitId);
         setAssignmentId(assignmentId === null ? "" : assignmentId);
         setTurkSubmitTo(turkSubmitTo === null ? "" : turkSubmitTo);
-        setWorkerId(workerId === null ? "" : workerId);
+        setWorkerID(workerID === null ? "" : workerID);
         setTaskID(taskID === null ? -1 : parseInt(taskID));
     };
 
+    // Cascading useEffects to call API once
     useEffect(() => {
-        getAMTInfo();
+        setIsInitalized(true);
     }, []);
+
+    useEffect(() => {
+        if (isInitalized) {
+            getAMTInfo();
+            setIsURLParsed(true);
+        }
+    }, [isInitalized]);
+
+    useEffect(() => {
+        if (isURLParsed) {
+            mutate({ workerID: workerID, taskID: taskID, isSkip: false });
+        }
+    }, [isURLParsed]);
+
+    //  Update taskID when data is updated
+    useEffect(() => {
+        console.log(`data: ${JSON.stringify(data)} isloading:${isLoading}`);
+        if (!isLoading && data) {
+            setTaskID(data?.task?.taskID);
+        }
+    }, [data]);
 
     const AMTSubmissionForm = (
         <React.Fragment>
@@ -77,7 +118,7 @@ export const Collection = (props: any) => {
                 <input type="hidden" value={assignmentId} name="assignmentId" id="assignmentId" />
                 <input type="hidden" value={answer.type} name="taskType" id="taskType" />
                 <input type="hidden" value={answer.nl} name="answerNL" id="answerNL" />
-                <input type="hidden" value={currentTask?.taskId} name="taskId" id="taskId" />
+                <input type="hidden" value={currentTask?.taskID} name="taskId" id="taskId" />
                 <input type="hidden" value={answer.isCorrect === undefined ? "true" : answer.isCorrect.toString()} name="isCorrect" id="isCorrect" />
             </form>
         </React.Fragment>
@@ -95,17 +136,7 @@ export const Collection = (props: any) => {
                 <QuerySheet currentTask={currentTask} />
             </Paper>
             {/* Show query information for the previous tasks (to complete the current task) */}
-            {currentTask?.history?.map((prevTask, idx) => {
-                return (
-                    <React.Fragment>
-                        <br />
-                        <Paper elevation={2}>
-                            <QuerySheet currentTask={prevTask} />
-                        </Paper>
-                    </React.Fragment>
-                );
-            })}
-            <AnswerSheet taskType={currentTask?.taskType} taskNL={currentTask?.nl} answer={answer} setAnswer={setAnswer} onSubmitHandler={onSubmitHandler} />
+            <AnswerSheet taskNL={currentTask?.nl} answer={answer} setAnswer={setAnswer} onSubmitHandler={onSubmitHandler} onSkipHandler={onSkipHandler} />
             <br />
             {AMTSubmissionForm}
         </div>
@@ -159,7 +190,7 @@ export const Collection = (props: any) => {
         } else {
             return collectionBody;
         }
-    }, [isLoading, isError, data, error, answer]);
+    }, [isAnswerSubmitted, isLoading, isError, data, answer, taskID, currentTask]);
 
     return (
         <React.Fragment>

@@ -45,15 +45,15 @@ app.post("/fetchEVQL", function (req, res) {
 });
 
 app.post("/fetchTask", function (req, res) {
-    const workerID = req.body.workerId;
+    console.log(`fetchTask: ${JSON.stringify(req.body)}`);
+    const workerID = req.body.workerID;
     const taskID = req.body.taskID;
+    const isSkip = req.body.isSkip;
     console.log(`/fetchTask; workerID:${workerID} taskID:${taskID}) has requested a task`);
     var taskData = null;
     // If taskID is given, return the task
     if (taskID !== null && taskID !== -1) {
-        taskData = func.getTask(taskID);
-        console.log(`task is retrieved and sent to workerID:${workerID}\n`);
-        res.send({ isTaskReturned: true, task: taskData });
+        taskData = func.getTask(taskID, isSkip);
     } else {
         // Check if worker has already been assigned a task
         if (workerID in workerTaskMapping) {
@@ -65,18 +65,20 @@ app.post("/fetchTask", function (req, res) {
             // Allocate a new task
             taskData = func.getTask();
             if (taskData) {
-                const taskID = taskData["taskId"];
-                workerTaskMapping[workerID] = taskID;
-                console.log(`workerID:${workerID} has been assigned to taskID:${taskID}`);
+                const taskID = taskData.taskID;
+                if (workerID !== undefined) {
+                    workerTaskMapping[workerID] = taskID;
+                    console.log(`workerID:${workerID} has been assigned to taskID:${taskID}`);
+                }
             }
         }
-        if (taskData === null) {
-            console.log(`No task is retrieved and sent to workerID:${workerID}\n`);
-            res.send({ isTaskReturned: false, task: null });
-        } else {
-            console.log(`task is retrieved and sent to workerID:${workerID}\n`);
-            res.send({ isTaskReturned: true, task: taskData });
-        }
+    }
+    if (taskData === null) {
+        console.log(`No task is retrieved and sent to workerID:${workerID}\n`);
+        res.send({ isTaskReturned: false, task: null });
+    } else {
+        console.log(`task ${taskData.taskID} is retrieved and sent to workerID:${workerID}\n`);
+        res.send({ isTaskReturned: true, task: taskData });
     }
 });
 
@@ -119,7 +121,7 @@ app.post("/runSQL", async function (req, res) {
 /* Handling Response */
 app.post("/logWorkerAnswer", function (req, res) {
     console.log(`app.post./logWorkerAnswer`);
-    console.log(`Received answer: ${JSON.stringify(req.body.params)}`);
+    // console.log(`Received answer: ${JSON.stringify(req.body.params)}`);
     func.logWorkerAnswer(req.body.params);
     res.send({ status: "success" });
 });

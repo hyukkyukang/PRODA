@@ -32,4 +32,5 @@ DB:
         TaskTableName: task
 SSLCertPath: "/home/proda/certificates/localhost.crt"
 SSLKeyPath: "/home/proda/certificates/localhost.key"
+SSLCaPath: "/home/proda/certificates/localhost.key"
 taskSaveDirPath: "/home/proda/database/dataCollection/tasks/"

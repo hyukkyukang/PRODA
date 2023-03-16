@@ -7,6 +7,9 @@ import { isEmptyObject } from "../../utils";
 import { TableExcerpt } from "../TableExcerpt/TableExcerpt";
 import { EVQLTable } from "../VQL/EVQLTable";
 import { Task } from "./task";
+import { flattenEVQLInPostOrder } from "../VQL/utils";
+import { EVQLNode } from "../VQL/EVQL";
+import { QueryHistorySheet } from "./queryHistorySheet";
 
 export interface ICoordinateContext {
     selectedCoordinate: { x: number; y: number };
@@ -33,6 +36,7 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
     const expandCollapseHandler = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         setIsCollapse(!isCollapse);
     };
+    const listOfEVQLNodes = useMemo<EVQLNode[]>(() => (currentTask?.evql ? flattenEVQLInPostOrder(currentTask.evql) : []), [currentTask]);
 
     const style = {
         transform: isCollapse ? "rotate(180deg)" : "",
@@ -69,11 +73,8 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
         <React.Fragment>
             {currentTask ? (
                 <Box style={{ marginLeft: "15px", marginRight: "15px", paddingTop: "15px" }}>
-                    <b>Sentence:</b>
-                    <br />
-                    <span>{highlightedNL(currentTask?.nl, highlightList)}</span>
+                    {currentTask.history.map((subTask) => QueryHistorySheet(subTask))}
                     <Collapse in={isCollapse}>
-                        <br />
                         <Grid container spacing={2}>
                             <Grid item xs={12} sm={12}>
                                 <br />
@@ -97,6 +98,9 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
                         </Grid>
                         <br />
                     </Collapse>
+                    <b>Sentence:</b>
+                    <br />
+                    <span>{highlightedNL(currentTask?.nl, highlightList)}</span>
                     <div style={{ textAlign: "center" }}>
                         <IconButton onClick={expandCollapseHandler}>
                             <ExpandMoreIcon sx={style} />

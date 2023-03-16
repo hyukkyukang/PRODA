@@ -74,16 +74,20 @@ function getEVQL(queryType) {
 }
 
 /* Fetch Task */
-function getTask(taskID = null, get_history = true) {
+function getTask(taskID = null, isSkip = false, getHistory = true) {
     // Connect to DB and retrieve Task
     const client = new pg();
-    console.log(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
+    // console.log(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
     client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
     // Insert new log
     var result = null;
     var results = null;
     if (taskID === null) {
         results = client.querySync(`SELECT * FROM ${collectionDBTaskTableName} WHERE id NOT IN (SELECT task_id FROM ${collectionDBCollectionTableName});`);
+    } else if (isSkip) {
+        results = client.querySync(
+            `SELECT * FROM ${collectionDBTaskTableName} WHERE id NOT IN (SELECT task_id FROM ${collectionDBCollectionTableName}) AND id > ${taskID};`
+        );
     } else {
         results = client.querySync(`SELECT * FROM ${collectionDBTaskTableName} WHERE id = ${taskID};`);
     }
@@ -92,7 +96,7 @@ function getTask(taskID = null, get_history = true) {
         result = results[0];
     }
     client.end();
-    console.log(`Retrieved result: ${JSON.stringify(result)}`);
+    // console.log(`Retrieved result: ${JSON.stringify(result)}`);
     // Handle empty result
     if (result == null) {
         console.warn("No task returned from DB.");
@@ -114,9 +118,9 @@ function getTask(taskID = null, get_history = true) {
     delete result.table_excerpt_path;
     // Append history if there are any
     const history = [];
-    if (get_history) {
+    if (getHistory) {
         for (const task_id of result.history_task_ids) {
-            const history_task = getTask(task_id, false);
+            const history_task = getTask(task_id, false, false);
             history.push(history_task);
         }
     }
@@ -132,8 +136,8 @@ function getTask(taskID = null, get_history = true) {
         tableExcerpt: table_excerpt_object,
         resultTable: result_table_object,
         history: history,
-        blockId: null,
-        taskId: result.id,
+        blockID: null,
+        taskID: result.id,
     };
 }
 
@@ -225,7 +229,7 @@ function setNewConfig(newConfig) {
 /* Log worker answer */
 function logWorkerAnswer(logData) {
     // Get values from answer
-    const task_id = logData.task.taskId;
+    const task_id = logData.task.taskID;
     const user_id = logData.workerId;
     const is_correct = "isCorrect" in logData.answer ? logData.answer.isCorrect : null;
     const nl = logData.answer.nl.replace(/'/g, "\\'");

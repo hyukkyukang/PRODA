@@ -6,11 +6,10 @@ export interface Task {
     sql: string;
     evql: EVQLTree;
     queryType: number;
-    taskType: number;
     dbName: string;
     tableExcerpt: { key: string }[];
     resultTable: { key: string }[];
     history: Task[];
-    blockId: string;
-    taskId: number;
+    blockID: string;
+    taskID: number;
 }
