@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS task (
     nl VARCHAR(512) NOT NULL,
     sql VARCHAR(1024) NOT NULL,
     query_type VARCHAR(64) NOT NULL,
-    evqa_path VARCHAR(256) NOT NULL,
+    evql_path VARCHAR(256) NOT NULL,
     table_excerpt_path VARCHAR(256) DEFAULT NULL,
     result_table_path VARCHAR(256) DEFAULT NULL,
     nl_mapping_path VARCHAR(256) DEFAULT NULL,

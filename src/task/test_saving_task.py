@@ -16,21 +16,21 @@ if __name__ == "__main__":
     db_name = "dummy_db_name"
     task_type = 2
 
-    # Save evqa
-    evqa = query.evqa
-    evqa_path = os.path.join(DATA_DIR, "evqa.pkl")
-    save_data(evqa, evqa_path)
+    # Save evql
+    evql = query.evql
+    evql_path = os.path.join(DATA_DIR, "evql.pkl")
+    save_data(evql, evql_path)
 
     # Save table_excerpt
-    table_excerpt = query.evqa.node.table_excerpt
+    table_excerpt = query.evql.node.table_excerpt
     table_excerpt_path = os.path.join(DATA_DIR, "table_excerpt.pkl")
     save_data(table_excerpt, table_excerpt_path)
 
     # Save result_table
-    result_table = query.evqa.node.table_excerpt
+    result_table = query.evql.node.table_excerpt
     result_table_path = os.path.join(DATA_DIR, "result_table.pkl")
     save_data(result_table, result_table_path)
 
-    task_id = save_task_in_db(nl, sql, evqa_path, query_type, table_excerpt_path, result_table_path, db_name, task_type)
+    task_id = save_task_in_db(nl, sql, evql_path, query_type, table_excerpt_path, result_table_path, db_name, task_type)
 
     print("Done!")

@@ -90,6 +90,8 @@ function getTask(taskID, getHistory = true) {
         console.warn(`Task ${taskID} not found in DB.`);
         return null;
     }
+    // Check if there is any worker said the given NL is incorrect, then, replace with the new nl
+
     // Get file paths
     const evqa_path = result.evqa_path;
     const result_table_path = result.result_table_path;

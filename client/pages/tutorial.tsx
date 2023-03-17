@@ -1,5 +1,5 @@
 import { Button, Divider, Grid } from "@mui/material";
-import { MouseEventHandler, useEffect, useState, useMemo } from "react";
+import { MouseEventHandler, useState, useMemo } from "react";
 import { useQuery } from "react-query";
 import { fetchEVQA, runEVQA, runSQL } from "../api/connect";
 import { PGResultToTableExcerpt, PGResultInterface } from "../components/TableExcerpt/Postgres";
@@ -57,10 +57,6 @@ const Tutorial = () => {
         [queryResultQuery?.data]
     );
 
-    const navigateToDemoPage: MouseEventHandler = (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
-        window.open(`handsOnEVQA?queryName=${selectedSection.exampleQueryName}`, "_blank", "noopener,noreferrer");
-    };
-
     const selectPrevTutorialHandler: MouseEventHandler = (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
         let index = allTutorialSections.indexOf(selectedSection);
         if (index != 0) {
@@ -95,11 +91,6 @@ const Tutorial = () => {
                     <EVQATables evqaRoot={evqa} editable={false} />
                     <p> Below is the query result from the Demo Database: </p>
                     <TableExcerpt queryResult={queryResult} />
-                    <br />
-                    <Button variant="contained" color="success" size="medium" onClick={navigateToDemoPage}>
-                        {"Try it Yourself>>"}{" "}
-                    </Button>
-                    <br />
                     <br />
                     <Divider light={false} sx={{ marginTop: "2px", marginBottom: "2px" }} />
                     <br />
