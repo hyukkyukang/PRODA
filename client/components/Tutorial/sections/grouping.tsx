@@ -1,7 +1,7 @@
 import Spreadsheet from "react-spreadsheet-custom";
 
 import ITutorialSection from "./abstractSection";
-import { EVQLColumnIndicator } from "../../VQL/EVQLColumnIndicator";
+import { EVQAColumnIndicator } from "../../VQA/EVQAColumnIndicator";
 import { GroupingSyntaxExample } from "../syntaxExamples";
 
 export const SyntaxDescription = () => {
@@ -16,7 +16,7 @@ export const SyntaxDescription = () => {
                 className="syntaxExample"
                 data={GroupingSyntaxExample.rows}
                 columnLabels={GroupingSyntaxExample.headers}
-                ColumnIndicator={EVQLColumnIndicator}
+                ColumnIndicator={EVQAColumnIndicator}
             />
         </>
     );
@@ -28,7 +28,7 @@ export const GroupingSection: ITutorialSection = {
         'The Grouping operation groups rows that have the same values into summary rows, like "find the number of customers in each country".\
                 \nThe Grouping operation is often used with aggregate functions (e.g. min, max, avg, count, and sum) to group the result-set by one or more columns.',
     exampleQueryName: "groupBy",
-    exampleDescription: " The following EVQL Groups data by the column 'model' and projects the name and number of models.",
+    exampleDescription: " The following EVQA Groups data by the column 'model' and projects the name and number of models.",
     demoDBName: "Overwrite a demo database name here",
     syntaxExamples: [GroupingSyntaxExample],
     syntaxDescription: SyntaxDescription(),

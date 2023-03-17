@@ -60,7 +60,7 @@ export const SideBar = (params: ISelectedSection): React.ReactElement => {
                     onMouseLeave={handleMouseLeave}
                 >
                     {" "}
-                    EVQL {value.title}{" "}
+                    EVQA {value.title}{" "}
                 </ListItem>
             ))}
             <div style={{ fontWeight: "bold", fontSize: "20px" }}>
@@ -76,7 +76,7 @@ export const SideBar = (params: ISelectedSection): React.ReactElement => {
                     onMouseLeave={handleMouseLeave}
                 >
                     {" "}
-                    EVQL {value.title}{" "}
+                    EVQA {value.title}{" "}
                 </ListItem>
             ))}
         </>

@@ -3,14 +3,14 @@ import { Container, Button, Select, MenuItem, Grid, SelectChangeEvent, FormContr
 import { AiFillPlusSquare, AiFillCloseCircle } from "react-icons/ai";
 import { IoMdRemoveCircleOutline } from "react-icons/io";
 
-import { EVQLTree, EVQLNode, Header } from "./EVQL";
-import { Coordinate } from "./EVQLTable";
+import { EVQATree, EVQANode, Header } from "./EVQA";
+import { Coordinate } from "./EVQATable";
 import { getNode, parseExpression, conditionToExpression } from "./utils";
 import { isEmptyObject, removeMultipleSpaces } from "../../utils";
 
 export interface ISideBar {
-    evqlRoot: EVQLTree;
-    setEVQL: React.Dispatch<React.SetStateAction<EVQLTree>>;
+    evqaRoot: EVQATree;
+    setEVQA: React.Dispatch<React.SetStateAction<EVQATree>>;
     selectedCoordinate: Coordinate | undefined;
     showSideBar: boolean;
     setShowSideBar: React.Dispatch<React.SetStateAction<boolean>>;
@@ -63,12 +63,12 @@ interface IExpressionData {
 }
 
 export const SideBar = (props: ISideBar) => {
-    const { evqlRoot, setEVQL, showSideBar, selectedCoordinate, setShowSideBar } = props;
+    const { evqaRoot, setEVQA, showSideBar, selectedCoordinate, setShowSideBar } = props;
 
     // Local variables
-    const selectedEVQLNode: EVQLNode = useMemo(() => getNode(evqlRoot, selectedCoordinate?.tableIndices), [evqlRoot, selectedCoordinate]);
-    const selectedHeaders = useMemo(() => selectedEVQLNode?.projection.headers, [selectedEVQLNode, evqlRoot]);
-    const selectedClauses = useMemo(() => selectedEVQLNode?.predicate.clauses, [selectedEVQLNode, evqlRoot]);
+    const selectedEVQANode: EVQANode = useMemo(() => getNode(evqaRoot, selectedCoordinate?.tableIndices), [evqaRoot, selectedCoordinate]);
+    const selectedHeaders = useMemo(() => selectedEVQANode?.projection.headers, [selectedEVQANode, evqaRoot]);
+    const selectedClauses = useMemo(() => selectedEVQANode?.predicate.clauses, [selectedEVQANode, evqaRoot]);
     const selectedConditions = useMemo(
         () =>
             !isEmptyObject(selectedClauses) && selectedCoordinate && isCellSelected(selectedCoordinate)
@@ -77,8 +77,8 @@ export const SideBar = (props: ISideBar) => {
         [selectedClauses, selectedCoordinate]
     );
     const selectedHeaderName = useMemo(
-        () => (selectedEVQLNode && selectedCoordinate ? selectedEVQLNode.headers[selectedCoordinate.colIdx] : ""),
-        [selectedCoordinate, selectedEVQLNode, evqlRoot]
+        () => (selectedEVQANode && selectedCoordinate ? selectedEVQANode.headers[selectedCoordinate.colIdx] : ""),
+        [selectedCoordinate, selectedEVQANode, evqaRoot]
     );
     const [selectedExpressions, setSelectedExpressions] = React.useState<IExpressionData[]>([]);
 
@@ -91,24 +91,24 @@ export const SideBar = (props: ISideBar) => {
     const addProjectionHandler = () => {
         if (selectedCoordinate == undefined) return;
         // If Projection headers of this colId is less than 4, add a new projection
-        const numOfProjectionForSelectedCol = selectedEVQLNode?.projection.headers.filter((header) => header.id == selectedCoordinate.colIdx).length;
+        const numOfProjectionForSelectedCol = selectedEVQANode?.projection.headers.filter((header) => header.id == selectedCoordinate.colIdx).length;
         if (numOfProjectionForSelectedCol < 5) {
-            selectedEVQLNode?.projection.headers.push({ id: selectedCoordinate.colIdx, agg_type: null });
-            setEVQL(Object.assign({}, evqlRoot));
+            selectedEVQANode?.projection.headers.push({ id: selectedCoordinate.colIdx, agg_type: null });
+            setEVQA(Object.assign({}, evqaRoot));
         }
     };
 
     const removeProjectionHandler = (idx: number) => {
-        selectedEVQLNode?.projection.headers.splice(idx, 1);
-        setEVQL(Object.assign({}, evqlRoot));
+        selectedEVQANode?.projection.headers.splice(idx, 1);
+        setEVQA(Object.assign({}, evqaRoot));
     };
 
     const modifyAggTypeHandler = (idx: number, event: SelectChangeEvent<number>) => {
         // Set aggregation function to "idx" element;
         const value: number | string = event?.target?.value;
         const aggType: number = typeof value == "number" ? value : parseInt(value);
-        selectedEVQLNode.projection.headers[idx]["agg_type"] = aggType;
-        setEVQL(Object.assign({}, evqlRoot));
+        selectedEVQANode.projection.headers[idx]["agg_type"] = aggType;
+        setEVQA(Object.assign({}, evqaRoot));
     };
 
     // Condition Handlers
@@ -139,12 +139,12 @@ export const SideBar = (props: ISideBar) => {
         conditionArrayToUse.length = 0;
         // Parse expression
         selectedExpressions.forEach((expressionData) => {
-            const newcondition = parseExpression(expressionData.expression, selectedEVQLNode.headers);
+            const newcondition = parseExpression(expressionData.expression, selectedEVQANode.headers);
             // If successfully parsed, add it to the condition array
             if (newcondition) conditionArrayToUse.push(newcondition);
         });
         // Update states
-        setEVQL(Object.assign({}, evqlRoot));
+        setEVQA(Object.assign({}, evqaRoot));
         setShowSideBar(false);
     };
 
@@ -253,7 +253,7 @@ export const SideBar = (props: ISideBar) => {
             const existingExpressions: IExpressionData[] = selectedConditions
                 ? selectedConditions.map((condition) => ({
                       colIdx: condition.header_id,
-                      expression: conditionToExpression(condition, selectedEVQLNode.headers),
+                      expression: conditionToExpression(condition, selectedEVQANode.headers),
                   }))
                 : [];
             // Add default textfield if there are no expressions

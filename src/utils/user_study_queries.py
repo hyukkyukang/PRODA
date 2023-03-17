@@ -19,7 +19,7 @@ from src.query_tree.operator import Aggregation, Clause, Condition, Foreach, Pro
 from src.query_tree.query_tree import Attach, BaseTable, QueryBlock, QueryTree, Refer, get_global_index
 from src.table_excerpt.table_excerpt import TableExcerpt
 from src.utils.user_study_table_excerpt import MovieDB, AdvisingDB
-from src.VQL.EVQL import Aggregator, Clause, EVQLNode, EVQLTree, Grouping, Header, Operator, Ordering, Selecting
+from src.VQA.EVQA import Aggregator, Clause, EVQANode, EVQATree, Grouping, Header, Operator, Ordering, Selecting
 from src.utils.example_queries import TestQuery, find_nth_occurrence_index
 
 
@@ -31,9 +31,9 @@ class MovieQuery1(TestQuery):
         self._DB = MovieDB()
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node
-        node = EVQLNode(f"movie_query_1", self._DB.get_table("movie"))
+        node = EVQANode(f"movie_query_1", self._DB.get_table("movie"))
         node.add_projection(Header(node.headers.index("title")))
 
         # Create conditions for the node
@@ -42,7 +42,7 @@ class MovieQuery1(TestQuery):
         node.add_predicate(clause)
 
         # Construct tree
-        return EVQLTree(node)
+        return EVQATree(node)
 
     @misc_utils.property_with_cache
     def query_graphs(self) -> List[Query_graph]:
@@ -87,9 +87,9 @@ class MovieQuery2(TestQuery):
         self._DB = MovieDB()
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node
-        node = EVQLNode(f"movie_query_2", self._DB.get_table("actor"))
+        node = EVQANode(f"movie_query_2", self._DB.get_table("actor"))
         node.add_projection(Header(node.headers.index("first_name")))
         node.add_projection(Header(node.headers.index("last_name")))
 
@@ -99,7 +99,7 @@ class MovieQuery2(TestQuery):
         node.add_predicate(clause)
 
         # Construct tree
-        return EVQLTree(node)
+        return EVQATree(node)
 
     @misc_utils.property_with_cache
     def query_graphs(self) -> List[Query_graph]:
@@ -146,7 +146,7 @@ class MovieQuery3(TestQuery):
         self._DB = MovieDB()
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # init_table1 = TableExcerpt.fake_join("movie_rating_reviewer", [self._DB.get_table("movie"), self._DB.get_table("rating"), self._DB.get_table("reviewer")], ["movie_", "rating_", "reviewer_"])
         init_table1 = TableExcerpt.fake_join(
             "movie_rating_reviewer",
@@ -157,12 +157,12 @@ class MovieQuery3(TestQuery):
         #    (0, init_table1.headers.index("id"), "id"),
         #    (0, init_table1.headers.index("stars"), "stars"),
         #    (1, init_table1.headers.index("id"), "id"),
-        # ]# (evql_row_idx, evql_colum_idx, sql_colum_name)
+        # ]# (evqa_row_idx, evqa_colum_idx, sql_colum_name)
 
         # Create tree node
-        node = EVQLNode(f"movie_query_3", init_table1)
+        node = EVQANode(f"movie_query_3", init_table1)
         print(node.headers)
-        # node_1 = EVQLNode(f"movie_query_3", init_table1, mapping=mapping1)
+        # node_1 = EVQANode(f"movie_query_3", init_table1, mapping=mapping1)
         # node.add_projection(Header(node.headers.index("movie_title")))
         # node.add_projection(Header(node.headers.index("rating_stars")))
         node.add_projection(Header(node.headers.index("title")))
@@ -177,7 +177,7 @@ class MovieQuery3(TestQuery):
         node.add_predicate(clause)
 
         # Construct tree
-        return EVQLTree(node)
+        return EVQATree(node)
 
     @misc_utils.property_with_cache
     def query_graphs(self) -> List[Query_graph]:
@@ -246,7 +246,7 @@ GROUP BY T3.id;
         self._DB = MovieDB()
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # init_table1 = TableExcerpt.fake_join("movie_rating_reviewer", [self._DB.get_table("movie"), self._DB.get_table("rating"), self._DB.get_table("reviewer")], ["movie_", "rating_", "reviewer_"])
         init_table1 = TableExcerpt.fake_join(
             "movie_direction_director",
@@ -259,12 +259,12 @@ GROUP BY T3.id;
         #    (0, init_table1.headers.index("id"), "id"),
         #    (0, init_table1.headers.index("stars"), "stars"),
         #    (1, init_table1.headers.index("id"), "id"),
-        # ]# (evql_row_idx, evql_colum_idx, sql_colum_name)
+        # ]# (evqa_row_idx, evqa_colum_idx, sql_colum_name)
 
         # Create tree node
-        node = EVQLNode(f"movie_query_4", init_table1)
+        node = EVQANode(f"movie_query_4", init_table1)
         print(node.headers)
-        # node_1 = EVQLNode(f"movie_query_3", init_table1, mapping=mapping1)
+        # node_1 = EVQANode(f"movie_query_3", init_table1, mapping=mapping1)
         # node.add_projection(Header(node.headers.index("movie_title")))
         # node.add_projection(Header(node.headers.index("rating_stars")))
         node.add_projection(Header(node.headers.index("director_id")))
@@ -279,7 +279,7 @@ GROUP BY T3.id;
         node.add_predicate(Clause([Grouping(node.headers.index("director_id"))]))
 
         # Construct tree
-        return EVQLTree(node)
+        return EVQATree(node)
 
     @misc_utils.property_with_cache
     def query_graphs(self) -> List[Query_graph]:
@@ -358,7 +358,7 @@ class MovieQuery5(TestQuery):
         self._DB = MovieDB()
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node 1
         init_table1 = TableExcerpt.fake_join(
             "movie_rating",
@@ -374,7 +374,7 @@ class MovieQuery5(TestQuery):
             (1, init_table1.headers.index("movie_id"), "id"),
         ]
 
-        node_1 = EVQLNode(f"MovieQuery5_B1", init_table1, mapping=mapping1)
+        node_1 = EVQANode(f"MovieQuery5_B1", init_table1, mapping=mapping1)
         node_1.add_projection(Header(node_1.headers.index("movie_id"), alias="movie_id"))
         node_1.add_projection(
             Header(node_1.headers.index("rating_stars"), agg_type=Aggregator.max, alias="max_rating_stars")
@@ -397,7 +397,7 @@ class MovieQuery5(TestQuery):
             (2, init_table2.headers.index("director_last_name"), "last_name"),
         ]
 
-        node_2 = EVQLNode(f"MovieQuery5_B2", init_table2, mapping=mapping2)
+        node_2 = EVQANode(f"MovieQuery5_B2", init_table2, mapping=mapping2)
         node_2.add_projection(Header(node_2.headers.index("movie_id"), alias="movie_id"))
         node_2.add_predicate(
             Clause(
@@ -429,7 +429,7 @@ class MovieQuery5(TestQuery):
             (1, init_table3.headers.index("rating_stars"), "stars"),
         ]
 
-        node_3 = EVQLNode(f"MovieQuery5_B3", init_table3, mapping=mapping3)
+        node_3 = EVQANode(f"MovieQuery5_B3", init_table3, mapping=mapping3)
         node_3.add_projection(Header(node_3.headers.index("movie_id"), alias="movie_id"))
         node_3.add_projection(
             Header(node_3.headers.index("rating_stars"), agg_type=Aggregator.avg, alias="avg_rating_stars")
@@ -464,13 +464,13 @@ class MovieQuery5(TestQuery):
             (1, node_3_result.headers.index("avg_rating_stars"), "avg_rating_stars"),
         ]
 
-        node_4 = EVQLNode(f"MovieQuery5_B4", node_3_result, mapping=mapping4)
+        node_4 = EVQANode(f"MovieQuery5_B4", node_3_result, mapping=mapping4)
         node_4.add_projection(Header(node_4.headers.index("movie_id"), alias="movie_id"))
         node_4.add_predicate(
             Clause([Selecting(node_4.headers.index("avg_rating_stars"), Operator.greaterThanOrEqual, 5.5)])
         )
 
-        return EVQLTree(node_4, children=[EVQLTree(node_3, children=[EVQLTree(node_2), EVQLTree(node_1)])])
+        return EVQATree(node_4, children=[EVQATree(node_3, children=[EVQATree(node_2), EVQATree(node_1)])])
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -895,7 +895,7 @@ class MovieQuery6(TestQuery):
         self._DB = MovieDB()
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         init_table1 = TableExcerpt.fake_join(
             "movie_rating_reviewer",
             [self._DB.get_table("movie"), self._DB.get_table("rating"), self._DB.get_table("reviewer")],
@@ -907,10 +907,10 @@ class MovieQuery6(TestQuery):
         #    (0, init_table1.headers.index("id"), "id"),
         #    (0, init_table1.headers.index("stars"), "stars"),
         #    (1, init_table1.headers.index("id"), "id"),
-        # ]# (evql_row_idx, evql_colum_idx, sql_colum_name)
+        # ]# (evqa_row_idx, evqa_colum_idx, sql_colum_name)
 
         # Create tree node
-        node_1 = EVQLNode(f"movie_query_6_B1", init_table1)
+        node_1 = EVQANode(f"movie_query_6_B1", init_table1)
         node_1.add_projection(Header(node_1.headers.index("reviewer_name")))
         node_1.add_projection(
             Header(node_1.headers.index("movie_rating_reviewer", agg_type=Aggregator.count, alias="cnt"))
@@ -924,13 +924,13 @@ class MovieQuery6(TestQuery):
 
         result_table = result_tables[0]
 
-        node_2 = EVQLNode(f"movie_query_6_B2", result_table)
+        node_2 = EVQANode(f"movie_query_6_B2", result_table)
         node_2.add_projection(Header(node_2.headers.index("reviewer_name")))
         cond3 = Selecting(find_nth_occurrence_index(node_2.headers, "cnt", 1), Operator.greaterThan, "1")
         node_2.add_predicate(Clause([cond3]))
 
         # Construct tree
-        return EVQLTree(node_2, children=[EVQLTree(node_1)])
+        return EVQATree(node_2, children=[EVQATree(node_1)])
 
     @misc_utils.property_with_cache
     def query_graphs(self) -> List[Query_graph]:

@@ -5,8 +5,8 @@ export const SyntaxDescription = () => {
         <>
             <h2>Selection on Aggregated Results Syntax</h2>
             <p>
-                To perform selection on aggregated results, we first write an EVQL with grouping operation. And we write another EVQL with a condition on the
-                result of the first EVQL query.
+                To perform selection on aggregated results, we first write an EVQA with grouping operation. And we write another EVQA with a condition on the
+                result of the first EVQA query.
             </p>
         </>
     );
@@ -14,7 +14,7 @@ export const SyntaxDescription = () => {
 
 export const Selection3Section: ITutorialSection = {
     title: "Selection on Aggregated Results",
-    description: "EVQL allows you to add selection on aggregated results",
+    description: "EVQA allows you to add selection on aggregated results",
     exampleQueryName: "having",
     exampleDescription:
         "In the below example, we first group models and find the average max_speed of each model.\

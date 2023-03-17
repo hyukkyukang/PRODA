@@ -56,23 +56,23 @@ function getConfig() {
 }
 
 /* Fetch information */
-function getEVQL(queryType) {
+function getEVQA(queryType) {
     const spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/utils/example_queries.py`, "--query_type", queryType]);
-    const json_dumped_evql = spawnedProcess.stdout.toString();
-    var evql = null;
+    const json_dumped_evqa = spawnedProcess.stdout.toString();
+    var evqa = null;
     // Check if empty
-    if (!json_dumped_evql) {
-        console.warn("No EVQL returned from Python script.");
+    if (!json_dumped_evqa) {
+        console.warn("No EVQA returned from Python script.");
     } else {
         // Try to parse string into JSON
         try {
-            evql = JSON.parse(json_dumped_evql);
+            evqa = JSON.parse(json_dumped_evqa);
         } catch (err) {
             console.warn(`Error parsing JSON: ${err}`);
-            console.warn(`JSON string: ${json_dumped_evql}`);
+            console.warn(`JSON string: ${json_dumped_evqa}`);
         }
     }
-    return evql;
+    return evqa;
 }
 
 /* Fetch Task */
@@ -91,17 +91,17 @@ function getTask(taskID, getHistory = true) {
         return null;
     }
     // Get file paths
-    const evql_path = result.evql_path;
+    const evqa_path = result.evqa_path;
     const result_table_path = result.result_table_path;
     const table_excerpt_path = result.table_excerpt_path;
     const nl_mapping_path = result.nl_mapping_path;
     // Retrieve data from Python script
-    const evql_object = readJsonFile(evql_path);
+    const evqa_object = readJsonFile(evqa_path);
     const result_table_object = readJsonFile(result_table_path);
     const table_excerpt_object = readJsonFile(table_excerpt_path);
     const nl_mapping_object = readJsonFile(nl_mapping_path);
     // Replace path with the real data
-    delete result.evql_path;
+    delete result.evqa_path;
     delete result.result_table_path;
     delete result.table_excerpt_path;
     // Append history if there are any
@@ -116,7 +116,7 @@ function getTask(taskID, getHistory = true) {
         nl: result.nl,
         nl_mapping: nl_mapping_object,
         sql: result.sql,
-        evql: evql_object,
+        evqa: evqa_object,
         queryType: result.query_type,
         taskType: result.task_type,
         dbName: result.db_name,
@@ -228,7 +228,7 @@ function getLogData() {
             id: result[step].id,
             given_nl: result[step].given_nl,
             given_sql: result[step].given_sql,
-            given_evql: JSON.parse(result[step].given_evql),
+            given_evqa: JSON.parse(result[step].given_evqa),
             given_queryType: result[step].given_query_type,
             given_tableExcerpt: JSON.parse(result[step].given_table_excerpt),
             given_resultTable: JSON.parse(result[step].given_result_table),
@@ -277,8 +277,8 @@ function logWorkerAnswer(logData) {
 }
 
 /* Utils */
-function EVQLToSQL(evql) {
-    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/VQL/EVQL_to_SQL.py`, "--evql_in_json_str", JSON.stringify(evql)]);
+function EVQAToSQL(evqa) {
+    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/VQA/EVQA_to_SQL.py`, "--evqa_in_json_str", JSON.stringify(evqa)]);
     var result = spawnedProcess.stdout.toString();
     return result;
 }
@@ -303,12 +303,12 @@ module.exports = {
     readPickleFile: readPickleFile,
     readJsonFile: readJsonFile,
     getConfig: getConfig,
-    getEVQL: getEVQL,
+    getEVQA: getEVQA,
     getTask: getTask,
     getTaskSet: getTaskSet,
     getLogData: getLogData,
     setNewConfig: setNewConfig,
     logWorkerAnswer: logWorkerAnswer,
-    EVQLToSQL: EVQLToSQL,
+    EVQAToSQL: EVQAToSQL,
     queryDB: queryDB,
 };

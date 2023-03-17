@@ -1,7 +1,7 @@
 import Spreadsheet from "react-spreadsheet-custom";
 
 import ITutorialSection from "./abstractSection";
-import { EVQLColumnIndicator } from "../../VQL/EVQLColumnIndicator";
+import { EVQAColumnIndicator } from "../../VQA/EVQAColumnIndicator";
 import { OrderingSyntaxExample } from "../syntaxExamples";
 
 export const SyntaxDescription = () => {
@@ -13,7 +13,7 @@ export const SyntaxDescription = () => {
                 className="syntaxExample"
                 data={OrderingSyntaxExample.rows}
                 columnLabels={OrderingSyntaxExample.headers}
-                ColumnIndicator={EVQLColumnIndicator}
+                ColumnIndicator={EVQAColumnIndicator}
             />
         </>
     );
@@ -23,7 +23,7 @@ export const OrderingSection: ITutorialSection = {
     title: "Ordering",
     description: "Ordering operation is used to sort the result-set in ascending or descending order.",
     exampleQueryName: "orderBy",
-    exampleDescription: "The following EVQL projects id of cars which are manufactured in year 2010 by descending order of horsepower.",
+    exampleDescription: "The following EVQA projects id of cars which are manufactured in year 2010 by descending order of horsepower.",
     demoDBName: "Overwrite a demo database name here",
     syntaxExamples: [OrderingSyntaxExample],
     syntaxDescription: SyntaxDescription(),

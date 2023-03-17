@@ -123,7 +123,7 @@ export const Collection = (props: any) => {
             <br />
             {/* Show saquery information for the current task */}
             <Paper elevation={2}>
-                <OverallTaskDescription evql={currentTask?.evql} />
+                <OverallTaskDescription evqa={currentTask?.evqa} />
             </Paper>
             <br />
             <Paper elevation={2}>

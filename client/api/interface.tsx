@@ -24,11 +24,11 @@ export interface IFetchTaskResponse {
         tasks: Task[];
     };
 }
-export interface IRunEVQL {
-    evqlStr: string;
+export interface IRunEVQA {
+    evqaStr: string;
 }
 
-export interface IRunEVQLResponse {
+export interface IRunEVQAResponse {
     sql: string;
     result: any[];
 }

@@ -1,7 +1,7 @@
 import Spreadsheet from "react-spreadsheet-custom";
 
 import ITutorialSection from "./abstractSection";
-import { EVQLColumnIndicator } from "../../VQL/EVQLColumnIndicator";
+import { EVQAColumnIndicator } from "../../VQA/EVQAColumnIndicator";
 import { SelectionOrSyntaxExample, SelectionAndSyntaxExample } from "../syntaxExamples";
 
 export const SyntaxDescription = () => {
@@ -13,7 +13,7 @@ export const SyntaxDescription = () => {
                 className="syntaxExample"
                 data={SelectionOrSyntaxExample.rows}
                 columnLabels={SelectionOrSyntaxExample.headers}
-                ColumnIndicator={EVQLColumnIndicator}
+                ColumnIndicator={EVQAColumnIndicator}
             />
             <h2>Or Syntax</h2>
             <p>
@@ -24,7 +24,7 @@ export const SyntaxDescription = () => {
                 className="syntaxExample"
                 data={SelectionAndSyntaxExample.rows}
                 columnLabels={SelectionAndSyntaxExample.headers}
-                ColumnIndicator={EVQLColumnIndicator}
+                ColumnIndicator={EVQAColumnIndicator}
             />
         </>
     );
@@ -32,10 +32,10 @@ export const SyntaxDescription = () => {
 
 export const Selection2Section: ITutorialSection = {
     title: "And, Or",
-    description: "With EVQL, we can apply multiple conditions with OR or AND operators",
+    description: "With EVQA, we can apply multiple conditions with OR or AND operators",
     exampleQueryName: "andOr",
     exampleDescription:
-        "The following EVQL applies conditons on column 'model' and 'year'.\nIt returns records that has model equal to 'tesla model x' and year is equal to 2011 or 2012",
+        "The following EVQA applies conditons on column 'model' and 'year'.\nIt returns records that has model equal to 'tesla model x' and year is equal to 2011 or 2012",
     demoDBName: "Overwrite a demo database name here",
     syntaxExamples: [SelectionOrSyntaxExample, SelectionAndSyntaxExample],
     syntaxDescription: SyntaxDescription(),

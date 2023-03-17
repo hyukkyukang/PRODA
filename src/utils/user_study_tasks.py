@@ -6,7 +6,7 @@ from pylogos.translate import translate
 from src.query_tree.query_tree import QueryTree
 from src.task.task import Task
 from src.utils.user_study_queries import MovieQuery1, MovieQuery2, MovieQuery3, MovieQuery5, MovieQuery6
-from src.VQL.EVQL import EVQLTree
+from src.VQA.EVQA import EVQATree
 import hkkang_utils.file as file_utils
 from src.utils.example_tasks import create_nl_and_mapping
 from src.utils.data_manager import save_task_set_in_db
@@ -17,13 +17,13 @@ def MovieTask1(query_object):
     config = file_utils.read_yaml_file(config_file_path)
     task_save_dir_path = config["taskSaveDirPath"]
 
-    evql_object = query_object.evql
+    evqa_object = query_object.evqa
     query_graphs = query_object.query_graphs
     sql = query_object.sql
 
     # Create natural language
-    evql1 = evql_object
-    nl1, mapping1 = create_nl_and_mapping(query_graphs[0], evql1)
+    evqa1 = evqa_object
+    nl1, mapping1 = create_nl_and_mapping(query_graphs[0], evqa1)
     result = query_object.result_tables[0]
 
     # Create and save task1
@@ -31,11 +31,11 @@ def MovieTask1(query_object):
         nl=nl1,
         nl_mapping=mapping1,
         sql=sql,
-        evql=evql1,
+        evqa=evqa1,
         query_type="SelectionQuery",
         task_type=1,
         db_name="Movie",
-        table_excerpt=evql1.node.table_excerpt,
+        table_excerpt=evqa1.node.table_excerpt,
         result_table=result,
         history_task_ids=[],
     )
@@ -50,32 +50,32 @@ def MovieTask2(query_object):
     config = file_utils.read_yaml_file(config_file_path)
     task_save_dir_path = config["taskSaveDirPath"]
 
-    evql_object = query_object.evql
+    evqa_object = query_object.evqa
     query_graphs = query_object.query_graphs
 
     # Create natural language
-    evql1 = evql_object.children[0].children[1]
-    evql2 = evql_object.children[0].children[0]
-    evql3 = evql_object.children[0]
-    evql4 = evql_object
+    evqa1 = evqa_object.children[0].children[1]
+    evqa2 = evqa_object.children[0].children[0]
+    evqa3 = evqa_object.children[0]
+    evqa4 = evqa_object
 
     result_tables = query_object.result_tables
 
-    nl4, mapping4 = create_nl_and_mapping(query_graphs[0], evql4)
-    nl3, mapping3 = create_nl_and_mapping(query_graphs[1], evql3)
-    nl2, mapping2 = create_nl_and_mapping(query_graphs[2], evql2)
-    nl1, mapping1 = create_nl_and_mapping(query_graphs[3], evql1)
+    nl4, mapping4 = create_nl_and_mapping(query_graphs[0], evqa4)
+    nl3, mapping3 = create_nl_and_mapping(query_graphs[1], evqa3)
+    nl2, mapping2 = create_nl_and_mapping(query_graphs[2], evqa2)
+    nl1, mapping1 = create_nl_and_mapping(query_graphs[3], evqa1)
 
     # Create and save task1
     sub_task1 = Task(
         nl=nl1,
         nl_mapping=mapping1,
         sql="SELECT Max(R2.stars) AS max_stars, M2.id as m_id FROM movie AS M2, rating AS R2 GROUP BY M2.id",
-        evql=evql1,
+        evqa=evqa1,
         query_type="GroupbyQuery",
         task_type=1,
         db_name="IMDB",
-        table_excerpt=evql1.node.table_excerpt,
+        table_excerpt=evqa1.node.table_excerpt,
         result_table=result_tables[0],
         history_task_ids=[],
     )
@@ -87,11 +87,11 @@ def MovieTask2(query_object):
         nl=nl2,
         nl_mapping=mapping2,
         sql="SELECT M3.id FROM movie AS M3, direction AS MD, director AS D WHERE D.first_Name = 'spielberg' ADN D.last_Name = 'steven'",
-        evql=evql2,
+        evqa=evqa2,
         query_type="SelectionQuery",
         task_type=1,
         db_name="IMDB",
-        table_excerpt=evql2.node.table_excerpt,
+        table_excerpt=evqa2.node.table_excerpt,
         result_table=result_tables[1],
         history_task_ids=[],
     )
@@ -103,11 +103,11 @@ def MovieTask2(query_object):
         nl=nl3,
         nl_mapping=mapping3,
         sql="SELECT M1.id as id, avg(R1.stars) as avg_stars FROM movie AS M1, rating AS R1, B1, B2 WHERE R1.stars < B1.max_stars AND M1.id IN B2 AND B1.m_id = M1.id GROUP BY M1.id",
-        evql=evql3,
+        evqa=evqa3,
         query_type="CorrelatedNestedQuery",
         task_type=1,
         db_name="IMDB",
-        table_excerpt=evql3.node.table_excerpt,
+        table_excerpt=evqa3.node.table_excerpt,
         result_table=result_tables[2],
         history_task_ids=[task2_id, task1_id],
     )
@@ -119,11 +119,11 @@ def MovieTask2(query_object):
         nl=nl4,
         nl_mapping=mapping4,
         sql="SELECT B3.id as id FROM B3 WHERE B3.avg_stars >= 3",
-        evql=evql4,
+        evqa=evqa4,
         query_type="HavingQuery",
         task_type=1,
         db_name="IMDB",
-        table_excerpt=evql4.node.table_excerpt,
+        table_excerpt=evqa4.node.table_excerpt,
         result_table=result_tables[3],
         history_task_ids=[task3_id, task2_id, task1_id],
     )
@@ -138,28 +138,28 @@ def MovieTask3(query_object):
     config = file_utils.read_yaml_file(config_file_path)
     task_save_dir_path = config["taskSaveDirPath"]
 
-    evql_object = query_object.evql
+    evqa_object = query_object.evqa
     query_graphs = query_object.query_graphs
 
     # Create natural language
-    evql1 = evql_object.children[0]
-    evql2 = evql_object
+    evqa1 = evqa_object.children[0]
+    evqa2 = evqa_object
 
     result_tables = query_object.result_tables
 
-    nl2, mapping2 = create_nl_and_mapping(query_graphs[0], evql2)
-    nl1, mapping1 = create_nl_and_mapping(query_graphs[1], evql1)
+    nl2, mapping2 = create_nl_and_mapping(query_graphs[0], evqa2)
+    nl1, mapping1 = create_nl_and_mapping(query_graphs[1], evqa1)
 
     # Create and save task1
     sub_task1 = Task(
         nl=nl1,
         nl_mapping=mapping1,
         sql="Sub1",
-        evql=evql1,
+        evqa=evqa1,
         query_type="GroupbyQuery",
         task_type=1,
         db_name="IMDB",
-        table_excerpt=evql1.node.table_excerpt,
+        table_excerpt=evqa1.node.table_excerpt,
         result_table=result_tables[0],
         history_task_ids=[],
     )
@@ -171,11 +171,11 @@ def MovieTask3(query_object):
         nl=nl2,
         nl_mapping=mapping2,
         sql="Full",
-        evql=evql2,
+        evqa=evqa2,
         query_type="HavingQuery",
         task_type=1,
         db_name="IMDB",
-        table_excerpt=evql2.node.table_excerpt,
+        table_excerpt=evqa2.node.table_excerpt,
         result_table=result_tables[1],
         history_task_ids=[],
     )

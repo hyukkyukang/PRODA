@@ -8,7 +8,7 @@ import hkkang_utils.string as string_utils
 
 from src.table_excerpt.table_excerpt import TableExcerpt
 from src.utils.data_manager import save_task_in_db, save_json
-from src.VQL.EVQL import EVQLTree
+from src.VQA.EVQA import EVQATree
 
 
 class TaskTypes(IntEnum):
@@ -21,7 +21,7 @@ class Task:
     nl: str
     nl_mapping: Dict[str, Any]
     sql: str
-    evql: EVQLTree
+    evqa: EVQATree
     query_type: IntEnum
     task_type: IntEnum
     db_name: str
@@ -34,15 +34,15 @@ class Task:
     def save(cls, dir_path):
         # Generate file paths
         rand_id = string_utils.generate_random_str(size=10)
-        evql_file_path = os.path.join(dir_path, f"evql/{rand_id}.json")
+        evqa_file_path = os.path.join(dir_path, f"evqa/{rand_id}.json")
         table_excerpt_path = os.path.join(dir_path, f"table_excerpt/{rand_id}.json")
         result_table_path = os.path.join(dir_path, f"result_table/{rand_id}.json")
         nl_mapping_path = os.path.join(dir_path, f"nl_mapping/{rand_id}.json")
 
-        print(evql_file_path)
+        print(evqa_file_path)
 
         # Save as json file
-        save_json(cls.evql.dump_json(), evql_file_path)
+        save_json(cls.evqa.dump_json(), evqa_file_path)
         save_json(cls.table_excerpt.dump_json(), table_excerpt_path)
         save_json(cls.result_table.dump_json(), result_table_path)
         save_json(json.dumps(cls.nl_mapping), nl_mapping_path)
@@ -52,7 +52,7 @@ class Task:
             nl=cls.nl,
             sql=cls.sql,
             query_type=cls.query_type,
-            evql_path=evql_file_path,
+            evqa_path=evqa_file_path,
             table_excerpt_path=table_excerpt_path,
             result_table_path=result_table_path,
             nl_mapping_path=nl_mapping_path,
@@ -66,7 +66,7 @@ class Task:
             "nl": self.nl,
             "nl_mapping": self.nl_mapping,
             "sql": self.sql,
-            "evql": self.evql.dump_json(),
+            "evqa": self.evqa.dump_json(),
             "queryType": self.query_type,
             "taskType": self.task_type,
             "dbName": self.db_name,
@@ -82,7 +82,7 @@ class Task:
             nl=json_obj["nl"],
             nl_mapping=json_obj["nl_mapping"],
             sql=json_obj["sql"],
-            evql=EVQLTree.load_json(json_obj["evql"]),
+            evqa=EVQATree.load_json(json_obj["evqa"]),
             query_type=json_obj["queryType"],
             task_type=json_obj["taskType"],
             db_name=json_obj["dbName"],

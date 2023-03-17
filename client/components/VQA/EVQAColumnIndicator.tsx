@@ -1,15 +1,15 @@
 import classNames from "classnames";
 import React from "react";
 import { ColumnIndicatorComponent } from "react-spreadsheet-custom";
-import { HoveringDescriptionContext, IEVQLTableHeader } from "./EVQLTable";
+import { HoveringDescriptionContext, IEVQATableHeader } from "./EVQATable";
 import { operatorDescriptions } from "./operatorDescriptions";
 import { isEmptyObject } from "../../utils";
-import { aggFunctions } from "./EVQL";
+import { aggFunctions } from "./EVQA";
 import { getHeaderDescription } from "./utils";
 
-export const EVQLColumnIndicator: ColumnIndicatorComponent = ({ column, label, selected, selectedPoint, active, onSelect, activate }) => {
+export const EVQAColumnIndicator: ColumnIndicatorComponent = ({ column, label, selected, selectedPoint, active, onSelect, activate }) => {
     const { setX, setY, setDescription, setIsActive } = React.useContext(HoveringDescriptionContext);
-    const description = React.useMemo(() => (label ? getHeaderDescription(label as unknown as IEVQLTableHeader) : ""), [label]);
+    const description = React.useMemo(() => (label ? getHeaderDescription(label as unknown as IEVQATableHeader) : ""), [label]);
 
     // column is the id
     const handleClick = React.useCallback(
@@ -22,20 +22,20 @@ export const EVQLColumnIndicator: ColumnIndicatorComponent = ({ column, label, s
         },
         [onSelect, column, active, selected, selectedPoint]
     );
-    const evqlTableHeader = label as unknown as IEVQLTableHeader;
+    const evqaTableHeader = label as unknown as IEVQATableHeader;
 
     // If isToProject,
     var unselectedHeaderStyle = {};
     var selectedHeaderStyle = {};
-    var componentToDisplay: React.ReactElement = isEmptyObject(evqlTableHeader) ? <>{String(column)}</> : <>{evqlTableHeader.name}</>;
-    if (!isEmptyObject(evqlTableHeader) && evqlTableHeader.isToProject) {
+    var componentToDisplay: React.ReactElement = isEmptyObject(evqaTableHeader) ? <>{String(column)}</> : <>{evqaTableHeader.name}</>;
+    if (!isEmptyObject(evqaTableHeader) && evqaTableHeader.isToProject) {
         // Highlight the header background
         unselectedHeaderStyle = { background: "#FFDDA7", color: "black" };
         // Get all aggregation functions applied to this column
-        const aggFuncs = evqlTableHeader.aggFuncs.map((aggFuncId) => aggFunctions[aggFuncId]);
+        const aggFuncs = evqaTableHeader.aggFuncs.map((aggFuncId) => aggFunctions[aggFuncId]);
         componentToDisplay = (
             <>
-                <>{evqlTableHeader.name}</>
+                <>{evqaTableHeader.name}</>
                 <br />
                 {aggFuncs.join(", ") == "none" ? <></> : <div style={{ fontSize: "14px" }}>{"(" + aggFuncs.join(", ") + ")"}</div>}
             </>

@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import Tree from "react-d3-tree";
-import { EVQLTree } from "../VQL/EVQL";
+import { EVQATree } from "../VQA/EVQA";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 
@@ -13,10 +13,10 @@ export interface RawNodeDatum {
     children?: RawNodeDatum[];
 }
 
-const convertTaskToTreeData = (evql: EVQLTree): RawNodeDatum => {
+const convertTaskToTreeData = (evqa: EVQATree): RawNodeDatum => {
     return {
-        name: evql.node.name,
-        children: evql.children.map((child) => convertTaskToTreeData(child)),
+        name: evqa.node.name,
+        children: evqa.children.map((child) => convertTaskToTreeData(child)),
     };
 };
 
@@ -42,26 +42,26 @@ const getQueryTree = (data: RawNodeDatum, treeBreadth: number, level: number) =>
     );
 };
 
-const getWidth = (evql: EVQLTree): number => {
-    if (evql.children.length == 0) {
+const getWidth = (evqa: EVQATree): number => {
+    if (evqa.children.length == 0) {
         return 1;
     }
-    return evql.children.reduce((acc, child) => acc + getWidth(child as EVQLTree), 0);
+    return evqa.children.reduce((acc, child) => acc + getWidth(child as EVQATree), 0);
 };
 
-const getLevel = (evql: EVQLTree): number => {
-    if (evql.children.length == 0) {
+const getLevel = (evqa: EVQATree): number => {
+    if (evqa.children.length == 0) {
         return 1;
     }
-    const listOfLevels = evql.children.map((child) => getLevel(child as EVQLTree));
+    const listOfLevels = evqa.children.map((child) => getLevel(child as EVQATree));
     return Math.max(...listOfLevels) + 1;
 };
 
-export const OverallTaskDescription = (props: { evql: EVQLTree | null | undefined }) => {
-    const { evql } = props;
-    const treeData = useMemo<RawNodeDatum | null>(() => (evql ? convertTaskToTreeData(evql) : null), [evql]);
-    const treeLevel = useMemo<number>(() => (evql ? getLevel(evql) : 0), [evql]);
-    const treeBreadth = useMemo<number>(() => (evql ? getWidth(evql) : 0), [evql]);
+export const OverallTaskDescription = (props: { evqa: EVQATree | null | undefined }) => {
+    const { evqa } = props;
+    const treeData = useMemo<RawNodeDatum | null>(() => (evqa ? convertTaskToTreeData(evqa) : null), [evqa]);
+    const treeLevel = useMemo<number>(() => (evqa ? getLevel(evqa) : 0), [evqa]);
+    const treeBreadth = useMemo<number>(() => (evqa ? getWidth(evqa) : 0), [evqa]);
     const height = useMemo<number>(() => treeLevel * 150, [treeLevel]);
 
     return (

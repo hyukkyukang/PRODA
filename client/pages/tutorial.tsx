@@ -1,14 +1,14 @@
 import { Button, Divider, Grid } from "@mui/material";
 import { MouseEventHandler, useEffect, useState, useMemo } from "react";
 import { useQuery } from "react-query";
-import { fetchEVQL, runEVQL, runSQL } from "../api/connect";
+import { fetchEVQA, runEVQA, runSQL } from "../api/connect";
 import { PGResultToTableExcerpt, PGResultInterface } from "../components/TableExcerpt/Postgres";
 import { ITableExcerpt, TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
 import { ITutorialSection } from "../components/Tutorial/sections/abstractSection";
 import { allTutorialSections, ProjectionSection } from "../components/Tutorial/sections/allSections";
 import { SideBar } from "../components/Tutorial/sidebar";
-import { EVQLTree } from "../components/VQL/EVQL";
-import { EVQLTables } from "../components/VQL/EVQLTable";
+import { EVQATree } from "../components/VQA/EVQA";
+import { EVQATables } from "../components/VQA/EVQATable";
 
 const DividerWithMargin: JSX.Element = (
     <>
@@ -41,16 +41,16 @@ const Tutorial = () => {
 
     // Use Query
     const demoDBTableQuery = useQuery<ITableExcerpt>(["runSQL", "SELECT * FROM cars"], runSQL);
-    const fetchedEVQLQuery = useQuery<EVQLTree>(["fetchEVQL", selectedSection.exampleQueryName], fetchEVQL, { cacheTime: 0 });
-    const queryResultQuery = useQuery(["runEVQL", fetchedEVQLQuery?.data], runEVQL, { enabled: fetchedEVQLQuery?.data ? true : false });
+    const fetchedEVQAQuery = useQuery<EVQATree>(["fetchEVQA", selectedSection.exampleQueryName], fetchEVQA, { cacheTime: 0 });
+    const queryResultQuery = useQuery(["runEVQA", fetchedEVQAQuery?.data], runEVQA, { enabled: fetchedEVQAQuery?.data ? true : false });
     // Use Memo
     const demoDBResult = useMemo(
         () => (demoDBTableQuery?.data ? PGResultToTableExcerpt(demoDBTableQuery.data as unknown as PGResultInterface) : {}),
         [demoDBTableQuery.data]
     );
-    const evql = useMemo<EVQLTree>(
-        () => (fetchedEVQLQuery?.data ? fetchedEVQLQuery.data : ({} as EVQLTree)),
-        [selectedSection, fetchedEVQLQuery, fetchedEVQLQuery.data]
+    const evqa = useMemo<EVQATree>(
+        () => (fetchedEVQAQuery?.data ? fetchedEVQAQuery.data : ({} as EVQATree)),
+        [selectedSection, fetchedEVQAQuery, fetchedEVQAQuery.data]
     );
     const queryResult = useMemo<ITableExcerpt>(
         () => (queryResultQuery?.data ? PGResultToTableExcerpt(queryResultQuery.data.result) : ({} as ITableExcerpt)),
@@ -58,7 +58,7 @@ const Tutorial = () => {
     );
 
     const navigateToDemoPage: MouseEventHandler = (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
-        window.open(`handsOnEVQL?queryName=${selectedSection.exampleQueryName}`, "_blank", "noopener,noreferrer");
+        window.open(`handsOnEVQA?queryName=${selectedSection.exampleQueryName}`, "_blank", "noopener,noreferrer");
     };
 
     const selectPrevTutorialHandler: MouseEventHandler = (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
@@ -92,7 +92,7 @@ const Tutorial = () => {
                     <TableExcerpt queryResult={demoDBResult} />
                     <h2> {selectedSection.title} Example</h2>
                     <p>{selectedSection.exampleDescription}</p>
-                    <EVQLTables evqlRoot={evql} editable={false} />
+                    <EVQATables evqaRoot={evqa} editable={false} />
                     <p> Below is the query result from the Demo Database: </p>
                     <TableExcerpt queryResult={queryResult} />
                     <br />

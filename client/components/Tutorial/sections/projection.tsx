@@ -1,7 +1,7 @@
 import Spreadsheet from "react-spreadsheet-custom";
 
 import ITutorialSection from "./abstractSection";
-import { EVQLColumnIndicator } from "../../VQL/EVQLColumnIndicator";
+import { EVQAColumnIndicator } from "../../VQA/EVQAColumnIndicator";
 import { ProjectionSyntaxExample } from "../syntaxExamples";
 
 export const SyntaxDescription = () => {
@@ -16,7 +16,7 @@ export const SyntaxDescription = () => {
                 className="syntaxExample"
                 data={ProjectionSyntaxExample.rows}
                 columnLabels={ProjectionSyntaxExample.headers}
-                ColumnIndicator={EVQLColumnIndicator}
+                ColumnIndicator={EVQAColumnIndicator}
             />
         </>
     );
@@ -28,7 +28,7 @@ export const ProjectionSection: ITutorialSection = {
         "The Projection operation is used to select data from a database.\nThrough projection, we can select columns of the table that we want to examine.\
         \nThe data returned is stored in a result table.",
     exampleQueryName: "projection",
-    exampleDescription: "The following EVQL lists the number of customers in each country:",
+    exampleDescription: "The following EVQA lists the number of customers in each country:",
     demoDBName: "cars",
     syntaxExamples: [ProjectionSyntaxExample],
     syntaxDescription: SyntaxDescription(),

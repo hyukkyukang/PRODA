@@ -10,7 +10,7 @@ from src.query_tree.query_tree import Node, QueryBlock
 from src.task import Task
 from src.utils.example_queries import CorrelatedNestedQuery
 from src.utils.pg_connector import PostgresConnector
-from src.VQL.EVQL import EVQLTree
+from src.VQA.EVQA import EVQATree
 
 # TASK_TYPES = [1, 2]
 TASK_TYPES = [1]
@@ -84,22 +84,22 @@ class Task_Generator:
         return selected_type
 
     def _query_to_task(
-        self, evql: EVQLTree, query_tree: Node, query_graphs: List[Query_graph], is_recursive_call=False
+        self, evqa: EVQATree, query_tree: Node, query_graphs: List[Query_graph], is_recursive_call=False
     ):
         # Select a query type to generate
         query_type = self.query_type
         task_type = self.task_type
 
         # Generate SQL
-        sql = evql.node.sql
-        table_excerpt = evql.node.table_excerpt
+        sql = evqa.node.sql
+        table_excerpt = evqa.node.table_excerpt
 
         # Generate NL
         generated_nl, mapping_info = translate(query_graphs[0])
 
         # Add Alignment annotation
         nl_mapping = []
-        for x, y, value in evql.node.mapping:
+        for x, y, value in evqa.node.mapping:
             key_str = f"{x},{y}"
             for item in filter(lambda k: value in [k["table"], k["column"]], mapping_info):
                 nl_mapping.append((key_str, item["start"], item["end"]))
@@ -107,17 +107,17 @@ class Task_Generator:
 
         # Create history
         child_query_blocks = [edge.child for edge in query_tree.child_tables if type(edge.child) == QueryBlock]
-        assert len(child_query_blocks) == len(evql.children), f"{len(child_query_blocks)} != {len(evql.children)}"
+        assert len(child_query_blocks) == len(evqa.children), f"{len(child_query_blocks)} != {len(evqa.children)}"
         history = (
             []
             if is_recursive_call
             else [
                 self._query_to_task(child_node, child_block, query_graphs[1:])
-                for child_node, child_block in zip(evql.children, child_query_blocks)
+                for child_node, child_block in zip(evqa.children, child_query_blocks)
             ]
         )
 
-        # For each evql node
+        # For each evqa node
 
         # Wrap with Task class
         # TODO: handle table_excerpt, result table, and history
@@ -125,7 +125,7 @@ class Task_Generator:
             nl=generated_nl,
             nl_mapping=nl_mapping,
             sql=sql,
-            evql=evql,
+            evqa=evqa,
             query_type=query_type,
             task_type=task_type,
             db_name="db_name",
@@ -136,15 +136,15 @@ class Task_Generator:
 
     def __call__(self) -> List[Task]:
         # Generate SQL
-        evql = dummy_query.evql
+        evqa = dummy_query.evqa
         query_tree_root_node = dummy_query.query_tree.root
         query_graphs = dummy_query.query_graphs
 
-        # For each evql node
+        # For each evqa node
 
         # Wrap with Task class
         # TODO: handle table_excerpt, result table, and history
-        return [self._query_to_task(evql, query_tree_root_node, query_graphs)]
+        return [self._query_to_task(evqa, query_tree_root_node, query_graphs)]
 
     def convert_tasks_into_json_string(self, tasks: List[Task]) -> str:
         return json.dumps([task.dump_json() for task in tasks][0])

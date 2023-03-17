@@ -12,27 +12,27 @@ from src.utils.example_queries import (
     CorrelatedNestedQuery,
 )
 
-from src.VQL.query_tree_to_EVQL import convert_queryTree_to_EVQLTree
-from src.VQL.EVQL import check_evql_equivalence
+from src.VQA.query_tree_to_EVQA import convert_queryTree_to_EVQATree
+from src.VQA.EVQA import check_evqa_equivalence
 
 
-class Test_QueryTree_to_EVQL(unittest.TestCase):
+class Test_QueryTree_to_EVQA(unittest.TestCase):
     def _test_translation(self, query):
         query_tree = query.query_tree
-        converted_evql = convert_queryTree_to_EVQLTree(query_tree)
+        converted_evqa = convert_queryTree_to_EVQATree(query_tree)
         self.assertTrue(
-            query_tree.height == converted_evql.height,
-            f"Height of query tree and EVQL tree are different, {query_tree.height} vs {converted_evql.height}",
+            query_tree.height == converted_evqa.height,
+            f"Height of query tree and EVQA tree are different, {query_tree.height} vs {converted_evqa.height}",
         )
         self.assertTrue(
-            query_tree.num_nodes == converted_evql.num_nodes,
-            f"Number of nodes of query tree and EVQL tree are different, {query_tree.num_nodes} vs {converted_evql.num_nodes}",
+            query_tree.num_nodes == converted_evqa.num_nodes,
+            f"Number of nodes of query tree and EVQA tree are different, {query_tree.num_nodes} vs {converted_evqa.num_nodes}",
         )
         self.assertTrue(
-            check_evql_equivalence(query.evql, converted_evql),
-            "EVQL converted from query tree is different from the original EVQL",
+            check_evqa_equivalence(query.evqa, converted_evqa),
+            "EVQA converted from query tree is different from the original EVQA",
         )
-        self.assertTrue(query.evql == converted_evql)
+        self.assertTrue(query.evqa == converted_evqa)
 
     def test_projection(self):
         self._test_translation(ProjectionQuery())
