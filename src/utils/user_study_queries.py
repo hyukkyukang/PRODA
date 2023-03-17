@@ -701,8 +701,6 @@ class MovieQuery5(TestQuery):
             ## Construct graph
             query_graph = Query_graph("CorrelatedNestedQuery3")
             query_graph.connect_membership(movie_1, movie_1_id1)
-            query_graph.connect_membership(rating_1, rating_1_stars2)
-            query_graph.connect_transformation(rating_avg, rating_1_stars2)
 
             query_graph.connect_simplified_join(movie_1, rating_1, "", "belongs to")
             # hkkang
@@ -736,6 +734,61 @@ class MovieQuery5(TestQuery):
 
             # For grouping and having
             query_graph.connect_grouping(movie_1, movie_1_id4)
+            return query_graph
+
+            
+        def graph_3_individual() -> Query_graph:
+            # Relation
+            movie = Relation("movie", "movie", is_primary = True)
+            Q1result = Relation("Q1result", "Q1's results")
+            Q2result = Relation("Q2result", "Q2's results")
+            rating = Relation("rating", "rating", is_primary = True)
+
+            # Attribute
+            movie_id1 = Attribute("m1_id1", "id")
+            movie_id2 = Attribute("m1_id2", "id")
+            movie_id3 = Attribute("m1_id3", "id")
+            movie_id4 = Attribute("m1_id4", "id")
+
+            rating_stars1 = Attribute("r1_stars", "stars")
+            rating_stars2 = Attribute("r1_stars1", "stars")
+
+            Q1_max_stars = Attribute("Q1_max_stars", "max_stars")
+            Q1_movie_id = Attribute("Q1_movie_id", "movie_id")
+
+            Q2_movie_ids = Attribute("Q2_movie_ids", "movie_id")
+            
+            rating_avg = Function(FunctionType.Avg)
+
+
+            ## Construct graph
+            query_graph = Query_graph("CorrelatedNestedQuery3")
+            query_graph.connect_membership(movie, movie_id1)
+            query_graph.connect_membership(rating, rating_stars1)
+            query_graph.connect_transformation(rating_avg, rating_stars1)
+
+            query_graph.connect_simplified_join(movie, rating, "", "belongs to")
+            #query_graph.connect_simplified_join(movie, Q1result, "", "belongs to")
+            #query_graph.connect_simplified_join(movie, Q2result)
+
+            # Nesting
+            query_graph.connect_selection(rating, rating_stars2)
+            query_graph.connect_predicate(rating_stars2, Q1_max_stars, OperatorType.LessThan)
+
+            query_graph.connect_membership(Q1result, Q1_max_stars)
+
+            # Correlation - skip
+            query_graph.connect_selection(Q1result, Q1_movie_id)
+            query_graph.connect_predicate(Q1_movie_id, movie_id4)
+            query_graph.connect_selection(movie_id4, movie)
+
+            # Second Nesting
+            query_graph.connect_selection(movie, movie_id2)
+            query_graph.connect_predicate(movie_id2, Q2_movie_ids, OperatorType.In)
+
+            query_graph.connect_membership(Q2result, Q2_movie_ids)
+            # For grouping and having
+            query_graph.connect_grouping(movie, movie_id3)
             return query_graph
 
         def graph_4() -> Query_graph:
@@ -811,7 +864,7 @@ class MovieQuery5(TestQuery):
             query_graph.connect_predicate(rating_avg, v_3, OperatorType.GEq)
             return query_graph
 
-        return [graph_4(), graph_3(), graph_2(), graph_1()]
+        return [graph_4(), graph_3_individual(), graph_2(), graph_1()]
 
     @misc_utils.property_with_cache
     def result_tables(self) -> List[TableExcerpt]:
