@@ -5,12 +5,13 @@ from pylogos.translate import translate
 
 from src.query_tree.query_tree import QueryTree
 from src.task.task import Task
-from src.utils.user_study_queries import MovieQuery1, MovieQuery2, MovieQuery3, MovieQuery5, MovieQuery6
+from src.utils.user_study_queries import MovieQuery1, MovieQuery2, MovieQuery3, MovieQuery5, MovieQuery6, MovieQuery4
 from src.VQL.EVQL import EVQLTree
 import hkkang_utils.file as file_utils
 from src.utils.example_tasks import create_nl_and_mapping
 from src.utils.data_manager import save_task_set_in_db
 
+from src.utils.example_queries import CorrelatedNestedQuery
 
 def MovieTask1(query_object):
     config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
@@ -28,7 +29,7 @@ def MovieTask1(query_object):
 
     # Create and save task1
     sub_task1 = Task(
-        nl=nl1,
+        nl="Find first_name and last_name of actor in ascending order of first_name",
         nl_mapping=mapping1,
         sql=sql,
         evql=evql1,
@@ -65,10 +66,14 @@ def MovieTask2(query_object):
     nl3, mapping3 = create_nl_and_mapping(query_graphs[1], evql3)
     nl2, mapping2 = create_nl_and_mapping(query_graphs[2], evql2)
     nl1, mapping1 = create_nl_and_mapping(query_graphs[3], evql1)
+    print(nl4)
+    print(nl3)
+    print(nl2)
+    print(nl1)
 
     # Create and save task1
     sub_task1 = Task(
-        nl=nl1,
+        nl="Find id of movie for each id of movie, maximum stars of rating in which rating belongs to movie.",
         nl_mapping=mapping1,
         sql="SELECT Max(R2.stars) AS max_stars, M2.id as m_id FROM movie AS M2, rating AS R2 GROUP BY M2.id",
         evql=evql1,
@@ -100,7 +105,8 @@ def MovieTask2(query_object):
 
     # Create and save task3
     sub_task3 = Task(
-        nl=nl3,
+        #nl=nl3,
+        nl="Find id of movie for each id of movie where id of movie is in id of movie where last_name of director is Cameron and first_name of director is James, average stars where stars of rating is less than maximum stars of rating in which rating belongs to movie of the same id.",
         nl_mapping=mapping3,
         sql="SELECT M1.id as id, avg(R1.stars) as avg_stars FROM movie AS M1, rating AS R1, B1, B2 WHERE R1.stars < B1.max_stars AND M1.id IN B2 AND B1.m_id = M1.id GROUP BY M1.id",
         evql=evql3,
@@ -116,6 +122,7 @@ def MovieTask2(query_object):
 
     # Create and save task4
     sub_task4 = Task(
+        #nl="Find id of movie for each id of movie, considering only those groups whose average stars of rating is greater than 5.5, where id of movie is in id of movie where first_name of director is James and last_name of director is Cameron and stars of rating is less than maximum stars of rating in which rating belongs to movie of the same id.",
         nl=nl4,
         nl_mapping=mapping4,
         sql="SELECT B3.id as id FROM B3 WHERE B3.avg_stars >= 3",
@@ -145,14 +152,17 @@ def MovieTask3(query_object):
     evql1 = evql_object.children[0]
     evql2 = evql_object
 
-    result_tables = query_object.result_tables
+    #result_tables = query_object.result_tables
+    result_tables=[0,1]
 
     nl2, mapping2 = create_nl_and_mapping(query_graphs[0], evql2)
     nl1, mapping1 = create_nl_and_mapping(query_graphs[1], evql1)
+    print (nl1)
+    print (nl2)
 
     # Create and save task1
     sub_task1 = Task(
-        nl=nl1,
+        nl="Find name of reviewer, for each reviewer number of all of movie where time of movie is greater than 130",
         nl_mapping=mapping1,
         sql="Sub1",
         evql=evql1,
@@ -168,7 +178,7 @@ def MovieTask3(query_object):
 
     # Create and save task2
     sub_task2 = Task(
-        nl=nl2,
+        nl="Find name of reviewer for each id of reviewer, considering only those groups whose number of all of movie is 1, where time of movie is greater than 130.",
         nl_mapping=mapping2,
         sql="Full",
         evql=evql2,
@@ -177,7 +187,7 @@ def MovieTask3(query_object):
         db_name="IMDB",
         table_excerpt=evql2.node.table_excerpt,
         result_table=result_tables[1],
-        history_task_ids=[],
+        history_task_ids=[task1_id],
     )
     task2_id = Task.save(sub_task2, task_save_dir_path)
     print(task2_id)

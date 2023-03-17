@@ -103,11 +103,7 @@ app.post("/runSQL", async function (req, res) {
     console.log(`app.posts.runSQL with query: ${JSON.stringify(req.body.sql)}`);
     const sql = req.body.sql;
     console.log(`sql: ${sql}`);
-    if (sql.includes("group by model) AND T2.model = (SELECT AVG(max_speed) FROM cars")) {
-        console.log(`This query causes error, need to fix this issue`);
-        res.send({});
-        return;
-    }
+    console.log(`This query causes error, need to fix this issue`);
     var queryResult = {};
     try {
         queryResult = await func.queryDB(sql);

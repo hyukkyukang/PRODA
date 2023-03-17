@@ -51,7 +51,7 @@ export const CountAvgSumSyntaxExample: IEVQLTable = {
 export const SelectionSyntaxExample: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
-        { name: "column1", aggFuncs: [0], isToProject: true },
+        { name: "column1", aggFuncs: [0], isToProject: false },
         { name: "column2", aggFuncs: [], isToProject: false },
         { name: "column3", aggFuncs: [], isToProject: false },
         { name: "...", aggFuncs: [], isToProject: false },
@@ -62,8 +62,8 @@ export const SelectionSyntaxExample: IEVQLTable = {
 export const SelectionOrSyntaxExample: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
-        { name: "column1", aggFuncs: [0], isToProject: true },
-        { name: "column2", aggFuncs: [0], isToProject: true },
+        { name: "column1", aggFuncs: [0], isToProject: false },
+        { name: "column2", aggFuncs: [0], isToProject: false },
         { name: "column3", aggFuncs: [], isToProject: false },
         { name: "...", aggFuncs: [], isToProject: false },
     ],
@@ -76,8 +76,8 @@ export const SelectionOrSyntaxExample: IEVQLTable = {
 export const SelectionAndSyntaxExample: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
-        { name: "column1", aggFuncs: [0], isToProject: true },
-        { name: "column2", aggFuncs: [0], isToProject: true },
+        { name: "column1", aggFuncs: [0], isToProject: false },
+        { name: "column2", aggFuncs: [0], isToProject: false },
         { name: "column3", aggFuncs: [], isToProject: false },
         { name: "...", aggFuncs: [], isToProject: false },
     ],
@@ -88,7 +88,7 @@ export const GroupingSyntaxExample: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
         { name: "column1", aggFuncs: [], isToProject: false },
-        { name: "column2", aggFuncs: [0], isToProject: true },
+        { name: "column2", aggFuncs: [0], isToProject: false },
         { name: "column3", aggFuncs: [], isToProject: false },
         { name: "...", aggFuncs: [], isToProject: false },
     ],
@@ -98,7 +98,7 @@ export const GroupingSyntaxExample: IEVQLTable = {
 export const OrderingSyntaxExample: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
-        { name: "column1", aggFuncs: [0], isToProject: true },
+        { name: "column1", aggFuncs: [0], isToProject: false },
         { name: "column2", aggFuncs: [], isToProject: false },
         { name: "column3", aggFuncs: [], isToProject: false },
         { name: "...", aggFuncs: [], isToProject: false },

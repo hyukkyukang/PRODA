@@ -1,15 +1,15 @@
 visibleToClient:
     frontend:
-        IP: localhost
-        Port: 3000
+        IP: 141.223.197.243
+        Port: 3001
         Protocol: http # Either https or http
     backend:
-        IP: localhost
-        Port: 4001
+        IP: 141.223.197.243
+        Port: 40102
         Protocol: http # Either https or http
 backend:
     IP: localhost
-    Port: 4001
+    Port: 4002
     Protocol: http # Either https or http
 DB:
     IP: localhost
@@ -30,8 +30,6 @@ DB:
         UserPW: collection_user_pw
         CollectionTableName: collection
         TaskTableName: task
-        TaskSetTableName: task_set
-SSLCertPath: "/home/proda/certificates/localhost.crt"
-SSLKeyPath: "/home/proda/certificates/localhost.key"
-SSLCaPath: "/home/proda/certificates/localhost.key"
-taskSaveDirPath: "/home/proda/database/dataCollection/tasks/"
+SSLCertPath: "/home/hjkim/PRODA/certificates/localhost.crt"
+SSLKeyPath: "/home/hjkim/PRODA/certificates/localhost.key"
+taskSaveDirPath: "/home/hjkim/PRODA/database/dataCollection/tasks/"

@@ -7,7 +7,7 @@ import { SelectionOrSyntaxExample, SelectionAndSyntaxExample } from "../syntaxEx
 export const SyntaxDescription = () => {
     return (
         <>
-            <h2>AND Syntax</h2>
+            <h2>OR Syntax</h2>
             <p>To combine conditions with OR, write conditions in a separate row.</p>
             <Spreadsheet
                 className="syntaxExample"
@@ -15,7 +15,7 @@ export const SyntaxDescription = () => {
                 columnLabels={SelectionOrSyntaxExample.headers}
                 ColumnIndicator={EVQLColumnIndicator}
             />
-            <h2>Or Syntax</h2>
+            <h2>AND Syntax</h2>
             <p>
                 To combine conditions with AND, write conditions in the same row. To write a multiple conditions for one column, use the keyword AND to combine
                 two different expressions.

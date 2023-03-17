@@ -118,7 +118,7 @@ class MovieQuery2(TestQuery):
             query_graph.connect_membership(actor, first_name)
             query_graph.connect_membership(actor, last_name)
             # query_graph.connect_transformation(avg, max_speed)
-            query_graph.connect_order(actor, first_name_o, is_asc=True)
+            query_graph.connect_order(actor, first_name_o)
             return query_graph
 
         return [graph_1()]
@@ -402,8 +402,8 @@ class MovieQuery5(TestQuery):
         node_2.add_predicate(
             Clause(
                 [
-                    Selecting(node_2.headers.index("director_first_name"), Operator.equal, "Cameron"),
-                    Selecting(node_2.headers.index("director_last_name"), Operator.equal, "James"),
+                    Selecting(node_2.headers.index("director_first_name"), Operator.equal, "James"),
+                    Selecting(node_2.headers.index("director_last_name"), Operator.equal, "Cameron"),
                 ]
             )
         )
@@ -441,11 +441,6 @@ class MovieQuery5(TestQuery):
                         node_3.headers.index("movie_id"),
                         Operator.In,
                         Operator.add_idx_prefix(node_3.headers.index("B2_movie_id")),
-                    ),
-                    Selecting(
-                        node_3.headers.index("movie_id"),
-                        Operator.equal,
-                        Operator.add_idx_prefix(node_3.headers.index("B1_movie_id")),
                     ),
                     Selecting(
                         node_3.headers.index("rating_stars"),
@@ -690,7 +685,8 @@ class MovieQuery5(TestQuery):
             rating_1_stars0 = Attribute("r1_stars", "stars")
             rating_1_stars1 = Attribute("r1_stars1", "stars")
             rating_2_stars = Attribute("r2_stars", "stars")
-
+            
+            rating_1_stars2 = Attribute("r1_stars2", "stars")
             director_last_name = Attribute("last_name", "last_name")
             director_first_name = Attribute("first_name", "first_name")
 
@@ -705,6 +701,9 @@ class MovieQuery5(TestQuery):
             ## Construct graph
             query_graph = Query_graph("CorrelatedNestedQuery3")
             query_graph.connect_membership(movie_1, movie_1_id1)
+            query_graph.connect_membership(rating_1, rating_1_stars2)
+            query_graph.connect_transformation(rating_avg, rating_1_stars2)
+
             query_graph.connect_simplified_join(movie_1, rating_1, "", "belongs to")
             # hkkang
             query_graph.connect_membership(rating_1, rating_1_stars0)
@@ -820,30 +819,10 @@ class MovieQuery5(TestQuery):
             node_1_name = "MovieQuery5_B1"
             node_1_result_headers = ["movie_id", "max_rating_stars"]
             node_1_result_col_types = ["number", "list.number"]
-            node_1_result_rows = [
-                [901, [8.4]],
-                [902, [7.9]],
-                [903, [8.3]],
-                [906, [8.2]],
-                [908, [8.6]],
-                [909, [5]],
-                [910, [6]],
-                [911, [8.1]],
-                [912, [4.4]],
-                [914, [7]],
-                [915, [9.7]],
-                [916, [4]],
-                [918, [2]],
-                [920, [8.1]],
-                [921, [8]],
-                [922, [8.4]],
-                [923, [6.7]],
-                [924, [7.3]],
-                [925, [7.7]],
-            ]
-            # node_1_result_col_types = ["number", "number"]
-            # node_1_result_rows = [[901, 8.4], [902, 7.9], [903, 8.3], [906, 8.2], [908, 8.6], [909, 5], [910, 6], [911, 8.1], [912, 4.4], [914, 7],
-            # [915, 9.7], [916, 4], [918, 2], [920, 8.1], [921, 8], [922, 8.4], [923, 6.7], [924, 7.3], [925, 7.7]]
+            node_1_result_rows = [ [914, [7]], [915, [9.7]], [916, [4]], [920, [8.1]], [922, [8.4]], [923, [6.7]], [925, [7.7]]]
+            #node_1_result_col_types = ["number", "number"]
+            #node_1_result_rows = [[901, 8.4], [902, 7.9], [903, 8.3], [906, 8.2], [908, 8.6], [909, 5], [910, 6], [911, 8.1], [912, 4.4], [914, 7],
+            #[915, 9.7], [916, 4], [918, 2], [920, 8.1], [921, 8], [922, 8.4], [923, 6.7], [924, 7.3], [925, 7.7]]
             print(node_1_result_rows)
             node_1_result = TableExcerpt(
                 f"{node_1_name}_result", node_1_result_headers, node_1_result_col_types, rows=node_1_result_rows
@@ -912,9 +891,7 @@ class MovieQuery6(TestQuery):
         # Create tree node
         node_1 = EVQLNode(f"movie_query_6_B1", init_table1)
         node_1.add_projection(Header(node_1.headers.index("reviewer_name")))
-        node_1.add_projection(
-            Header(node_1.headers.index("movie_rating_reviewer", agg_type=Aggregator.count, alias="cnt"))
-        )
+        node_1.add_projection(Header(node_1.headers.index("movie_rating_reviewer"), agg_type=Aggregator.count, alias="cnt"))
 
         # Create conditions for the node
         cond1 = Selecting(node_1.headers.index("movie_time"), Operator.greaterThan, "130")
@@ -923,8 +900,9 @@ class MovieQuery6(TestQuery):
         node_1.add_predicate(clause)
 
         result_table = result_tables[0]
-
+        print(result_table.headers)
         node_2 = EVQLNode(f"movie_query_6_B2", result_table)
+        print(node_2.headers)
         node_2.add_projection(Header(node_2.headers.index("reviewer_name")))
         cond3 = Selecting(find_nth_occurrence_index(node_2.headers, "cnt", 1), Operator.greaterThan, "1")
         node_2.add_predicate(Clause([cond3]))
@@ -1009,7 +987,7 @@ class MovieQuery6(TestQuery):
     @misc_utils.property_with_cache
     def result_tables(self) -> List[TableExcerpt]:
         def result_1() -> TableExcerpt:
-            sql = """SELECT T3.name as movie_name, count(*) as cnt
+            sql = """SELECT T3.name as reviewer_name, count(*) as cnt
             FROM movie AS T1 JOIN rating AS T2 ON T1.id=T2.mov_id JOIN reviewer AS T3 ON T2.rev_id = T3.id 
             WHERE T1.time > 130
             GROUP BY T3.id
@@ -1020,9 +998,8 @@ class MovieQuery6(TestQuery):
         def result_2() -> TableExcerpt:
             result_table = self._DB.get_result_table(self._sql, "MovieQuery6")
             return result_table
-
-        return [result_2(), result_1()]
-
+        return [result_1(), result_2()]
+        
     @misc_utils.property_with_cache
     def query_tree(self):
         pass

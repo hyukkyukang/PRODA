@@ -66,9 +66,15 @@ class DList(DType):
 
 
 class Cell:
-    def __init__(self, value: Any):
+    def __init__(self, value: Any, dtype=None):
         self.value = value
-        self.dtype = Cell.to_dtype(value)
+        if dtype is not None:
+            if dtype in ("int", "float", "number"):
+                self.dtype = DNumber()
+            else:
+                self.dtype = DString()
+        else:
+            self.dtype = Cell.to_dtype(value)
 
     @staticmethod
     def to_dtype(value: Any) -> DType:
@@ -161,18 +167,18 @@ class TableExcerpt:
                 
                 cells_df=[]
                 for table in joined_tables:
-                    for header in tables[table].headers:
-                        cells_df.append(Cell(None))
+                    for col_type in tables[table].col_types:
+                        cells_df.append(Cell(None, dtype=col_type))
                 empty_row_df=Row(cells_df)
 
                 cells_t1=[]
-                for header in tables[t1_idx].headers:
-                    cells_t1.append(Cell(None))
+                for col_type in tables[t1_idx].col_types:
+                    cells_t1.append(Cell(None, dtype=col_type))
                 empty_row_t1=Row(cells_t1)
                 
                 cells_t2=[]
-                for header in tables[t2_idx].headers:
-                    cells_t2.append(Cell(None))
+                for col_type in tables[t2_idx].col_types:
+                    cells_t2.append(Cell(None, dtype=col_type))
                 empty_row_t2=Row(cells_t2)
 
                 if t1_idx in joined_tables and t2_idx not in joined_tables:
