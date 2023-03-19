@@ -29,6 +29,7 @@ def save_data(data: Any, path: str) -> None:
     with open(path, "wb") as f:
         pickle.dump(data, f)
 
+
 def save_json(data: Union[Dict, str], path: str) -> None:
     def save_json_string() -> None:
         # Check if data is JSON
@@ -38,6 +39,7 @@ def save_json(data: Union[Dict, str], path: str) -> None:
             raise ValueError("Data is not JSON")
         with open(path, "wb") as f:
             f.write(data.encode("utf-8"))
+
     def save_json_object() -> None:
         # check if valid json object
         try:
@@ -46,7 +48,7 @@ def save_json(data: Union[Dict, str], path: str) -> None:
             raise ValueError("Data is not JSON")
         with open(path, "w", encoding="utf8") as f:
             json.dump(data, f)
-    
+
     # Create directory if not exists
     dir_path, _ = file_utils.split_path_into_dir_and_file_name(path)
     os.makedirs(dir_path, exist_ok=True)
@@ -54,6 +56,7 @@ def save_json(data: Union[Dict, str], path: str) -> None:
         save_json_string()
     else:
         save_json_object()
+
 
 def save_task_set_in_db(
     task_ids: List[int],
@@ -78,6 +81,7 @@ def save_task_in_db(
 ) -> None:
     pg = PostgresConnector(DBUserID, DBUserPW, IP, port, DBName)
     history_task_ids_str = "{" + ",".join(map(lambda k: f'"{str(k)}"', history_task_ids)) + "}"
+    nl = nl.replace("'", "\\'")
     sql = sql.replace("'", "\\'")
     pg.execute(
         f"INSERT INTO {DBTaskTableName} (nl, sql, query_type, evqa_path, table_excerpt_path, result_table_path, nl_mapping_path, db_name, task_type, history_task_ids) VALUES (E'{nl}', E'{sql}', '{query_type}', '{evqa_path}', '{table_excerpt_path}', '{result_table_path}', '{nl_mapping_path}', '{db_name}', {task_type}, '{history_task_ids_str}') RETURNING id"
