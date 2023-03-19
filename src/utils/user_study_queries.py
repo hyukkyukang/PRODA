@@ -685,7 +685,7 @@ class MovieQuery5(TestQuery):
             rating_1_stars0 = Attribute("r1_stars", "stars")
             rating_1_stars1 = Attribute("r1_stars1", "stars")
             rating_2_stars = Attribute("r2_stars", "stars")
-            
+
             rating_1_stars2 = Attribute("r1_stars2", "stars")
             director_last_name = Attribute("last_name", "last_name")
             director_first_name = Attribute("first_name", "first_name")
@@ -736,13 +736,12 @@ class MovieQuery5(TestQuery):
             query_graph.connect_grouping(movie_1, movie_1_id4)
             return query_graph
 
-            
         def graph_3_individual() -> Query_graph:
             # Relation
-            movie = Relation("movie", "movie", is_primary = True)
+            movie = Relation("movie", "movie", is_primary=True)
             Q1result = Relation("Q1result", "Q1's results")
             Q2result = Relation("Q2result", "Q2's results")
-            rating = Relation("rating", "rating", is_primary = True)
+            rating = Relation("rating", "rating", is_primary=True)
 
             # Attribute
             movie_id1 = Attribute("m1_id1", "id")
@@ -757,9 +756,8 @@ class MovieQuery5(TestQuery):
             Q1_movie_id = Attribute("Q1_movie_id", "movie_id")
 
             Q2_movie_ids = Attribute("Q2_movie_ids", "movie_id")
-            
-            rating_avg = Function(FunctionType.Avg)
 
+            rating_avg = Function(FunctionType.Avg)
 
             ## Construct graph
             query_graph = Query_graph("CorrelatedNestedQuery3")
@@ -768,8 +766,8 @@ class MovieQuery5(TestQuery):
             query_graph.connect_transformation(rating_avg, rating_stars1)
 
             query_graph.connect_simplified_join(movie, rating, "", "belongs to")
-            #query_graph.connect_simplified_join(movie, Q1result, "", "belongs to")
-            #query_graph.connect_simplified_join(movie, Q2result)
+            # query_graph.connect_simplified_join(movie, Q1result, "", "belongs to")
+            # query_graph.connect_simplified_join(movie, Q2result)
 
             # Nesting
             query_graph.connect_selection(rating, rating_stars2)
@@ -864,7 +862,28 @@ class MovieQuery5(TestQuery):
             query_graph.connect_predicate(rating_avg, v_3, OperatorType.GEq)
             return query_graph
 
-        return [graph_4(), graph_3_individual(), graph_2(), graph_1()]
+        def graph_4_individual() -> Query_graph:
+            ## Initialize nodes
+            # Relation
+            Q3result = Relation("Q3result", "Q3's results")
+
+            # Attribute
+            Q3_avg_stars = Attribute("Q3_avg_stars", "avg_stars")
+            Q3_movie_id = Attribute("Q3_movie_id", "movie_id")
+
+            ## Construct graph
+            query_graph = Query_graph("CorrelatedNestedQuery4")
+            query_graph.connect_membership(Q3result, Q3_movie_id)
+
+            ## Value
+            v_3 = Value("5.5", "5.5")
+
+            # For grouping and having
+            query_graph.connect_selection(Q3result, Q3_avg_stars)
+            query_graph.connect_predicate(Q3_avg_stars, v_3, OperatorType.GEq)
+            return query_graph
+
+        return [graph_4_individual(), graph_3_individual(), graph_2(), graph_1()]
 
     @misc_utils.property_with_cache
     def result_tables(self) -> List[TableExcerpt]:
@@ -872,10 +891,18 @@ class MovieQuery5(TestQuery):
             node_1_name = "MovieQuery5_B1"
             node_1_result_headers = ["movie_id", "max_rating_stars"]
             node_1_result_col_types = ["number", "list.number"]
-            node_1_result_rows = [ [914, [7]], [915, [9.7]], [916, [4]], [920, [8.1]], [922, [8.4]], [923, [6.7]], [925, [7.7]]]
-            #node_1_result_col_types = ["number", "number"]
-            #node_1_result_rows = [[901, 8.4], [902, 7.9], [903, 8.3], [906, 8.2], [908, 8.6], [909, 5], [910, 6], [911, 8.1], [912, 4.4], [914, 7],
-            #[915, 9.7], [916, 4], [918, 2], [920, 8.1], [921, 8], [922, 8.4], [923, 6.7], [924, 7.3], [925, 7.7]]
+            node_1_result_rows = [
+                [914, [7]],
+                [915, [9.7]],
+                [916, [4]],
+                [920, [8.1]],
+                [922, [8.4]],
+                [923, [6.7]],
+                [925, [7.7]],
+            ]
+            # node_1_result_col_types = ["number", "number"]
+            # node_1_result_rows = [[901, 8.4], [902, 7.9], [903, 8.3], [906, 8.2], [908, 8.6], [909, 5], [910, 6], [911, 8.1], [912, 4.4], [914, 7],
+            # [915, 9.7], [916, 4], [918, 2], [920, 8.1], [921, 8], [922, 8.4], [923, 6.7], [924, 7.3], [925, 7.7]]
             print(node_1_result_rows)
             node_1_result = TableExcerpt(
                 f"{node_1_name}_result", node_1_result_headers, node_1_result_col_types, rows=node_1_result_rows
@@ -944,7 +971,9 @@ class MovieQuery6(TestQuery):
         # Create tree node
         node_1 = EVQLNode(f"movie_query_6_B1", init_table1)
         node_1.add_projection(Header(node_1.headers.index("reviewer_name")))
-        node_1.add_projection(Header(node_1.headers.index("movie_rating_reviewer"), agg_type=Aggregator.count, alias="cnt"))
+        node_1.add_projection(
+            Header(node_1.headers.index("movie_rating_reviewer"), agg_type=Aggregator.count, alias="cnt")
+        )
 
         # Create conditions for the node
         cond1 = Selecting(node_1.headers.index("movie_time"), Operator.greaterThan, "130")
@@ -1051,8 +1080,9 @@ class MovieQuery6(TestQuery):
         def result_2() -> TableExcerpt:
             result_table = self._DB.get_result_table(self._sql, "MovieQuery6")
             return result_table
+
         return [result_1(), result_2()]
-        
+
     @misc_utils.property_with_cache
     def query_tree(self):
         pass

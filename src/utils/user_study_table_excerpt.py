@@ -87,7 +87,7 @@ class BaseDB:
 
 class MovieDB(BaseDB):
     def __init__(self):
-        self._sqlite3 = "/home/proda/databases/movie.sqlite3"
+        self._sqlite3 = "movie.sqlite3"
 
         conn = sqlite3.connect(self._sqlite3)
         cur = conn.cursor()
