@@ -68,7 +68,7 @@ def save_task_in_db(
     nl: str,
     sql: str,
     query_type: str,
-    evql_path: str,
+    evqa_path: str,
     table_excerpt_path: str,
     result_table_path: str,
     nl_mapping_path: str,
@@ -80,7 +80,7 @@ def save_task_in_db(
     history_task_ids_str = "{" + ",".join(map(lambda k: f'"{str(k)}"', history_task_ids)) + "}"
     sql = sql.replace("'", "\\'")
     pg.execute(
-        f"INSERT INTO {DBTaskTableName} (nl, sql, query_type, evql_path, table_excerpt_path, result_table_path, nl_mapping_path, db_name, task_type, history_task_ids) VALUES (E'{nl}', E'{sql}', '{query_type}', '{evql_path}', '{table_excerpt_path}', '{result_table_path}', '{nl_mapping_path}', '{db_name}', {task_type}, '{history_task_ids_str}') RETURNING id"
+        f"INSERT INTO {DBTaskTableName} (nl, sql, query_type, evqa_path, table_excerpt_path, result_table_path, nl_mapping_path, db_name, task_type, history_task_ids) VALUES (E'{nl}', E'{sql}', '{query_type}', '{evqa_path}', '{table_excerpt_path}', '{result_table_path}', '{nl_mapping_path}', '{db_name}', {task_type}, '{history_task_ids_str}') RETURNING id"
     )
     return pg.fetchone()[0]
 

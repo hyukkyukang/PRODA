@@ -43,12 +43,25 @@ export const SideBar = (params: ISelectedSection): React.ReactElement => {
         return {};
     };
 
-    if (isEmptyObject(basicTutorialSections)) return <></>;
-    return (
-        <>
-            <ListItem sx={{ fontWeight: "bold", fontSize: "20px", marginTop: 1 }}>Tutorial Sections</ListItem>
-            <div style={{ fontWeight: "bold", fontSize: "20px" }}>
-                <p> Basic </p>
+    const taskOverviewSection = (
+        <React.Fragment>
+            <ListItem
+                sx={getStyle(null)}
+                id={"Task Overview"}
+                key={"Task Overview"}
+                onClick={handleClick}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+            >
+                Task Overview
+            </ListItem>
+        </React.Fragment>
+    );
+
+    const basicSection = (
+        <React.Fragment>
+            <div style={{ paddingLeft: "10px", fontWeight: "bold", fontSize: "20px" }}>
+                <p> EVQA Basic </p>
             </div>
             {basicTutorialSections.map((value) => (
                 <ListItem
@@ -59,12 +72,16 @@ export const SideBar = (params: ISelectedSection): React.ReactElement => {
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                 >
-                    {" "}
-                    EVQL {value.title}{" "}
+                    {value.title}{" "}
                 </ListItem>
             ))}
-            <div style={{ fontWeight: "bold", fontSize: "20px" }}>
-                <p> Advance </p>
+        </React.Fragment>
+    );
+
+    const advancedSection = (
+        <React.Fragment>
+            <div style={{ paddingLeft: "10px", fontWeight: "bold", fontSize: "20px" }}>
+                <p> EVQA Advance </p>
             </div>
             {advanceTutorialSections.map((value) => (
                 <ListItem
@@ -75,11 +92,20 @@ export const SideBar = (params: ISelectedSection): React.ReactElement => {
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                 >
-                    {" "}
-                    EVQL {value.title}{" "}
+                    {value.title}{" "}
                 </ListItem>
             ))}
-        </>
+        </React.Fragment>
+    );
+
+    if (isEmptyObject(basicTutorialSections)) return <></>;
+    return (
+        <React.Fragment>
+            <ListItem sx={{ fontWeight: "bold", fontSize: "20px", marginTop: 1 }}>Tutorial Sections</ListItem>
+            {taskOverviewSection}
+            {basicSection}
+            {advancedSection}
+        </React.Fragment>
     );
 };
 

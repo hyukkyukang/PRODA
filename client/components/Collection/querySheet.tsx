@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { isEmptyObject } from "../../utils";
 import { Accordion, AccordionDetails, AccordionSummary } from "../Accordion/customAccordian";
 import { TableExcerpt } from "../TableExcerpt/TableExcerpt";
-import { EVQLTable } from "../VQL/EVQLTable";
+import { EVQATable } from "../VQA/EVQATable";
 import { QueryHistorySheet } from "./queryHistorySheet";
 import { Task } from "./task";
 
@@ -64,7 +64,7 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
                     {reversedSubTaskHistory.map((subTask, subTaskIdx) => (
                         <Accordion>
                             <AccordionSummary aria-controls={`panel${subTaskIdx}a-content`} id={`panel${subTaskIdx}a-header`}>
-                                <span>{subTask.evql.node.name}</span>
+                                <span>{subTask.evqa.node.name}</span>
                             </AccordionSummary>
                             <AccordionDetails>
                                 <QueryHistorySheet task={subTask} />
@@ -73,7 +73,7 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
                     ))}
                     <Accordion>
                         <AccordionSummary aria-controls={`panela-content`} id={`panela-header`}>
-                            <span>{currentTask.evql.node.name}</span>
+                            <span>{currentTask.evqa.node.name}</span>
                         </AccordionSummary>
                         <AccordionDetails>
                             <Grid container spacing={2}>
@@ -82,9 +82,9 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
                                         {currentTask?.tableExcerpt ? <h3>Table:</h3> : null}
                                         {currentTask?.tableExcerpt ? <TableExcerpt queryResult={currentTask.tableExcerpt} /> : null}
                                         <br />
-                                        {currentTask?.evql ? (
-                                            <EVQLTable
-                                                evqlRoot={{ node: currentTask.evql.node, children: currentTask.evql.children }}
+                                        {currentTask?.evqa ? (
+                                            <EVQATable
+                                                evqaRoot={{ node: currentTask.evqa.node, children: currentTask.evqa.children }}
                                                 childListPath={[]}
                                                 editable={false}
                                                 isFirstNode={true}

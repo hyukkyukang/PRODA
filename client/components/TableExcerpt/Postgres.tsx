@@ -4,25 +4,25 @@ import { getEmptyTableExcerpt } from "./TableExcerpt";
 
 export interface PGResultFieldInterface {
     name: string;
-    tableID: number;
-    columnID: number;
-    dataTypeID: number;
-    dataTypeSize: number;
-    dataTypeMOdifier: number;
     format: string;
+    tableID?: number;
+    columnID?: number;
+    dataTypeID?: number;
+    dataTypeSize?: number;
+    dataTypeMOdifier?: number;
 }
 
 export interface PGResultInterface {
-    command: string;
-    rowCount: number;
-    oid: number | null;
     rows: any[][];
     fields: PGResultFieldInterface[];
-    rosAsArray: boolean;
+    command?: string;
+    rowCount?: number;
+    oid?: number | null;
+    rosAsArray?: boolean;
     // Below attributes are not used in this component
-    _parsers: any;
-    _types: any;
-    RowCtor: any;
+    _parsers?: any;
+    _types?: any;
+    RowCtor?: any;
 }
 
 export const PGResultToTableExcerpt = (pgResult: PGResultInterface): ITableExcerpt => {

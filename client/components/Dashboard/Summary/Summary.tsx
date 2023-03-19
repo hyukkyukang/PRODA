@@ -54,7 +54,7 @@ export const Summary = (props: any) => {
                 dbName: logData[i]["given_dbName"],
                 nl: logData[i]["given_nl"],
                 sql: logData[i]["given_sql"],
-                evql: logData[i]["given_evql"],
+                evqa: logData[i]["given_evqa"],
                 queryType: logData[i]["given_queryType"],
                 date: stringToDate(logData[i]["date"]),
                 user_nl: logData[i]["user_nl"],

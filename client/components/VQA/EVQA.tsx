@@ -1,6 +1,7 @@
 import { ITableExcerpt } from "../TableExcerpt/TableExcerpt";
 
-// ! This must be aligned with the definition in src/VQL/EVQL.py > Operator
+// ! This must be aligned with the definition in src/VQA/EVQA.py > Operator
+// ! In EVQA, op_type should be index + 1 of below index (0 is reserved for null)
 // All the operators
 export const operators = ["=", "<", ">", "<=", ">=", "EXISTS", "NOT EXISTS", "IN", "NOT IN", "GROUP", "none", "count", "sum", "avg", "min", "max"];
 // Specific types of operators
@@ -37,7 +38,7 @@ export interface Predicate {
     clauses: Clause[];
 }
 
-export interface EVQLNode {
+export interface EVQANode {
     name: string;
     table_excerpt: ITableExcerpt;
     headers: string[];
@@ -45,12 +46,12 @@ export interface EVQLNode {
     predicate: Predicate;
 }
 
-export interface EVQLTree {
-    node: EVQLNode;
-    children: EVQLTree[];
+export interface EVQATree {
+    node: EVQANode;
+    children: EVQATree[];
 }
 
-export interface IEVQLContext {
-    evql: EVQLTree;
-    setEVQL: React.Dispatch<React.SetStateAction<EVQLTree>>;
+export interface IEVQAContext {
+    evqa: EVQATree;
+    setEVQA: React.Dispatch<React.SetStateAction<EVQATree>>;
 }

@@ -63,3 +63,4 @@ launch.json
 certificates/
 *.pkl
 database/dataCollection/tasks*
+*.sqlite3
