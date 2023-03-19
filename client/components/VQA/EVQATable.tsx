@@ -206,7 +206,7 @@ export const EVQATable = (props: IEVQAVisualizationContext) => {
     if (!isEmptyObject(tableContext)) {
         return (
             <div style={{ overflow: "scroll" }}>
-                <h3>EVQA:</h3>
+                <h2>EVQA:</h2>
                 <div style={{ display: "inline-block" }}>
                     <TableHeaderContext.Provider value={{ headerNames: headerNames }}>
                         <HoveringDescriptionContext.Provider value={{ x, setX, y, setY, description, setDescription, isActive, setIsActive }}>

@@ -12,7 +12,7 @@ import ITutorialSection from "./abstractSection";
 export const SyntaxDescription = (
     <>
         <h2>Expression</h2>
-        <p>We can write conditions below any columns to add conditions on those columns.</p>
+        <p>We can write conditions below any columns to add conditions for those columns.</p>
         <Spreadsheet
             className="syntaxExample"
             data={SelectionSyntaxExample.rows}
@@ -59,17 +59,17 @@ const exampleResult: ITableExcerpt = PGResultToTableExcerpt(exampleTable);
 
 const exampleDescription: JSX.Element = (
     <React.Fragment>
-        <p>Below is the demo table</p>
         <TableExcerpt queryResult={demoTable} />
-        <p>The following EVQA the column id to project and applies condition on the column 'year'. It will return record of cars with year 2010.</p>
+        <p>The following EVQA applies conditions on the column 'year'. It selects data in which the year is equal to 2010.</p>
         <EVQATables evqaRoot={exampleEQVA} editable={false} />
+        <h2>Result:</h2>
         <TableExcerpt queryResult={exampleResult} />
     </React.Fragment>
 );
 
 export const Selection1Section: ITutorialSection = {
     title: "Filter By Condition",
-    description: "EVQA Selection is used to filter records.\nIt is used to extract only those records that fufill a specified condition",
+    description: "EVQA can add conditions to filter data that do not satisfy the given condition.",
 
     exampleDescription: exampleDescription,
     syntaxDescription: SyntaxDescription,

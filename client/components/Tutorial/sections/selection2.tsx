@@ -12,7 +12,7 @@ import ITutorialSection from "./abstractSection";
 const SyntaxDescription = (
     <>
         <h2>Expression</h2>
-        <p>To combine conditions with OR, write conditions in a separate row.</p>
+        <p>EVQA writes conditions in a separate row to express OR conditions.</p>
         <Spreadsheet
             className="syntaxExample"
             data={SelectionOrSyntaxExample.rows}
@@ -21,20 +21,21 @@ const SyntaxDescription = (
         />
         <br />
         <br />
-        <Spreadsheet
-            className="syntaxExample"
-            data={SelectionAndOnCellSyntaxExample.rows}
-            columnLabels={SelectionAndOnCellSyntaxExample.headers}
-            ColumnIndicator={EVQAColumnIndicator}
-        />
-        <p>
-            To combine conditions with AND, write conditions in the same row. To write a multiple conditions for one column, use the keyword AND to combine two
-            different expressions.
-        </p>
+        <p>EVQA writes conditions in the same row to express AND conditions between different columns.</p>
         <Spreadsheet
             className="syntaxExample"
             data={SelectionAndSyntaxExample.rows}
             columnLabels={SelectionAndSyntaxExample.headers}
+            ColumnIndicator={EVQAColumnIndicator}
+        />
+
+        <br />
+        <br />
+        <p>EVQA writes uses AND operator to express AND conditions on the same column.</p>
+        <Spreadsheet
+            className="syntaxExample"
+            data={SelectionAndOnCellSyntaxExample.rows}
+            columnLabels={SelectionAndOnCellSyntaxExample.headers}
             ColumnIndicator={EVQAColumnIndicator}
         />
     </>
@@ -89,20 +90,21 @@ const exampleResult: ITableExcerpt = PGResultToTableExcerpt(exampleTable);
 
 const exampleDescription: JSX.Element = (
     <React.Fragment>
-        <p>Below is the demo table</p>
         <TableExcerpt queryResult={demoTable} />
         <p>
-            The following EVQA applies conditons on column 'model' and 'year'.\nIt returns records that has model equal to 'tesla model x' and year is equal to
-            2011 or 2012
+            {
+                'The following EVQA applies conditons on the column "model" and "year".\nIt returns records that has model equal to "tesla model x" and year is equal to 2011 or 2012'
+            }
         </p>
         <EVQATables evqaRoot={exampleEQVA} editable={false} />
+        <h2>Result:</h2>
         <TableExcerpt queryResult={exampleResult} />
     </React.Fragment>
 );
 
 export const Selection2Section: ITutorialSection = {
     title: "And, Or",
-    description: "With EVQA, we can apply multiple conditions with OR or AND operators",
+    description: "EVQA can apply multiple conditions with AND and OR.",
     exampleDescription: exampleDescription,
     syntaxDescription: SyntaxDescription,
 };

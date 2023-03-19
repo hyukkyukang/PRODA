@@ -49,10 +49,12 @@ const Tutorial = () => {
 
     const EVQATutorial: JSX.Element = (
         <React.Fragment>
-            <p>{selectedSection.description}</p>
-            {selectedSection.syntaxDescription}
-            <h2> Demo Table </h2>
-            <p> Below is a sampled rows from the "cars" table in our demo table: </p>
+            <div style={{ width: 600, whiteSpace: "pre-line" }}>
+                <p>{selectedSection.description}</p>
+                {selectedSection.syntaxDescription}
+            </div>
+            <h1>Example</h1>
+            <p> Below is an input table "cars" for our example</p>
             {selectedSection.exampleDescription}
         </React.Fragment>
     );

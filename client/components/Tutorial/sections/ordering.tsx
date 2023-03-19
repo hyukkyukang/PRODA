@@ -32,13 +32,34 @@ export const SyntaxDescription = (
 
 // Demo EVQA and results
 const headers = ["cars"].concat(demoTable.headers);
+// const exampleEQVA: EVQATree = {
+//     node: {
+//         name: "select",
+//         table_excerpt: demoTable,
+//         headers: headers,
+//         projection: {
+//             headers: [{ id: headers.indexOf("id"), agg_type: aggFunctions.indexOf("none") }],
+//         },
+//         predicate: {
+//             clauses: [
+//                 {
+//                     conditions: [
+//                         { header_id: headers.indexOf("year"), func_type: "Selecting", op_type: binaryOperators.indexOf("=") + 1, r_operand: "2010" },
+//                         { header_id: headers.indexOf("horsepower"), func_type: "Ordering", is_ascending: false },
+//                     ],
+//                 },
+//             ],
+//         },
+//     },
+//     children: [],
+// };
 const exampleEQVA: EVQATree = {
     node: {
         name: "select",
         table_excerpt: demoTable,
         headers: headers,
         projection: {
-            headers: [{ id: headers.indexOf("id"), agg_type: aggFunctions.indexOf("none") }],
+            headers: [],
         },
         predicate: {
             clauses: [
@@ -53,6 +74,7 @@ const exampleEQVA: EVQATree = {
     },
     children: [],
 };
+
 const headerInfo: PGResultFieldInterface[] = [{ name: "id", format: "number" }];
 
 const data = [[2], [1]];

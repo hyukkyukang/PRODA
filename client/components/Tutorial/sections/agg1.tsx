@@ -12,10 +12,11 @@ import ITutorialSection from "./abstractSection";
 export const SyntaxDescription = (
     <>
         <h2>Expression</h2>
-        <p>"Below EVQA applies min function on 'column1' and max function on 'column2'."</p>
+        <p>{'Below illustrates how min operation is applied in EVQA. It applies min function on "column1"'}</p>
         <Spreadsheet className="syntaxExample" data={MinSyntaxExample.rows} columnLabels={MinSyntaxExample.headers} ColumnIndicator={EVQAColumnIndicator} />
         <br />
         <br />
+        <p>{"In fact, more than one function can be used simultaneously."}</p>
         <Spreadsheet
             className="syntaxExample"
             data={MinMaxSyntaxExample.rows}
@@ -61,17 +62,18 @@ export const exampleResult: ITableExcerpt = PGResultToTableExcerpt(exampleTable)
 
 const exampleDescription: JSX.Element = (
     <React.Fragment>
-        <p>Below is the demo table</p>
         <TableExcerpt queryResult={demoTable} />
-        <p>"The following EVQA lists the maximum 'horsepower' and the minimum 'max_speed' of cars"</p>
+        <p>{'The following EVQA lists the maximum "horsepower" and the minimum "max_speed" of cars'}</p>
         <EVQATables evqaRoot={exampleEQVA} editable={false} />
+        <h2>Result:</h2>
         <TableExcerpt queryResult={exampleResult} />
     </React.Fragment>
 );
 
 export const Agg1Section: ITutorialSection = {
     title: "Min and Max",
-    description: "The 'Min' and 'Max' functions return the smallest and largest values of the selected column. respectively.",
+    description:
+        'The "Min" and "Max" functions return the smallest and largest values of the selected column, respectively. These functions can only be applied on columns that are selected to be shown in the reuslt.',
     exampleDescription: exampleDescription,
     syntaxDescription: SyntaxDescription,
 };

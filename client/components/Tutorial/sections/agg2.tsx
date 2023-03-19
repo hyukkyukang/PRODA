@@ -12,7 +12,7 @@ import ITutorialSection from "./abstractSection";
 export const SyntaxDescription = (
     <>
         <h2>Expression</h2>
-        <p>Below EVQA applies 'count', 'avg', 'sum' functions on 'column1', 'column2', and 'column3' respectively.</p>
+        <p>{'Below EVQA applies "count", "avg", "sum" functions on "column1", "column2", and "column3" respectively.'}</p>
         <Spreadsheet
             className="syntaxExample"
             data={CountAvgSumSyntaxExample.rows}
@@ -21,6 +21,7 @@ export const SyntaxDescription = (
         />
         <br />
         <br />
+        <p>{'Below EVQA applies "count" function on "table name", whole table.'}</p>
         <Spreadsheet
             className="syntaxExample"
             data={CountTableSyntaxExample.rows}
@@ -39,7 +40,7 @@ const exampleEQVA: EVQATree = {
         headers: headers,
         projection: {
             headers: [
-                { id: headers.indexOf("id"), agg_type: aggFunctions.indexOf("none") },
+                { id: headers.indexOf("id"), agg_type: aggFunctions.indexOf("count") },
                 { id: headers.indexOf("max_speed"), agg_type: aggFunctions.indexOf("avg") },
                 { id: headers.indexOf("year"), agg_type: aggFunctions.indexOf("sum") },
             ],
@@ -69,10 +70,10 @@ export const exampleResult: ITableExcerpt = PGResultToTableExcerpt(exampleTable)
 
 const exampleDescription: JSX.Element = (
     <React.Fragment>
-        <p>Below is the demo table</p>
         <TableExcerpt queryResult={demoTable} />
         <p>The following EVQA lists the number of car ids with the average maximum speed and the total price of cars</p>
         <EVQATables evqaRoot={exampleEQVA} editable={false} />
+        <h2>Result:</h2>
         <TableExcerpt queryResult={exampleResult} />
     </React.Fragment>
 );
@@ -80,7 +81,7 @@ const exampleDescription: JSX.Element = (
 export const Agg2Section: ITutorialSection = {
     title: "Count, Avg, Sum",
     description:
-        "The 'Count', 'Avg', and 'Sum' functions return the number of rows, the average of the selected column, and the sum of the selected column, respectively.",
+        'The "Count", "Avg", and "Sum" functions return the number of rows, the average of the selected column, and the sum of the selected column, respectively. "Avg" and "Sum" can only be applied to columns that are seleted to be shown in the result table. However, "Count" can be applied to the table name, which means that it counts the total number of rows in the table.',
     exampleDescription: exampleDescription,
     syntaxDescription: SyntaxDescription,
 };
