@@ -12,3 +12,4 @@ hkkang_utils
 pylogos
 attrs
 psycopg
+boto3

@@ -1,16 +1,16 @@
 visibleToClient:
     frontend:
-        IP: 141.223.197.243
-        Port: 3001
-        Protocol: http # Either https or http
+        IP: proda.postech.ac.kr
+        Port: 40080
+        Protocol: https # Either https or http
     backend:
-        IP: 141.223.197.243
+        IP: proda.postech.ac.kr
         Port: 40102
-        Protocol: http # Either https or http
+        Protocol: https # Either https or http
 backend:
     IP: localhost
     Port: 4002
-    Protocol: http # Either https or http
+    Protocol: https # Either https or http
 DB:
     IP: localhost
     Port: 5432
@@ -30,6 +30,7 @@ DB:
         UserPW: collection_user_pw
         CollectionTableName: collection
         TaskTableName: task
+        TaskSetTableName: task_set
 SSLCertPath: "/home/hjkim/PRODA/certificates/localhost.crt"
 SSLKeyPath: "/home/hjkim/PRODA/certificates/localhost.key"
 taskSaveDirPath: "/home/hjkim/PRODA/database/dataCollection/tasks/"
