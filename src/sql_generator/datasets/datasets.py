@@ -960,7 +960,7 @@ def LoadDataset(dataset, table, use_cols, data_dir,try_load_parsed=True):
         return LoadSYN(table,data_dir=data_dir,try_load_parsed=try_load_parsed,use_cols=use_cols)
 
 
-def filename_encoder(file_path, map_path='./tools/encode_map.pkl'):
+def filename_encoder(file_path, map_path='data/tools/encode_map.pkl'):
     def encoding(txt, mapper, delimeter='-'):
         tokens = txt.split(delimeter)
         result = []
