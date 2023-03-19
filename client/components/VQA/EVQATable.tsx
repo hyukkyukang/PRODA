@@ -69,7 +69,7 @@ export const TableHeaderContext = React.createContext({} as ITableHeaderContext)
 export const HoveringDescriptionContext = React.createContext({} as IHoveringDescriptionContext);
 
 export const EVQATable = (props: IEVQAVisualizationContext) => {
-    const { evqaRoot, setEVQARoot, setSelectedCoordinate, childListPath, editable, isFirstNode } = props;
+    const { evqaRoot, setEVQARoot, setSelectedCoordinate, childListPath, editable } = props;
 
     // Context for the provider
     const [x, setX] = useState(0);
@@ -82,7 +82,6 @@ export const EVQATable = (props: IEVQAVisualizationContext) => {
     const [rowLabels, setRowLabels] = useState<string[]>(["1"]);
     const [tableContext, setTableContext] = useState<IEVQATable>({} as IEVQATable);
 
-    const [subTree_str, setSubTree_str] = useState("");
     const headerNames = useMemo<string[]>(() => tableContext?.headers?.map((h) => h.name), [tableContext]);
 
     // To get selected cell information
@@ -198,16 +197,11 @@ export const EVQATable = (props: IEVQAVisualizationContext) => {
             const node = getNode(evqaRoot, [...childListPath]);
             const tmpTableContext = EVQANodeToEVQATable(node, editable);
             const tmpRowLabels = Array.from({ length: tmpTableContext.rows.length }, (x, i) => i + 1).map((x) => x.toString());
-            if (!editable) {
-                // Get and show result table
-                const subtree = getSubtree(evqaRoot, [...childListPath]);
-                setSubTree_str(JSON.stringify(subtree));
-            }
             setEVQANode(node);
             setTableContext(tmpTableContext);
             setRowLabels(tmpRowLabels);
         }
-    }, []);
+    }, [evqaRoot]);
 
     if (!isEmptyObject(tableContext)) {
         return (
@@ -263,7 +257,6 @@ export const EVQATable = (props: IEVQAVisualizationContext) => {
 
 export const EVQATables = (props: EVQATreeWrapperProps) => {
     const { evqaRoot, setEVQARoot = undefined, setSelectedCoordinate = undefined, editable = true } = props;
-    // const childPathLists = isEmptyObject(evqaRoot) ? [] : getTreeTraversingPaths(evqaRoot);
     const childPathLists = getTreeTraversingPaths(evqaRoot);
 
     // Add & remove buttons

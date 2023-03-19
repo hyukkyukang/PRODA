@@ -32,7 +32,7 @@ demoDBUserPW = config.DB.demo.UserPW;
 demoDBName = config.DB.demo.DBName;
 demoDBTableName = config.DB.demo.tableName;
 
-const spawnSync = require("child_process");
+const spawnSync = require("child_process").spawnSync;
 
 /* Fetch configs */
 function getConfig() {

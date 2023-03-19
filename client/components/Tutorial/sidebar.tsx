@@ -61,7 +61,7 @@ export const SideBar = (params: ISelectedSection): React.ReactElement => {
     const basicSection = (
         <React.Fragment>
             <div style={{ paddingLeft: "10px", fontWeight: "bold", fontSize: "20px" }}>
-                <p> Basic </p>
+                <p> EVQA Basic </p>
             </div>
             {basicTutorialSections.map((value) => (
                 <ListItem
@@ -72,7 +72,7 @@ export const SideBar = (params: ISelectedSection): React.ReactElement => {
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                 >
-                    EVQA {value.title}{" "}
+                    {value.title}{" "}
                 </ListItem>
             ))}
         </React.Fragment>
@@ -81,7 +81,7 @@ export const SideBar = (params: ISelectedSection): React.ReactElement => {
     const advancedSection = (
         <React.Fragment>
             <div style={{ paddingLeft: "10px", fontWeight: "bold", fontSize: "20px" }}>
-                <p> Advance </p>
+                <p> EVQA Advance </p>
             </div>
             {advanceTutorialSections.map((value) => (
                 <ListItem
@@ -92,7 +92,7 @@ export const SideBar = (params: ISelectedSection): React.ReactElement => {
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                 >
-                    EVQA {value.title}{" "}
+                    {value.title}{" "}
                 </ListItem>
             ))}
         </React.Fragment>

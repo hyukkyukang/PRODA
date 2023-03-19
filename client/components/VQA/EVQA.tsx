@@ -1,6 +1,7 @@
 import { ITableExcerpt } from "../TableExcerpt/TableExcerpt";
 
 // ! This must be aligned with the definition in src/VQA/EVQA.py > Operator
+// ! In EVQA, op_type should be index + 1 of below index (0 is reserved for null)
 // All the operators
 export const operators = ["=", "<", ">", "<=", ">=", "EXISTS", "NOT EXISTS", "IN", "NOT IN", "GROUP", "none", "count", "sum", "avg", "min", "max"];
 // Specific types of operators

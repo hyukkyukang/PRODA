@@ -1,33 +1,88 @@
+import React from "react";
 import Spreadsheet from "react-spreadsheet-custom";
-
-import ITutorialSection from "./abstractSection";
+import { PGResultFieldInterface, PGResultInterface, PGResultToTableExcerpt } from "../../TableExcerpt/Postgres";
+import { ITableExcerpt, TableExcerpt } from "../../TableExcerpt/TableExcerpt";
+import { aggFunctions, EVQATree } from "../../VQA/EVQA";
 import { EVQAColumnIndicator } from "../../VQA/EVQAColumnIndicator";
-import { CountAvgSumSyntaxExample } from "../syntaxExamples";
+import { EVQATables } from "../../VQA/EVQATable";
+import { demoTable } from "../examples/demoTable";
+import { CountAvgSumSyntaxExample, CountTableSyntaxExample } from "../examples/EVQAExamples";
+import ITutorialSection from "./abstractSection";
 
-export const SyntaxDescription = () => {
-    return (
-        <>
-            <h2>Count, Avg, Sum Syntax</h2>
-            <p>Below EVQA applies 'count', 'avg', 'sum' functions on 'column1', 'column2', and 'column3' respectively.</p>
-            <Spreadsheet
-                className="syntaxExample"
-                data={CountAvgSumSyntaxExample.rows}
-                columnLabels={CountAvgSumSyntaxExample.headers}
-                ColumnIndicator={EVQAColumnIndicator}
-            />
-        </>
-    );
+export const SyntaxDescription = (
+    <>
+        <h2>Expression</h2>
+        <p>Below EVQA applies 'count', 'avg', 'sum' functions on 'column1', 'column2', and 'column3' respectively.</p>
+        <Spreadsheet
+            className="syntaxExample"
+            data={CountAvgSumSyntaxExample.rows}
+            columnLabels={CountAvgSumSyntaxExample.headers}
+            ColumnIndicator={EVQAColumnIndicator}
+        />
+        <br />
+        <br />
+        <Spreadsheet
+            className="syntaxExample"
+            data={CountTableSyntaxExample.rows}
+            columnLabels={CountTableSyntaxExample.headers}
+            ColumnIndicator={EVQAColumnIndicator}
+        />
+    </>
+);
+
+// Demo EVQA and results
+const headers = ["cars"].concat(demoTable.headers);
+const exampleEQVA: EVQATree = {
+    node: {
+        name: "select",
+        table_excerpt: demoTable,
+        headers: headers,
+        projection: {
+            headers: [
+                { id: headers.indexOf("id"), agg_type: aggFunctions.indexOf("none") },
+                { id: headers.indexOf("max_speed"), agg_type: aggFunctions.indexOf("avg") },
+                { id: headers.indexOf("year"), agg_type: aggFunctions.indexOf("sum") },
+            ],
+        },
+        predicate: {
+            clauses: [],
+        },
+    },
+    children: [],
 };
+const headerInfo: PGResultFieldInterface[] = [
+    { name: "id", format: "number" },
+    { name: "max_speed", format: "number" },
+    { name: "price", format: "number" },
+];
+
+const data = [[12, 740, 884000]];
+export const exampleTable: PGResultInterface = {
+    command: "",
+    rowCount: 0,
+    oid: null,
+    rows: data,
+    fields: headerInfo,
+    rosAsArray: false,
+};
+export const exampleResult: ITableExcerpt = PGResultToTableExcerpt(exampleTable);
+
+const exampleDescription: JSX.Element = (
+    <React.Fragment>
+        <p>Below is the demo table</p>
+        <TableExcerpt queryResult={demoTable} />
+        <p>The following EVQA lists the number of car ids with the average maximum speed and the total price of cars</p>
+        <EVQATables evqaRoot={exampleEQVA} editable={false} />
+        <TableExcerpt queryResult={exampleResult} />
+    </React.Fragment>
+);
 
 export const Agg2Section: ITutorialSection = {
     title: "Count, Avg, Sum",
     description:
         "The 'Count', 'Avg', and 'Sum' functions return the number of rows, the average of the selected column, and the sum of the selected column, respectively.",
-    exampleQueryName: "countAvgSum",
-    exampleDescription: "The following EVQA lists the number of car ids with the average maximum speed and the total price of cars",
-    demoDBName: "Overwrite a demo database name here",
-    syntaxExamples: [CountAvgSumSyntaxExample],
-    syntaxDescription: SyntaxDescription(),
+    exampleDescription: exampleDescription,
+    syntaxDescription: SyntaxDescription,
 };
 
 export default Agg2Section;

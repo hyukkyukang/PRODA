@@ -1,7 +1,7 @@
 import React from "react";
 import { CellBase } from "react-spreadsheet-custom";
-import { IEVQATable } from "../VQA/EVQATable";
-import { aggFunctions } from "../VQA/EVQA";
+import { IEVQATable } from "../../VQA/EVQATable";
+import { aggFunctions } from "../../VQA/EVQA";
 
 export const valueToCell = (value: React.ReactElement): CellBase => {
     return { value: value, readOnly: true };
@@ -26,11 +26,33 @@ export const ProjectionSyntaxExample: IEVQATable = {
     rows: [["", "", "", "", ""].map(stringToReactElement).map(valueToCell)],
 };
 
+export const MinSyntaxExample: IEVQATable = {
+    headers: [
+        { name: "table_name", aggFuncs: [], isToProject: false },
+        { name: "column1", aggFuncs: [aggFunctions.indexOf("min")], isToProject: true },
+        { name: "column2", aggFuncs: [], isToProject: false },
+        { name: "column3", aggFuncs: [], isToProject: false },
+        { name: "...", aggFuncs: [], isToProject: false },
+    ],
+    rows: [["", "", "", "", ""].map(stringToReactElement).map(valueToCell)],
+};
+
 export const MinMaxSyntaxExample: IEVQATable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
         { name: "column1", aggFuncs: [aggFunctions.indexOf("min")], isToProject: true },
         { name: "column2", aggFuncs: [aggFunctions.indexOf("max")], isToProject: true },
+        { name: "column3", aggFuncs: [], isToProject: false },
+        { name: "...", aggFuncs: [], isToProject: false },
+    ],
+    rows: [["", "", "", "", ""].map(stringToReactElement).map(valueToCell)],
+};
+
+export const CountTableSyntaxExample: IEVQATable = {
+    headers: [
+        { name: "table_name", aggFuncs: [aggFunctions.indexOf("count")], isToProject: true },
+        { name: "column1", aggFuncs: [], isToProject: false },
+        { name: "column2", aggFuncs: [], isToProject: false },
         { name: "column3", aggFuncs: [], isToProject: false },
         { name: "...", aggFuncs: [], isToProject: false },
     ],
@@ -84,6 +106,17 @@ export const SelectionAndSyntaxExample: IEVQATable = {
     rows: [["", "condition1", "condition2", "", ""].map(stringToReactElement).map(valueToCell)],
 };
 
+export const SelectionAndOnCellSyntaxExample: IEVQATable = {
+    headers: [
+        { name: "table_name", aggFuncs: [], isToProject: false },
+        { name: "column1", aggFuncs: [0], isToProject: true },
+        { name: "column2", aggFuncs: [], isToProject: false },
+        { name: "column3", aggFuncs: [], isToProject: false },
+        { name: "...", aggFuncs: [], isToProject: false },
+    ],
+    rows: [["", "condition1 AND condition2", "", "", ""].map(stringToReactElement).map(valueToCell)],
+};
+
 export const GroupingSyntaxExample: IEVQATable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
@@ -95,7 +128,7 @@ export const GroupingSyntaxExample: IEVQATable = {
     rows: [["", "", "Group($column2)", "", ""].map(stringToReactElement).map(valueToCell)],
 };
 
-export const OrderingSyntaxExample: IEVQATable = {
+export const OrderingAscSyntaxExample: IEVQATable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
         { name: "column1", aggFuncs: [0], isToProject: true },
@@ -103,7 +136,18 @@ export const OrderingSyntaxExample: IEVQATable = {
         { name: "column3", aggFuncs: [], isToProject: false },
         { name: "...", aggFuncs: [], isToProject: false },
     ],
-    rows: [["", "Asc($column1)", "", "", ""].map(stringToReactElement).map(valueToCell)],
+    rows: [["", "Sort\u2191($column1)", "", "", ""].map(stringToReactElement).map(valueToCell)],
+};
+
+export const OrderingDescSyntaxExample: IEVQATable = {
+    headers: [
+        { name: "table_name", aggFuncs: [], isToProject: false },
+        { name: "column1", aggFuncs: [0], isToProject: true },
+        { name: "column2", aggFuncs: [], isToProject: false },
+        { name: "column3", aggFuncs: [], isToProject: false },
+        { name: "...", aggFuncs: [], isToProject: false },
+    ],
+    rows: [["", "Sort\u2193($column1)", "", "", ""].map(stringToReactElement).map(valueToCell)],
 };
 
 export const HavingSyntaxExampleStep1: IEVQATable = {

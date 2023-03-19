@@ -138,7 +138,7 @@ export const parseExpression = (expression: string, header_names: string[], igno
             tmpCondition.func_type = "Grouping";
         } else if (funcName in ["Asc", "Des"]) {
             tmpCondition.func_type = "Ordering";
-            tmpCondition.is_ascending = funcName == "Asc";
+            tmpCondition.is_ascending = funcName == "Sort\u2191";
         } else {
             if (!ignoreWarning) console.warn("Syntax Error (unexpected function name): " + funcName);
             return null;
@@ -164,7 +164,7 @@ export const parseExpressions = (cellValue: string, header_names: string[], igno
 export const conditionToExpression = (condition: Function, names: string[]): string => {
     const l_op = names[condition.header_id];
     if (condition.func_type == "Selecting") {
-        if (!condition.op_type) {
+        if (condition.op_type == undefined) {
             console.error("op_type is not defined");
             return "";
         }
@@ -188,7 +188,7 @@ export const conditionToExpression = (condition: Function, names: string[]): str
     } else if (condition.func_type == "Grouping") {
         return `Group($${l_op})`;
     } else if (condition.func_type == "Ordering") {
-        return `${condition.is_ascending ? "Asc" : "Des"}($${l_op})`;
+        return `${condition.is_ascending ? "Sort\u2191" : "Sort\u2193"}($${l_op})`;
     } else {
         return `${condition.func_type}($${l_op})`;
     }

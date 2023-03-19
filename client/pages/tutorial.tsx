@@ -1,14 +1,8 @@
 import { Button, Divider, Grid } from "@mui/material";
-import { MouseEventHandler, useState, useMemo } from "react";
-import { useQuery } from "react-query";
-import { fetchEVQA, runEVQA, runSQL } from "../api/connect";
-import { PGResultToTableExcerpt, PGResultInterface } from "../components/TableExcerpt/Postgres";
-import { ITableExcerpt, TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
+import React, { MouseEventHandler, useState, useMemo } from "react";
 import { ITutorialSection } from "../components/Tutorial/sections/abstractSection";
-import { allTutorialSections, ProjectionSection } from "../components/Tutorial/sections/allSections";
+import { allTutorialSections, TaskOverviewSection } from "../components/Tutorial/sections/allSections";
 import { SideBar } from "../components/Tutorial/sidebar";
-import { EVQATree } from "../components/VQA/EVQA";
-import { EVQATables } from "../components/VQA/EVQATable";
 
 const DividerWithMargin: JSX.Element = (
     <>
@@ -37,25 +31,7 @@ const PageNavigationButtons = (prevButtonHandler: MouseEventHandler, nextButtonH
 
 const Tutorial = () => {
     // Global variables
-    const [selectedSection, setSelectedSection] = useState<ITutorialSection>(ProjectionSection);
-
-    // Use Query
-    const demoDBTableQuery = useQuery<ITableExcerpt>(["runSQL", "SELECT * FROM cars"], runSQL);
-    const fetchedEVQAQuery = useQuery<EVQATree>(["fetchEVQA", selectedSection.exampleQueryName], fetchEVQA, { cacheTime: 0 });
-    const queryResultQuery = useQuery(["runEVQA", fetchedEVQAQuery?.data], runEVQA, { enabled: fetchedEVQAQuery?.data ? true : false });
-    // Use Memo
-    const demoDBResult = useMemo(
-        () => (demoDBTableQuery?.data ? PGResultToTableExcerpt(demoDBTableQuery.data as unknown as PGResultInterface) : {}),
-        [demoDBTableQuery.data]
-    );
-    const evqa = useMemo<EVQATree>(
-        () => (fetchedEVQAQuery?.data ? fetchedEVQAQuery.data : ({} as EVQATree)),
-        [selectedSection, fetchedEVQAQuery, fetchedEVQAQuery.data]
-    );
-    const queryResult = useMemo<ITableExcerpt>(
-        () => (queryResultQuery?.data ? PGResultToTableExcerpt(queryResultQuery.data.result) : ({} as ITableExcerpt)),
-        [queryResultQuery?.data]
-    );
+    const [selectedSection, setSelectedSection] = useState<ITutorialSection>(TaskOverviewSection);
 
     const selectPrevTutorialHandler: MouseEventHandler = (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
         let index = allTutorialSections.indexOf(selectedSection);
@@ -71,6 +47,26 @@ const Tutorial = () => {
         }
     };
 
+    const EVQATutorial: JSX.Element = (
+        <React.Fragment>
+            <p>{selectedSection.description}</p>
+            {selectedSection.syntaxDescription}
+            <h2> Demo Table </h2>
+            <p> Below is a sampled rows from the "cars" table in our demo table: </p>
+            {selectedSection.exampleDescription}
+        </React.Fragment>
+    );
+
+    const mainBody = useMemo((): JSX.Element => {
+        if (selectedSection === undefined || selectedSection === null) {
+            return <></>;
+        } else if (selectedSection.itsOwnPage !== undefined) {
+            return selectedSection.itsOwnPage;
+        } else {
+            return EVQATutorial;
+        }
+    }, [selectedSection]);
+
     return (
         <>
             <Grid container spacing={2} style={{ whiteSpace: "pre-wrap", lineHeight: "1.5" }}>
@@ -81,16 +77,7 @@ const Tutorial = () => {
                     <h1>{selectedSection.title}</h1>
                     {PageNavigationButtons(selectPrevTutorialHandler, selectNextTutorialHandler)}
                     {DividerWithMargin}
-                    <p>{selectedSection.description}</p>
-                    {selectedSection.syntaxDescription}
-                    <h2> Demo Database </h2>
-                    <p> Below is a sampled rows from the "cars" table in our demo database: </p>
-                    <TableExcerpt queryResult={demoDBResult} />
-                    <h2> {selectedSection.title} Example</h2>
-                    <p>{selectedSection.exampleDescription}</p>
-                    <EVQATables evqaRoot={evqa} editable={false} />
-                    <p> Below is the query result from the Demo Database: </p>
-                    <TableExcerpt queryResult={queryResult} />
+                    {mainBody}
                     <br />
                     <Divider light={false} sx={{ marginTop: "2px", marginBottom: "2px" }} />
                     <br />
