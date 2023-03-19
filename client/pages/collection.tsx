@@ -11,7 +11,7 @@ import { OverallTaskDescription } from "../components/Collection/overallTaskDesc
 import { Header } from "../components/Header/collectionHeader";
 import { RefContext } from "../pages/_app";
 
-const enableAMTSubmission = false;
+const enableAMTSubmission = true;
 
 export const Collection = (props: any) => {
     // Ref
@@ -45,16 +45,26 @@ export const Collection = (props: any) => {
     });
     const taskSet = useMemo<{ taskSetID: number; tasks: Task[] } | null>(() => (data?.isTaskReturned ? data.taskSet : null), [data]);
     const currentTask = useMemo<Task | null>(() => (taskSet && taskSet.tasks.length > taskSetIdx ? taskSet.tasks[taskSetIdx] : null), [taskSet, taskSetIdx]);
+    const isToSendAMTSubmit = useMemo<boolean>(() => (taskSet?.tasks ? taskSetIdx + 1 >= taskSet?.tasks.length : false), [taskSet, taskSetIdx]);
     const isTaskSetComplete = useMemo<boolean>(() => (taskSet?.tasks ? taskSetIdx >= taskSet?.tasks.length : false), [taskSet, taskSetIdx]);
+    const isClickable = useMemo<boolean>(
+        () => (currentTask && (!enableAMTSubmission || (enableAMTSubmission && workerID)) ? true : false),
+        [currentTask, workerID]
+    );
 
     const onSubmitHandler = () => {
         // This should be called only when data is not null
-        if (currentTask) {
+        if (isClickable) {
             // Send current step's info to the server
             sendWorkerAnswer({ answer: answer, workerID: workerID, taskID: currentTask?.taskID, taskSetID: taskSet?.taskSetID });
 
             // Submit assignment
-            if (enableAMTSubmission && isTaskSetComplete && formRef.current) {
+            console.log(`taskSet length:${taskSet?.tasks.length}`);
+            console.log(`taskSetIdx: ${taskSetIdx}`);
+            console.log(`isTaskSetComplete: ${isTaskSetComplete}`);
+            console.log(`isToSendAMTSubmit: ${isToSendAMTSubmit}`);
+            if (enableAMTSubmission && isToSendAMTSubmit && formRef.current) {
+                console.log(`amt submitted!!`);
                 formRef.current.submit();
             }
             setTaskSetIdx(taskSetIdx + 1);
@@ -62,7 +72,9 @@ export const Collection = (props: any) => {
     };
 
     const onSkipHandler = () => {
-        mutate({ workerID: workerID, taskSetID: taskSet?.taskSetID, isSkip: true });
+        if (isClickable) {
+            mutate({ workerID: workerID, taskSetID: taskSet?.taskSetID, isSkip: true });
+        }
     };
 
     const getAMTInfo = () => {
@@ -71,7 +83,7 @@ export const Collection = (props: any) => {
         const hitId = queryParams.get("hitId") ? queryParams.get("hitId") : "";
         const assignmentId = queryParams.get("assignmentId") ? queryParams.get("assignmentId") : "";
         const turkSubmitTo = queryParams.get("turkSubmitTo") ? queryParams.get("turkSubmitTo") : "";
-        const workerID = queryParams.get("workerId") ? queryParams.get("workerId") : "a";
+        const workerID = queryParams.get("workerId") ? queryParams.get("workerId") : "";
         const taskSetID = queryParams.get("taskSetID") ? queryParams.get("taskSetID") : "";
 
         // Set AMT information

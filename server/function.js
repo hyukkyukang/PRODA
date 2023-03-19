@@ -264,7 +264,7 @@ function logWorkerAnswer(logData) {
     // Get values from answer
     const task_set_id = logData.taskSetID;
     const task_id = logData.taskID;
-    const user_id = logData.workerId;
+    const user_id = logData.workerID;
     const is_correct = logData.answer.isCorrect === undefined ? null : logData.answer.isCorrect;
     const nl = logData.answer.nl.replace(/'/g, "\\'");
 

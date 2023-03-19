@@ -1,7 +1,7 @@
 visibleToClient:
     frontend:
         IP: proda.postech.ac.kr
-        Port: 40080
+        Port: 3001
         Protocol: https # Either https or http
     backend:
         IP: proda.postech.ac.kr

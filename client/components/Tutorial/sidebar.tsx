@@ -34,7 +34,7 @@ export const SideBar = (params: ISelectedSection): React.ReactElement => {
         setHoveringSection(null);
     };
 
-    const getStyle = (section: ITutorialSection): React.CSSProperties => {
+    const getStyle = (section: ITutorialSection | null): React.CSSProperties => {
         if (section == params.selectedSection) {
             return { background: "green", color: "white" };
         } else if (section == hoveringSection) {

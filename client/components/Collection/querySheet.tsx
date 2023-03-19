@@ -52,8 +52,8 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
             const selectedSpan = nl_mapping?.filter((value) => {
                 return value[0] == `${selectedCoordinate.x},${selectedCoordinate.y}`;
             });
-            const spanOnly: Array<[number, number]> = selectedSpan ? selectedSpan.map((value) => value.slice(1)) : [];
-            setHighlightList(spanOnly);
+            const spanOnly = selectedSpan ? selectedSpan.map((value) => value.slice(1)) : [];
+            setHighlightList(spanOnly as unknown as Array<[number, number]>);
         }
     }, [nl_mapping, selectedCoordinate]);
 
