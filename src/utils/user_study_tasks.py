@@ -171,7 +171,7 @@ def MovieTask3(query_object):
 
     # Create and save task1
     sub_task1 = Task(
-        nl="Find name of reviewer, for each reviewer number of all of movie where time of movie is greater than 130",
+        nl=nl1,
         nl_mapping=mapping1,
         sql="Sub1",
         evql=evql1,
@@ -187,7 +187,7 @@ def MovieTask3(query_object):
 
     # Create and save task2
     sub_task2 = Task(
-        nl="Find name of reviewer for each id of reviewer, considering only those groups whose number of all of movie is 1, where time of movie is greater than 130.",
+        nl=nl2,
         nl_mapping=mapping2,
         sql="Full",
         evql=evql2,
