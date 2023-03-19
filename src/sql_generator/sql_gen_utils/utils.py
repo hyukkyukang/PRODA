@@ -3,7 +3,37 @@
 import ast
 from collections import defaultdict
 import csv
+import pickle
 
+def write_graphs(writer, graphs):
+    for graph in graphs:
+        pickle.dump(graph, writer, pickle.HIGHEST_PROTOCOL)
+
+def load_graphs(filepath, count):
+    graphs = list()
+    with open(filepath, 'rb') as f:
+        for i in range(count):
+            try:
+                data = pickle.load(f)
+            except EOFError:
+                assert False, "The number of queries given by users is wrong, Only {} queries in the file {}".format(i, filepath)
+            graphs.append(data)
+    return graphs
+
+def write_objs(writer, objs):
+    for obj in objs:
+        pickle.dump(obj, writer, pickle.HIGHEST_PROTOCOL)
+
+def load_objs(filepath, count):
+    objs = list()
+    with open(filepath, 'rb') as f:
+        for i in range(count):
+            try:
+                data = pickle.load(f)
+            except EOFError:
+                assert False, "The number of queries given by users is wrong, Only {} queries in the file {}".format(i, filepath)
+            objs.append(data)
+    return objs
 
 def _get_table_dict(tables):
     table_dict = {}

@@ -1,26 +1,27 @@
-
-
 import numpy as np
 import pandas as pd
 import argparse
+import datetime
 import time
 import json
 import sqlite3
 from glob import glob
 from tqdm import tqdm
 from pandas.api.types import is_string_dtype,is_numeric_dtype
-
-import utils
-import datasets
-import join_utils
-from gen_schema_new import SCHEMA as spider_schema
-from gen_schema import SCHEMA as original_schema
-from sql_genetion_modules import query_generator, \
-                                    alias_generator, \
+import sql_gen_utils.query_graph
+import sql_gen_utils.utils as utils
+import tools.experiments
+import sampler.common
+import datasets.datasets as datasets
+import sql_gen_utils.join_utils as join_utils
+from tools.gen_schema_new import SCHEMA as spider_schema
+from tools.gen_schema import SCHEMA as original_schema
+from sql_gen_utils.sql_genetion_modules import query_generator
+from sql_gen_utils.sql_genetion_utils import  alias_generator, \
                                     TEXTUAL_AGGS, \
                                     NUMERIC_AGGS
-from type_dicts import imdbDtypeDict, tpcdsDtypeDict
-from factorized_sampler import FactorizedSamplerIterDataset, JoinCountTableActor
+from datasets.type_dicts import imdbDtypeDict, tpcdsDtypeDict
+from sampler.factorized_sampler import FactorizedSamplerIterDataset, JoinCountTableActor
 
 SCHEMA = {k: v for k, v in list(spider_schema.items()) + list(original_schema.items())}
 #SCHEMA = {k: v for k, v in list(original_schema.items())}
@@ -76,8 +77,8 @@ parser.add_argument('--has_type_ja', action='store_true')
 parser.add_argument('--log_path',type=str,default="query_generator.log")
 parser.add_argument('--schema_name',type=str)
 parser.add_argument('--db',type=str)
-parser.add_argument('--join_key_pred',type=str2bool,default='True')
-
+parser.add_argument('--join_key_pred',type=str2bool,default='False')
+parser.add_argument('--inner_query_paths', nargs='+', default=None)
 args = parser.parse_args()
 
 ALIAS_TO_TABLE_NAME, TABLE_NAME_TO_ALIAS = alias_generator(args)
@@ -144,7 +145,7 @@ def decode_key_column (df, db_id):
 
 
 def main(schema, dvs, column_dtype_dict, num_queries, output_path,log_path,log_step = 1,sep='#',SEED=1234,join_key_pred=True,only_executable=False):
-
+    
     all_table_set =  set(schema['join_tables'])
     join_clause_list = schema['join_clauses']
     join_keys = schema['join_keys']
@@ -163,6 +164,8 @@ def main(schema, dvs, column_dtype_dict, num_queries, output_path,log_path,log_s
         df = decode_key_column(df, schema['use_cols'])
 
     lines = list()
+    graphs = list()
+    objs = list()
     print("Query generation")
 
     if schema['dataset'] == 'imdb':
@@ -177,6 +180,20 @@ def main(schema, dvs, column_dtype_dict, num_queries, output_path,log_path,log_s
     n = 1
     num_success = 0
     num_iter = 0
+    # Loading non-nested or nested query from files in the given paths
+    if args.inner_query_paths:
+        inner_query_objs = list()
+        inner_query_graphs = list()
+        for inner_query_path in args.inner_query_paths:
+            with open(inner_query_path, 'r') as fp:
+                q_count = len(fp.readlines())
+            inner_query_objs += load_objs(inner_query_path+".obj", q_count)
+            inner_query_graphs += load_graphs(inner_query_path+".graph", q_count)
+        # .obj type files
+    else:
+        inner_query_objs = None
+        inner_query_graphs = None
+
     while num_success < num_queries:
         num_iter += 1
         if num_success == 0 and num_iter > 10000:
@@ -185,15 +202,17 @@ def main(schema, dvs, column_dtype_dict, num_queries, output_path,log_path,log_s
         if n >= len(df.notna()):
             n = 1
         
-        # line = query_generator(args, df, n, rng,
+        #line, graph, obj = query_generator(args, df, n, rng,
         #                             all_table_set, join_key_list, join_clause_list, join_key_pred,
         #                             dtype_dict, dvs)
         try:
-        	line = query_generator(args, df, n, rng,
+        	line, graph, obj = query_generator(args, df, n, rng,
         							all_table_set, join_key_list, join_clause_list, join_key_pred,
-        							dtype_dict, dvs)
+        							dtype_dict, dvs, inner_query_objs, inner_query_graphs)
         except Exception as e:
-        	continue
+            print(e)
+            #break
+            continue
         n += 1
 
         do_write = True
@@ -202,6 +221,8 @@ def main(schema, dvs, column_dtype_dict, num_queries, output_path,log_path,log_s
 
         if do_write:
             lines.append(line + '\n')
+            graphs.append(graph)
+            objs.append(obj)
             pbar.update(1)
             num_success += 1
 
@@ -210,6 +231,12 @@ def main(schema, dvs, column_dtype_dict, num_queries, output_path,log_path,log_s
             with open(output_path,'at') as writer:
                 writer.writelines(lines)
                 lines = list()
+            with open(output_path+".graph", 'ab') as writer:
+                utils.write_graphs(writer, graphs)
+                graphs = list()
+            with open(output_path+".obj", 'ab') as writer:
+                utils.write_objs(writer, objs)
+                objs = list()
 
             cur_time = time.time()
             txt = f"{n+1} done. takes {cur_time-t1:.2f}s\t{cur_time-t2:.2f}s per {log_step}\n"

@@ -11,13 +11,13 @@ import glog as log
 import numpy as np
 import pandas as pd
 
-import common
-import datasets
-import experiments
-import factorized_sampler_lib.data_utils as data_utils
-import factorized_sampler_lib.prepare_utils as prepare_utils
-import factorized_sampler_lib.rustlib as rustlib
-import join_utils
+import sampler.common as common
+import datasets.datasets
+import tools.experiments
+import sampler.factorized_sampler_lib.data_utils as data_utils
+import sampler.factorized_sampler_lib.prepare_utils as prepare_utils
+import sampler.factorized_sampler_lib.rustlib as rustlib
+import sql_gen_utils.join_utils
 
 
 # +@ add
