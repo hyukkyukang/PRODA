@@ -7,7 +7,6 @@ import Selection2Section from "./selection2";
 import Selection3Section from "./selection3";
 import GroupingSection from "./grouping";
 import OrderingSection from "./ordering";
-import NestingSection from "./nesting";
 import ForEachSection from "./forEach";
 import MultipleSublinks from "./multisublinks";
 import EVQAOverviewSection from "./EVQAOverview";
@@ -23,7 +22,6 @@ export { Selection2Section as Selection2Section } from "./selection2";
 export { Selection3Section as Selection3Section } from "./selection3";
 export { GroupingSection as GroupingSection } from "./grouping";
 export { OrderingSection as OrderingSection } from "./ordering";
-export { NestingSection as NestingSection } from "./nesting";
 export { ForEachSection as ForEachSection } from "./forEach";
 export { MultipleSublinks as MultipleSublinks } from "./multisublinks";
 
@@ -38,6 +36,7 @@ export const basicTutorialSections: ITutorialSection[] = [
     OrderingSection,
 ];
 
-export const advanceTutorialSections: ITutorialSection[] = [GroupingSection, Selection3Section, NestingSection, ForEachSection, MultipleSublinks];
+// export const advanceTutorialSections: ITutorialSection[] = [GroupingSection, Selection3Section, ForEachSection, MultipleSublinks];
+export const advanceTutorialSections: ITutorialSection[] = [GroupingSection, Selection3Section];
 
 export const allTutorialSections: ITutorialSection[] = [TaskOverviewSection].concat(basicTutorialSections.concat(advanceTutorialSections));

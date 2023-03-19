@@ -79,7 +79,7 @@ const description: JSX.Element = (
 );
 
 export const EVQAOverviewSection: ITutorialSection = {
-    title: "EVQA Overview",
+    title: "Structure",
     description: "Write description here..",
     exampleDescription: <></>,
     syntaxDescription: <></>,

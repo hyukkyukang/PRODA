@@ -3,6 +3,7 @@ import Spreadsheet from "react-spreadsheet-custom";
 import { PGResultFieldInterface, PGResultInterface, PGResultToTableExcerpt } from "../../TableExcerpt/Postgres";
 import { ITableExcerpt, TableExcerpt } from "../../TableExcerpt/TableExcerpt";
 import { aggFunctions, EVQATree } from "../../VQA/EVQA";
+import { dataViewer } from "../../VQA/EVQACell";
 import { EVQAColumnIndicator } from "../../VQA/EVQAColumnIndicator";
 import { EVQATables } from "../../VQA/EVQATable";
 import { demoTable } from "../examples/demoTable";
@@ -13,14 +14,16 @@ export const SyntaxDescription = (
     <>
         <h2>Expression</h2>
         <p>
-            'The name of grouping function is "Group". We write grouping expression in the condition of the grouping column, with the name of the column given
-            as an input to the grouping function.',
+            {
+                'EVQA uses function called "Group" to express grouping. As described below, the column that is used for grouping is given as the input to the function.'
+            }
         </p>
         <Spreadsheet
             className="syntaxExample"
             data={GroupingSyntaxExample.rows}
             columnLabels={GroupingSyntaxExample.headers}
             ColumnIndicator={EVQAColumnIndicator}
+            DataViewer={dataViewer}
         />
     </>
 );
@@ -77,10 +80,10 @@ const exampleResult: ITableExcerpt = PGResultToTableExcerpt(exampleTable);
 
 const exampleDescription: JSX.Element = (
     <React.Fragment>
-        <p>Below is the demo table</p>
         <TableExcerpt queryResult={demoTable} />
         <p>The following EVQA Groups data by the column 'model' and projects the name and number of models.</p>
         <EVQATables evqaRoot={exampleEQVA} editable={false} />
+        <h2>Result:</h2>
         <TableExcerpt queryResult={exampleResult} />
     </React.Fragment>
 );
@@ -88,8 +91,8 @@ const exampleDescription: JSX.Element = (
 export const GroupingSection: ITutorialSection = {
     title: "Grouping",
     description:
-        'The Grouping operation groups rows that have the same values into summary rows, like "find the number of customers in each country".\
-                \nThe Grouping operation is often used with aggregate functions (e.g. min, max, avg, count, and sum) to group the result-set by one or more columns.',
+        "The grouping operation groups rows that have the same value into one.\
+        \nIt is often used with aggregate functions (e.g. min, max, avg, count, and sum) to group the result-set by one or more columns.",
     exampleDescription: exampleDescription,
     syntaxDescription: SyntaxDescription,
 };
