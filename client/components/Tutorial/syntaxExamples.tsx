@@ -1,7 +1,7 @@
 import React from "react";
 import { CellBase } from "react-spreadsheet-custom";
-import { IEVQATable } from "../../VQA/EVQATable";
-import { aggFunctions } from "../../VQA/EVQA";
+import { IEVQLTable } from "../VQL/EVQLTable";
+import { aggFunctions } from "../VQL/EVQL";
 
 export const valueToCell = (value: React.ReactElement): CellBase => {
     return { value: value, readOnly: true };
@@ -15,7 +15,7 @@ export const stringToReactElement = (value: string): React.ReactElement => {
     );
 };
 
-export const ProjectionSyntaxExample: IEVQATable = {
+export const ProjectionSyntaxExample: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
         { name: "column1", aggFuncs: [0], isToProject: true },
@@ -26,18 +26,7 @@ export const ProjectionSyntaxExample: IEVQATable = {
     rows: [["", "", "", "", ""].map(stringToReactElement).map(valueToCell)],
 };
 
-export const MinSyntaxExample: IEVQATable = {
-    headers: [
-        { name: "table_name", aggFuncs: [], isToProject: false },
-        { name: "column1", aggFuncs: [aggFunctions.indexOf("min")], isToProject: true },
-        { name: "column2", aggFuncs: [], isToProject: false },
-        { name: "column3", aggFuncs: [], isToProject: false },
-        { name: "...", aggFuncs: [], isToProject: false },
-    ],
-    rows: [["", "", "", "", ""].map(stringToReactElement).map(valueToCell)],
-};
-
-export const MinMaxSyntaxExample: IEVQATable = {
+export const MinMaxSyntaxExample: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
         { name: "column1", aggFuncs: [aggFunctions.indexOf("min")], isToProject: true },
@@ -48,18 +37,7 @@ export const MinMaxSyntaxExample: IEVQATable = {
     rows: [["", "", "", "", ""].map(stringToReactElement).map(valueToCell)],
 };
 
-export const CountTableSyntaxExample: IEVQATable = {
-    headers: [
-        { name: "table_name", aggFuncs: [aggFunctions.indexOf("count")], isToProject: true },
-        { name: "column1", aggFuncs: [], isToProject: false },
-        { name: "column2", aggFuncs: [], isToProject: false },
-        { name: "column3", aggFuncs: [], isToProject: false },
-        { name: "...", aggFuncs: [], isToProject: false },
-    ],
-    rows: [["", "", "", "", ""].map(stringToReactElement).map(valueToCell)],
-};
-
-export const CountAvgSumSyntaxExample: IEVQATable = {
+export const CountAvgSumSyntaxExample: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
         { name: "column1", aggFuncs: [aggFunctions.indexOf("count")], isToProject: true },
@@ -70,10 +48,10 @@ export const CountAvgSumSyntaxExample: IEVQATable = {
     rows: [["", "", "", "", ""].map(stringToReactElement).map(valueToCell)],
 };
 
-export const SelectionSyntaxExample: IEVQATable = {
+export const SelectionSyntaxExample: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
-        { name: "column1", aggFuncs: [], isToProject: false },
+        { name: "column1", aggFuncs: [0], isToProject: false },
         { name: "column2", aggFuncs: [], isToProject: false },
         { name: "column3", aggFuncs: [], isToProject: false },
         { name: "...", aggFuncs: [], isToProject: false },
@@ -81,11 +59,11 @@ export const SelectionSyntaxExample: IEVQATable = {
     rows: [["", "condition", "", "", ""].map(stringToReactElement).map(valueToCell)],
 };
 
-export const SelectionOrSyntaxExample: IEVQATable = {
+export const SelectionOrSyntaxExample: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
-        { name: "column1", aggFuncs: [], isToProject: false },
-        { name: "column2", aggFuncs: [], isToProject: false },
+        { name: "column1", aggFuncs: [0], isToProject: false },
+        { name: "column2", aggFuncs: [0], isToProject: false },
         { name: "column3", aggFuncs: [], isToProject: false },
         { name: "...", aggFuncs: [], isToProject: false },
     ],
@@ -95,62 +73,40 @@ export const SelectionOrSyntaxExample: IEVQATable = {
     ],
 };
 
-export const SelectionAndSyntaxExample: IEVQATable = {
+export const SelectionAndSyntaxExample: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
-        { name: "column1", aggFuncs: [], isToProject: false },
-        { name: "column2", aggFuncs: [], isToProject: false },
+        { name: "column1", aggFuncs: [0], isToProject: false },
+        { name: "column2", aggFuncs: [0], isToProject: false },
         { name: "column3", aggFuncs: [], isToProject: false },
         { name: "...", aggFuncs: [], isToProject: false },
     ],
     rows: [["", "condition1", "condition2", "", ""].map(stringToReactElement).map(valueToCell)],
 };
 
-export const SelectionAndOnCellSyntaxExample: IEVQATable = {
+export const GroupingSyntaxExample: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
         { name: "column1", aggFuncs: [], isToProject: false },
-        { name: "column2", aggFuncs: [], isToProject: false },
-        { name: "column3", aggFuncs: [], isToProject: false },
-        { name: "...", aggFuncs: [], isToProject: false },
-    ],
-    rows: [["", "condition1 AND condition2", "", "", ""].map(stringToReactElement).map(valueToCell)],
-};
-
-export const GroupingSyntaxExample: IEVQATable = {
-    headers: [
-        { name: "table_name", aggFuncs: [], isToProject: false },
-        { name: "column1", aggFuncs: [], isToProject: false },
-        { name: "column2", aggFuncs: [], isToProject: false },
+        { name: "column2", aggFuncs: [0], isToProject: false },
         { name: "column3", aggFuncs: [], isToProject: false },
         { name: "...", aggFuncs: [], isToProject: false },
     ],
     rows: [["", "", "Group($column2)", "", ""].map(stringToReactElement).map(valueToCell)],
 };
 
-export const OrderingAscSyntaxExample: IEVQATable = {
+export const OrderingSyntaxExample: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
-        { name: "column1", aggFuncs: [], isToProject: false },
+        { name: "column1", aggFuncs: [0], isToProject: false },
         { name: "column2", aggFuncs: [], isToProject: false },
         { name: "column3", aggFuncs: [], isToProject: false },
         { name: "...", aggFuncs: [], isToProject: false },
     ],
-    rows: [["", "Sort\u2191($column1)", "", "", ""].map(stringToReactElement).map(valueToCell)],
+    rows: [["", "Asc($column1)", "", "", ""].map(stringToReactElement).map(valueToCell)],
 };
 
-export const OrderingDescSyntaxExample: IEVQATable = {
-    headers: [
-        { name: "table_name", aggFuncs: [], isToProject: false },
-        { name: "column1", aggFuncs: [], isToProject: false },
-        { name: "column2", aggFuncs: [], isToProject: false },
-        { name: "column3", aggFuncs: [], isToProject: false },
-        { name: "...", aggFuncs: [], isToProject: false },
-    ],
-    rows: [["", "Sort\u2193($column1)", "", "", ""].map(stringToReactElement).map(valueToCell)],
-};
-
-export const HavingSyntaxExampleStep1: IEVQATable = {
+export const HavingSyntaxExampleStep1: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
         { name: "column1", aggFuncs: [0], isToProject: true },
@@ -161,7 +117,7 @@ export const HavingSyntaxExampleStep1: IEVQATable = {
     rows: [],
 };
 
-export const HavingSyntaxExampleStep2: IEVQATable = {
+export const HavingSyntaxExampleStep2: IEVQLTable = {
     headers: [
         { name: "table_name", aggFuncs: [], isToProject: false },
         { name: "column1", aggFuncs: [0], isToProject: true },

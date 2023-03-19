@@ -3,6 +3,7 @@ import Spreadsheet from "react-spreadsheet-custom";
 import { PGResultFieldInterface, PGResultInterface, PGResultToTableExcerpt } from "../../TableExcerpt/Postgres";
 import { ITableExcerpt, TableExcerpt } from "../../TableExcerpt/TableExcerpt";
 import { aggFunctions, binaryOperators, EVQATree } from "../../VQA/EVQA";
+import { dataViewer } from "../../VQA/EVQACell";
 import { EVQAColumnIndicator } from "../../VQA/EVQAColumnIndicator";
 import { EVQATables } from "../../VQA/EVQATable";
 import { demoTable } from "../examples/demoTable";
@@ -18,6 +19,7 @@ export const SyntaxDescription = (
             data={SelectionSyntaxExample.rows}
             columnLabels={SelectionSyntaxExample.headers}
             ColumnIndicator={EVQAColumnIndicator}
+            DataViewer={dataViewer}
         />
     </>
 );
@@ -70,7 +72,6 @@ const exampleDescription: JSX.Element = (
 export const Selection1Section: ITutorialSection = {
     title: "Filter By Condition",
     description: "EVQA can add conditions to filter data that do not satisfy the given condition.",
-
     exampleDescription: exampleDescription,
     syntaxDescription: SyntaxDescription,
 };

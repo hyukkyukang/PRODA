@@ -3,6 +3,7 @@ import Spreadsheet from "react-spreadsheet-custom";
 import { PGResultFieldInterface, PGResultInterface, PGResultToTableExcerpt } from "../../TableExcerpt/Postgres";
 import { ITableExcerpt, TableExcerpt } from "../../TableExcerpt/TableExcerpt";
 import { aggFunctions, binaryOperators, EVQATree } from "../../VQA/EVQA";
+import { dataViewer } from "../../VQA/EVQACell";
 import { EVQAColumnIndicator } from "../../VQA/EVQAColumnIndicator";
 import { EVQATables } from "../../VQA/EVQATable";
 import { demoTable } from "../examples/demoTable";
@@ -12,20 +13,23 @@ import ITutorialSection from "./abstractSection";
 export const SyntaxDescription = (
     <>
         <h2>Expression</h2>
-        <p>"Asc" and "Desc" are the two functions used to specify the order of the result-set.</p>
+        <p>{'Below EVQA uses sorting operation on "column1". The arrow pointing up indicates that it is sorting in ascending order'}</p>
         <Spreadsheet
             className="syntaxExample"
             data={OrderingAscSyntaxExample.rows}
             columnLabels={OrderingAscSyntaxExample.headers}
             ColumnIndicator={EVQAColumnIndicator}
+            DataViewer={dataViewer}
         />
         <br />
         <br />
+        <p>{'Below EVQA uses sorting operation on "column1". The arrow pointing down indicates that it is sorting in descending order'}</p>
         <Spreadsheet
             className="syntaxExample"
             data={OrderingDescSyntaxExample.rows}
             columnLabels={OrderingDescSyntaxExample.headers}
             ColumnIndicator={EVQAColumnIndicator}
+            DataViewer={dataViewer}
         />
     </>
 );
@@ -59,7 +63,7 @@ const exampleEQVA: EVQATree = {
         table_excerpt: demoTable,
         headers: headers,
         projection: {
-            headers: [],
+            headers: [{ id: headers.indexOf("id"), agg_type: aggFunctions.indexOf("none") }],
         },
         predicate: {
             clauses: [
@@ -90,17 +94,17 @@ const exampleResult: ITableExcerpt = PGResultToTableExcerpt(exampleTable);
 
 const exampleDescription: JSX.Element = (
     <React.Fragment>
-        <p>Below is the demo table</p>
         <TableExcerpt queryResult={demoTable} />
-        <p>The following EVQA projects id of cars which are manufactured in year 2010 by descending order of horsepower.</p>
+        <p>The following EVQA selectes id of cars which are manufactured in year 2010. It should the result in the descending order of horsepower.</p>
         <EVQATables evqaRoot={exampleEQVA} editable={false} />
+        <h2>Result:</h2>
         <TableExcerpt queryResult={exampleResult} />
     </React.Fragment>
 );
 
 export const OrderingSection: ITutorialSection = {
     title: "Sorting",
-    description: "Sorting operation is used to sort the result-set in ascending or descending order.",
+    description: `EVQA can use sorting operations to sort the result-set in ascending or descending order.\n`,
     exampleDescription: exampleDescription,
     syntaxDescription: SyntaxDescription,
 };
