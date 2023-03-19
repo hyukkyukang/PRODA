@@ -1,4 +1,4 @@
-import { EVQLTree } from "../VQL/EVQL";
+import { EVQATree } from "../VQA/EVQA";
 
 export interface IDate {
     year: number;
@@ -30,7 +30,7 @@ export const queryTypeNames: { [key: string]: string } = {
 // Change the name. PairData may be misleading
 export interface IPairData {
     nl: string;
-    evql: EVQLTree;
+    evqa: EVQATree;
     sql: string;
     queryType: string;
     dbName: string;
@@ -42,7 +42,7 @@ export interface ILogData {
     dbName: string;
     nl: string;
     sql: string;
-    evql: EVQLTree;
+    evqa: EVQATree;
     queryType: string;
     date: IDate;
     user_nl: string;

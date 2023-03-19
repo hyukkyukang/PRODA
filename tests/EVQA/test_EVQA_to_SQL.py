@@ -17,10 +17,10 @@ from src.utils.example_queries import (
 )
 
 
-class Test_EVQL_to_SQL(unittest.TestCase):
+class Test_EVQA_to_SQL(unittest.TestCase):
     def _test_translation(self, query):
         gold_sql = query.sql.lower()
-        generated_sql = query.evql.to_sql.lower()
+        generated_sql = query.evqa.to_sql.lower()
         self.assertTrue(gold_sql == generated_sql, f'\nExpected: "{gold_sql}". \nGot: "{generated_sql}"')
 
     def test_selection_with_or(self):

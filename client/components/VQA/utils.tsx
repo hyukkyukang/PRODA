@@ -1,7 +1,7 @@
 import { CellBase, createEmptyMatrix, Matrix } from "react-spreadsheet-custom";
 import { isArrayEqual, isEmptyObject, isNumber, removeMultipleSpaces, stripQutations } from "../../utils";
-import { aggFunctions, binaryOperators, EVQLNode, EVQLTree, Function, Header, operators, unaryOperators } from "./EVQL";
-import { IEVQLTable, IEVQLTableHeader } from "./EVQLTable";
+import { aggFunctions, binaryOperators, EVQANode, EVQATree, Function, Header, operators, unaryOperators } from "./EVQA";
+import { IEVQATable, IEVQATableHeader } from "./EVQATable";
 import { operatorDescriptions } from "./operatorDescriptions";
 
 export const createEmptyValueMatrix = (numOfRow: number, numOfCol: number, readOnly?: boolean): Matrix<CellBase> => {
@@ -15,42 +15,42 @@ export const createEmptyValueMatrix = (numOfRow: number, numOfCol: number, readO
     return rows;
 };
 
-export const EVQLNodeToEVQLTable = (evqlNode: EVQLNode, editable: boolean): IEVQLTable => {
+export const EVQANodeToEVQATable = (evqaNode: EVQANode, editable: boolean): IEVQATable => {
     // Handle exception
-    if (isEmptyObject(evqlNode)) {
-        console.warn(`evqlNode empty when calling EVQLNodeToEVQLTable`);
-        return {} as IEVQLTable;
+    if (isEmptyObject(evqaNode)) {
+        console.warn(`evqaNode empty when calling EVQANodeToEVQATable`);
+        return {} as IEVQATable;
     }
-    if (isEmptyObject(evqlNode.headers)) {
-        console.warn(`evqlNode does not have headers..`);
-        return {} as IEVQLTable;
+    if (isEmptyObject(evqaNode.headers)) {
+        console.warn(`evqaNode does not have headers..`);
+        return {} as IEVQATable;
     }
-    const hasPredicate = (node: EVQLNode): boolean => {
+    const hasPredicate = (node: EVQANode): boolean => {
         return !isEmptyObject(node.predicate) && !isEmptyObject(node.predicate.clauses);
     };
-    const numOfRows = hasPredicate(evqlNode) ? evqlNode.predicate.clauses.length : 1;
-    const numOfCols = evqlNode.headers.length;
-    var headers: IEVQLTableHeader[] = [];
+    const numOfRows = hasPredicate(evqaNode) ? evqaNode.predicate.clauses.length : 1;
+    const numOfCols = evqaNode.headers.length;
+    var headers: IEVQATableHeader[] = [];
     var rows = createEmptyValueMatrix(numOfRows, numOfCols, !editable);
 
     // Create default headers
     for (let i = 0; i < numOfCols; i++) {
-        headers.push({ name: evqlNode.headers[i], aggFuncs: [], isToProject: false });
+        headers.push({ name: evqaNode.headers[i], aggFuncs: [], isToProject: false });
     }
 
     // Add info for projection
-    evqlNode.projection.headers.forEach((header: Header) => {
+    evqaNode.projection.headers.forEach((header: Header) => {
         const colId = header.id;
         headers[colId].isToProject = true;
         headers[colId].aggFuncs.push(header.agg_type ? header.agg_type : 0);
     });
 
     // Create rows if any predicate exists
-    if (hasPredicate(evqlNode)) {
-        for (let i = 0; i < evqlNode.predicate.clauses.length; i++) {
-            for (let j = 0; j < evqlNode.predicate.clauses[i].conditions.length; j++) {
-                const tmpCondition: Function = evqlNode.predicate.clauses[i].conditions[j];
-                const newCellValue: string = conditionToExpression(tmpCondition, evqlNode.headers);
+    if (hasPredicate(evqaNode)) {
+        for (let i = 0; i < evqaNode.predicate.clauses.length; i++) {
+            for (let j = 0; j < evqaNode.predicate.clauses[i].conditions.length; j++) {
+                const tmpCondition: Function = evqaNode.predicate.clauses[i].conditions[j];
+                const newCellValue: string = conditionToExpression(tmpCondition, evqaNode.headers);
                 const cell = tmpCondition.header_id == -1 || tmpCondition.header_id >= numOfCols ? null : rows[i][tmpCondition.header_id];
 
                 if (cell && cell.value) {
@@ -66,26 +66,26 @@ export const EVQLNodeToEVQLTable = (evqlNode: EVQLNode, editable: boolean): IEVQ
     return { headers: headers, rows: rows };
 };
 
-export const getNode = (evqlTree: EVQLTree, childListIndices: number[] | undefined): EVQLNode => {
-    return getSubtree(evqlTree, childListIndices).node;
+export const getNode = (evqaTree: EVQATree, childListIndices: number[] | undefined): EVQANode => {
+    return getSubtree(evqaTree, childListIndices).node;
 };
 
-export const getSubtree = (evqlTree: EVQLTree, childListIndices: number[] | undefined): EVQLTree => {
-    if (childListIndices == undefined || childListIndices.length == 0) return evqlTree;
+export const getSubtree = (evqaTree: EVQATree, childListIndices: number[] | undefined): EVQATree => {
+    if (childListIndices == undefined || childListIndices.length == 0) return evqaTree;
     const idx = childListIndices.shift();
     if (idx == undefined) throw "idx variable is undefined!";
-    return getSubtree(evqlTree.children[idx], childListIndices);
+    return getSubtree(evqaTree.children[idx], childListIndices);
 };
 
-export const getTreeTraversingPaths = (evqlTree: EVQLTree, prevPath?: number[]): number[][] => {
+export const getTreeTraversingPaths = (evqaTree: EVQATree, prevPath?: number[]): number[][] => {
     // return paths for every node in the tree (in Post-order)
-    if (isEmptyObject(evqlTree)) return [];
+    if (isEmptyObject(evqaTree)) return [];
     if (prevPath == undefined) prevPath = [];
 
     const pathsToReturn: number[][] = [];
-    if (evqlTree.children) {
-        for (let i = 0; i < evqlTree.children.length; i++) {
-            const child = evqlTree.children[i];
+    if (evqaTree.children) {
+        for (let i = 0; i < evqaTree.children.length; i++) {
+            const child = evqaTree.children[i];
             // Add paths for the child
             pathsToReturn.push(...getTreeTraversingPaths(child, [...prevPath, ...[i]]));
         }
@@ -138,7 +138,7 @@ export const parseExpression = (expression: string, header_names: string[], igno
             tmpCondition.func_type = "Grouping";
         } else if (funcName in ["Asc", "Des"]) {
             tmpCondition.func_type = "Ordering";
-            tmpCondition.is_ascending = funcName == "Asc";
+            tmpCondition.is_ascending = funcName == "Sort\u2191";
         } else {
             if (!ignoreWarning) console.warn("Syntax Error (unexpected function name): " + funcName);
             return null;
@@ -164,7 +164,7 @@ export const parseExpressions = (cellValue: string, header_names: string[], igno
 export const conditionToExpression = (condition: Function, names: string[]): string => {
     const l_op = names[condition.header_id];
     if (condition.func_type == "Selecting") {
-        if (!condition.op_type) {
+        if (condition.op_type == undefined) {
             console.error("op_type is not defined");
             return "";
         }
@@ -188,17 +188,17 @@ export const conditionToExpression = (condition: Function, names: string[]): str
     } else if (condition.func_type == "Grouping") {
         return `Group($${l_op})`;
     } else if (condition.func_type == "Ordering") {
-        return `${condition.is_ascending ? "Asc" : "Des"}($${l_op})`;
+        return `${condition.is_ascending ? "Sort\u2191" : "Sort\u2193"}($${l_op})`;
     } else {
         return `${condition.func_type}($${l_op})`;
     }
 };
 
-export const addEVQLNode = (evqlTree: EVQLTree, newHeaders: string[]): EVQLTree => {
-    // Create new evql node
+export const addEVQANode = (evqaTree: EVQATree, newHeaders: string[]): EVQATree => {
+    // Create new evqa node
     // TODO: modify header_names if necessary in the parent node
     // TODO: Need to get result table from the previous query and make a new table excerpt
-    const newNode: EVQLNode = {
+    const newNode: EVQANode = {
         name: "dummy_name",
         table_excerpt: {
             name: "new_node",
@@ -217,20 +217,20 @@ export const addEVQLNode = (evqlTree: EVQLTree, newHeaders: string[]): EVQLTree 
     };
 
     // Add new node to the tree
-    const newTree: EVQLTree = {
+    const newTree: EVQATree = {
         node: newNode,
-        children: [evqlTree],
+        children: [evqaTree],
     };
 
     return newTree;
 };
 
-export const getProjectedNames = (evqlTree: EVQLTree, childListPath: number[]): string[] => {
-    const evql: EVQLNode = getNode(evqlTree, [...childListPath]);
+export const getProjectedNames = (evqaTree: EVQATree, childListPath: number[]): string[] => {
+    const evqa: EVQANode = getNode(evqaTree, [...childListPath]);
     const projectedNames: string[] = [];
 
     // Get all childListPaths
-    const childListPaths = getTreeTraversingPaths(evqlTree);
+    const childListPaths = getTreeTraversingPaths(evqaTree);
 
     // Find queryStep
     var queryStep = -1;
@@ -246,8 +246,8 @@ export const getProjectedNames = (evqlTree: EVQLTree, childListPath: number[]): 
     }
 
     const prefix = `step${queryStep + 1}_`;
-    evql.projection.headers.forEach((header) => {
-        const newColName = prefix + evql.headers[header.id];
+    evqa.projection.headers.forEach((header) => {
+        const newColName = prefix + evqa.headers[header.id];
         if (header.agg_type === aggFunctions.indexOf("count")) {
             projectedNames.push(`${newColName}_count`);
         } else if (header.agg_type === aggFunctions.indexOf("sum")) {
@@ -286,7 +286,7 @@ export const getCellDescription = (expressions: Function[]): string => {
     return filteredDescriptions.join("\n");
 };
 
-export const getHeaderDescription = (header: IEVQLTableHeader): string => {
+export const getHeaderDescription = (header: IEVQATableHeader): string => {
     const descriptions: Array<string | undefined> = [];
     if (header.isToProject) {
         descriptions.push("Highlighted header indicates that the corresponding column has been chosen to be displayed in the output.");
@@ -298,12 +298,12 @@ export const getHeaderDescription = (header: IEVQLTableHeader): string => {
     return descriptions.join("\n");
 };
 
-export const flattenEVQLInPostOrder = (evqlTree: EVQLTree): EVQLNode[] => {
-    const flattenedEVQL: EVQLNode[] = [];
-    const traverse = (evqlTree: EVQLTree) => {
-        evqlTree.children.forEach((child) => traverse(child));
-        flattenedEVQL.push(evqlTree.node);
+export const flattenEVQAInPostOrder = (evqaTree: EVQATree): EVQANode[] => {
+    const flattenedEVQA: EVQANode[] = [];
+    const traverse = (evqaTree: EVQATree) => {
+        evqaTree.children.forEach((child) => traverse(child));
+        flattenedEVQA.push(evqaTree.node);
     };
-    traverse(evqlTree);
-    return flattenedEVQL;
+    traverse(evqaTree);
+    return flattenedEVQA;
 };

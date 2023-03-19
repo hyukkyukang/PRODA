@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import React from "react";
 import { CellComponent, CellComponentProps, Dimensions, Point } from "react-spreadsheet-custom";
-import { HoveringDescriptionContext, TableHeaderContext } from "./EVQLTable";
+import { HoveringDescriptionContext, TableHeaderContext } from "./EVQATable";
 import { parseExpressions, getCellDescription } from "./utils";
 
 export function getOffsetRect(element: HTMLElement): Dimensions {
@@ -13,7 +13,7 @@ export function getOffsetRect(element: HTMLElement): Dimensions {
     };
 }
 
-export const EVQLCell: CellComponent = ({
+export const EVQACell: CellComponent = ({
     row,
     column,
     DataViewer,

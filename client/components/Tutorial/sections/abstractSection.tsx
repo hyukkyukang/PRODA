@@ -1,13 +1,9 @@
-import { IEVQLTable } from "../../VQL/EVQLTable";
-
 export interface ITutorialSection {
     title: string;
     description: string;
-    exampleQueryName: string;
-    exampleDescription: string;
-    demoDBName: string;
-    syntaxExamples: IEVQLTable[];
+    exampleDescription: JSX.Element;
     syntaxDescription: JSX.Element;
+    itsOwnPage?: JSX.Element;
 }
 
 export default ITutorialSection;

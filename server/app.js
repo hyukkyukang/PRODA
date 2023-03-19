@@ -36,12 +36,12 @@ app.post("/fetchConfig", function (req, res) {
 });
 
 /* Handling Request */
-app.post("/fetchEVQL", function (req, res) {
-    console.log(`app.post./fetchEVQL  with queryType: ${JSON.stringify(req.body.queryType)}`);
+app.post("/fetchEVQA", function (req, res) {
+    console.log(`app.post./fetchEVQA  with queryType: ${JSON.stringify(req.body.queryType)}`);
     const queryType = req.body.queryType;
-    const evql = func.getEVQL(queryType);
-    console.log(`return evql of type: ${queryType}`);
-    res.send(evql);
+    const evqa = func.getEVQA(queryType);
+    console.log(`return evqa of type: ${queryType}`);
+    res.send(evqa);
 });
 
 app.post("/fetchTask", function (req, res) {
@@ -90,10 +90,10 @@ app.post("/fetchLogData", function (req, res) {
     res.send(logData);
 });
 
-app.post("/runEVQL", async function (req, res) {
-    console.log(`app.post./runEVQL`);
-    const evqlStr = req.body.evql;
-    const sql = func.EVQLToSQL(evqlStr);
+app.post("/runEVQA", async function (req, res) {
+    console.log(`app.post./runEVQA`);
+    const evqaStr = req.body.evqa;
+    const sql = func.EVQAToSQL(evqaStr);
     const queryResult = await func.queryDB(sql);
     console.log(`sending back result with SQL: ${sql}`);
     res.send({ sql: sql, result: queryResult });

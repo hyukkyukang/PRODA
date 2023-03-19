@@ -4,11 +4,11 @@ from typing import List, Tuple
 
 import attrs
 
-import src.VQL.utils as utils
+import src.VQA.utils as utils
 from src.table_excerpt.table_excerpt import TableExcerpt
 
 
-# ! This must be aligned with the definition in client/components/VQL/EVQL.tsx > operators
+# ! This must be aligned with the definition in client/components/VQA/EVQA.tsx > operators
 class Operator(IntEnum):
     equal = 1
     lessThan = 2
@@ -315,27 +315,27 @@ class Clause:
 
 
 @attrs.define
-class EVQLNode:
+class EVQANode:
     name: str = attrs.field()
     table_excerpt: TableExcerpt = attrs.field()
     sql = attrs.field(default="")
     mapping: List[Tuple[int, int, str]] = attrs.field(
         default=attrs.Factory(list)
-    )  # (evql_row_idx, evql_colum_idx, sql_colum_name)
+    )  # (evqa_row_idx, evqa_colum_idx, sql_colum_name)
     _projection: Projection = attrs.field(default=attrs.Factory(Projection))
     _predicate: Predicate = attrs.field(default=attrs.Factory(Predicate))
 
     def __eq__(self, other):
-        assert isinstance(other, EVQLNode), f"Expected type EVQLNode, but found:{type(EVQLNode)}"
+        assert isinstance(other, EVQANode), f"Expected type EVQANode, but found:{type(EVQANode)}"
         return self.predicate == other.predicate and self.projection == other.projection
 
     @staticmethod
-    def to_table_excerpt_header_idx(evql_header_idx):
-        return evql_header_idx - 1
+    def to_table_excerpt_header_idx(evqa_header_idx):
+        return evqa_header_idx - 1
 
     @staticmethod
     def load_json(json_obj):
-        obj = EVQLNode(json_obj["name"], TableExcerpt.load_json(json_obj["table_excerpt"]))
+        obj = EVQANode(json_obj["name"], TableExcerpt.load_json(json_obj["table_excerpt"]))
         # Non-primitive types
         for header in Projection.load_json(json_obj["projection"]).headers:
             obj.add_projection(header)
@@ -377,13 +377,13 @@ class EVQLNode:
         return json_obj
 
 
-class EVQLTree:
+class EVQATree:
     def __init__(self, node, children=None):
-        self.node: EVQLNode = node
-        self.children: List[EVQLTree] = children if children else []
+        self.node: EVQANode = node
+        self.children: List[EVQATree] = children if children else []
 
     def __eq__(self, other):
-        assert isinstance(other, EVQLTree), f"Expected type EVQLTree, but found: {type(other)}"
+        assert isinstance(other, EVQATree), f"Expected type EVQATree, but found: {type(other)}"
         return self.node == other.node and all(child in other.children for child in self.children)
 
     @property
@@ -461,7 +461,7 @@ class EVQLTree:
 
     @property
     def to_sql(self):
-        return evql_tree_to_SQL(self)
+        return evqa_tree_to_SQL(self)
 
     @property
     def use_t_alias(self):
@@ -483,12 +483,12 @@ class EVQLTree:
 
     @staticmethod
     def load_json(json_obj):
-        return EVQLTree(
-            EVQLNode.load_json(json_obj["node"]), [EVQLTree.load_json(child) for child in json_obj["children"]]
+        return EVQATree(
+            EVQANode.load_json(json_obj["node"]), [EVQATree.load_json(child) for child in json_obj["children"]]
         )
 
 
-def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
+def evqa_tree_to_SQL(evqa_tree, correlation_cond_str=None):
     def create_select_clause(tree):
         att_str_list = []
         # Create string for every projecting headers
@@ -524,10 +524,10 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
                 if Operator.is_column_idx(sel_cond.r_operand):
                     r_col_idx = Operator.rm_prefix(sel_cond.r_operand)
                     # should be nested for correlation
-                    if tree.node.table_excerpt.is_nested_col(EVQLNode.to_table_excerpt_header_idx(r_col_idx)):
+                    if tree.node.table_excerpt.is_nested_col(EVQANode.to_table_excerpt_header_idx(r_col_idx)):
                         # Get child that belongs to the r_operand
                         base_table_name = tree.node.table_excerpt.base_table_names[
-                            EVQLNode.to_table_excerpt_header_idx(r_col_idx)
+                            EVQANode.to_table_excerpt_header_idx(r_col_idx)
                         ]
                         children_of_base_table = [
                             child for child in tree.children if child.node.name == base_table_name
@@ -567,10 +567,10 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
                     #                           : -> correlation selection on the inner query
                     # If nested and is not grouped by
                     #                           : -> create nested query and use it as an operand
-                    if tree.node.table_excerpt.is_nested_col(EVQLNode.to_table_excerpt_header_idx(r_col_idx)):
+                    if tree.node.table_excerpt.is_nested_col(EVQANode.to_table_excerpt_header_idx(r_col_idx)):
                         # Get child that belongs to the r_operand
                         base_table_name = tree.node.table_excerpt.base_table_names[
-                            EVQLNode.to_table_excerpt_header_idx(r_col_idx)
+                            EVQANode.to_table_excerpt_header_idx(r_col_idx)
                         ]
                         children_of_base_table = [
                             child for child in tree.children if child.node.name == base_table_name
@@ -591,7 +591,7 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
                         if base_table_name in correlation_mapping:
                             correlation_condition = correlation_mapping[base_table_name]
                         r_op_str = (
-                            f"({evql_tree_to_SQL(child_of_base_table, correlation_cond_str=correlation_condition)})"
+                            f"({evqa_tree_to_SQL(child_of_base_table, correlation_cond_str=correlation_condition)})"
                         )
                     else:
                         r_op_str = tree.get_var_name(r_col_idx, use_t_alias=bool(correlation_cond_str))
@@ -652,7 +652,7 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
 
     def create_having_clause(tree):
         def get_agg_func_name_from_prev_node(tree, col_name):
-            """Find out aggregation operator from the previous EVQL projection"""
+            """Find out aggregation operator from the previous EVQA projection"""
             assert len(tree.children) == 1, f"Expected only one child, but got {len(tree.children)}"
             child = tree.children[0]
             prev_node = child.node
@@ -696,16 +696,16 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
         return sql_str
 
     # Create clauses
-    select_clause = create_select_clause(evql_tree)
-    from_clause = create_from_clause(evql_tree)
-    order_by_clause = create_order_by_clause(evql_tree)
-    if evql_tree.is_having:
-        where_clause = create_where_clause(evql_tree.children[0])
-        group_by_clause = create_group_by_clause(evql_tree.children[0]) if not correlation_cond_str else ""
-        having_clause = create_having_clause(evql_tree)
+    select_clause = create_select_clause(evqa_tree)
+    from_clause = create_from_clause(evqa_tree)
+    order_by_clause = create_order_by_clause(evqa_tree)
+    if evqa_tree.is_having:
+        where_clause = create_where_clause(evqa_tree.children[0])
+        group_by_clause = create_group_by_clause(evqa_tree.children[0]) if not correlation_cond_str else ""
+        having_clause = create_having_clause(evqa_tree)
     else:
-        where_clause = create_where_clause(evql_tree)
-        group_by_clause = create_group_by_clause(evql_tree) if not correlation_cond_str else ""
+        where_clause = create_where_clause(evqa_tree)
+        group_by_clause = create_group_by_clause(evqa_tree) if not correlation_cond_str else ""
         having_clause = ""
 
     # Return composed SQL string
@@ -713,7 +713,7 @@ def evql_tree_to_SQL(evql_tree, correlation_cond_str=None):
 
 
 # Helper Functions
-def check_evql_equivalence(evqlTree1: EVQLTree, evqlTree2: EVQLTree) -> bool:
+def check_evqa_equivalence(evqaTree1: EVQATree, evqaTree2: EVQATree) -> bool:
     def check_and_remove_same_header(target_proj_header: Header, proj_headers: List[Header]):
         """Check if there are any same header and remove from the list if found"""
         found_idx = None
@@ -727,36 +727,36 @@ def check_evql_equivalence(evqlTree1: EVQLTree, evqlTree2: EVQLTree) -> bool:
         return found_idx is not None
 
     # Check num of
-    if evqlTree1.children and len(evqlTree1.children) == len(evqlTree2.children):
+    if evqaTree1.children and len(evqaTree1.children) == len(evqaTree2.children):
         is_same_children = all(
-            check_evql_equivalence(child1, child2) for child1, child2 in zip(evqlTree1.children, evqlTree2.children)
+            check_evqa_equivalence(child1, child2) for child1, child2 in zip(evqaTree1.children, evqaTree2.children)
         )
     else:
-        is_same_children = not bool(evqlTree1.children)
+        is_same_children = not bool(evqaTree1.children)
 
     # Check headers
-    is_same_headers = evqlTree1.node.headers[1:] == evqlTree2.node.headers[1:]
+    is_same_headers = evqaTree1.node.headers[1:] == evqaTree2.node.headers[1:]
 
     # Check predicate
-    is_same_predicate = evqlTree1.node.predicate == evqlTree2.node.predicate
+    is_same_predicate = evqaTree1.node.predicate == evqaTree2.node.predicate
 
     # Check projection
-    is_same_projection = evqlTree1.node.projection == evqlTree2.node.projection
+    is_same_projection = evqaTree1.node.projection == evqaTree2.node.projection
 
     # Check is_groupby
-    is_same_groupby = evqlTree1.is_groupby == evqlTree2.is_groupby
+    is_same_groupby = evqaTree1.is_groupby == evqaTree2.is_groupby
 
     # Check is_having
-    is_same_having = evqlTree1.is_having == evqlTree2.is_having
+    is_same_having = evqaTree1.is_having == evqaTree2.is_having
 
     # Check is_nested
-    is_same_nested = evqlTree1.is_nested == evqlTree2.is_nested
+    is_same_nested = evqaTree1.is_nested == evqaTree2.is_nested
 
     # Check is_nested_with_correlation
-    is_same_correlated_nesting = evqlTree1.is_nested_with_correlation == evqlTree2.is_nested_with_correlation
+    is_same_correlated_nesting = evqaTree1.is_nested_with_correlation == evqaTree2.is_nested_with_correlation
 
     # Check level
-    is_same_level = evqlTree1.level == evqlTree2.level
+    is_same_level = evqaTree1.level == evqaTree2.level
 
     return all(
         [
@@ -776,9 +776,9 @@ def check_evql_equivalence(evqlTree1: EVQLTree, evqlTree2: EVQLTree) -> bool:
 if __name__ == "__main__":
     pass
     # import json
-    # from tests.EVQL.utils import SelectionQueryWithOr
+    # from tests.EVQA.utils import SelectionQueryWithOr
     # query = SelectionQueryWithOr()
-    # dumped_query = query.evql.dump_json()
+    # dumped_query = query.evqa.dump_json()
     # print(json.dumps(dumped_query, indent=4))
-    # evql_tree = EVQLTree.load_json(dumped_query)
-    # assert evql_tree.to_sql == query.evql.to_sql
+    # evqa_tree = EVQATree.load_json(dumped_query)
+    # assert evqa_tree.to_sql == query.evqa.to_sql

@@ -1,10 +1,10 @@
-import { EVQLTree } from "../VQL/EVQL";
+import { EVQATree } from "../VQA/EVQA";
 
 export interface Task {
     nl: string;
     nl_mapping: Array<[string, number, number]>;
     sql: string;
-    evql: EVQLTree;
+    evqa: EVQATree;
     queryType: number;
     dbName: string;
     tableExcerpt: { key: string }[];

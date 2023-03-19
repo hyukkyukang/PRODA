@@ -19,7 +19,7 @@ from src.query_tree.operator import Aggregation, Clause, Condition, Foreach, Pro
 from src.query_tree.query_tree import Attach, BaseTable, QueryBlock, QueryTree, Refer, get_global_index
 from src.table_excerpt.table_excerpt import TableExcerpt
 from src.utils.example_table_excerpt import car_table, movie_table, director_table, direction_table, rating_table
-from src.VQL.EVQL import Aggregator, Clause, EVQLNode, EVQLTree, Grouping, Header, Operator, Ordering, Selecting
+from src.VQA.EVQA import Aggregator, Clause, EVQANode, EVQATree, Grouping, Header, Operator, Ordering, Selecting
 
 
 def find_nth_occurrence_index(lst, item, n):
@@ -33,7 +33,7 @@ def find_nth_occurrence_index(lst, item, n):
 class TestQuery(metaclass=abc.ABCMeta):
     def __init__(self):
         self._query_tree = None
-        self._evql = None
+        self._evqa = None
         self._sql = None
 
     @property
@@ -42,7 +42,7 @@ class TestQuery(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         pass
 
     @property
@@ -57,12 +57,12 @@ class ProjectionQuery(TestQuery):
         self._sql = "SELECT id FROM cars"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node
-        node = EVQLNode(f"{car_table.name}_query", car_table)
+        node = EVQANode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(car_table.table_excerpt_headers.index("id")))
         # Construct tree
-        return EVQLTree(node)
+        return EVQATree(node)
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -85,13 +85,13 @@ class MinMaxQuery(TestQuery):
         self._sql = "SELECT max(horsepower), min(max_speed) FROM cars"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node
-        node = EVQLNode(f"{car_table.name}_query", car_table)
+        node = EVQANode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("horsepower"), agg_type=Aggregator.max))
         node.add_projection(Header(node.headers.index("max_speed"), agg_type=Aggregator.min))
         # Construct tree
-        return EVQLTree(node)
+        return EVQATree(node)
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -117,14 +117,14 @@ class CountAvgSumQuery(TestQuery):
         self._sql = "SELECT count(id), avg(max_speed), sum(price) FROM cars"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node
-        node = EVQLNode(f"{car_table.name}_query", car_table)
+        node = EVQANode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("id"), agg_type=Aggregator.count))
         node.add_projection(Header(node.headers.index("max_speed"), agg_type=Aggregator.avg))
         node.add_projection(Header(node.headers.index("price"), agg_type=Aggregator.sum))
         # Construct tree
-        return EVQLTree(node)
+        return EVQATree(node)
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -152,15 +152,15 @@ class SelectionQuery(TestQuery):
         self._sql = "SELECT id FROM cars WHERE year = 2010"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node
-        node = EVQLNode(f"{car_table.name}_query", car_table)
+        node = EVQANode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("id")))
         # Create conditions for the node
         clause = Clause([Selecting(node.headers.index("year"), Operator.equal, "2010")])
         node.add_predicate(clause)
         # Construct tree
-        return EVQLTree(node)
+        return EVQATree(node)
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -196,9 +196,9 @@ class AndOrQuery(TestQuery):
         self._sql = "SELECT id, price FROM cars WHERE (model = 'tesla model x' and year = 2011) or (model = 'tesla model x' and year = 2012)"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node
-        node = EVQLNode(f"{car_table.name}_query", car_table)
+        node = EVQANode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("id")))
         node.add_projection(Header(node.headers.index("price")))
         # Create conditions for the node
@@ -214,7 +214,7 @@ class AndOrQuery(TestQuery):
         node.add_predicate(clause1)
         node.add_predicate(clause2)
         # Construct tree
-        return EVQLTree(node)
+        return EVQATree(node)
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -269,9 +269,9 @@ class SelectionQueryWithOr(TestQuery):
         self._sql = "SELECT id FROM cars WHERE (max_speed > 2000) OR (year = 2010)"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node
-        node = EVQLNode(f"{car_table.name}_query", car_table)
+        node = EVQANode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("id")))
         # Create conditions for the node
         clause1 = Clause(
@@ -287,7 +287,7 @@ class SelectionQueryWithOr(TestQuery):
         node.add_predicate(clause1)
         node.add_predicate(clause2)
         # Construct tree
-        return EVQLTree(node)
+        return EVQATree(node)
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -329,16 +329,16 @@ class SelectionQueryWithAnd(TestQuery):
         self._sql = "SELECT id FROM cars WHERE max_speed > 2000 AND year = 2010"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node
-        node = EVQLNode(f"{car_table.name}_query", car_table)
+        node = EVQANode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("id")))
         # Create conditions for the node
         cond1 = Selecting(node.headers.index("max_speed"), Operator.greaterThan, "2000")
         cond2 = Selecting(node.headers.index("year"), Operator.equal, "2010")
         clause = Clause([cond1, cond2])
         node.add_predicate(clause)
-        return EVQLTree(node)
+        return EVQATree(node)
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -376,16 +376,16 @@ class OrderByQuery(TestQuery):
         self._sql = "SELECT id FROM cars WHERE year = 2010 ORDER BY horsepower DESC"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node
-        node = EVQLNode(f"{car_table.name}_query", car_table)
+        node = EVQANode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("id")))
         # Create conditions for the node
         cond1 = Selecting(node.headers.index("year"), Operator.equal, "2010")
         cond2 = Ordering(node.headers.index("horsepower"), is_ascending=False)
         clause = Clause([cond1, cond2])
         node.add_predicate(clause)
-        return EVQLTree(node)
+        return EVQATree(node)
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -411,16 +411,16 @@ class GroupByQuery(TestQuery):
         self._sql = "SELECT count(*), model FROM cars GROUP BY model"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node
-        node = EVQLNode(f"{car_table.name}_query", car_table)
+        node = EVQANode(f"{car_table.name}_query", car_table)
         node.add_projection(Header(node.headers.index("cars"), agg_type=Aggregator.count))
         node.add_projection(Header(node.headers.index("model")))
         # Create conditions for the node
         cond = Grouping(node.headers.index("model"))
         clause = Clause([cond])
         node.add_predicate(clause)
-        return EVQLTree(node)
+        return EVQATree(node)
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -445,9 +445,9 @@ class HavingQuery(TestQuery):
         self._sql = "SELECT model FROM cars GROUP BY model HAVING AVG(max_speed) > 400"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node 1
-        node_1 = EVQLNode(f"{car_table.name}_query", car_table)
+        node_1 = EVQANode(f"{car_table.name}_query", car_table)
         node_1.add_projection(Header(node_1.headers.index("model")))
         node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
         # Create conditions for the node
@@ -480,7 +480,7 @@ class HavingQuery(TestQuery):
 
         # Create tree node 2
         # TODO: Need to discuss about how to name variables from previous step
-        node_2 = EVQLNode(f"{new_table_excerpt.name}_query", new_table_excerpt)
+        node_2 = EVQANode(f"{new_table_excerpt.name}_query", new_table_excerpt)
         node_2.add_projection(Header(node_2.headers.index("model")))
 
         cond2 = Selecting(
@@ -489,7 +489,7 @@ class HavingQuery(TestQuery):
             "400",
         )
         node_2.add_predicate(Clause([cond2]))
-        return EVQLTree(node_2, children=[EVQLTree(node_1)])
+        return EVQATree(node_2, children=[EVQATree(node_1)])
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -525,9 +525,9 @@ class NestedQuery(TestQuery):
         self._sql = "SELECT id FROM cars WHERE max_speed > (SELECT AVG(max_speed) FROM cars WHERE year = 2010)"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node 1
-        node_1 = EVQLNode(f"{car_table.name}_query", car_table)
+        node_1 = EVQANode(f"{car_table.name}_query", car_table)
         node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
         # Create conditions for the node
         cond1_1 = Selecting(node_1.headers.index("year"), Operator.equal, "2010")
@@ -543,7 +543,7 @@ class NestedQuery(TestQuery):
         new_table_excerpt = TableExcerpt.concatenate("cars3", car_table, result_table)
 
         # Create tree node 2
-        node_2 = EVQLNode(f"{new_table_excerpt.name}_query", new_table_excerpt)
+        node_2 = EVQANode(f"{new_table_excerpt.name}_query", new_table_excerpt)
         node_2.add_projection(Header(node_2.headers.index("id")))
         cond2 = Selecting(
             find_nth_occurrence_index(node_2.headers, "max_speed", 1),
@@ -551,7 +551,7 @@ class NestedQuery(TestQuery):
             Operator.add_idx_prefix(node_2.headers.index("avg_max_speed")),
         )
         node_2.add_predicate(Clause([cond2]))
-        return EVQLTree(node_2, children=[EVQLTree(node_1)])
+        return EVQATree(node_2, children=[EVQATree(node_1)])
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -601,13 +601,13 @@ class CorrelatedNestedQuery(TestQuery):
         self._sql = "SELECT T2.id FROM cars AS T2 WHERE T2.max_speed > (SELECT avg(T1.max_speed) FROM cars AS T1 WHERE T1.model = T2.model)"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node 1
         mapping1 = [
             (0, car_table.headers.index("max_speed") + 1, "max_speed"),
             (1, car_table.headers.index("model") + 1, "model"),
         ]
-        node_1 = EVQLNode(
+        node_1 = EVQANode(
             f"{car_table.name}_query", car_table, "SELECT avg(max_speed) FROM cars GROUP BY model", mapping=mapping1
         )
         node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
@@ -650,7 +650,7 @@ class CorrelatedNestedQuery(TestQuery):
             (1, new_car_table.headers.index("max_speed") + 1, "max_speed"),
             (1, new_car_table.headers.index("max_speed") + 1, "avg_max_speed"),
         ]
-        node_2 = EVQLNode(f"{new_car_table.name}_query", new_car_table, self.sql, mapping=mapping2)
+        node_2 = EVQANode(f"{new_car_table.name}_query", new_car_table, self.sql, mapping=mapping2)
         node_2.add_projection(Header(node_2.headers.index("id")))
         # Create conditions for the node
         cond2_1 = Selecting(
@@ -665,7 +665,7 @@ class CorrelatedNestedQuery(TestQuery):
         )
         node_2.add_predicate(Clause([cond2_1, cond2_2]))
 
-        return EVQLTree(node_2, children=[EVQLTree(node_1)])
+        return EVQATree(node_2, children=[EVQATree(node_1)])
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -778,9 +778,9 @@ class CorrelatedNestedQuery2(TestQuery):
         self._sql = "SELECT T2.id FROM cars AS T2 WHERE T2.max_speed > (SELECT avg(T1.max_speed) FROM cars AS T1 WHERE T1.model = T2.model) GROUP BY T2.model HAVING AVG(T2.max_speed) > 300"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node 1
-        node_1 = EVQLNode(f"{car_table.name}_query", car_table)
+        node_1 = EVQANode(f"{car_table.name}_query", car_table)
         node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
         # Create conditions for the node
         cond1_1 = Grouping(node_1.headers.index("model"))
@@ -808,7 +808,7 @@ class CorrelatedNestedQuery2(TestQuery):
 
         # Create tree node 2
         new_table_excerpt = TableExcerpt.concatenate("cars2", car_table, result_table)
-        node_2 = EVQLNode(f"{new_table_excerpt.name}_query", new_table_excerpt)
+        node_2 = EVQANode(f"{new_table_excerpt.name}_query", new_table_excerpt)
         node_2.add_projection(Header(node_2.headers.index("id")))
         node_2.add_projection(Header(node_2.headers.index("max_speed"), agg_type=Aggregator.avg))
         # Create conditions for the node
@@ -835,12 +835,12 @@ class CorrelatedNestedQuery2(TestQuery):
         result_table_2 = TableExcerpt(node_2.name, result_headers_2, result_col_types_2, rows=result_rows_2)
 
         # Create tree node 3
-        node_3 = EVQLNode(f"{result_table_2.name}_query", result_table_2)
+        node_3 = EVQANode(f"{result_table_2.name}_query", result_table_2)
         node_3.add_projection(Header(node_3.headers.index("id")))
         # Create conditions for the node
         cond3 = Selecting(node_3.headers.index("max_speed"), Operator.greaterThan, "300")
         node_3.add_predicate(Clause([cond3]))
-        return EVQLTree(node_3, children=[EVQLTree(node_2, children=[EVQLTree(node_1)])])
+        return EVQATree(node_3, children=[EVQATree(node_2, children=[EVQATree(node_1)])])
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -853,9 +853,9 @@ class MultipleSublinksQuery(TestQuery):
         self._sql = "SELECT id FROM cars WHERE max_speed > (SELECT avg(max_speed) FROM cars WHERE model = 'hyundai') AND horsepower > (SELECT avg(horsepower) FROM cars WHERE model = 'genesis')"
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node 1
-        node_1 = EVQLNode(f"{car_table}_query1", car_table)
+        node_1 = EVQANode(f"{car_table}_query1", car_table)
         node_1.add_projection(Header(node_1.headers.index("max_speed"), agg_type=Aggregator.avg))
         # Create conditions for the node
         cond1 = Selecting(node_1.headers.index("model"), Operator.equal, "hyundai")
@@ -868,7 +868,7 @@ class MultipleSublinksQuery(TestQuery):
         result_table1 = TableExcerpt(node_1.name, result_headers, result_col_types, rows=result_rows)
 
         # Create tree node 2
-        node_2 = EVQLNode(f"{car_table}_query2", car_table)
+        node_2 = EVQANode(f"{car_table}_query2", car_table)
         node_2.add_projection(Header(node_2.headers.index("horsepower"), agg_type=Aggregator.avg))
         # Create conditions for the node
         cond2 = Selecting(node_2.headers.index("model"), Operator.equal, "genesis")
@@ -884,7 +884,7 @@ class MultipleSublinksQuery(TestQuery):
         new_car_table2 = TableExcerpt.concatenate("cars3", new_car_table1, result_table2)
 
         # Create tree node 3
-        node_3 = EVQLNode(f"{new_car_table2.name}_query", new_car_table2)
+        node_3 = EVQANode(f"{new_car_table2.name}_query", new_car_table2)
         node_3.add_projection(Header(node_3.headers.index("id")))
         # Create conditions for the node
         cond3_1 = Selecting(
@@ -898,7 +898,7 @@ class MultipleSublinksQuery(TestQuery):
             Operator.add_idx_prefix(find_nth_occurrence_index(node_3.headers, "horsepower", 2)),
         )
         node_3.add_predicate(Clause([cond3_1, cond3_2]))
-        return EVQLTree(node_3, children=[EVQLTree(node_2), EVQLTree(node_1)])
+        return EVQATree(node_3, children=[EVQATree(node_2), EVQATree(node_1)])
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -930,7 +930,7 @@ class MultipleSublinksQuery2(TestQuery):
                     """
 
     @misc_utils.property_with_cache
-    def evql(self) -> EVQLTree:
+    def evqa(self) -> EVQATree:
         # Create tree node 1
         init_table1 = TableExcerpt.fake_join("movie_rating", [movie_table, rating_table])
 
@@ -940,7 +940,7 @@ class MultipleSublinksQuery2(TestQuery):
             (1, init_table1.headers.index("id"), "id"),
         ]
 
-        node_1 = EVQLNode(f"query1", init_table1, mapping=mapping1)
+        node_1 = EVQANode(f"query1", init_table1, mapping=mapping1)
         node_1.add_projection(Header(node_1.headers.index("id"), alias="m_id"))
         node_1.add_projection(Header(node_1.headers.index("stars"), agg_type=Aggregator.max, alias="max_stars"))
         node_1.add_predicate(Clause([Grouping(node_1.headers.index("id"))]))
@@ -961,7 +961,7 @@ class MultipleSublinksQuery2(TestQuery):
             (2, init_table2.headers.index("last_name"), "last_name"),
         ]
 
-        node_2 = EVQLNode(f"query2", init_table2, mapping=mapping2)
+        node_2 = EVQANode(f"query2", init_table2, mapping=mapping2)
         node_2.add_projection(Header(node_2.headers.index("id"), alias="b2_m_id"))
         node_2.add_predicate(
             Clause(
@@ -989,7 +989,7 @@ class MultipleSublinksQuery2(TestQuery):
             (1, init_table3.headers.index("stars"), "stars"),
         ]
 
-        node_3 = EVQLNode(f"query3", init_table3, mapping=mapping3)
+        node_3 = EVQANode(f"query3", init_table3, mapping=mapping3)
         node_3.add_projection(Header(node_3.headers.index("id"), alias="id"))
         node_3.add_projection(Header(node_3.headers.index("stars"), agg_type=Aggregator.avg, alias="avg_stars"))
         node_3.add_predicate(
@@ -1026,11 +1026,11 @@ class MultipleSublinksQuery2(TestQuery):
             (1, node_3_result.headers.index("avg_stars"), "avg_stars"),
         ]
 
-        node_4 = EVQLNode(f"query4", node_3_result, mapping=mapping4)
+        node_4 = EVQANode(f"query4", node_3_result, mapping=mapping4)
         node_4.add_projection(Header(node_4.headers.index("id"), alias="id"))
         node_4.add_predicate(Clause([Selecting(node_4.headers.index("avg_stars"), Operator.greaterThanOrEqual, 3)]))
 
-        return EVQLTree(node_4, children=[EVQLTree(node_3, children=[EVQLTree(node_2), EVQLTree(node_1)])])
+        return EVQATree(node_4, children=[EVQATree(node_3, children=[EVQATree(node_2), EVQATree(node_1)])])
 
     @misc_utils.property_with_cache
     def query_tree(self):
@@ -1565,7 +1565,7 @@ def query_graph_to_generic_templates(query_graph):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Translate EVQL to SQL")
+    parser = argparse.ArgumentParser(description="Translate EVQA to SQL")
     parser.add_argument("--query_type", type=str, help="Tell the type of example query")
     return parser.parse_args()
 
@@ -1596,5 +1596,5 @@ if __name__ == "__main__":
         query = QUERY_TYPE_TO_CLASS_MAPPING[query_type]()
     else:
         raise RuntimeError("Should not be here")
-    dumped_query = query.evql.dump_json()
+    dumped_query = query.evqa.dump_json()
     print(json.dumps(dumped_query, indent=4))

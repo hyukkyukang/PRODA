@@ -1,12 +1,12 @@
 import Typography from "@mui/material/Typography";
 import React, { useMemo } from "react";
 import { TableExcerpt } from "../TableExcerpt/TableExcerpt";
-import { EVQLTable } from "../VQL/EVQLTable";
+import { EVQATable } from "../VQA/EVQATable";
 import { Task } from "./task";
 
 export const QueryHistorySheet = (props: { task: Task }) => {
     const { task } = props;
-    const evqlTree = useMemo(() => task?.evql, [task]);
+    const evqaTree = useMemo(() => task?.evqa, [task]);
 
     return (
         <React.Fragment>
@@ -14,7 +14,7 @@ export const QueryHistorySheet = (props: { task: Task }) => {
             <h3>Table:</h3>
             <TableExcerpt queryResult={task.resultTable}></TableExcerpt>
             {/* EVQA */}
-            <EVQLTable evqlRoot={evqlTree} childListPath={[]} editable={false} isFirstNode={true} />
+            <EVQATable evqaRoot={evqaTree} childListPath={[]} editable={false} isFirstNode={true} />
             <br />
             {/* Description */}
             <h3>Description:</h3>

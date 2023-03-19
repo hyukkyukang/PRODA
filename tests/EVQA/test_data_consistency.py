@@ -10,18 +10,18 @@ from src.utils.example_queries import (
     CorrelatedNestedQuery2,
     MultipleSublinksQuery,
 )
-from src.VQL.EVQL import EVQLTree
+from src.VQA.EVQA import EVQATree
 
 
 class Test_data_consistency(unittest.TestCase):
     def _test_consistency(self, query):
-        json_obj = query.evql.dump_json()
-        new_query_obj = EVQLTree.load_json(json_obj)
-        ori = query.evql.to_sql
+        json_obj = query.evqa.dump_json()
+        new_query_obj = EVQATree.load_json(json_obj)
+        ori = query.evqa.to_sql
         new = new_query_obj.to_sql
         self.assertTrue(
-            query.evql.to_sql == new_query_obj.to_sql,
-            f'\nExpected: "{query.evql.to_sql}". \nGot: "{new_query_obj.to_sql}"',
+            query.evqa.to_sql == new_query_obj.to_sql,
+            f'\nExpected: "{query.evqa.to_sql}". \nGot: "{new_query_obj.to_sql}"',
         )
 
     def test_selection_with_or(self):

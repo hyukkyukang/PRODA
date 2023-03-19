@@ -14,9 +14,9 @@ export const fetchConfig = async (params) => {
 };
 
 /* Fetch data */
-export const fetchEVQL = async (params) => {
+export const fetchEVQA = async (params) => {
     const [key, queryType] = params.queryKey;
-    return (await axios.post(`${protocol}://${ip}:${serverPort}/fetchEVQL`, { queryType: queryType }, axioscConfig)).data;
+    return (await axios.post(`${protocol}://${ip}:${serverPort}/fetchEVQA`, { queryType: queryType }, axioscConfig)).data;
 };
 
 export const fetchTask = async (params) => {
@@ -38,9 +38,9 @@ export const updateConfig = async (params) => {
 };
 
 /* Send and request data */
-export const runEVQL = async (params) => {
-    const [key, evql] = params.queryKey;
-    return (await axios.post(`${protocol}://${ip}:${serverPort}/runEVQL`, { evql: evql }, axioscConfig)).data;
+export const runEVQA = async (params) => {
+    const [key, evqa] = params.queryKey;
+    return (await axios.post(`${protocol}://${ip}:${serverPort}/runEVQA`, { evqa: evqa }, axioscConfig)).data;
 };
 
 export const runSQL = async (params) => {

@@ -2,16 +2,16 @@ import React, { useState, useEffect } from "react";
 import { Grid, Button } from "@mui/material";
 
 import { isEmptyObject } from "../utils";
-import { runEVQL, fetchEVQL, runSQL } from "../api/connect";
-import { EVQLTree } from "../components/VQL/EVQL";
-import { EVQLTables, Coordinate } from "../components/VQL/EVQLTable";
+import { runEVQA, fetchEVQA, runSQL } from "../api/connect";
+import { EVQATree } from "../components/VQA/EVQA";
+import { EVQATables, Coordinate } from "../components/VQA/EVQATable";
 import { TableExcerpt } from "../components/TableExcerpt/TableExcerpt";
-import { SideBar } from "../components/VQL/Sidebar";
+import { SideBar } from "../components/VQA/Sidebar";
 
-const HandsOnEVQL = (props: any) => {
+const HandsOnEVQA = (props: any) => {
     // Global variables (to children)
     const [selectedCoordinate, setSelectedCoordinate] = useState<Coordinate>();
-    const [evql, setEVQL] = useState({} as EVQLTree);
+    const [evqa, setEVQA] = useState({} as EVQATree);
 
     // Local variables
     const [sql, setSQL] = useState<string | undefined>("");
@@ -35,20 +35,20 @@ const HandsOnEVQL = (props: any) => {
             });
     };
 
-    // Visualize EVQL
+    // Visualize EVQA
     const doInitSetting = async (queryName: string) => {
-        // Fetch example EVQL
-        const tmpEVQL = await fetchEVQL({ queryType: queryName });
-        // Execute EVQL
-        const tmpQueryResult = await runEVQL({ evqlStr: JSON.stringify(tmpEVQL) });
+        // Fetch example EVQA
+        const tmpEVQA = await fetchEVQA({ queryType: queryName });
+        // Execute EVQA
+        const tmpQueryResult = await runEVQA({ evqaStr: JSON.stringify(tmpEVQA) });
         // Set values
-        setEVQL(tmpEVQL);
+        setEVQA(tmpEVQA);
         setSQL(tmpQueryResult["sql"]);
         setQueryResult(tmpQueryResult["result"]);
     };
 
     const executeQuery: React.MouseEventHandler = (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
-        runEVQL({ evqlStr: JSON.stringify(evql) })
+        runEVQA({ evqaStr: JSON.stringify(evqa) })
             .then((data) => {
                 setSQL(data["sql"]);
                 setQueryResult(data["result"]);
@@ -70,7 +70,7 @@ const HandsOnEVQL = (props: any) => {
     return (
         <Grid container style={{ background: "white", color: "black" }}>
             <Grid item xs={showSideBar ? 9 : 12}>
-                <h1> Hands-On EVQL</h1>
+                <h1> Hands-On EVQA</h1>
                 <div style={{ marginLeft: "10px" }}>
                     <div>
                         <h2> Demo Database </h2>
@@ -78,12 +78,12 @@ const HandsOnEVQL = (props: any) => {
                         <TableExcerpt queryResult={sampledDBRows} />
                     </div>
                     <div>
-                        <h2>EVQL Query</h2>
-                        <p>Edit the EVQL table, and click "Run EVQL" to see the result. </p>
-                        <EVQLTables evqlRoot={evql} setEVQLRoot={setEVQL} setSelectedCoordinate={setSelectedCoordinate} />
+                        <h2>EVQA Query</h2>
+                        <p>Edit the EVQA table, and click "Run EVQA" to see the result. </p>
+                        <EVQATables evqaRoot={evqa} setEVQARoot={setEVQA} setSelectedCoordinate={setSelectedCoordinate} />
                         <br />
                         <Button variant="contained" color="success" size="medium" onClick={executeQuery}>
-                            {"Run EVQL"}{" "}
+                            {"Run EVQA"}{" "}
                         </Button>
                         <h3>Results:</h3>
                         <TableExcerpt queryResult={queryResult} />
@@ -96,10 +96,10 @@ const HandsOnEVQL = (props: any) => {
                 </div>
             </Grid>
             <Grid item xs={3} style={{ background: "#f5f6f7", boxShadow: "-2px 0px 0px #e6e9ed" }}>
-                <SideBar evqlRoot={evql} setEVQL={setEVQL} selectedCoordinate={selectedCoordinate} showSideBar={showSideBar} setShowSideBar={setShowSideBar} />
+                <SideBar evqaRoot={evqa} setEVQA={setEVQA} selectedCoordinate={selectedCoordinate} showSideBar={showSideBar} setShowSideBar={setShowSideBar} />
             </Grid>
         </Grid>
     );
 };
 
-export default HandsOnEVQL;
+export default HandsOnEVQA;

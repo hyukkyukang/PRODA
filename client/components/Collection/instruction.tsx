@@ -9,9 +9,9 @@ export enum TaskTypes {
 export const taskTypeToInstruction = (taskType: number | undefined): string => {
     switch (taskType) {
         case TaskTypes.YesNo:
-            return "A natural language query, corrsponding EVQL query, table excerpt, and query execution result is given below. Please understand them and answer the question below.";
+            return "A natural language query, corrsponding EVQA query, table excerpt, and query execution result is given below. Please understand them and answer the question below.";
         case TaskTypes.NLAugmentation:
-            return "A natural language query, corrsponding EVQL query, table excerpt, and query execution result is given below. Please understand them and answer the question below.";
+            return "A natural language query, corrsponding EVQA query, table excerpt, and query execution result is given below. Please understand them and answer the question below.";
         default:
             return "Instrunction goes here...";
     }
