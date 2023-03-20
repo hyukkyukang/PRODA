@@ -1,17 +1,19 @@
 import { Grid, Paper } from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "react-query";
-
-import CircularProgress from "@mui/material/CircularProgress";
 import { fetchTask, sendWorkerAnswer } from "../api/connect";
 import { AnswerSheet, UserAnswer } from "../components/Collection/answerSheet";
+import { OverallTaskDescription } from "../components/Collection/overallTaskDescription";
 import { QuerySheet } from "../components/Collection/querySheet";
 import { Task } from "../components/Collection/task";
-import { OverallTaskDescription } from "../components/Collection/overallTaskDescription";
 import { Header } from "../components/Header/collectionHeader";
 import { RefContext } from "../pages/_app";
+import { getConfig } from "../utils";
 
-const enableAMTSubmission = true;
+const config = getConfig();
+const enableAMTSubmission = config.isAMTCollectionMode;
+
 
 export const Collection = (props: any) => {
     // Ref
