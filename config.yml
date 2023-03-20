@@ -1,8 +1,8 @@
 visibleToClient:
     frontend:
         IP: localhost
-        Port: 3001
-        Protocol: https # Either https or http
+        Port: 3000
+        Protocol: http # Either https or http
     backend:
         IP: localhost
         Port: 4001
