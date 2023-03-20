@@ -24,10 +24,9 @@ if (!["start", "dev"].includes(mode)) {
 const hostname = config.visibleToClient.frontend.IP;
 const port = config.visibleToClient.frontend.Port;
 const protocol = config.visibleToClient.frontend.Protocol;
-const projectPath = config.ProjectPath;
-const SSLKeyPath = path.join(projectPath, config.SSLKeyPath);
-const SSLCertPath = path.join(projectPath, config.SSLCertPath);
-const SSLCaPath = path.join(projectPath, config.SSLCaPath);
+const SSLKeyPath = path.join(config.ProjectPath, config.SSLKeyPath);
+const SSLCertPath = path.join(config.ProjectPath, config.SSLCertPath);
+const SSLCaPath = path.join(config.ProjectPath, config.SSLCaPath);
 // Append configs to process.env
 
 if (protocol == "http") {

@@ -12,9 +12,8 @@ const config = utils.loadYamlFile("../config.yml");
 const protocol = config.backend.Protocol;
 const IP = config.backend.IP;
 const port = config.backend.Port;
-const projectPath = config.ProjectPath;
-const SSLCertPath = path.join(projectPath, config.SSLCertPath);
-const SSLKeyPath = path.join(projectPath, config.SSLKeyPath);
+const SSLCertPath = path.join(config.ProjectPath, config.SSLCertPath);
+const SSLKeyPath = path.join(config.ProjectPath, config.SSLKeyPath);
 
 console.log("Begin server");
 
