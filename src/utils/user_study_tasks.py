@@ -1,4 +1,3 @@
-import json
 import os
 
 from combine_multiple_sentence import *
@@ -18,7 +17,7 @@ from src.utils.example_queries import CorrelatedNestedQuery
 def MovieTask1(query_object):
     config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
     config = file_utils.read_yaml_file(config_file_path)
-    task_save_dir_path = config["taskSaveDirPath"]
+    task_save_dir_path = os.path.join(config["projectPath"], config["taskSaveDirPath"])
 
     evqa_object = query_object.evqa
     query_graphs = query_object.query_graphs
@@ -51,7 +50,7 @@ def MovieTask1(query_object):
 def MovieTask2(query_object):
     config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
     config = file_utils.read_yaml_file(config_file_path)
-    task_save_dir_path = config["taskSaveDirPath"]
+    task_save_dir_path = os.path.join(config["projectPath"], config["taskSaveDirPath"])
 
     evqa_object = query_object.evqa
     query_graphs = query_object.query_graphs
@@ -152,7 +151,7 @@ def MovieTask2(query_object):
 def MovieTask3(query_object):
     config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
     config = file_utils.read_yaml_file(config_file_path)
-    task_save_dir_path = config["taskSaveDirPath"]
+    task_save_dir_path = os.path.join(config["projectPath"], config["taskSaveDirPath"])
 
     evqa_object = query_object.evqa
     query_graphs = query_object.query_graphs

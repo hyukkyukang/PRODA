@@ -1,3 +1,5 @@
+var path = require("path");
+
 function loadYamlFile(path) {
     const fs = require("fs");
     const yaml = require("js-yaml");
@@ -22,9 +24,10 @@ if (!["start", "dev"].includes(mode)) {
 const hostname = config.visibleToClient.frontend.IP;
 const port = config.visibleToClient.frontend.Port;
 const protocol = config.visibleToClient.frontend.Protocol;
-const SSLKeyPath = config.SSLKeyPath;
-const SSLCertPath = config.SSLCertPath;
-const SSLCaPath = config.SSLCaPath;
+const projectPath = config.ProjectPath;
+const SSLKeyPath = path.join(projectPath, config.SSLKeyPath);
+const SSLCertPath = path.join(projectPath, config.SSLCertPath);
+const SSLCaPath = path.join(projectPath, config.SSLCaPath);
 // Append configs to process.env
 
 if (protocol == "http") {
