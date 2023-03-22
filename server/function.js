@@ -81,16 +81,19 @@ function getTask(taskID, getHistory = true) {
     const client = new pg();
     client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
     results = client.querySync(`SELECT * FROM ${collectionDBTaskTableName} WHERE id = ${taskID};`);
+    let result = null;
     // Get one task
-    if (results.length > 0) {
+    if (results.length == 1) {
         result = results[0];
+    } else {
+        console.error(`${results.length} tasks found in DB. (with taskID: ${taskID})`);
+        return null;
     }
     client.end();
     if (result == null) {
-        console.warn(`Task ${taskID} not found in DB.`);
+        console.error(`Task ${taskID} not found in DB.`);
         return null;
     }
-    // Check if there is any worker said the given NL is incorrect, then, replace with the new nl
 
     // Get file paths
     const evqa_path = result.evqa_path;
@@ -164,7 +167,7 @@ function getTaskSet(taskSetID = null, isSkip = false) {
         const task = getTask(task_id);
         tasks.push(task);
     }
-    console.log(`Task set ${result.id} with ${tasks.length} number of tasks retrieved.`);
+    console.log(`TaskSet with ID:${result.id} containing ${tasks.length} number of tasks:(${tasks.map((t) => t.taskID).toString()}) is retrieved.`);
     return {
         taskSetID: result.id,
         tasks: tasks,

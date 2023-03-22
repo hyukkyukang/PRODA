@@ -4,24 +4,30 @@ import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "react-query";
 import { fetchTask, sendWorkerAnswer } from "../api/connect";
 import { AnswerSheet, UserAnswer } from "../components/Collection/answerSheet";
+import { DialogToTutorial } from "../components/Collection/dialogToTutorial";
 import { OverallTaskDescription } from "../components/Collection/overallTaskDescription";
 import { QuerySheet } from "../components/Collection/querySheet";
+import { SubmitFailedSnackbar } from "../components/Collection/submitFailedSnackbar";
+import { SubmitSucceedSnackbar } from "../components/Collection/submitSucceedSnackbar";
 import { Task } from "../components/Collection/task";
 import { Header } from "../components/Header/collectionHeader";
 import { RefContext } from "../pages/_app";
 import { getConfig } from "../utils";
 
 const config = getConfig();
-const enableAMTSubmission = config.isAMTCollectionMode;
-
+const isAMTSubmissionMode = config.isAMTCollectionMode;
 
 export const Collection = (props: any) => {
     // Ref
     const { targetRef } = useContext(RefContext);
     // Global state variables
     const [answer, setAnswer] = useState<UserAnswer>({ nl: "", isCorrect: undefined });
+    const [answerSet, setAnswerSet] = useState<UserAnswer[]>([]);
+    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(true);
     // Local state variables
     const [taskSetIdx, setTaskSetIdx] = useState<number>(0);
+    const [isSubmitSucceedSnackbarOpen, setIsSubmitSucceedSnackbarOpen] = React.useState<boolean>(false);
+    const [isSubmitFailedSnackbarOpen, setIsSubmitFailedSnackbarOpen] = React.useState<boolean>(false);
     // AMT informations
     const [hitId, setHitId] = useState("");
     const [assignmentId, setAssignmentId] = useState("");
@@ -31,6 +37,7 @@ export const Collection = (props: any) => {
     // Variables to change state step-by-step to call API once
     const [isInitalized, setIsInitalized] = useState(false);
     const [isURLParsed, setIsURLParsed] = useState(false);
+    const [isReadyToSendAMTAnswer, setIsReadyToSendAMTAnswer] = useState(false);
 
     // To handle submission
     const formRef = useRef<HTMLFormElement>(null);
@@ -47,34 +54,39 @@ export const Collection = (props: any) => {
     });
     const taskSet = useMemo<{ taskSetID: number; tasks: Task[] } | null>(() => (data?.isTaskReturned ? data.taskSet : null), [data]);
     const currentTask = useMemo<Task | null>(() => (taskSet && taskSet.tasks.length > taskSetIdx ? taskSet.tasks[taskSetIdx] : null), [taskSet, taskSetIdx]);
-    const isToSendAMTSubmit = useMemo<boolean>(() => (taskSet?.tasks ? taskSetIdx + 1 >= taskSet?.tasks.length : false), [taskSet, taskSetIdx]);
+    const isAllTaskComplete = useMemo<boolean>(() => (taskSet?.tasks ? taskSetIdx + 1 >= taskSet?.tasks.length : false), [taskSet, taskSetIdx]);
     const isTaskSetComplete = useMemo<boolean>(() => (taskSet?.tasks ? taskSetIdx >= taskSet?.tasks.length : false), [taskSet, taskSetIdx]);
-    const isClickable = useMemo<boolean>(
-        () => (currentTask && (!enableAMTSubmission || (enableAMTSubmission && workerID)) ? true : false),
+    const isAnswerNLValid = useMemo<boolean>(() => (answer?.nl && currentTask?.nl ? answer.nl != currentTask.nl : false), [answer, currentTask]);
+    const isNotPreviewMode = useMemo<boolean>(
+        () => (currentTask && (!isAMTSubmissionMode || (isAMTSubmissionMode && workerID)) ? true : false),
         [currentTask, workerID]
     );
 
     const onSubmitHandler = () => {
         // This should be called only when data is not null
-        if (isClickable) {
-            // Send current step's info to the server
-            sendWorkerAnswer({ answer: answer, workerID: workerID, taskID: currentTask?.taskID, taskSetID: taskSet?.taskSetID });
+        if (isNotPreviewMode) {
+            if (isAnswerNLValid) {
+                // Send current step's info to the server
+                sendWorkerAnswer({ answer: answer, workerID: workerID, taskID: currentTask?.taskID, taskSetID: taskSet?.taskSetID });
 
-            // Submit assignment
-            console.log(`taskSet length:${taskSet?.tasks.length}`);
-            console.log(`taskSetIdx: ${taskSetIdx}`);
-            console.log(`isTaskSetComplete: ${isTaskSetComplete}`);
-            console.log(`isToSendAMTSubmit: ${isToSendAMTSubmit}`);
-            if (enableAMTSubmission && isToSendAMTSubmit && formRef.current) {
-                console.log(`amt submitted!!`);
-                formRef.current.submit();
+                setIsSubmitSucceedSnackbarOpen(true);
+                setTaskSetIdx(taskSetIdx + 1);
+                setAnswerSet([...answerSet, answer]);
+
+                // Submit assignment
+                if (isAllTaskComplete) {
+                    setIsReadyToSendAMTAnswer(true);
+                }
+                return true;
+            } else {
+                setIsSubmitFailedSnackbarOpen(true);
             }
-            setTaskSetIdx(taskSetIdx + 1);
         }
+        return false;
     };
 
     const onSkipHandler = () => {
-        if (isClickable) {
+        if (isNotPreviewMode) {
             mutate({ workerID: workerID, taskSetID: taskSet?.taskSetID, isSkip: true });
         }
     };
@@ -121,13 +133,20 @@ export const Collection = (props: any) => {
         }
     }, [data]);
 
+    // Send answer to AMT when everything is done
+    useEffect(() => {
+        if (isReadyToSendAMTAnswer && isAMTSubmissionMode) {
+            formRef.current?.submit();
+        }
+    }, [isReadyToSendAMTAnswer]);
+
     const AMTSubmissionForm = (
         <React.Fragment>
             <form action="https://workersandbox.mturk.com/mturk/externalSubmit" ref={formRef}>
                 <input type="hidden" value={assignmentId} name="assignmentId" id="assignmentId" />
-                <input type="hidden" value={answer.nl} name="answerNL" id="answerNL" />
+                <input type="hidden" value={JSON.stringify(answer)} name="answer" id="answer" />
                 <input type="hidden" value={taskSet?.taskSetID} name="taskSetID" id="taskSetID" />
-                <input type="hidden" value={answer.isCorrect === undefined ? "true" : answer.isCorrect.toString()} name="isCorrect" id="isCorrect" />
+                <input type="hidden" value={workerID} name="workerID" id="workerID" />
             </form>
         </React.Fragment>
     );
@@ -181,7 +200,7 @@ export const Collection = (props: any) => {
     const answerSubmittedBody = (
         <div style={{ height: "100px", display: "flex", textAlign: "center", justifyContent: "center", alignItems: "center" }}>
             <div style={{ display: "inline-block" }}>
-                <p> Answer successfully submitted! </p>
+                <p> We appreciate your response. Your answer has been submitted successfully!</p>
             </div>
         </div>
     );
@@ -205,13 +224,16 @@ export const Collection = (props: any) => {
             <div ref={targetRef}>
                 <Grid container sx={{ background: "#f6efe8", color: "black" }}>
                     <Grid item xs={12}>
-                        <>
+                        <React.Fragment>
                             <Header />
                             {componentBody}
-                        </>
+                        </React.Fragment>
                     </Grid>
                 </Grid>
             </div>
+            <DialogToTutorial isDialogOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} />
+            <SubmitSucceedSnackbar isSubmitSucceedSnackbarOpen={isSubmitSucceedSnackbarOpen} setIsSubmitSucceedSnackbarOpen={setIsSubmitSucceedSnackbarOpen} />
+            <SubmitFailedSnackbar isSubmitFailedSnackbarOpen={isSubmitFailedSnackbarOpen} setIsSubmitFailedSnackbarOpen={setIsSubmitFailedSnackbarOpen} />
         </React.Fragment>
     );
 };

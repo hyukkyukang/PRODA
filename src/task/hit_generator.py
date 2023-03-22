@@ -1,4 +1,3 @@
-import os
 import attrs
 import boto3
 from hkkang_utils.misc import property_with_cache
@@ -11,8 +10,6 @@ DEFAULT_ENDPOINT_URL = "https://mturk-requester.us-east-1.amazonaws.com"
 SANDBOX_ENDPOINT_URL = "https://mturk-requester-sandbox.us-east-1.amazonaws.com"
 ENDPOINT_URL = SANDBOX_ENDPOINT_URL if IS_USE_SANDBOX else DEFAULT_ENDPOINT_URL
 
-__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-
 
 @attrs.define
 class MTurkClient:
@@ -24,7 +21,7 @@ class MTurkClient:
     endpoint_url: str = attrs.field(default=ENDPOINT_URL)
     # For creating HIT
     _question = attrs.field(init=False)
-    question_schema_path: str = attrs.field(default=os.path.join(__location__, "AMT_ExternalQuestion.xml"))
+    question_schema_path: str = attrs.field(default="AMT_ExternalQuestion.xml")
     reward = attrs.field(default="0.11")
     max_assignments: int = attrs.field(default=10)
     lifetime_in_seconds: int = attrs.field(default=60 * 30)

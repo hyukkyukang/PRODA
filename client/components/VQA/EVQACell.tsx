@@ -37,13 +37,14 @@ export const EVQACell: CellComponent = ({
         }),
         [row, column]
     );
-    const { setX, setY, setDescription, setIsActive } = React.useContext(HoveringDescriptionContext);
+    const { setX, setY, setoperatorDescription, setIsActive } = React.useContext(HoveringDescriptionContext);
     const { headerNames } = React.useContext(TableHeaderContext);
     const parsedExpressions = React.useMemo(
         () => (data?.value?.length > 0 ? parseExpressions(data?.value, headerNames) : null),
         [data, data?.value, headerNames]
     );
     const description: string = React.useMemo(() => (parsedExpressions ? getCellDescription(parsedExpressions) : ""), [parsedExpressions]);
+    const pageYOffset = React.useMemo<number>(() => (rootRef?.current?.offsetTop ? rootRef?.current?.offsetTop : 0), [rootRef?.current?.offsetTop]);
 
     // Handle mouse down
     const handleMouseDown = React.useCallback(
@@ -65,8 +66,8 @@ export const EVQACell: CellComponent = ({
                 activate(point);
             }
             // Set operator description
-            if (setDescription) {
-                setDescription(description);
+            if (setoperatorDescription) {
+                setoperatorDescription(description);
             }
             if (setIsActive) {
                 setIsActive(true);
@@ -91,7 +92,7 @@ export const EVQACell: CellComponent = ({
         const handleMouseMove = (event: any) => {
             if (setX && setY) {
                 setX(event.clientX + window.pageXOffset);
-                setY(event.clientY + window.pageYOffset);
+                setY(event.clientY + window.pageYOffset - pageYOffset - 260);
             }
         };
 

@@ -5,7 +5,7 @@ from hkkang_utils.file import file_utils
 
 config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
 config = file_utils.read_yaml_file(config_file_path)
-DATA_DIR = os.path.join(config["projectPath"], config["taskSaveDirPath"])
+DATA_DIR = os.path.join(config["ProjectPath"], config["TaskSaveDirPath"])
 
 if __name__ == "__main__":
     query = MultipleSublinksQuery2()

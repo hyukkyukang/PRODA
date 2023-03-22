@@ -1,6 +1,13 @@
-from src.table_excerpt.table_excerpt import TableExcerpt
+import os
 import sqlite3
 
+import hkkang_utils.file as file_utils
+
+from src.table_excerpt.table_excerpt import TableExcerpt
+
+config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
+config = file_utils.read_yaml_file(config_file_path)
+database_dir_path = os.path.join(config["ProjectPath"], config["DBPath"])
 
 def get_table_names(cur):
     sql_query = """SELECT name FROM sqlite_master WHERE type='table';"""
@@ -87,7 +94,7 @@ class BaseDB:
 
 class MovieDB(BaseDB):
     def __init__(self):
-        self._sqlite3 = "movie.sqlite3"
+        self._sqlite3 = os.path.join(database_dir_path,"movie.sqlite3")
 
         conn = sqlite3.connect(self._sqlite3)
         cur = conn.cursor()

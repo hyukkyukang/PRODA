@@ -34,9 +34,10 @@ export const basicTutorialSections: ITutorialSection[] = [
     Selection1Section,
     Selection2Section,
     OrderingSection,
+    GroupingSection,
 ];
 
-// export const advanceTutorialSections: ITutorialSection[] = [GroupingSection, Selection3Section, ForEachSection, MultipleSublinks];
-export const advanceTutorialSections: ITutorialSection[] = [GroupingSection, Selection3Section];
+// export const advanceTutorialSections: ITutorialSection[] = [Selection3Section, ForEachSection, MultipleSublinks];
+export const advanceTutorialSections: ITutorialSection[] = [Selection3Section];
 
 export const allTutorialSections: ITutorialSection[] = [TaskOverviewSection].concat(basicTutorialSections.concat(advanceTutorialSections));

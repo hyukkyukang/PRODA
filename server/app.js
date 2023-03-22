@@ -68,7 +68,8 @@ app.post("/fetchTask", function (req, res) {
             taskSetData = func.getTaskSet();
             if (taskSetData) {
                 const taskSetID = taskSetData.taskSetID;
-                if (workerID !== undefined) {
+                // Assign worker to task mapping
+                if (workerID !== undefined && workerID !== null) {
                     workerTaskMapping[workerID] = taskSetID;
                     console.log(`workerID:${workerID} has been assigned to taskSetID:${taskSetID}`);
                 }

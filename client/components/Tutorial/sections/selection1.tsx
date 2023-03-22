@@ -9,6 +9,7 @@ import { EVQATables } from "../../VQA/EVQATable";
 import { demoTable } from "../examples/demoTable";
 import { SelectionSyntaxExample } from "../examples/EVQAExamples";
 import ITutorialSection from "./abstractSection";
+import OperatorsDescription from "../operatorsDescription";
 
 export const SyntaxDescription = (
     <>
@@ -21,6 +22,11 @@ export const SyntaxDescription = (
             ColumnIndicator={EVQAColumnIndicator}
             DataViewer={dataViewer}
         />
+        <br />
+        <br />
+        <h2>List of operators and functions</h2>
+        <div style={{ width: 1000 }}>{OperatorsDescription}</div>
+        <br />
     </>
 );
 // Demo EVQA and results

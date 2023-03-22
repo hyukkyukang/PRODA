@@ -1,10 +1,8 @@
-import React, { useState, MouseEventHandler } from "react";
 import ListItem from "@mui/material/ListItem";
-
-import { allTutorialSections, basicTutorialSections, advanceTutorialSections } from "./sections/allSections";
-import { ITutorialSection } from "./sections/abstractSection";
+import React, { MouseEventHandler, useState } from "react";
 import { isEmptyObject } from "../../utils";
-
+import { ITutorialSection } from "./sections/abstractSection";
+import { advanceTutorialSections, allTutorialSections, basicTutorialSections, TaskOverviewSection } from "./sections/allSections";
 interface ISelectedSection {
     selectedSection: ITutorialSection;
     setSelectedSection: React.Dispatch<React.SetStateAction<ITutorialSection>>;
@@ -46,9 +44,9 @@ export const SideBar = (params: ISelectedSection): React.ReactElement => {
     const taskOverviewSection = (
         <React.Fragment>
             <ListItem
-                sx={getStyle(null)}
-                id={"Task Overview"}
-                key={"Task Overview"}
+                sx={getStyle(TaskOverviewSection)}
+                id={TaskOverviewSection.title}
+                key={TaskOverviewSection.title}
                 onClick={handleClick}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
@@ -103,7 +101,9 @@ export const SideBar = (params: ISelectedSection): React.ReactElement => {
         <React.Fragment>
             <ListItem sx={{ fontWeight: "bold", fontSize: "20px", marginTop: 1 }}>Tutorial Sections</ListItem>
             {taskOverviewSection}
+            <br />
             {basicSection}
+            <br />
             {advancedSection}
         </React.Fragment>
     );
