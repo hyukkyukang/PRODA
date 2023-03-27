@@ -43,13 +43,15 @@ if (protocol == "http") {
     const next = require("next");
     const fs = require("fs");
 
-    const dev = process.env.NODE_ENV !== "production";
+    const dev = mode !== "start";
 
     // Create Server
     const httpsOptions = {
         key: fs.readFileSync(SSLKeyPath),
         cert: fs.readFileSync(SSLCertPath),
     };
+
+    console.log(`dev:${dev}`);
 
     const app = next({ dev, hostname, port });
     const handle = app.getRequestHandler();

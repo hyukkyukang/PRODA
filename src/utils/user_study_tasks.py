@@ -63,22 +63,22 @@ def MovieTask2(query_object):
 
     result_tables = query_object.result_tables
 
-    nl4, mapping4 = create_nl_and_mapping(query_graphs[0], evqa4)
-    nl3, mapping3 = create_nl_and_mapping(query_graphs[1], evqa3)
+    nl4_origin, mapping4 = create_nl_and_mapping(query_graphs[0], evqa4)
+    nl3_origin, mapping3 = create_nl_and_mapping(query_graphs[1], evqa3)
     nl2, mapping2 = create_nl_and_mapping(query_graphs[2], evqa2)
     nl1, mapping1 = create_nl_and_mapping(query_graphs[3], evqa1)
 
-    # nl3_concat = templatize([nl1, nl2], nl3_origin)
-    # # nl3 = rewrite_sentence(nl3_concat)
+    nl3_concat = templatize([nl1, nl2], nl3_origin)
+    nl3 = rewrite_sentence(nl3_concat)
     # nl3 = nl3_origin
 
-    # nl4_concat = templatize([nl1, nl2, nl3], nl4_origin)
-    # nl4 = rewrite_sentence(nl4_concat)
-    # # nl4 = nl4_origin
-    # print(nl4_origin, nl4)
-    # print(nl3_origin, nl3)
-    # print(nl2)
-    # print(nl1)
+    nl4_concat = templatize([nl1, nl2, nl3], nl4_origin)
+    nl4 = rewrite_sentence(nl4_concat)
+    # nl4 = nl4_origin
+    print(nl4_origin)
+    print(nl3_origin)
+    print(nl2)
+    print(nl1)
 
     # Create and save task1
     sub_task1 = Task(

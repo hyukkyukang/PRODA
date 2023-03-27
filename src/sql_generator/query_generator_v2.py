@@ -128,30 +128,6 @@ def file_len(fname):
     return i + 1
 
 
-def decode_key_column(df, db_id):
-    spiderReplacement = json.load(open("data/spider_replacement.json"))
-    rep = spiderReplacement[db_id]
-    join_groups = rep["join_groups"]
-
-    for col in df.columns:
-        cur_col_group = None
-        for g_idx in join_groups.keys():
-            group = join_groups[g_idx]
-            if col in group:
-                cur_col_group = g_idx
-                break
-
-        if cur_col_group:
-            df[col] = df.apply(
-                lambda x: rep["replacement"][cur_col_group][str(int(x[col]))]
-                if not np.isnan(x[col]) and str(int(x[col])) in rep["replacement"][cur_col_group].keys()
-                else x[col],
-                axis=1,
-            )
-
-    return df
-
-
 def main(
     schema,
     dvs,
@@ -180,7 +156,7 @@ def main(
     t2 = time.time()
     df = sampler.run()
     if schema["dataset"] == "spider":
-        df = decode_key_column(df, schema["use_cols"])
+        df = utils.decode_key_column(df, schema["use_cols"])
 
     lines = list()
     graphs = list()
@@ -206,8 +182,8 @@ def main(
         for inner_query_path in args.inner_query_paths:
             with open(inner_query_path, "r") as fp:
                 q_count = len(fp.readlines())
-            inner_query_objs += load_objs(inner_query_path + ".obj", q_count)
-            inner_query_graphs += load_graphs(inner_query_path + ".graph", q_count)
+            inner_query_objs += utils.load_objs(inner_query_path + ".obj", q_count)
+            inner_query_graphs += utils.load_graphs(inner_query_path + ".graph", q_count)
         # .obj type files
     else:
         inner_query_objs = None
