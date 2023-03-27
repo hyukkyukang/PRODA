@@ -26,8 +26,8 @@ export interface IHoveringDescriptionContext {
     setX: React.Dispatch<React.SetStateAction<number>>;
     y: number;
     setY: React.Dispatch<React.SetStateAction<number>>;
-    description: string;
-    setDescription: React.Dispatch<React.SetStateAction<string>>;
+    operatorDescription: string;
+    setoperatorDescription: React.Dispatch<React.SetStateAction<string>>;
     isActive: boolean;
     setIsActive: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -56,6 +56,7 @@ export interface IEVQAVisualizationContext {
     childListPath: number[];
     editable: boolean;
     isFirstNode: boolean | undefined;
+    prefixDescription?: JSX.Element | undefined;
 }
 
 export interface EVQATreeWrapperProps {
@@ -63,19 +64,21 @@ export interface EVQATreeWrapperProps {
     setEVQARoot?: React.Dispatch<React.SetStateAction<EVQATree>>;
     setSelectedCoordinate?: React.Dispatch<React.SetStateAction<Coordinate | undefined>>;
     editable?: boolean;
+    prefixDescription?: JSX.Element | undefined;
 }
 
 export const TableHeaderContext = React.createContext({} as ITableHeaderContext);
 export const HoveringDescriptionContext = React.createContext({} as IHoveringDescriptionContext);
 
 export const EVQATable = (props: IEVQAVisualizationContext) => {
-    const { evqaRoot, setEVQARoot, setSelectedCoordinate, childListPath, editable } = props;
+    const { evqaRoot, setEVQARoot, setSelectedCoordinate, childListPath, editable, prefixDescription = undefined } = props;
 
     // Context for the provider
     const [x, setX] = useState(0);
     const [y, setY] = useState(0);
-    const [description, setDescription] = useState("");
+    const [operatorDescription, setoperatorDescription] = useState("");
     const [isActive, setIsActive] = useState(false);
+    const rootRef = React.useRef<HTMLTableCellElement | null>(null);
 
     // Local context to visualize table
     const [evqaNode, setEVQANode] = useState({} as EVQANode);
@@ -205,11 +208,11 @@ export const EVQATable = (props: IEVQAVisualizationContext) => {
 
     if (!isEmptyObject(tableContext)) {
         return (
-            <div style={{ overflow: "scroll" }}>
-                <h2>EVQA:</h2>
+            <div style={{ overflow: "scroll" }} ref={rootRef}>
+                {prefixDescription ? prefixDescription : <h2>EVQA:</h2>}
                 <div style={{ display: "inline-block" }}>
                     <TableHeaderContext.Provider value={{ headerNames: headerNames }}>
-                        <HoveringDescriptionContext.Provider value={{ x, setX, y, setY, description, setDescription, isActive, setIsActive }}>
+                        <HoveringDescriptionContext.Provider value={{ x, setX, y, setY, operatorDescription, setoperatorDescription, isActive, setIsActive }}>
                             <Spreadsheet
                                 className="table_sketch"
                                 data={tableContext.rows}
@@ -245,8 +248,8 @@ export const EVQATable = (props: IEVQAVisualizationContext) => {
                 </div>
                 <br />
                 {isActive ? (
-                    <p className="EVQA-description" style={{ left: x + 10, top: y + 10, zIndex: 1 }}>
-                        {description}
+                    <p className="EVQA-description" style={{ left: x + 5, top: y + 10, zIndex: 1, position: "absolute" }}>
+                        {operatorDescription}
                     </p>
                 ) : null}
             </div>
@@ -256,7 +259,7 @@ export const EVQATable = (props: IEVQAVisualizationContext) => {
 };
 
 export const EVQATables = (props: EVQATreeWrapperProps) => {
-    const { evqaRoot, setEVQARoot = undefined, setSelectedCoordinate = undefined, editable = true } = props;
+    const { evqaRoot, setEVQARoot = undefined, setSelectedCoordinate = undefined, editable = true, prefixDescription = undefined } = props;
     const childPathLists = getTreeTraversingPaths(evqaRoot);
 
     // Add & remove buttons
@@ -319,9 +322,8 @@ export const EVQATables = (props: EVQATreeWrapperProps) => {
                               childListPath={path}
                               editable={editable && index + 1 == childPathLists.length}
                               isFirstNode={Boolean(index > 0) ? Boolean(childPathLists[index - 1]) : undefined}
+                              prefixDescription={prefixDescription}
                           />
-                          <br />
-                          <br />
                       </div>
                   ))}
         </React.Fragment>

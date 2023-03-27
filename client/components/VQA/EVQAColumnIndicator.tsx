@@ -8,7 +8,7 @@ import { aggFunctions } from "./EVQA";
 import { getHeaderDescription } from "./utils";
 
 export const EVQAColumnIndicator: ColumnIndicatorComponent = ({ column, label, selected, selectedPoint, active, onSelect, activate }) => {
-    const { setX, setY, setDescription, setIsActive } = React.useContext(HoveringDescriptionContext);
+    const { setX, setY, setoperatorDescription, setIsActive } = React.useContext(HoveringDescriptionContext);
     const description = React.useMemo(() => (label ? getHeaderDescription(label as unknown as IEVQATableHeader) : ""), [label]);
 
     // column is the id
@@ -46,9 +46,9 @@ export const EVQAColumnIndicator: ColumnIndicatorComponent = ({ column, label, s
             activate({ row: -1, column: column });
         }
         // Set operator description
-        if (setDescription) {
-            setDescription(operatorDescriptions["="]);
-            setDescription(description);
+        if (setoperatorDescription) {
+            setoperatorDescription(operatorDescriptions["="]);
+            setoperatorDescription(description);
         }
         if (setIsActive) {
             setIsActive(true);

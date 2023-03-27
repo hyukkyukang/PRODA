@@ -18,10 +18,13 @@ RUN apt install yarn -y
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install postgresql postgresql-contrib libpq-dev
 
 # Local setting to kr
-RUN apt install apt install language-pack-ko
-RUN echo "LC_CTYPE=ko_KR.UTF-8" >> /etc/environment
-RUN echo "LC_ALL=ko_KR.UTF-8" >> /etc/environment
-RUN echo "LANG=ko_KR.UTF-8" >> /etc/environment
+RUN echo "LC_CTYPE=en_US.UTF-8" >> /etc/environment
+RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment
+RUN echo "LANG=en_US.UTF-8" >> /etc/environment
+
+# Setting timezon
+RUN echo "Asia/Seoul" > /etc/timezone
+RUN dpkg-reconfigure -f noninteractive tzdata
 
 # python alias to python3
 RUN apt install python-is-python3

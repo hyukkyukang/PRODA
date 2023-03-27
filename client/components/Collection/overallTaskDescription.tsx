@@ -1,11 +1,9 @@
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import Link from "next/link";
 import React, { useMemo } from "react";
 import Tree from "react-d3-tree";
 import { EVQATree } from "../VQA/EVQA";
-import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
-
-const instructionText =
-    "Below, we provide one or more blocks of table and EVQA where the EVQA describes an operation on each table. On the right is a visual representation that describes the connection between individual EVQA blocks. The result of the child block is used as an input to the parent block. Please carefully review the following EVQA and see if the statement at the bottom of the page accurately summarizes the entire process.";
 
 export interface RawNodeDatum {
     name: string;
@@ -70,7 +68,16 @@ export const OverallTaskDescription = (props: { evqa: EVQATree | null | undefine
                 <Grid item xs={6} sx={{ margin: "10px", marginLeft: "18px" }}>
                     <h1>Instruction</h1>
                     {/* <Box sx={{ fontWeight: "regular", m: 1, fontSize: "18px", textAlign: "justify", whiteSpace: "pre-line" }}>{instructionText}</Box> */}
-                    <Typography sx={{ textAlign: "justify", whiteSpace: "pre-line" }}>{instructionText}</Typography>
+                    <Typography sx={{ textAlign: "justify", whiteSpace: "pre-line" }}>
+                        We have presented one or more EVQA blocks below, along with a visual representation on the right that illustrates the link between
+                        individual EVQA blocks (the output of the child block serves as input for the parent block). Please thoroughly review the following
+                        EVQA, and evaluate whether the concluding statement at the bottom of the page provides an accurate summary of the entire process. You
+                        may refer to the{" "}
+                        <Link href="/tutorial" target="_blank">
+                            tutorial page
+                        </Link>{" "}
+                        as needed.
+                    </Typography>
                 </Grid>
                 <Grid item xs={5}>
                     {treeData ? getQueryTree(treeData, treeBreadth, treeLevel) : null}

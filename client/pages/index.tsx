@@ -15,7 +15,6 @@ const Home: NextPage = () => {
     //         if (err) {
     //             console.warn("Error making the mTurk API call:", err);
     //         } else {
-    //             console.log("The call was a success:", data);
     //             // The call was a success
     //             const balanceTmp = data.AvailableBalance;
     //             setBalance(balanceTmp);

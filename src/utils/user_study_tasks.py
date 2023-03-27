@@ -17,7 +17,7 @@ from src.utils.example_queries import CorrelatedNestedQuery
 def MovieTask1(query_object):
     config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
     config = file_utils.read_yaml_file(config_file_path)
-    task_save_dir_path = os.path.join(config["projectPath"], config["taskSaveDirPath"])
+    task_save_dir_path = os.path.join(config["ProjectPath"], config["TaskSaveDirPath"])
 
     evqa_object = query_object.evqa
     query_graphs = query_object.query_graphs
@@ -50,7 +50,7 @@ def MovieTask1(query_object):
 def MovieTask2(query_object):
     config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
     config = file_utils.read_yaml_file(config_file_path)
-    task_save_dir_path = os.path.join(config["projectPath"], config["taskSaveDirPath"])
+    task_save_dir_path = os.path.join(config["ProjectPath"], config["TaskSaveDirPath"])
 
     evqa_object = query_object.evqa
     query_graphs = query_object.query_graphs
@@ -68,17 +68,17 @@ def MovieTask2(query_object):
     nl2, mapping2 = create_nl_and_mapping(query_graphs[2], evqa2)
     nl1, mapping1 = create_nl_and_mapping(query_graphs[3], evqa1)
 
-    nl3_concat = templatize([nl1, nl2], nl3_origin)
-    # nl3 = rewrite_sentence(nl3_concat)
-    nl3 = nl3_origin
+    # nl3_concat = templatize([nl1, nl2], nl3_origin)
+    # # nl3 = rewrite_sentence(nl3_concat)
+    # nl3 = nl3_origin
 
-    nl4_concat = templatize([nl1, nl2, nl3], nl4_origin)
-    nl4 = rewrite_sentence(nl4_concat)
-    # nl4 = nl4_origin
-    print(nl4_origin, nl4)
-    print(nl3_origin, nl3)
-    print(nl2)
-    print(nl1)
+    # nl4_concat = templatize([nl1, nl2, nl3], nl4_origin)
+    # nl4 = rewrite_sentence(nl4_concat)
+    # # nl4 = nl4_origin
+    # print(nl4_origin, nl4)
+    # print(nl3_origin, nl3)
+    # print(nl2)
+    # print(nl1)
 
     # Create and save task1
     sub_task1 = Task(
@@ -151,7 +151,7 @@ def MovieTask2(query_object):
 def MovieTask3(query_object):
     config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
     config = file_utils.read_yaml_file(config_file_path)
-    task_save_dir_path = os.path.join(config["projectPath"], config["taskSaveDirPath"])
+    task_save_dir_path = os.path.join(config["ProjectPath"], config["TaskSaveDirPath"])
 
     evqa_object = query_object.evqa
     query_graphs = query_object.query_graphs

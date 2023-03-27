@@ -24,7 +24,7 @@ def create_nl_and_mapping(query_graph: QueryTree, evqa: EVQATree):
 def example_task_in_the_paper():
     config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
     config = file_utils.read_yaml_file(config_file_path)
-    task_save_dir_path = os.path.join(config["projectPath"], config["taskSaveDirPath"])
+    task_save_dir_path = os.path.join(config["ProjectPath"], config["TaskSaveDirPath"])
 
     query_object = MultipleSublinksQuery2()
     evqa_object = query_object.evqa
