@@ -64,3 +64,4 @@ certificates/
 *.pkl
 database/dataCollection/tasks*
 *.sqlite3
+src/sql_generator

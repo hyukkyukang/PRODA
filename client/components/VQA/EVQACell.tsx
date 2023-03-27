@@ -121,7 +121,3 @@ export const EVQACell: CellComponent = ({
         </td>
     );
 };
-
-export function dataViewer(e: any) {
-    return e?.cell ? <p style={{ color: "black", textAlign: "center", paddingTop: "10px" }}>{e.cell.value}</p> : <></>;
-}

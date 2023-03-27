@@ -1,57 +1,45 @@
-const fs = require("fs");
 const func = require("./function.js");
-const https = require("https");
-var express = require("express");
-var cors = require("cors");
-var path = require("path");
+const bodyParser = require("body-parser");
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+// const morgan = require("morgan");
 
-/* Load config */
-console.log("Reading config file...");
-const utils = require("./utils.js");
-const config = utils.loadYamlFile("../config.yml");
-const protocol = config.backend.Protocol;
-const IP = config.backend.IP;
-const port = config.backend.Port;
-const SSLCertPath = path.join(config.ProjectPath, config.SSLCertPath);
-const SSLKeyPath = path.join(config.ProjectPath, config.SSLKeyPath);
+// defining the Express app
+const app = express();
+// defining an array to work as the database (temporary solution)
+// const ads = [{ title: "Hello, world (again)!" }];
 
-console.log("Begin server");
+// adding Helmet to enhance your Rest API's security
+app.use(helmet());
 
-var app = express();
+// using bodyParser to parse JSON bodies into JS objects
+app.use(bodyParser.json());
+
+// enabling CORS for all requests
 app.use(cors());
-app.use(express.json());
+// app.use(express.json());
+
+// adding morgan to log HTTP requests
+// app.use(morgan("combined"));
 
 const workerTaskMapping = {};
 
-app.get("/", function (req, res) {
-    console.log("app.get./");
-    console.log(`query: ${JSON.stringify(req.query)}`);
-    res.send("Hello World!\nThis is back-end Server responding!");
+app.get("/", (req, res) => {
+    console.log("hello");
+    res.send("Hello World!");
 });
 
-/* Handling Config Request */
-app.post("/fetchConfig", function (req, res) {
-    console.log("app.post./fetchConfig");
-    const systemConfig = func.getConfig();
-    res.send(systemConfig);
-});
-
-/* Handling Request */
-app.post("/fetchEVQA", function (req, res) {
-    console.log(`app.post./fetchEVQA  with queryType: ${JSON.stringify(req.body.queryType)}`);
-    const queryType = req.body.queryType;
-    const evqa = func.getEVQA(queryType);
-    console.log(`return evqa of type: ${queryType}`);
-    res.send(evqa);
-});
-
-app.post("/fetchTask", function (req, res) {
+// defining an endpoint to return all ads
+app.post("/fetchTask", (req, res) => {
     console.log(`fetchTask: ${JSON.stringify(req.body)}`);
+    // sleep 1 sec
+    for (let i = 0; i < 1000000000; i++) {}
     const workerID = req.body.workerID;
     const taskSetID = req.body.taskSetID;
     const isSkip = req.body.isSkip;
     console.log(`/fetchTask: workerID:${workerID} taskSetID:${taskSetID}) has requested a task`);
-    var taskSetData = null;
+    let taskSetData = null;
     // If taskSetID is given, return the task
     if (taskSetID !== undefined && taskSetID !== null && taskSetID !== -1) {
         taskSetData = func.getTaskSet(taskSetID, isSkip);
@@ -68,7 +56,8 @@ app.post("/fetchTask", function (req, res) {
             taskSetData = func.getTaskSet();
             if (taskSetData) {
                 const taskSetID = taskSetData.taskSetID;
-                if (workerID !== undefined) {
+                // Assign worker to task mapping
+                if (workerID !== undefined && workerID !== null) {
                     workerTaskMapping[workerID] = taskSetID;
                     console.log(`workerID:${workerID} has been assigned to taskSetID:${taskSetID}`);
                 }
@@ -77,89 +66,18 @@ app.post("/fetchTask", function (req, res) {
     }
     if (taskSetData === null) {
         console.log(`No task is retrieved and sent to workerID:${workerID}\n`);
+
         res.send({ isTaskReturned: false, taskSet: null });
     } else {
         console.log(`task ${taskSetData.taskSetID} is retrieved and sent to workerID:${workerID}\n`);
         res.send({ isTaskReturned: true, taskSet: taskSetData });
     }
+    console.log(`message sent!`);
 });
 
-app.post("/fetchLogData", function (req, res) {
-    console.log("app.post./fetchLogData");
-    const logData = func.getLogData();
-    console.log(`log data: ${JSON.stringify(logData)}`);
-    res.send(logData);
-});
-
-app.post("/runEVQA", async function (req, res) {
-    console.log(`app.post./runEVQA`);
-    const evqaStr = req.body.evqa;
-    const sql = func.EVQAToSQL(evqaStr);
-    const queryResult = await func.queryDB(sql);
-    console.log(`sending back result with SQL: ${sql}`);
-    res.send({ sql: sql, result: queryResult });
-});
-
-app.post("/runSQL", async function (req, res) {
-    console.log(`app.posts.runSQL with query: ${JSON.stringify(req.body.sql)}`);
-    const sql = req.body.sql;
-    console.log(`sql: ${sql}`);
-    console.log(`This query causes error, need to fix this issue`);
-    var queryResult = {};
-    try {
-        queryResult = await func.queryDB(sql);
-    } catch (err) {
-        console.warn(err);
-    }
-    console.log(`sending back result for SQL: ${sql}`);
-    console.log(`result: ${queryResult}`);
-    res.send(queryResult);
-});
-
-/* Handling Response */
-app.post("/logWorkerAnswer", function (req, res) {
-    console.log(`app.post./logWorkerAnswer`);
-    // console.log(`Received answer: ${JSON.stringify(req.body.params)}`);
-    func.logWorkerAnswer(req.body.params);
-    res.send({ status: "success" });
-});
-
-app.post("/updateConfig", function (req, res) {
-    console.log(`app.post./updateConfig`);
-    console.log(`Received config: ${JSON.stringify(req.body.params)}`);
-    const formattedConfig = {
-        originalBalance: req.body.params.totalBudget,
-        pricePerData: req.body.params.pricePerDataPair,
-        goalNumOfQueries: req.body.params.goalNumOfQueries,
-    };
-    func.setNewConfig(formattedConfig);
-    res.send({ status: "success" });
-});
-
-// Error handler
-function errorHandler(err, req, res, next) {
-    console.log("Handling error");
-    console.error(err);
-    // clear the task mapping
-    for (var member in workerTaskMapping) delete workerTaskMapping[member];
-    res.status(500).send({ error: err });
-}
-app.use(errorHandler);
-
-if (protocol == "https") {
-    console.log(`Using https protocol`);
-    https
-        .createServer(
-            {
-                key: fs.readFileSync(SSLKeyPath),
-                cert: fs.readFileSync(SSLCertPath),
-            },
-            app
-        )
-        .listen(port);
-} else {
-    console.log(`Using http protocol`);
-    app.listen(port);
-}
-
-console.log(`Server is running on ${protocol}:${IP}:${port}`);
+// starting the server
+app.listen(4001);
+console.log("listening on port 4001");
+// app.listen(4001, () => {
+//     console.log("listening on port 4001");
+// });
