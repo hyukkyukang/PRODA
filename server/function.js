@@ -1,5 +1,5 @@
 // Globally used variables
-const pg = require("pg-native");
+const { Client } = require("pg");
 const assert = require("assert");
 
 /* Add environment variable to Python path */
@@ -36,23 +36,23 @@ const spawnSync = require("child_process").spawnSync;
 
 /* Fetch configs */
 function getConfig() {
-    const client = new pg();
-    client.connectSync(`user=${configDBUserID} password=${configDBUserPW} port=${DBPort} host=${DBIP} dbname=${configDBName}`);
-    const fetchedConfigs = client.querySync(`SELECT * FROM ${configDBTableName};`);
-    const fetchedQueryGoalNums = client.querySync(`SELECT * FROM ${configDBQueryGoalNumsTableName};`);
-    client.end();
-    // Parse configs into JSON
-    assert.equal(fetchedConfigs.length, 1);
-    const systemConfig = {
-        originalBalance: fetchedConfigs[0].original_balance,
-        pricePerDataPair: fetchedConfigs[0].price_per_data,
-        remainingBalance: fetchedConfigs[0].remaining_balance,
-    };
-    const queryGoalNum = {};
-    fetchedQueryGoalNums.forEach((row) => {
-        queryGoalNum[row.query_type] = row.goal_num;
-    });
-    return { ...systemConfig, goalNumOfQueries: queryGoalNum };
+    // const client = new pg();
+    // client.connectSync(`user=${configDBUserID} password=${configDBUserPW} port=${DBPort} host=${DBIP} dbname=${configDBName}`);
+    // const fetchedConfigs = client.querySync(`SELECT * FROM ${configDBTableName};`);
+    // const fetchedQueryGoalNums = client.querySync(`SELECT * FROM ${configDBQueryGoalNumsTableName};`);
+    // client.end();
+    // // Parse configs into JSON
+    // assert.equal(fetchedConfigs.length, 1);
+    // const systemConfig = {
+    //     originalBalance: fetchedConfigs[0].original_balance,
+    //     pricePerDataPair: fetchedConfigs[0].price_per_data,
+    //     remainingBalance: fetchedConfigs[0].remaining_balance,
+    // };
+    // const queryGoalNum = {};
+    // fetchedQueryGoalNums.forEach((row) => {
+    //     queryGoalNum[row.query_type] = row.goal_num;
+    // });
+    // return { ...systemConfig, goalNumOfQueries: queryGoalNum };
 }
 
 /* Fetch information */
@@ -76,25 +76,15 @@ function getEVQA(queryType) {
 }
 
 /* Fetch Task */
-function getTask(taskID, getHistory = true) {
+async function getTask(taskID, getHistory = true) {
     // Connect to DB and retrieve Task
-    const client = new pg();
-    client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
-    results = client.querySync(`SELECT * FROM ${collectionDBTaskTableName} WHERE id = ${taskID};`);
-    let result = null;
-    // Get one task
-    if (results.length == 1) {
-        result = results[0];
-    } else {
-        console.error(`${results.length} tasks found in DB. (with taskID: ${taskID})`);
-        return null;
-    }
-    client.end();
+    let sql_query = `SELECT * FROM ${collectionDBTaskTableName} WHERE id = ${taskID};`;
+    let results = await queryDB(collectionDBName, collectionDBUserID, collectionDBUserPW, sql_query);
+    let result = getOneQueryResult(results);
     if (result == null) {
         console.error(`Task ${taskID} not found in DB.`);
         return null;
     }
-
     // Get file paths
     const evqa_path = result.evqa_path;
     const result_table_path = result.result_table_path;
@@ -113,7 +103,7 @@ function getTask(taskID, getHistory = true) {
     const history = [];
     if (getHistory) {
         for (const task_id of result.history_task_ids) {
-            const history_task = getTask(task_id, false, false);
+            const history_task = await getTask(task_id, false, false);
             history.push(history_task);
         }
     }
@@ -133,30 +123,17 @@ function getTask(taskID, getHistory = true) {
     };
 }
 
-function getTaskSet(taskSetID = null, isSkip = false) {
+async function getTaskSet(taskSetID = null, isSkip = false) {
     // Connect to DB and retrieve Task
-    const client = new pg();
-    // console.log(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
-    client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
-    // Insert new log
-    var result = null;
-    var results = null;
     if (taskSetID === null) {
-        results = client.querySync(
-            `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName});`
-        );
+        sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName});`;
     } else if (isSkip) {
-        results = client.querySync(
-            `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName}) AND id > ${taskSetID};`
-        );
+        sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName}) AND id > ${taskSetID};`;
     } else {
-        results = client.querySync(`SELECT * FROM ${collectionDBTaskSetTableName} WHERE id = ${taskSetID};`);
+        sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id = ${taskSetID};`;
     }
-    // Get one task
-    if (results.length > 0) {
-        result = results[0];
-    }
-    client.end();
+    let results = await queryDB(collectionDBName, collectionDBUserID, collectionDBUserPW, sql_query);
+    let result = getOneQueryResult(results);
     if (result == null) {
         console.warn("No task returned from DB.");
         return null;
@@ -164,7 +141,7 @@ function getTaskSet(taskSetID = null, isSkip = false) {
     const task_ids = result.task_ids;
     const tasks = [];
     for (const task_id of task_ids) {
-        const task = getTask(task_id);
+        const task = await getTask(task_id);
         tasks.push(task);
     }
     console.log(`TaskSet with ID:${result.id} containing ${tasks.length} number of tasks:(${tasks.map((t) => t.taskID).toString()}) is retrieved.`);
@@ -199,67 +176,65 @@ function readJsonFile(file_path) {
 
 /* Fetch Log data */
 function getLogData() {
-    function psqlDateToyymmdd(postgresDate) {
-        const months = {
-            Jan: "01",
-            Feb: "02",
-            Mar: "03",
-            Apr: "04",
-            May: "05",
-            Jun: "06",
-            Jul: "07",
-            Aug: "08",
-            Sep: "09",
-            Oct: "10",
-            Nov: "11",
-            Dec: "12",
-        };
-        const dateStringSplitted = String(postgresDate).split(" ");
-        const year = dateStringSplitted[3];
-        const month = months[dateStringSplitted[1]];
-        const day = dateStringSplitted[2];
-        return `${year}.${month}.${day}`;
-    }
-    const client = new pg();
-    client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
-    // Insert new log
-    result = client.querySync(`SELECT * FROM ${collectionDBCollectionTableName};`);
-    client.end();
-
-    // Format Log Data for the client
-    const parsedResult = [];
-    for (var step = 0; step < result.length; step++) {
-        parsedResult.push({
-            id: result[step].id,
-            given_nl: result[step].given_nl,
-            given_sql: result[step].given_sql,
-            given_evqa: JSON.parse(result[step].given_evqa),
-            given_queryType: result[step].given_query_type,
-            given_tableExcerpt: JSON.parse(result[step].given_table_excerpt),
-            given_resultTable: JSON.parse(result[step].given_result_table),
-            given_dbName: result[step].given_db_name,
-            given_taskType: result[step].given_task_type,
-            user_isCorrect: result[step].user_is_correct,
-            user_nl: result[step].user_nl,
-            user_id: result[step].user_id,
-            date: psqlDateToyymmdd(result[step].date),
-        });
-    }
-    return parsedResult;
+    // function psqlDateToyymmdd(postgresDate) {
+    //     const months = {
+    //         Jan: "01",
+    //         Feb: "02",
+    //         Mar: "03",
+    //         Apr: "04",
+    //         May: "05",
+    //         Jun: "06",
+    //         Jul: "07",
+    //         Aug: "08",
+    //         Sep: "09",
+    //         Oct: "10",
+    //         Nov: "11",
+    //         Dec: "12",
+    //     };
+    //     const dateStringSplitted = String(postgresDate).split(" ");
+    //     const year = dateStringSplitted[3];
+    //     const month = months[dateStringSplitted[1]];
+    //     const day = dateStringSplitted[2];
+    //     return `${year}.${month}.${day}`;
+    // }
+    // const client = new pg();
+    // client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
+    // // Insert new log
+    // result = client.querySync(`SELECT * FROM ${collectionDBCollectionTableName};`);
+    // client.end();
+    // // Format Log Data for the client
+    // const parsedResult = [];
+    // for (var step = 0; step < result.length; step++) {
+    //     parsedResult.push({
+    //         id: result[step].id,
+    //         given_nl: result[step].given_nl,
+    //         given_sql: result[step].given_sql,
+    //         given_evqa: JSON.parse(result[step].given_evqa),
+    //         given_queryType: result[step].given_query_type,
+    //         given_tableExcerpt: JSON.parse(result[step].given_table_excerpt),
+    //         given_resultTable: JSON.parse(result[step].given_result_table),
+    //         given_dbName: result[step].given_db_name,
+    //         given_taskType: result[step].given_task_type,
+    //         user_isCorrect: result[step].user_is_correct,
+    //         user_nl: result[step].user_nl,
+    //         user_id: result[step].user_id,
+    //         date: psqlDateToyymmdd(result[step].date),
+    //     });
+    // }
+    // return parsedResult;
 }
 
 /* Save info */
 function setNewConfig(newConfig) {
-    const client = new pg();
-    client.connectSync(`user=${configDBUserID} password=${configDBUserPW} port=${DBPort} host=${DBIP} dbname=${configDBName}`);
-    // Update system config
-    client.querySync(`UPDATE ${configDBTableName} SET original_balance=${newConfig.originalBalance}, price_per_data=${newConfig.pricePerData};`);
-
-    // Update query goal nums
-    for (const queryType in newConfig.goalNumOfQueries) {
-        client.querySync(`UPDATE ${configDBQueryGoalNumsTableName} SET goal_num=${newConfig.goalNumOfQueries[queryType]} WHERE query_type='${queryType}';`);
-    }
-    client.end();
+    // const client = new pg();
+    // client.connectSync(`user=${configDBUserID} password=${configDBUserPW} port=${DBPort} host=${DBIP} dbname=${configDBName}`);
+    // // Update system config
+    // client.querySync(`UPDATE ${configDBTableName} SET original_balance=${newConfig.originalBalance}, price_per_data=${newConfig.pricePerData};`);
+    // // Update query goal nums
+    // for (const queryType in newConfig.goalNumOfQueries) {
+    //     client.querySync(`UPDATE ${configDBQueryGoalNumsTableName} SET goal_num=${newConfig.goalNumOfQueries[queryType]} WHERE query_type='${queryType}';`);
+    // }
+    // client.end();
 }
 
 /* Log worker answer */
@@ -270,15 +245,8 @@ function logWorkerAnswer(logData) {
     const user_id = logData.workerID;
     const is_correct = logData.answer.isCorrect === undefined ? null : logData.answer.isCorrect;
     const nl = logData.answer.nl.replace(/'/g, "\\'");
-
-    const client = new pg();
-    client.connectSync(`user=${collectionDBUserID} password=${collectionDBUserPW} port=${DBPort} host=${DBIP} dbname=${collectionDBName}`);
-    // Insert new log
-    result = client.querySync(
-        `INSERT INTO ${collectionDBCollectionTableName} VALUES(DEFAULT, ${task_set_id}, ${task_id}, E'${user_id}', ${is_correct}, E'${nl}', DEFAULT);`
-    );
-    client.end();
-    return result;
+    const sql_query = `INSERT INTO ${collectionDBCollectionTableName} VALUES(DEFAULT, ${task_set_id}, ${task_id}, E'${user_id}', ${is_correct}, E'${nl}', DEFAULT);`;
+    queryDB(collectionDBName, collectionDBUserID, collectionDBUserPW, sql_query);
 }
 
 /* Utils */
@@ -288,9 +256,29 @@ function EVQAToSQL(evqa) {
     return result;
 }
 
+function getOneQueryResult(results) {
+    if (results.rowCount > 0) {
+        return results.rows[0];
+    }
+    return null;
+}
+
+async function queryDB(database, user, password, sql) {
+    const client = new Client({
+        host: DBIP,
+        port: DBPort,
+        user: user,
+        password: password,
+        database: database,
+    });
+    client.connect();
+    let result = await client.query({ text: sql });
+    client.end();
+    return result;
+}
+
 /* Used for query to demo*/
-async function queryDB(sql) {
-    const { Client } = require("pg");
+async function queryDemoDB(sql) {
     const client = new Client({
         host: DBIP,
         port: DBPort,
@@ -299,7 +287,7 @@ async function queryDB(sql) {
         database: demoDBName,
     });
     client.connect();
-    result = await client.query({ text: sql, rowMode: "array" });
+    let result = await client.query({ text: sql, rowMode: "array" });
     client.end();
     return result;
 }
@@ -315,5 +303,5 @@ module.exports = {
     setNewConfig: setNewConfig,
     logWorkerAnswer: logWorkerAnswer,
     EVQAToSQL: EVQAToSQL,
-    queryDB: queryDB,
+    queryDemoDB: queryDemoDB,
 };
