@@ -431,7 +431,7 @@ class JoinOrderBenchmark(object):
         }
 
 def LoadSpider(table=None,
-             data_dir='data/csv/',
+             data_dir='/home/hjkim/shpark/PRODA/src/sql_generator/data/csv/',
              try_load_parsed=True,
              use_cols='simple',
              schema=None):
@@ -960,7 +960,7 @@ def LoadDataset(dataset, table, use_cols, data_dir,try_load_parsed=True):
         return LoadSYN(table,data_dir=data_dir,try_load_parsed=try_load_parsed,use_cols=use_cols)
 
 
-def filename_encoder(file_path, map_path='./tools/encode_map.pkl'):
+def filename_encoder(file_path, map_path='/home/hjkim/shpark/PRODA/src/sql_generator/tools/encode_map.pkl'):
     def encoding(txt, mapper, delimeter='-'):
         tokens = txt.split(delimeter)
         result = []
@@ -1045,7 +1045,7 @@ def get_use_column(dataset, table, usecols):
         if usecols == 'single':
             return SyntheticSingleDataset.SYN_SINGLE_PRED_COLS[f"{table}.csv"]
     if dataset == 'spider':
-        reader = csv.reader(open('data/csv/' + usecols + '/' + table + '.csv'))
+        reader = csv.reader(open('/home/hjkim/shpark/PRODA/src/sql_generator/data/csv/' + usecols + '/' + table + '.csv'))
         headers = next(reader, None)
 
         return headers
