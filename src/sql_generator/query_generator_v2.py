@@ -37,7 +37,7 @@ def str2bool(v):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--num_queries", help="Number of queries", type=int, default=1)  # 10k
+parser.add_argument("--num_queries", help="Number of queries", type=int, default=15)  # 10k
 parser.add_argument("--output", type=str, default="result3.out")
 parser.add_argument("--sep", type=str, default="#")
 parser.add_argument("--seed", type=int, default=1234)
@@ -54,12 +54,12 @@ parser.add_argument("--num_order_max", type=int, default=2)
 parser.add_argument("--num_order_min", type=int, default=1)
 parser.add_argument("--num_limit_max", type=int, default=5)
 parser.add_argument("--num_limit_min", type=int, default=1)
-parser.add_argument("--num_nested_pred_max", type=int, default=3)
+parser.add_argument("--num_nested_pred_max", type=int, default=2)
 parser.add_argument("--num_nested_pred_min", type=int, default=1)
 parser.add_argument(
     "--query_type",
     type=str,
-    default="spj-nested",
+    default="nested",
     help="""One of (spj-non-nested, spj-nested, spj-mix, non-nested, nested, mix)\n
         Each type stands for non-nested spj query, 
         nested query consists of spj queries, 
@@ -83,10 +83,11 @@ parser.add_argument("--log_path", type=str, default="query_generator.log")
 parser.add_argument("--schema_name", type=str, default="car_1")
 parser.add_argument("--db", type=str, default="spider")
 parser.add_argument("--join_key_pred", type=str2bool, default="False")
+parser.add_argument("--global_idx", type=int, default=1)
 parser.add_argument(
     "--inner_query_paths",
     nargs="+",
-    default=["/home/hjkim/shpark/PRODA/non-nested/result4.out"],
+    default=["/home/hjkim/shpark/PRODA/non-nested/result2.out"],
 )
 args = parser.parse_args()
 
@@ -223,6 +224,7 @@ def main(
         inner_query_objs = None
         inner_query_graphs = None
 
+    global_unique_query_idx = args.global_idx
     while num_success < num_queries:
         num_iter += 1
         if num_success == 0 and num_iter > 10000:
@@ -231,40 +233,43 @@ def main(
         if n >= len(df.notna()):
             n = 1
 
-        line, graph, obj = query_generator(
-            args,
-            df,
-            n,
-            rng,
-            all_table_set,
-            join_key_list,
-            join_clause_list,
-            join_key_pred,
-            dtype_dict,
-            dvs,
-            inner_query_objs,
-            inner_query_graphs,
-        )
-        # try:
-        #    line, graph, obj = query_generator(
-        #        args,
-        #        df,
-        #        n,
-        #        rng,
-        #        all_table_set,
-        #        join_key_list,
-        #        join_clause_list,
-        #        join_key_pred,
-        #        dtype_dict,
-        #        dvs,
-        #       inner_query_objs,
-        #        inner_query_graphs,
-        #    )
-        # except Exception as e:
-        #    print(e)
-        #    # break
-        #    continue
+        # line, graph, obj = query_generator(
+        #    args,
+        #    df,
+        #    n,
+        #    rng,
+        #    all_table_set,
+        #    join_key_list,
+        #    join_clause_list,
+        #    join_key_pred,
+        #    dtype_dict,
+        #    dvs,
+        #    inner_query_objs,
+        #    inner_query_graphs,
+        #    global_unique_query_idx,
+        # )
+        try:
+            line, graph, obj = query_generator(
+                args,
+                df,
+                n,
+                rng,
+                all_table_set,
+                join_key_list,
+                join_clause_list,
+                join_key_pred,
+                dtype_dict,
+                dvs,
+                inner_query_objs,
+                inner_query_graphs,
+                global_unique_query_idx,
+            )
+        except Exception as e:
+            print(e)
+            # break
+            continue
         n += 1
+        global_unique_query_idx += 1
 
         do_write = True
         if only_executable:

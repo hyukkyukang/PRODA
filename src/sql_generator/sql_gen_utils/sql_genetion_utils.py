@@ -7,6 +7,7 @@ import pandas as pd
 import json
 import copy
 import networkx as nx
+import pandasql as ps
 
 # if is_null_support:
 # TEXTUAL_OPERATORS = ['=','!=','LIKE','NOT LIKE','IN','NOT IN','IS_NOT_NULL']
@@ -271,6 +272,101 @@ def preorder_traverse_to_get_graph(tree, cnf_idx):
     return operations, after_right_cnf_idx
 
 
+def preorder_traverse_to_make_df_query(tree, values, df_name):
+    if not isinstance(tree, tuple) and not isinstance(tree, list):
+        value = values[tree]
+        prefix = value[0]
+        col = value[1]
+        op = value[2]
+        val = value[3]
+        query_string = None
+        correal = None
+
+        if len(value) == 5:
+            obj = value[4]
+            df_query = obj["df_query"]
+            query_string = "SELECT " + df_query["SELECT"] + " FROM " + df_query["FROM"]
+            if "WHERE" in df_query.keys():
+                query_string += " WHERE " + df_query["WHERE"]
+            if "GROUPBY" in df_query.keys():
+                query_string += " GROUP BY " + df_query["GROUPBY"]
+            if "HAVING" in df_query.keys():
+                query_string += " HAVING " + df_query["HAVING"]
+            if "ORDERBY" in df_query.keys():
+                query_string += " ORDER BY " + df_query["ORDERBY"]
+            if "LIMIT" in df_query.keys():
+                query_string += " LIMIT " + df_query["LIMIT"]
+        if len(value) == 6:
+            prefix_outer = value[5]
+            val = prefix_outer + "df.`" + val + "`"
+        if prefix is not None:
+            col = df_name + ".`" + col + "`"
+            if query_string is not None:
+                val = "(" + query_string + ")"
+        else:
+            if query_string is not None:
+                if col is None:
+                    col = ""
+                    val = "(" + query_string + ")"
+                else:
+                    col = "(" + query_string + ")"
+                    if val is None:
+                        val = ""
+            else:
+                assert False
+
+        return col + " " + op + " " + val
+
+    if len(tree) == 1:
+        return preorder_traverse_to_make_df_query(tree[0], values, df_name)
+    elif len(tree) == 3:
+        left, op, right = tree
+
+    return (
+        "("
+        + preorder_traverse_to_make_df_query(left, values, df_name)
+        + " "
+        + op
+        + " "
+        + preorder_traverse_to_make_df_query(right, values, df_name)
+        + ")"
+    )
+
+
+def preorder_traverse_to_make_df_query_having(tree, prefix, df_name):
+    if not isinstance(tree, tuple) and not isinstance(tree, list):
+        if "(" in tree and ")" in tree:
+            agg_col = tree
+            agg = agg_col.split("(")[0]
+            col = agg_col.split("(")[1].split(")")[0]
+            if col == "*":
+                pass
+            else:
+                alias = col.split(".")[0]
+                col_name = col.split(".")[1]
+                rel_name = alias.split(prefix)[1]
+                tree = agg + "(" + df_name + ".`" + rel_name + "." + col_name + "`)"
+        return tree
+
+    assert len(tree) == 3 or len(tree) == 1
+
+    if len(tree) == 1:
+        assert len(tree[0]) == 3
+        left, op, right = tree[0]
+    elif len(tree) == 3:
+        left, op, right = tree
+
+    return (
+        "("
+        + preorder_traverse_to_make_df_query_having(left, prefix, df_name)
+        + " "
+        + op
+        + " "
+        + preorder_traverse_to_make_df_query_having(right, prefix, df_name)
+        + ")"
+    )
+
+
 def preorder_traverse_dataframe(tree):
     if not isinstance(tree, tuple) and not isinstance(tree, list):
         return tree
@@ -340,9 +436,28 @@ def sql_formation(
     inner_select_nodes=None,
 ):
     ALIAS_TO_TABLE_NAME, TABLE_NAME_TO_ALIAS = alias_generator(args)
+    prefix = "N" + str(nesting_level) + "_" + str(nesting_block_idx) + "_"
+
     graph = Query_graph()
     rel_nodes = []
+
     select_clause = "SELECT " + ", ".join(select)
+
+    df_query = {}
+
+    select_cols_df = []
+    for col_info in select_agg_cols:
+        agg = col_info[0]
+        col = col_info[1]
+        if col != "*":
+            col_df = prefix + "df" + ".`" + col + "`"
+        else:
+            col_df = col
+        if agg != "NONE":
+            col_df = agg + "(" + col_df + ")"
+        select_cols_df.append(col_df)
+    df_query["SELECT"] = ", ".join(select_cols_df)
+
     if make_graph:  # add projection edges
         for col_info in select_agg_cols:
             agg = col_info[0]
@@ -403,12 +518,7 @@ def sql_formation(
             if cur_agg_node is not None:
                 graph.connect_aggregation(cur_col_node, cur_agg_node)
 
-    if outer_inner == "outer":
-        prefix = "O_"
-    elif outer_inner == "inner":
-        prefix = "I_"
-    else:
-        prefix = ""
+    df_query["FROM"] = "df " + prefix + "df"
 
     # FROM clause generation
     if TABLE_NAME_TO_ALIAS:
@@ -494,15 +604,28 @@ def sql_formation(
     # WHERE clause generation
     if sql_type_dict["where"]:
         where_clause = " WHERE " + preorder_traverse(where)
+        if outer_inner == "non-nested":
+            df_query["WHERE"] = preorder_traverse_to_make_df_query(
+                tree_predicates_origin, predicates_origin, prefix + "df"
+            )
+        elif outer_inner == "outer":
+            df_query["WHERE"] = preorder_traverse_to_make_df_query(
+                tree_predicates_origin, predicates_origin, prefix + "df"
+            )
+        elif outer_inner == "inner":
+            df_query["WHERE"] = preorder_traverse_to_make_df_query(
+                tree_predicates_origin, predicates_origin, prefix + "df"
+            )
         if make_graph:  # add selection edges
             assert tree_predicates_origin
             operations, _ = preorder_traverse_to_get_graph(tree_predicates_origin, 0)
             for operation_idx, cnf_idx in operations:
                 if outer_inner == "non-nested":
                     operation = predicates_origin[operation_idx]
-                    col = operation[0]
-                    op = operation[1]
-                    val = operation[2]
+                    prefix = operation[0]
+                    col = operation[1]
+                    op = operation[2]
+                    val = operation[3]
                     rel_name = col.split(".")[0]
 
                     cur_rel_node = Relation(rel_name)  # Nesting level is always 0
@@ -520,14 +643,15 @@ def sql_formation(
                 elif outer_inner == "outer":
                     # [TODO] Make graph for inner query block
                     operation = predicates_origin[operation_idx]
-                    left = operation[0]
-                    op = operation[1]
-                    right = operation[2]
-                    if len(operation) == 4:  # nested predicate
+                    prefix = operation[0]
+                    left = operation[1]
+                    op = operation[2]
+                    right = operation[3]
+                    if len(operation) == 5:  # nested predicate
                         inner_obj = operation[3]
                         inner_select_nodes = []
 
-                        _, inner_graph = sql_formation(
+                        _, inner_graph, _ = sql_formation(
                             args,
                             inner_obj["type"],
                             inner_obj["tables"],
@@ -543,8 +667,8 @@ def sql_formation(
                             select_agg_cols=inner_obj["agg_cols"],
                             tree_predicates_origin=inner_obj["tree_predicates_origin"],
                             predicates_origin=inner_obj["predicates_origin"],
-                            nesting_block_idx=0,
-                            nesting_level=1,
+                            nesting_block_idx=inner_obj["unique_alias"],
+                            nesting_level=inner_obj["nesting_level"],
                             inner_select_nodes=inner_select_nodes,
                         )
                         assert len(inner_select_nodes) > 0
@@ -670,11 +794,12 @@ def sql_formation(
                         graph.connect_operation(cur_col_node, cur_op_type, cur_val_node)
                 elif outer_inner == "inner":
                     operation = predicates_origin[operation_idx]
-                    col = operation[0]
+                    prefix = operation[0]
+                    col = operation[1]
                     assert col.startswith("I_")
                     col = col[2:]
-                    op = operation[1]
-                    val = operation[2]
+                    op = operation[2]
+                    val = operation[3]
                     rel_name = col.split(".")[0]
 
                     cur_rel_node = Relation(
@@ -699,6 +824,14 @@ def sql_formation(
     # GROUP BY clause generation
     if sql_type_dict["group"]:
         group_clause = " GROUP BY " + ", ".join(group)
+        group_df = []
+        for group_col in group:
+            group_alias = group_col.split(".")[0]
+            rel_name = group_alias.split(prefix)[1]
+            col_name = group_col.split(".")[1]
+            col_df = prefix + "df" + ".`" + rel_name + "." + col_name + "`"
+            group_df.append(col_df)
+        df_query["GROUPBY"] = ", ".join(group_df)
         if make_graph:  # add group by edges
             for group_col in group:
                 rel_name = group_col.split(".")[0]
@@ -747,6 +880,7 @@ def sql_formation(
     # HAVING clause generation
     if sql_type_dict["having"]:
         having_clause = " HAVING " + preorder_traverse(having)
+        df_query["HAVING"] = preorder_traverse_to_make_df_query_having(having, prefix, prefix + "df")
         if make_graph:  # add having edges
             operations, _ = preorder_traverse_to_get_graph(having, 0)
             for operation_string, cnf_idx in operations:
@@ -863,6 +997,14 @@ def sql_formation(
     # ORDER BY clause generation
     if sql_type_dict["order"]:
         order_clause = " ORDER BY " + ", ".join(order)
+        order_df = []
+        for order_col in order:
+            order_alias = order_col.split(".")[0]
+            rel_name = order_alias.split(prefix)[1]
+            col_name = order_col.split(".")[1]
+            col_df = prefix + "df" + ".`" + rel_name + "." + col_name + "`"
+            order_df.append(col_df)
+        df_query["ORDERBY"] = ", ".join(order_df)
         if make_graph:  # add order by edges
             for order_col in order:
                 assert "(" not in order_col, "Currently not support aggregation in order by"
@@ -912,6 +1054,7 @@ def sql_formation(
     # LIMIT clause generation
     if sql_type_dict["limit"]:
         limit_clause = " LIMIT " + str(limit)
+        df_query["LIMIT"] = str(limit)
         if make_graph:  # add limit edges
             rel_name = tables[0]
             if outer_inner == "non-nested":
@@ -949,7 +1092,7 @@ def sql_formation(
     if make_graph and outer_inner != "inner":
         graph.set_join_directions()
 
-    return line, graph
+    return line, graph, df_query
 
 
 def get_table_from_clause(join_clause):
@@ -1111,6 +1254,7 @@ def bfs(edges, parents, observed, targets):
                     candidates.append(c)
                     observed.append(c)
                     cp_condition[c] = (p, join_clause)
+    assert len(candidates) > 0
     path, joins = bfs(edges, candidates, observed, targets)
     src_parent, src_join = cp_condition[path[-1]]
     path.append(src_parent)
@@ -1204,6 +1348,11 @@ def predicate_generator(col, op, val):
         if op == "NOT LIKE":
             query_predicate = "not " + query_predicate
     elif op == "=":
+        if not is_numeric(val) and not (val[0] == '"' and val[-1] == '"'):
+            query_predicate = "`" + col + '` == "' + val + '"'
+        else:
+            query_predicate = "`" + col + "` == " + val
+    elif op == "!=":
         if not is_numeric(val) and not (val[0] == '"' and val[-1] == '"'):
             query_predicate = "`" + col + '` == "' + val + '"'
         else:

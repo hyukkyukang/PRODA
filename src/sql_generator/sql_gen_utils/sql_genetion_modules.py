@@ -136,6 +136,7 @@ def select_generator(
     nesting_column=None,
     outer_nesting_position=-1,
     outer_operator=None,
+    prefix=None,
 ):
     if outer_nesting_position != -1:
         num_select = 1
@@ -158,11 +159,14 @@ def select_generator(
         use_agg = True if group else bool(rng.choice([0, 1], p=[1 - tmp_prob, tmp_prob]))
 
     if outer_inner == "outer":
-        prefix = "O_"
+        if prefix is None:
+            prefix = "O_"
     elif outer_inner == "inner":
-        prefix = "I_"
+        if prefix is None:
+            prefix = "I_"
     else:
-        prefix = ""
+        if prefix is None:
+            prefix = ""
 
     used_tables = set()
 
@@ -243,6 +247,7 @@ def where_generator(
     nesting_position=-1,
     nesting_type="non-nested",
     outer_correlation_column=None,
+    prefix=None,
 ):
     min_pred_num = args.num_pred_min
     max_pred_num = args.num_pred_max
@@ -269,14 +274,17 @@ def where_generator(
     cond_idx = 0
 
     result_guarantee_predicates = list()
-    result_guarantee_tuples = df
+    result_guarantee_tuples = df.copy(deep=True)
 
     if outer_inner == "outer":
-        prefix = "O_"
+        if prefix is None:
+            prefix = "O_"
     elif outer_inner == "inner":
-        prefix = "I_"
+        if prefix is None:
+            prefix = "I_"
     else:
-        prefix = ""
+        if prefix is None:
+            prefix = ""
 
     continue_cnt = 0
     while cond_idx < num_nonnest_predicate:
@@ -319,16 +327,19 @@ def where_generator(
                 else:
                     v = get_str_op_values(op, v, dvs[col], rng, num_in_max=args.num_in_max)
 
-                    if op in ["IN", "NOT IN"]:
-                        v, num_val = v
-                        if num_val <= 1:
-                            op = "=" if op == "IN" else "!="
-                            v = v[1:-1]
-
                     if op == "IS_NOT_NULL":
                         vals[0] = v
                     else:
-                        vals[0] = f'''\"{v}\"'''
+                        if op in ["IN", "NOT IN"]:
+                            v, num_val = v
+                            if num_val <= 1:
+                                op = "=" if op == "IN" else "!="
+                                v = v[1:-1]
+                                vals[0] = f'''\"{v}\"'''
+                            else:
+                                vals[0] = v
+                        else:
+                            vals[0] = f'''\"{v}\"'''
 
         elif dtype_dict[col] == "date":
             if val == "nan" or pd.isnull(val):
@@ -373,7 +384,7 @@ def where_generator(
             # num_result = len(df.query(' AND '.join(result_guarantee_predicates)))
             new_result_guarantee_tuples = result_guarantee_tuples.query(query_predicate)
             num_result = len(new_result_guarantee_tuples)
-            if num_result < 1:
+            if num_result < 1 or num_result == len(result_guarantee_tuples):
                 continue_cnt += 1
                 continue
             result_guarantee_tuples = new_result_guarantee_tuples
@@ -383,10 +394,12 @@ def where_generator(
         if op in ["IS_NULL", "IS_NOT_NULL"]:
             predicate_str = prefix + col + " " + op
             predicate_tuple = (prefix_col, op, None)
+            predicate_tuple_origin = (prefix, col, op, None)
         else:
             predicate_str = prefix + col + " " + op + " " + str(vals[0])
             predicate_tuple = (prefix + col, op, str(vals[0]))
-        predicates_origin.append(predicate_tuple)
+            predicate_tuple_origin = (prefix, col, op, str(vals[0]))
+        predicates_origin.append(predicate_tuple_origin)
         predicates.append(predicate_str)
         cond_idx += 1
 
@@ -492,6 +505,7 @@ def where_generator(
                 used_tables.add(col.split(".")[0])
                 predicate_str = prefix + col + " " + op + " (" + inner_query + ")"
                 predicate_tuple = (prefix + col, op, "(" + inner_query + ")", inner_obj)
+                predicate_tuple_origin = (prefix, col, op, "(" + inner_query + ")", inner_obj)
                 nesting_col = col
                 done = True
 
@@ -539,7 +553,7 @@ def where_generator(
                             if (column_value in result_val and op == "IN") or (
                                 column_value not in result_val and op == "NOT IN"
                             ):
-                                new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl.iloc[0])
+                                new_result_guarantee_tuples = pd.concat([new_result_guarantee_tuples, tpl.iloc[0]])
 
                     else:
                         result_val = list(inner_query_result.iloc[:, 0])  # Get the values of the inner query
@@ -547,7 +561,7 @@ def where_generator(
                             tpl = result_guarantee_tuples.iloc[[tid]]
                             column_value = tpl[col].iloc[0]
                             if column_value in result_val:
-                                new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl)
+                                new_result_guarantee_tuples = pd.concat([new_result_guarantee_tuples, tpl])
 
                     num_result = len(new_result_guarantee_tuples)
                     if num_result < 1:
@@ -558,6 +572,7 @@ def where_generator(
                 used_tables.add(col.split(".")[0])
                 predicate_str = prefix + col + " " + op + " (" + inner_query + ")"
                 predicate_tuple = (prefix + col, op, "(" + inner_query + ")", inner_obj)
+                predicate_tuple_origin = (prefix, col, op, "(" + inner_query + ")", inner_obj)
                 nesting_col = col
                 done = True
                 break
@@ -594,7 +609,7 @@ def where_generator(
 
                         num_result = len(cur_group) if cur_group is not None else 0
                         if (num_result > 0 and op == "EXISTS") or (num_result < 1 and op == "NOT EXISTS"):
-                            new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl.iloc[0])
+                            new_result_guarantee_tuples = pd.concat([new_result_guarantee_tuples, tpl.iloc[0]])
 
                     num_result = len(new_result_guarantee_tuples)
                     if num_result < 1:
@@ -602,6 +617,7 @@ def where_generator(
 
                 predicate_str = op + " (" + inner_query + ")"
                 predicate_tuple = (None, op, "(" + inner_query + ")", inner_obj)
+                predicate_tuple_origin = (None, None, op, "(" + inner_query + ")", inner_obj)
                 done = True
                 break
 
@@ -680,7 +696,7 @@ def where_generator(
                         predicate_result = cur_group.query(query_predicate)
                         num_result = len(predicate_result)
                         if num_result > 0:
-                            new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl.iloc[0])
+                            new_result_guarantee_tuples = pd.concat([new_result_guarantee_tuples, tpl.iloc[0]])
 
                     num_result = len(new_result_guarantee_tuples)
                     if num_result < 1:
@@ -690,14 +706,15 @@ def where_generator(
 
                 predicate_str = "(" + inner_query + ") " + op + " " + str(val)
                 predicate_tuple = ("(" + inner_query + ")", op, str(val), inner_obj)
+                predicate_tuple_origin = (None, "(" + inner_query + ")", op, str(val), inner_obj)
                 done = True
                 break
 
         if not done:
             raise Exception()
-        print(inner_query)
+
         predicates.append(predicate_str)
-        predicates_origin.append(predicate_tuple)
+        predicates_origin.append(predicate_tuple_origin)
 
     tree_predicates = restore_predicate_tree(tree_predicates, predicates)
 
@@ -725,7 +742,7 @@ def nested_predicate_generator(
     df,
     dvs,
     n,
-    prefix_alias="",
+    prefix,
     nesting_position=-1,
     nesting_type="non-nested",
     outer_correlation_column=None,
@@ -733,7 +750,7 @@ def nested_predicate_generator(
     inner_query_graph=None,
 ):
     num_predicate = 1
-    used_tables = []
+    used_tables = set()
 
     tree_predicates = build_predicate_tree_cnf(rng, [[x] for x in range(num_predicate)])
     if len(tree_predicates) == 1:
@@ -750,13 +767,14 @@ def nested_predicate_generator(
     result_guarantee_predicates = list()
     result_guarantee_tuples = df
 
-    prefix = prefix_alias
-
     continue_cnt = 0
 
     result_condition = sorted_conditions[-1][1]
     done = False
+    nested_predicate_origin = tuple()
     while not done:
+        if continue_cnt > 100:
+            raise Exception("Too many continues during nested predicate generation.. restart")
         if nesting_type in ["type-j", "type-ja"]:
             if inner_query_obj:
                 inner_query_tables = inner_query_obj["tables"]
@@ -776,32 +794,39 @@ def nested_predicate_generator(
                 column_idx = rng.randint(0, len(table_columns))
                 col = table_columns[column_idx]
             if correlation_column and col == correlation_column:
+                continue_cnt += 1
                 continue
 
             # (FIX #5) Non-textual column for type-a, type-ja nested query
             # for <col> <op> <inner query> form
 
             if nesting_type in ["type-a", "type-ja"] and dtype_dict[col] == "str":
+                continue_cnt += 1
                 continue
             if nesting_type in ["type-a", "type-ja"] and col in IDS:
+                continue_cnt += 1
                 continue
             if dtype_dict[col] == "str" and nesting_type not in ["type-a", "type-ja"]:
                 op = rng.choice(TEXTUAL_OPERATORS[0:3])
             else:
                 op = rng.choice(NUMERIC_OPERATORS)
 
-            inner_query, inner_query_result = inner_query_obj_to_inner_query(
+            inner_query, inner_query_result, inner_obj_updated = inner_query_obj_to_inner_query(
                 args,
-                df,
+                result_guarantee_tuples,
                 n,
                 rng,
                 inner_query_obj,
                 dtype_dict,
                 dvs,
+                prefix,
                 nesting_column=col,
                 correlation_column=correlation_column,
             )
-            assert len(inner_query_result) == 1, "The number of result of inner query should be 1"
+            if len(inner_query_result) > 1:
+                nesting_position = 1
+                continue
+            # assert len(inner_query_result) == 1, "The number of result of inner query should be 1"
 
             if result_condition:
                 if nesting_type in ["type-j", "type-ja"]:
@@ -826,10 +851,11 @@ def nested_predicate_generator(
                         query_predicate = predicate_generator(col, op, str(result_val))
                         query_result = tpl.query(query_predicate)
                         if len(query_result) > 0:
-                            new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl.iloc[0])
+                            new_result_guarantee_tuples = pd.concat([new_result_guarantee_tuples, tpl])
                 else:
                     result_val = inner_query_result.iloc[0, 0]  # Get the value of the inner query
                     if type(result_val) != str and np.isnan(result_val):
+                        continue_cnt += 1
                         continue
 
                     if dtype_dict[col] == "str" and nesting_type != "type-a":
@@ -841,13 +867,16 @@ def nested_predicate_generator(
                     new_result_guarantee_tuples = result_guarantee_tuples.query(query_predicate)
 
                 num_result = len(new_result_guarantee_tuples)
-                if num_result < 1:
+                if num_result < 1 or num_result == len(result_guarantee_tuples):
+                    continue_cnt += 1
                     continue
                 result_guarantee_tuples = new_result_guarantee_tuples
                 # result_guarantee_predicates.append(query_predicate)
-
+            if correlation_column is not None:
+                used_tables.add(correlation_column.split(".")[0])
             used_tables.add(col.split(".")[0])
             predicate_str = prefix + col + " " + op + " (" + inner_query + ")"
+            nested_predicate_origin = tuple([prefix, col, op, "(" + inner_query + ")", inner_obj_updated])
             nesting_col = col
             done = True
 
@@ -860,19 +889,19 @@ def nested_predicate_generator(
                 col = table_columns[column_idx]
 
             if correlation_column and col == correlation_column:
-                if len(inner_query_columns) == 1:
-                    assert False
+                continue_cnt += 1
                 continue
             op = rng.choice(["IN", "NOT IN"])
 
-            inner_query, inner_query_result = inner_query_obj_to_inner_query(
+            inner_query, inner_query_result, inner_obj_updated = inner_query_obj_to_inner_query(
                 args,
-                df,
+                result_guarantee_tuples,
                 n,
                 rng,
                 inner_query_obj,
                 dtype_dict,
                 dvs,
+                prefix,
                 nesting_column=col,
                 correlation_column=correlation_column,
             )
@@ -896,32 +925,46 @@ def nested_predicate_generator(
                         if (column_value in result_val and op == "IN") or (
                             column_value not in result_val and op == "NOT IN"
                         ):
-                            new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl.iloc[0])
+                            new_result_guarantee_tuples = pd.concat([new_result_guarantee_tuples, tpl])
 
                 else:
                     result_val = list(inner_query_result.iloc[:, 0])  # Get the values of the inner query
                     for tid in range(len(result_guarantee_tuples)):
                         tpl = result_guarantee_tuples.iloc[[tid]]
                         column_value = tpl[col].iloc[0]
-                        if column_value in result_val:
-                            new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl)
+                        if (column_value in result_val and op == "IN") or (
+                            column_value not in result_val and op == "NOT IN"
+                        ):
+                            new_result_guarantee_tuples = pd.concat([new_result_guarantee_tuples, tpl])
 
                 num_result = len(new_result_guarantee_tuples)
-                if num_result < 1:
+                if num_result < 1 or num_result == len(result_guarantee_tuples):
+                    continue_cnt += 1
                     continue
                 result_guarantee_tuples = new_result_guarantee_tuples
                 # result_guarantee_predicates.append(query_predicate)
 
+            if correlation_column is not None:
+                used_tables.add(correlation_column.split(".")[0])
             used_tables.add(col.split(".")[0])
             predicate_str = prefix + col + " " + op + " (" + inner_query + ")"
+            nested_predicate_origin = tuple([prefix, col, op, "(" + inner_query + ")", inner_obj_updated])
             nesting_col = col
             done = True
             break
 
         elif nesting_position == 2:
             op = rng.choice(["EXISTS", "NOT EXISTS"])
-            inner_query, inner_query_result = inner_query_obj_to_inner_query(
-                args, df, n, rng, inner_query_obj, dtype_dict, dvs, correlation_column=correlation_column
+            inner_query, inner_query_result, inner_obj_updated = inner_query_obj_to_inner_query(
+                args,
+                result_guarantee_tuples,
+                n,
+                rng,
+                inner_query_obj,
+                dtype_dict,
+                dvs,
+                prefix,
+                correlation_column=correlation_column,
             )
 
             if result_condition:  # Always correlation condition
@@ -937,13 +980,17 @@ def nested_predicate_generator(
 
                     num_result = len(cur_group) if cur_group is not None else 0
                     if (num_result > 0 and op == "EXISTS") or (num_result < 1 and op == "NOT EXISTS"):
-                        new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl.iloc[0])
+                        new_result_guarantee_tuples = pd.concat([new_result_guarantee_tuples, tpl])
 
                 num_result = len(new_result_guarantee_tuples)
-                if num_result < 1:
+                if num_result < 1 or num_result == len(result_guarantee_tuples):
+                    continue_cnt += 1
                     continue
 
             predicate_str = op + " (" + inner_query + ")"
+            nested_predicate_origin = tuple([None, None, op, "(" + inner_query + ")", inner_obj_updated])
+            if correlation_column is not None:
+                used_tables.add(correlation_column.split(".")[0])
             done = True
             break
 
@@ -964,20 +1011,22 @@ def nested_predicate_generator(
 
             # val = randomly_select_value_from_column()
 
-            inner_query, inner_query_result = inner_query_obj_to_inner_query(
+            inner_query, inner_query_result, inner_obj_updated = inner_query_obj_to_inner_query(
                 args,
-                df,
+                result_guarantee_tuples,
                 n,
                 rng,
                 inner_query_obj,
                 dtype_dict,
                 dvs,
+                prefix,
                 nesting_column=col,
                 correlation_column=correlation_column,
             )
             # Always correlation condition
 
             if len(inner_query_result) == 0:
+                continue_cnt += 1
                 continue
 
             if op in ["=", ">=", "<="]:
@@ -987,14 +1036,17 @@ def nested_predicate_generator(
                         cur_group = item
                         break
                 if cur_group is None:
+                    continue_cnt += 1
                     continue
                 val = cur_group[col].iloc[0]
                 if type(val) != str and np.isnan(val):
+                    continue_cnt += 1
                     continue
             else:
                 tid = rng.randint(0, len(inner_query_result))
                 val = inner_query_result[tid][1].iloc[0, 0]
                 if type(val) != str and np.isnan(val):
+                    continue_cnt += 1
                     continue
 
             if "*" not in col and dtype_dict[col] == "str" and nesting_type not in ["type-a", "type-ja"]:
@@ -1014,6 +1066,7 @@ def nested_predicate_generator(
                             cur_group = item
                             break
                     if cur_group is None:
+                        continue_cnt += 1
                         continue
 
                     if col == "*":
@@ -1022,15 +1075,19 @@ def nested_predicate_generator(
                     predicate_result = cur_group.query(query_predicate)
                     num_result = len(predicate_result)
                     if num_result > 0:
-                        new_result_guarantee_tuples = new_result_guarantee_tuples.append(tpl.iloc[0])
+                        new_result_guarantee_tuples = pd.concat([new_result_guarantee_tuples, tpl])
 
                 num_result = len(new_result_guarantee_tuples)
-                if num_result < 1:
+                if num_result < 1 or num_result == len(result_guarantee_tuples):
+                    continue_cnt += 1
                     continue
                 result_guarantee_tuples = new_result_guarantee_tuples
                 # result_guarantee_predicates.append(query_predicate)
 
             predicate_str = "(" + inner_query + ") " + op + " " + str(val)
+            nested_predicate_origin = tuple([None, "(" + inner_query + ")", op, str(val), inner_obj_updated])
+            if correlation_column is not None:
+                used_tables.add(correlation_column.split(".")[0])
             done = True
             break
 
@@ -1042,19 +1099,22 @@ def nested_predicate_generator(
 
     query_graph = None
 
-    return tree_predicates, nesting_col, used_tables, result_guarantee_tuples, query_graph
+    return tree_predicates, nesting_col, used_tables, result_guarantee_tuples, query_graph, nested_predicate_origin
 
 
-def group_generator(args, rng, cols, dtype_dict, group=False, outer_inner="non-nested"):
+def group_generator(args, rng, cols, dtype_dict, group=False, outer_inner="non-nested", prefix=None):
     min_group, max_group = args.num_group_min, args.num_group_max
     num_group = rng.randint(min_group, max_group)
 
     if outer_inner == "outer":
-        prefix = "O_"
+        if prefix is None:
+            prefix = "O_"
     elif outer_inner == "inner":
-        prefix = "I_"
+        if prefix is None:
+            prefix = "I_"
     else:
-        prefix = ""
+        if prefix is None:
+            prefix = ""
 
     columns = rng.choice(cols, num_group, replace=False)
 
@@ -1064,7 +1124,7 @@ def group_generator(args, rng, cols, dtype_dict, group=False, outer_inner="non-n
 
 
 def hainvg_generator(
-    args, rng, table_columns, group_columns, dtype_dict, df, dvs, n, used_tables, outer_inner="non-nested"
+    args, rng, table_columns, group_columns, dtype_dict, df, dvs, n, used_tables, outer_inner="non-nested", prefix=None
 ):
     min_pred_num = args.num_having_min
     max_pred_num = args.num_having_max
@@ -1076,11 +1136,14 @@ def hainvg_generator(
     predicates_cols = list(rng.choice(having_candidate_columns, num_predicate, replace=True))
 
     if outer_inner == "outer":
-        prefix = "O_"
+        if prefix is None:
+            prefix = "O_"
     elif outer_inner == "inner":
-        prefix = "I_"
+        if prefix is None:
+            prefix = "I_"
     else:
-        prefix = ""
+        if prefix is None:
+            prefix = ""
 
     # [TODO]
     cols = predicates_cols
@@ -1187,17 +1250,22 @@ def hainvg_generator(
     return tree_predicates, (cols, vals, ops), used_tables
 
 
-def order_generator(args, rng, cols, dtype_dict, group=False, group_columns=False, outer_inner="non-nested"):
+def order_generator(
+    args, rng, cols, dtype_dict, group=False, group_columns=False, outer_inner="non-nested", prefix=None
+):
     min_order, max_order = args.num_order_min, args.num_order_max
     num_order = rng.randint(min_order, max_order)
 
     columns = []
     if outer_inner == "outer":
-        prefix = "O_"
+        if prefix is None:
+            prefix = "O_"
     elif outer_inner == "inner":
-        prefix = "I_"
+        if prefix is None:
+            prefix = "I_"
     else:
-        prefix = ""
+        if prefix is None:
+            prefix = ""
 
     columns_with_prefix = []
 
@@ -1235,7 +1303,7 @@ def limit_generator(args, rng):
 
 
 def inner_query_obj_to_inner_query(
-    args, df, n, rng, inner_query_obj, dtype_dict, dvs, nesting_column=None, correlation_column=None
+    args, df, n, rng, inner_query_obj, dtype_dict, dvs, prefix, nesting_column=None, correlation_column=None
 ):
     # obj to sql
     sql_type_dict = inner_query_obj["type"]
@@ -1251,39 +1319,62 @@ def inner_query_obj_to_inner_query(
     necessary_joins = inner_query_obj["joins"]
     predicates_origin = inner_query_obj["predicates_origin"]
     tree_predicates_origin = inner_query_obj["tree_predicates_origin"]
+    df_query = inner_query_obj["df_query"]
+    nesting_level = inner_query_obj["nesting_level"]
+    unique_alias = inner_query_obj["unique_alias"]
 
     # [TODO] Add correlated columns
     # "tree_predicates_origin": tree_predicates_origin,
     # "predicates_origin": predicates_origin,
-    result_guarantee_tuples = df
+    query_string = "SELECT * FROM " + df_query["FROM"]
     if sql_type_dict["where"]:
-        query_predicates = []
-        for predicate in predicates_origin:
-            col = predicate[0]
-            op = predicate[1]
-            result_val = predicate[2]
-            query_predicate = predicate_generator(col, op, str(result_val))
-            query_predicates.append(query_predicate)
-        where_tree = restore_predicate_tree(tree_predicates_origin, query_predicates)
-        total_query_predicate = preorder_traverse_dataframe(where_tree)
-        new_result_guarantee_tuples = result_guarantee_tuples.query(total_query_predicate)
-        num_result = len(new_result_guarantee_tuples)
-        result_guarantee_tuples = new_result_guarantee_tuples
+        query_string += " WHERE " + df_query["WHERE"]
+    result_guarantee_tuples = ps.sqldf(query_string, locals())
+    assert not result_guarantee_tuples.empty
+    # if sql_type_dict["where"]:
+    #    query_predicates = []
+    #    for predicate in predicates_origin:
+    #        col = predicate[0]
+    #        op = predicate[1]
+    #        result_val = predicate[2]
+    #        query_predicate = predicate_generator(col, op, str(result_val))
+    #        query_predicates.append(query_predicate)
+    #    where_tree = restore_predicate_tree(tree_predicates_origin, query_predicates)
+    #    total_query_predicate = preorder_traverse_dataframe(where_tree)
+    #    new_result_guarantee_tuples = result_guarantee_tuples.query(total_query_predicate)
+    #    num_result = len(new_result_guarantee_tuples)
+    #    result_guarantee_tuples = new_result_guarantee_tuples
 
     # (FIX #12): Make correlation predicate as the top level predicate
+    prefix_inner = "N" + str(nesting_level) + "_" + str(unique_alias) + "_"
     if correlation_column is not None:  # (TODO) nned to identify whether it's generating outer query or inner query
-        correlation_predicate = "O_" + correlation_column + " = I_" + correlation_column
-        where_predicates = [(correlation_predicate, "AND", where_predicates)]
+        correlation_predicate = prefix + correlation_column + " = " + prefix_inner + correlation_column
+        correlation_predicate_origin = tuple(
+            [prefix_inner, correlation_column, "=", correlation_column, "correal", prefix]
+        )
+        if sql_type_dict["where"]:
+            where_predicates = [(correlation_predicate, "AND", where_predicates)]
+            predicates_origin = predicates_origin + [correlation_predicate_origin]
+            tree_predicates_origin = [[len(predicates_origin) - 1], "AND", tree_predicates_origin]
+        else:
+            where_predicates = correlation_predicate
+            predicates_origin = [correlation_predicate_origin]
+            tree_predicates_origin = [0]
         result_guarantee_tuples = result_guarantee_tuples.groupby(correlation_column)
+        sql_type_dict["where"] = True
 
     result_tuples = result_guarantee_tuples
 
     if correlation_column is not None:
         if not use_agg_sel:
-            select_columns = [correlation_column] + [col for agg, col in agg_cols]
+            if agg_cols[0][1] == "*":
+                selected_columns = [correlation_column]
+            else:
+                selected_columns = [correlation_column] + [col for agg, col in agg_cols]
             new_result_tuples = []
+
             for key, item in result_tuples:
-                new_result_tuples.append((key, item[select_columns]))
+                new_result_tuples.append((key, item[selected_columns]))
             result_tuples = new_result_tuples
         else:
             new_result_tuples = []
@@ -1300,17 +1391,20 @@ def inner_query_obj_to_inner_query(
             result_tuples = new_result_tuples
     else:
         if not use_agg_sel:
-            result_tuples = result_tuples[[col for agg, col in agg_cols]]
+            if agg_cols[0][1] != "*":
+                result_tuples = result_tuples[[col for agg, col in agg_cols]]
         else:
             new_result_tuples = pd.DataFrame([])
             for i in range(len(agg_cols)):
                 agg, col = agg_cols[i]
                 func = convert_agg_to_func(agg)
+                if col == "*":
+                    col = nesting_column
                 new_result_tuples[col] = [result_tuples[col].aggregate(func=func)]
 
             result_tuples = new_result_tuples
 
-    line, _ = sql_formation(
+    line, _, df_query = sql_formation(
         args,
         sql_type_dict,
         necessary_tables,
@@ -1322,9 +1416,34 @@ def inner_query_obj_to_inner_query(
         having_predicates,
         order_columns,
         limit_num,
+        select_agg_cols=agg_cols,
+        tree_predicates_origin=tree_predicates_origin,
+        predicates_origin=predicates_origin,
+        nesting_level=nesting_level,
+        nesting_block_idx=unique_alias,
     )
 
-    return line, result_tuples
+    obj = {
+        "type": sql_type_dict,
+        "select": select_columns,
+        "where": where_predicates,
+        "group": group_columns,
+        "having": having_predicates,
+        "order": order_columns,
+        "limit": limit_num,
+        "tables": necessary_tables,
+        "joins": necessary_joins,
+        "agg_cols": agg_cols,
+        "use_agg_sel": use_agg_sel,
+        "tree_predicates_origin": tree_predicates_origin,
+        "predicates_origin": predicates_origin,
+        "correlation_column": correlation_column,
+        "df_query": df_query,
+        "nesting_level": nesting_level,
+        "unique_alias": unique_alias,
+    }
+
+    return line, result_tuples, obj
 
 
 def inner_query_generator(
@@ -1486,7 +1605,7 @@ def inner_query_generator(
     #    select_columns = list(group_columns) + select_columns
     #    agg_cols = [ ('NONE', group_col) for group_col in group_columns_origin ] + agg_cols
 
-    line, _ = sql_formation(
+    line, _, df_query = sql_formation(
         args,
         sql_type_dict,
         necessary_tables,
@@ -1498,6 +1617,7 @@ def inner_query_generator(
         having_predicates,
         order_columns,
         limit_num,
+        select_agg_cols=agg_cols,
     )
 
     obj = {
@@ -1515,6 +1635,7 @@ def inner_query_generator(
         "tree_predicates_origin": tree_predicates_origin,
         "predicates_origin": predicates_origin,
         "correlation_column": correlation_column,
+        "df_query": df_query,
     }
 
     if correlation_column is not None:
@@ -1551,7 +1672,17 @@ def inner_query_generator(
 
 
 def non_nested_query_generator(
-    args, df, n, rng, all_table_set, join_key_list, join_clause_list, join_key_pred, dtype_dict, dvs
+    args,
+    df,
+    n,
+    rng,
+    all_table_set,
+    join_key_list,
+    join_clause_list,
+    join_key_pred,
+    dtype_dict,
+    dvs,
+    global_unique_query_idx,
 ):
     df_columns_not_null = df.columns[df.notna().iloc[n]]
     tables, joins, table_columns_projection, table_columns = get_query_token(
@@ -1563,11 +1694,19 @@ def non_nested_query_generator(
         rng,
         join_key_pred=join_key_pred,
     )
+    prefix = "N" + str(1) + "_" + str(global_unique_query_idx) + "_"
 
     sql_type_dict = non_nested_query_form_selector(args, rng)
 
     select_columns, agg_cols, (used_tables, use_agg_sel) = select_generator(
-        args, rng, table_columns_projection, dtype_dict, join_key_list, tables, group=sql_type_dict["group"]
+        args,
+        rng,
+        table_columns_projection,
+        dtype_dict,
+        join_key_list,
+        tables,
+        group=sql_type_dict["group"],
+        prefix=prefix,
     )
     where_predicates, _, used_tables, _, tree_predicates_origin, predicates_origin = where_generator(
         args,
@@ -1582,15 +1721,22 @@ def non_nested_query_generator(
         dvs,
         n,
         used_tables,
+        prefix=prefix,
     )
     group_columns_origin, group_columns = group_generator(
-        args, rng, table_columns, dtype_dict, group=sql_type_dict["group"]
+        args, rng, table_columns, dtype_dict, group=sql_type_dict["group"], prefix=prefix
     )
     having_predicates, _, used_tables = hainvg_generator(
-        args, rng, table_columns, group_columns_origin, dtype_dict, df, dvs, n, used_tables
+        args, rng, table_columns, group_columns_origin, dtype_dict, df, dvs, n, used_tables, prefix=prefix
     )
     order_columns_origin, order_columns = order_generator(
-        args, rng, table_columns, dtype_dict, group=sql_type_dict["group"], group_columns=group_columns_origin
+        args,
+        rng,
+        table_columns,
+        dtype_dict,
+        group=sql_type_dict["group"],
+        group_columns=group_columns_origin,
+        prefix=prefix,
     )
     limit_num = limit_generator(args, rng)
 
@@ -1603,7 +1749,7 @@ def non_nested_query_generator(
         select_columns = list(group_columns) + select_columns
         agg_cols = [("NONE", group_col) for group_col in group_columns] + agg_cols
 
-    line, graph = sql_formation(
+    line, graph, df_query = sql_formation(
         args,
         sql_type_dict,
         necessary_tables,
@@ -1619,7 +1765,10 @@ def non_nested_query_generator(
         select_agg_cols=agg_cols,
         tree_predicates_origin=tree_predicates_origin,
         predicates_origin=predicates_origin,
+        nesting_level=1,
+        nesting_block_idx=global_unique_query_idx,
     )
+
     obj = {
         "type": sql_type_dict,
         "select": select_columns,
@@ -1634,14 +1783,27 @@ def non_nested_query_generator(
         "use_agg_sel": use_agg_sel,
         "tree_predicates_origin": tree_predicates_origin,
         "predicates_origin": predicates_origin,
+        "df_query": df_query,
+        "nesting_level": 1,
+        "unique_alias": global_unique_query_idx,
     }
-    for key in obj.keys():
-        print(key, obj[key])
+
     return line, graph, obj
 
 
 def nested_query_generator_from_scratch(
-    args, df, n, rng, all_table_set, join_key_list, join_clause_list, join_key_pred, dtype_dict, dvs, nesting_type
+    args,
+    df,
+    n,
+    rng,
+    all_table_set,
+    join_key_list,
+    join_clause_list,
+    join_key_pred,
+    dtype_dict,
+    dvs,
+    nesting_type,
+    global_unique_query_idx,
 ):
     nesting_position = nesting_position_selector(args, rng, nesting_type)
 
@@ -1722,7 +1884,7 @@ def nested_query_generator_from_scratch(
         select_columns = list(group_columns) + select_columns
         agg_cols = [("NONE", group_col) for group_col in group_columns_origin] + agg_cols
 
-    line, graph = sql_formation(
+    line, graph, df_query = sql_formation(
         args,
         sql_type_dict,
         necessary_tables,
@@ -1754,6 +1916,9 @@ def nested_query_generator_from_scratch(
         "use_agg_sel": use_agg_sel,
         "tree_predicates_origin": tree_predicates_origin,
         "predicates_origin": predicates_origin,
+        "df_query": df_query,
+        "nesting_level": 2,
+        "unique_alias": global_unique_query_idx,
     }
 
     return line, graph, obj
@@ -1771,10 +1936,12 @@ def nested_query_generator(
     dtype_dict,
     dvs,
     nesting_type,
+    global_unique_query_idx,
     inner_query_objs=None,
     inner_query_graphs=None,
 ):
     if inner_query_objs is None:
+        assert False, "Currently not implemented"
         line, graph, obj = nested_query_generator_from_scratch(
             args,
             df,
@@ -1787,6 +1954,7 @@ def nested_query_generator(
             dtype_dict,
             dvs,
             nesting_type,
+            global_unique_query_idx,
         )
         return line, graph, obj
 
@@ -1801,14 +1969,19 @@ def nested_query_generator(
     chosen_inner_queries = rng.choice(candidate_idxs, num_nested_predicates, replace=False)
 
     nested_predicates = []
+    nested_predicates_origin = []
     nested_predicate_graphs = []
 
     inner_query_tables = set()
+    max_inner_level = 0
     for i in range(num_nested_predicates):
         inner_query_idx = chosen_inner_queries[i]
         obj = inner_query_objs[inner_query_idx]
+        max_inner_level = max(max_inner_level, obj["nesting_level"])
         for table in obj["tables"]:
             inner_query_tables.add(table)
+    current_nesting_level = max_inner_level + 1
+    prefix = "N" + str(current_nesting_level) + "_" + str(global_unique_query_idx) + "_"
 
     df_columns_not_null = df.columns[df.notna().iloc[n]]
     tables, joins, table_columns_projection, table_columns = get_query_token(
@@ -1821,7 +1994,8 @@ def nested_query_generator(
         join_key_pred=join_key_pred,
         inner_query_tables=inner_query_tables,
     )
-
+    result_guarantee_tuples = df.copy(deep=True)
+    used_tables = set()
     for i in range(num_nested_predicates):
         inner_query_idx = chosen_inner_queries[i]
         nesting_type = nesting_type_selector(
@@ -1830,7 +2004,14 @@ def nested_query_generator(
         nesting_position = nesting_position_selector(
             args, rng, nesting_type, inner_query_obj=inner_query_objs[inner_query_idx]
         )
-        nested_predicate, nesting_column, used_tables, _, nested_predicate_graph = nested_predicate_generator(
+        (
+            nested_predicate,
+            nesting_column,
+            used_tables_nested,
+            new_result_guarantee_tuples,
+            nested_predicate_graph,
+            nested_predicate_origin,
+        ) = nested_predicate_generator(
             args,
             rng,
             table_columns,
@@ -1839,24 +2020,27 @@ def nested_query_generator(
             all_table_set,
             join_clause_list,
             join_key_pred,
-            df,
+            result_guarantee_tuples,
             dvs,
             n,
-            prefix_alias="in" + str(i),
+            prefix,
             nesting_position=nesting_position,
             nesting_type=nesting_type,
             inner_query_obj=inner_query_objs[inner_query_idx],
             inner_query_graph=inner_query_graphs[inner_query_idx],
         )
+        result_guarantee_tuples = new_result_guarantee_tuples
         # if i != 0:
         #    nested_predicates.append("AND")
         nested_predicates.append(nested_predicate)
         nested_predicate_graphs.append(nested_predicate_graph)
+        nested_predicates_origin.append(nested_predicate_origin)
+        used_tables = used_tables.union(used_tables_nested)
 
     sql_type_dict = non_nested_query_form_selector(args, rng)
 
     # Step 1. Outer query generation
-    select_columns, agg_cols, (used_tables, use_agg_sel) = select_generator(
+    select_columns, agg_cols, (used_tables2, use_agg_sel) = select_generator(
         args,
         rng,
         table_columns_projection,
@@ -1865,7 +2049,9 @@ def nested_query_generator(
         tables,
         group=sql_type_dict["group"],
         outer_inner="outer",
+        prefix=prefix,
     )
+    used_tables = used_tables.union(used_tables2)
     if sql_type_dict["where"]:
         where_predicates, _, used_tables, _, tree_predicates_origin, predicates_origin = where_generator(
             args,
@@ -1876,39 +2062,75 @@ def nested_query_generator(
             all_table_set,
             join_clause_list,
             join_key_pred,
-            df,
+            result_guarantee_tuples,
             dvs,
             n,
             used_tables,
+            outer_inner="outer",
+            prefix=prefix,
         )
     else:
         where_predicates = []
-        result_tuples = df
+        predicates_origin = []
+        tree_predicates_origin = []
 
     # Always generate where clause for nested query
     sql_type_dict["where"] = True
     nested_predicates_tree = []
+    nested_predicates_tree_origin = []
+    starting_idx = len(predicates_origin)
     for nested_predicate in nested_predicates:
         if len(nested_predicates_tree) > 0:
             nested_predicates_tree = [nested_predicate, "AND", nested_predicates_tree]
+            nested_predicates_tree_origin = [[starting_idx], "AND", nested_predicates_tree_origin]
+            starting_idx += 1
         else:
             nested_predicates_tree = nested_predicate
+            nested_predicates_tree_origin = [starting_idx]
+            starting_idx += 1
     if len(where_predicates) > 0:
         where_predicates = [where_predicates, "AND", nested_predicates_tree]
+        tree_predicates_origin = [tree_predicates_origin, "AND", nested_predicates_tree_origin]
+        predicates_origin += nested_predicates_origin
     else:
         where_predicates = nested_predicates_tree
+        tree_predicates_origin = nested_predicates_tree_origin
+        predicates_origin = nested_predicates_origin
 
     group_columns_origin, group_columns = group_generator(
-        args, rng, table_columns, dtype_dict, group=sql_type_dict["group"]
+        args,
+        rng,
+        table_columns,
+        dtype_dict,
+        group=sql_type_dict["group"],
+        outer_inner="outer",
+        prefix=prefix,
     )
     if sql_type_dict["having"]:
         having_predicates, _, used_tables = hainvg_generator(
-            args, rng, table_columns, group_columns_origin, dtype_dict, df, dvs, n, used_tables
+            args,
+            rng,
+            table_columns,
+            group_columns_origin,
+            dtype_dict,
+            result_guarantee_tuples,
+            dvs,
+            n,
+            used_tables,
+            outer_inner="outer",
+            prefix=prefix,
         )
     else:
         having_predicates = []
     order_columns_origin, order_columns = order_generator(
-        args, rng, table_columns, dtype_dict, group=sql_type_dict["group"], group_columns=group_columns_origin
+        args,
+        rng,
+        table_columns,
+        dtype_dict,
+        group=sql_type_dict["group"],
+        group_columns=group_columns_origin,
+        outer_inner="outer",
+        prefix=prefix,
     )
     limit_num = limit_generator(args, rng)
 
@@ -1918,7 +2140,7 @@ def nested_query_generator(
     # (FIX C4) Remove unncessary tables & joins
     necessary_tables, necessary_joins = find_join_path(joins, tables, used_tables)
 
-    line, _ = sql_formation(
+    line, _, df_query = sql_formation(
         args,
         sql_type_dict,
         necessary_tables,
@@ -1931,6 +2153,10 @@ def nested_query_generator(
         order_columns,
         limit_num,
         select_agg_cols=agg_cols,
+        tree_predicates_origin=tree_predicates_origin,
+        predicates_origin=predicates_origin,
+        nesting_level=current_nesting_level,
+        nesting_block_idx=global_unique_query_idx,
     )
     graph = []
     obj = {
@@ -1947,6 +2173,9 @@ def nested_query_generator(
         "use_agg_sel": use_agg_sel,
         "tree_predicates_origin": tree_predicates_origin,
         "predicates_origin": predicates_origin,
+        "nesting_level": current_nesting_level,
+        "unique_alias": global_unique_query_idx,
+        "df_query": df_query,
     }
 
     return line, graph, obj
@@ -1965,6 +2194,7 @@ def query_generator(
     dvs,
     inner_query_objs=None,
     inner_query_graphs=None,
+    global_unique_query_idx=0,
 ):
     only_nested = args.query_type in ["spj-nested", "nested"]
     only_nonnested = args.query_type in ["spj-non-nested", "non-nested"]
@@ -1972,7 +2202,17 @@ def query_generator(
 
     if nesting_type == "non-nested":
         query, graph, obj = non_nested_query_generator(
-            args, df, n, rng, all_table_set, join_key_list, join_clause_list, join_key_pred, dtype_dict, dvs
+            args,
+            df,
+            n,
+            rng,
+            all_table_set,
+            join_key_list,
+            join_clause_list,
+            join_key_pred,
+            dtype_dict,
+            dvs,
+            global_unique_query_idx,
         )
     else:
         query, graph, obj = nested_query_generator(
@@ -1987,6 +2227,7 @@ def query_generator(
             dtype_dict,
             dvs,
             nesting_type,
+            global_unique_query_idx,
             inner_query_objs,
             inner_query_graphs,
         )
