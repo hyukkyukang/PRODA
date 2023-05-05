@@ -2,12 +2,11 @@ import React from "react";
 import Spreadsheet from "react-spreadsheet-custom";
 import { PGResultFieldInterface, PGResultInterface, PGResultToTableExcerpt } from "../../TableExcerpt/Postgres";
 import { ITableExcerpt, TableExcerpt } from "../../TableExcerpt/TableExcerpt";
-import { aggFunctions, EVQATree } from "../../VQA/EVQA";
-import { dataViewer } from "../../VQA/EVQACell";
+import { EVQATree, aggFunctions } from "../../VQA/EVQA";
 import { EVQAColumnIndicator } from "../../VQA/EVQAColumnIndicator";
 import { EVQATables } from "../../VQA/EVQATable";
-import { demoTable } from "../examples/demoTable";
 import { GroupingSyntaxExample } from "../examples/EVQAExamples";
+import { demoTable } from "../examples/demoTable";
 import ITutorialSection from "./abstractSection";
 
 export const SyntaxDescription = (
@@ -23,7 +22,6 @@ export const SyntaxDescription = (
             data={GroupingSyntaxExample.rows}
             columnLabels={GroupingSyntaxExample.headers}
             ColumnIndicator={EVQAColumnIndicator}
-            DataViewer={dataViewer}
         />
     </>
 );

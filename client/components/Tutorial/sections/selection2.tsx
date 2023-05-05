@@ -3,7 +3,6 @@ import Spreadsheet from "react-spreadsheet-custom";
 import { PGResultFieldInterface, PGResultInterface, PGResultToTableExcerpt } from "../../TableExcerpt/Postgres";
 import { ITableExcerpt, TableExcerpt } from "../../TableExcerpt/TableExcerpt";
 import { aggFunctions, binaryOperators, EVQATree } from "../../VQA/EVQA";
-import { dataViewer } from "../../VQA/EVQACell";
 import { EVQAColumnIndicator } from "../../VQA/EVQAColumnIndicator";
 import { EVQATables } from "../../VQA/EVQATable";
 import { demoTable } from "../examples/demoTable";
@@ -19,7 +18,6 @@ const SyntaxDescription = (
             data={SelectionOrSyntaxExample.rows}
             columnLabels={SelectionOrSyntaxExample.headers}
             ColumnIndicator={EVQAColumnIndicator}
-            DataViewer={dataViewer}
         />
         <br />
         <br />
@@ -29,7 +27,6 @@ const SyntaxDescription = (
             data={SelectionAndSyntaxExample.rows}
             columnLabels={SelectionAndSyntaxExample.headers}
             ColumnIndicator={EVQAColumnIndicator}
-            DataViewer={dataViewer}
         />
 
         <br />
@@ -40,7 +37,6 @@ const SyntaxDescription = (
             data={SelectionAndOnCellSyntaxExample.rows}
             columnLabels={SelectionAndOnCellSyntaxExample.headers}
             ColumnIndicator={EVQAColumnIndicator}
-            DataViewer={dataViewer}
         />
     </>
 );
