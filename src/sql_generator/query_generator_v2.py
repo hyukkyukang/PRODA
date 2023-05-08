@@ -388,7 +388,6 @@ def get_distinct_values_dict(loaded_tables, db_id=None):
         for column in table.Columns():
             col_name = column.Name()
             dvs = column.all_values
-            print(dvs)
 
             if db_id is not None:
                 dvs_df = pd.DataFrame({table_name + "." + col_name: dvs})
