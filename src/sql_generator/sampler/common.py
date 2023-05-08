@@ -112,6 +112,7 @@ class Column(object):
         # Data related fields.
         self.data = None
         self.all_distinct_values = None
+        self.all_values = None
         self.distribution_size = distribution_size
 
         # Factorization related fields.
@@ -182,6 +183,7 @@ class Column(object):
     def SetDistribution(self, distinct_values):
         """This is all the values this column will ever see."""
         assert self.all_distinct_values is None
+        assert self.all_values is None
         # pd.isnull returns true for both np.nan and np.datetime64('NaT').
         is_nan = pd.isnull(distinct_values)
         contains_nan = np.any(is_nan)
@@ -196,9 +198,22 @@ class Column(object):
             vs = np.insert(vs, 0, np.nan)
         if self.distribution_size is not None:
             assert len(vs) == self.distribution_size
+            
         self.all_distinct_values = vs
         self.distribution_size = len(vs)
         return self
+    
+    def SetTrueDistribution(self, all_values):
+        is_nan = pd.isnull(all_values)
+        contains_nan = np.any(is_nan)
+        dv_no_nan = all_values[~is_nan]
+        
+        vs_all = np.sort(dv_no_nan)
+        if contains_nan and np.issubdtype(all_values.dtype, np.datetime64):
+            vs_all = np.insert(vs_all, 0, np.datetime64('NaT'))
+        elif contains_nan:
+            vs_all = np.insert(vs_all, 0, np.nan)
+        self.all_values = vs_all
 
     def Fill(self, data_instance, infer_dist=False):
         assert self.data is None
@@ -207,6 +222,7 @@ class Column(object):
         # from data.
         if infer_dist:
             self.SetDistribution(self.data)
+            self.SetTrueDistribution(self.data)
         return self
 
     def InsertNullInDomain(self):
@@ -387,6 +403,7 @@ class CsvTable(Table):
             # To test for former, use np.isnan(...).any()
             # To test for latter, use np.isnat(...).any()
             col.SetDistribution(data[c].value_counts(dropna=False).index.values)
+            col.SetTrueDistribution(data[c])
             columns.append(col)
         print('done, took {:.1f}s'.format(time.time() - s))
         return columns
@@ -436,6 +453,7 @@ class FactorizedTable(Dataset):
                 new_col = Column(col.name,
                                  distribution_size=col.distribution_size)
                 new_col.SetDistribution(col.all_distinct_values)
+                new_col.SetTrueDistribution(col.all_values)
                 cols.append(new_col)
                 print("col", i, col.name, "not factorized")
             else:
@@ -470,6 +488,7 @@ class FactorizedTable(Dataset):
                                        domain_bits=domain_bits,
                                        num_bits=num_bits)
                     f_col.SetDistribution(factorized_data[-1])
+                    f_col.SetTrueDistribution(factorized_data[-1])
                     cols.append(f_col)
                     print("fact col", i, num_bits, factorized_data[-1])
                     j += 1
@@ -878,6 +897,7 @@ class SamplerBasedIterDataset(IterableDataset):
                         '__fanout_{}__{}'.format(table_name, key))
         max_count = table_df.groupby(by=[key]).size().max()
         column.SetDistribution(np.arange(max_count + 1))
+        column.SetTrueDistribution(np.arange(max_count + 1))
         columns.append(column)
         types.append(TYPE_FANOUT)
         table_indexes.append(i)

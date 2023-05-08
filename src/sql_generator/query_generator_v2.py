@@ -38,7 +38,7 @@ def str2bool(v):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--num_queries", help="Number of queries", type=int, default=15)  # 10k
-parser.add_argument("--output", type=str, default="result3.out")
+parser.add_argument("--output", type=str, default="result.out")
 parser.add_argument("--sep", type=str, default="#")
 parser.add_argument("--seed", type=int, default=1234)
 parser.add_argument("--num_in_max", type=int, default=5)
@@ -59,7 +59,7 @@ parser.add_argument("--num_nested_pred_min", type=int, default=1)
 parser.add_argument(
     "--query_type",
     type=str,
-    default="nested",
+    default="non-nested",
     help="""One of (spj-non-nested, spj-nested, spj-mix, non-nested, nested, mix)\n
         Each type stands for non-nested spj query, 
         nested query consists of spj queries, 
@@ -387,7 +387,8 @@ def get_distinct_values_dict(loaded_tables, db_id=None):
         table_name = table.Name()
         for column in table.Columns():
             col_name = column.Name()
-            dvs = column.all_distinct_values
+            dvs = column.all_values
+            print(dvs)
 
             if db_id is not None:
                 dvs_df = pd.DataFrame({table_name + "." + col_name: dvs})
