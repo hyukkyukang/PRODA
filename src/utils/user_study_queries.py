@@ -2,7 +2,9 @@ import abc
 import argparse
 import json
 from typing import List
-
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 from hkkang_utils import misc as misc_utils
 from pylogos.query_graph.koutrika_query_graph import (
     Attribute,
@@ -13,7 +15,7 @@ from pylogos.query_graph.koutrika_query_graph import (
     Relation,
     Value,
 )
-
+from functools import cached_property
 import src.query_tree.operator as qt_operator
 from src.query_tree.operator import Aggregation, Clause, Condition, Foreach, Projection, Selection
 from src.query_tree.query_tree import Attach, BaseTable, QueryBlock, QueryTree, Refer, get_global_index
@@ -30,7 +32,7 @@ class MovieQuery1(TestQuery):
                     """
         self._DB = MovieDB()
 
-    @misc_utils.property_with_cache
+    @cached_property
     def evqa(self) -> EVQATree:
         # Create tree node
         node = EVQANode(f"movie_query_1", self._DB.get_table("movie"))
@@ -44,7 +46,7 @@ class MovieQuery1(TestQuery):
         # Construct tree
         return EVQATree(node)
 
-    @misc_utils.property_with_cache
+    @cached_property
     def query_graphs(self) -> List[Query_graph]:
         def graph_1() -> Query_graph:
             ## Initialize nodes
@@ -66,7 +68,7 @@ class MovieQuery1(TestQuery):
 
         return [graph_1()]
 
-    @misc_utils.property_with_cache
+    @cached_property
     def result_tables(self) -> List[TableExcerpt]:
         def result_1() -> TableExcerpt:
             result_table = self._DB.get_result_table(self._sql, "MovieQuery1")
@@ -74,7 +76,7 @@ class MovieQuery1(TestQuery):
 
         return [result_1()]
 
-    @misc_utils.property_with_cache
+    @cached_property
     def query_tree(self):
         pass
 
@@ -86,7 +88,7 @@ class MovieQuery2(TestQuery):
                     """
         self._DB = MovieDB()
 
-    @misc_utils.property_with_cache
+    @cached_property
     def evqa(self) -> EVQATree:
         # Create tree node
         node = EVQANode(f"movie_query_2", self._DB.get_table("actor"))
@@ -101,7 +103,7 @@ class MovieQuery2(TestQuery):
         # Construct tree
         return EVQATree(node)
 
-    @misc_utils.property_with_cache
+    @cached_property
     def query_graphs(self) -> List[Query_graph]:
         def graph_1() -> Query_graph:
             ## Initialize nodes
@@ -123,7 +125,7 @@ class MovieQuery2(TestQuery):
 
         return [graph_1()]
 
-    @misc_utils.property_with_cache
+    @cached_property
     def result_tables(self) -> List[TableExcerpt]:
         def result_1() -> TableExcerpt:
             result_table = self._DB.get_result_table(self._sql, "MovieQuery1")
@@ -131,7 +133,7 @@ class MovieQuery2(TestQuery):
 
         return [result_1()]
 
-    @misc_utils.property_with_cache
+    @cached_property
     def query_tree(self):
         pass
 
@@ -145,7 +147,7 @@ class MovieQuery3(TestQuery):
                     """
         self._DB = MovieDB()
 
-    @misc_utils.property_with_cache
+    @cached_property
     def evqa(self) -> EVQATree:
         # init_table1 = TableExcerpt.fake_join("movie_rating_reviewer", [self._DB.get_table("movie"), self._DB.get_table("rating"), self._DB.get_table("reviewer")], ["movie_", "rating_", "reviewer_"])
         init_table1 = TableExcerpt.fake_join(
@@ -179,7 +181,7 @@ class MovieQuery3(TestQuery):
         # Construct tree
         return EVQATree(node)
 
-    @misc_utils.property_with_cache
+    @cached_property
     def query_graphs(self) -> List[Query_graph]:
         def graph_1() -> Query_graph:
             ## Initialize nodes
@@ -223,7 +225,7 @@ class MovieQuery3(TestQuery):
 
         return [graph_1()]
 
-    @misc_utils.property_with_cache
+    @cached_property
     def result_tables(self) -> List[TableExcerpt]:
         def result_1() -> TableExcerpt:
             result_table = self._DB.get_result_table(self._sql, "MovieQuery3")
@@ -231,7 +233,7 @@ class MovieQuery3(TestQuery):
 
         return [result_1()]
 
-    @misc_utils.property_with_cache
+    @cached_property
     def query_tree(self):
         pass
 
@@ -245,7 +247,7 @@ GROUP BY T3.id;
                     """
         self._DB = MovieDB()
 
-    @misc_utils.property_with_cache
+    @cached_property
     def evqa(self) -> EVQATree:
         # init_table1 = TableExcerpt.fake_join("movie_rating_reviewer", [self._DB.get_table("movie"), self._DB.get_table("rating"), self._DB.get_table("reviewer")], ["movie_", "rating_", "reviewer_"])
         init_table1 = TableExcerpt.fake_join(
@@ -281,7 +283,7 @@ GROUP BY T3.id;
         # Construct tree
         return EVQATree(node)
 
-    @misc_utils.property_with_cache
+    @cached_property
     def query_graphs(self) -> List[Query_graph]:
         def graph_1() -> Query_graph:
             ## Initialize nodes
@@ -319,7 +321,7 @@ GROUP BY T3.id;
 
         return [graph_1()]
 
-    @misc_utils.property_with_cache
+    @cached_property
     def result_tables(self) -> List[TableExcerpt]:
         def result_1() -> TableExcerpt:
             result_table = self._DB.get_result_table(self._sql, "MovieQuery3")
@@ -327,7 +329,7 @@ GROUP BY T3.id;
 
         return [result_1()]
 
-    @misc_utils.property_with_cache
+    @cached_property
     def query_tree(self):
         pass
 
@@ -357,7 +359,7 @@ class MovieQuery5(TestQuery):
                     """
         self._DB = MovieDB()
 
-    @misc_utils.property_with_cache
+    @cached_property
     def evqa(self) -> EVQATree:
         # Create tree node 1
         init_table1 = TableExcerpt.fake_join(
@@ -467,7 +469,7 @@ class MovieQuery5(TestQuery):
 
         return EVQATree(node_4, children=[EVQATree(node_3, children=[EVQATree(node_2), EVQATree(node_1)])])
 
-    @misc_utils.property_with_cache
+    @cached_property
     def query_tree(self):
         # Get base tables
         table_movie = BaseTable(["id"], [[]])
@@ -608,7 +610,7 @@ class MovieQuery5(TestQuery):
 
         return QueryTree(node_b4, self.sql)
 
-    @misc_utils.property_with_cache
+    @cached_property
     def query_graphs(self) -> List[Query_graph]:
         def graph_1() -> Query_graph:
             # Relation
@@ -885,7 +887,7 @@ class MovieQuery5(TestQuery):
 
         return [graph_4_individual(), graph_3_individual(), graph_2(), graph_1()]
 
-    @misc_utils.property_with_cache
+    @cached_property
     def result_tables(self) -> List[TableExcerpt]:
         def result_1() -> TableExcerpt:
             node_1_name = "MovieQuery5_B1"
@@ -953,7 +955,7 @@ class MovieQuery6(TestQuery):
                     """
         self._DB = MovieDB()
 
-    @misc_utils.property_with_cache
+    @cached_property
     def evqa(self) -> EVQATree:
         init_table1 = TableExcerpt.fake_join(
             "movie_rating_reviewer",
@@ -991,7 +993,7 @@ class MovieQuery6(TestQuery):
         # Construct tree
         return EVQATree(node_2, children=[EVQATree(node_1)])
 
-    @misc_utils.property_with_cache
+    @cached_property
     def query_graphs(self) -> List[Query_graph]:
         def graph_1() -> Query_graph:
             ## Initialize nodes
@@ -1065,7 +1067,7 @@ class MovieQuery6(TestQuery):
 
         return [graph_2(), graph_1()]
 
-    @misc_utils.property_with_cache
+    @cached_property
     def result_tables(self) -> List[TableExcerpt]:
         def result_1() -> TableExcerpt:
             sql = """SELECT T3.name as reviewer_name, count(*) as cnt
@@ -1082,6 +1084,6 @@ class MovieQuery6(TestQuery):
 
         return [result_1(), result_2()]
 
-    @misc_utils.property_with_cache
+    @cached_property
     def query_tree(self):
         pass
