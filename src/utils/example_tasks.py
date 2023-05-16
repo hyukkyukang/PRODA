@@ -1,8 +1,6 @@
 import json
 import os
-
 from src.pylogos.translate import translate
-
 from src.query_tree.query_tree import QueryTree
 from src.task.task import Task
 from src.utils.example_queries import MultipleSublinksQuery2

@@ -1,6 +1,8 @@
 import os
 import sqlite3
-
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 import hkkang_utils.file as file_utils
 
 from src.table_excerpt.table_excerpt import TableExcerpt
@@ -94,7 +96,7 @@ class BaseDB:
 
 class MovieDB(BaseDB):
     def __init__(self):
-        self._sqlite3 = os.path.join(database_dir_path,"movie.sqlite3")
+        self._sqlite3 = "/root/PRODA/databases/movie.sqlite3"#os.path.join(database_dir_path,"movie.sqlite3")
 
         conn = sqlite3.connect(self._sqlite3)
         cur = conn.cursor()

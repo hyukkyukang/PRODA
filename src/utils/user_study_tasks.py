@@ -2,7 +2,6 @@ import os
 
 from rewrite_sentence_gpt import *
 from src.pylogos.translate import translate
-
 from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 from src.query_tree.query_tree import QueryTree
 from src.task.task import Task

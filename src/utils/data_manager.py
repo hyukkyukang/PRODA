@@ -3,7 +3,9 @@ import json
 import os
 import pickle
 from typing import Any, List, Dict, Union
-
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 import hkkang_utils.file as file_utils
 
 from src.utils.pg_connector import PostgresConnector
