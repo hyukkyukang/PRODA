@@ -1,11 +1,26 @@
-from src.sql_generator.sql_gen_utils.query_graph import Relation, Attribute, Value, Function, Query_graph
-from src.sql_generator.sql_gen_utils.query_graph import (
+from src.pylogos.query_graph.koutrika_query_graph import (
+    Attribute,
+    Function,
+    FunctionType,
     OperatorType,
-    AggregationType,
+    Query_graph,
+    Relation,
+    Value,
     operatorNameToType,
     aggregationNameToType,
 )
-
+from src.query_tree.query_tree import QueryTree, QueryBlock, BaseTable, get_global_index
+from src.query_tree.operator import (
+    Aggregation,
+    Clause,
+    Condition,
+    Foreach,
+    Projection,
+    Selection,
+    Grouping,
+    Ordering,
+    Limit,
+)
 from hashlib import new
 import numpy as np
 from numpy.lib.shape_base import column_stack
@@ -13,13 +28,18 @@ import pandas as pd
 import json
 import copy
 import networkx as nx
+import pandasql as ps
+from ast import literal_eval
+
+
+DEBUG_ERROR = False  # [NOTE] This should be disabled
+
 
 # if is_null_support:
 # TEXTUAL_OPERATORS = ['=','!=','LIKE','NOT LIKE','IN','NOT IN','IS_NOT_NULL']
 TEXTUAL_OPERATORS = ["=", "!=", "LIKE", "NOT LIKE", "IN", "NOT IN"]
 NUMERIC_OPERATORS = ["<=", "<", ">=", ">", "=", "!="]
 KEY_OPERATORS = ["=", "!="]
-
 POSSIBLE_AGGREGATIONS_PER_OPERATOR = {
     "=": ["MIN", "MAX", "AVG", "SUM"],
     "!=": ["MIN", "MAX", "AVG", "SUM"],
@@ -43,24 +63,85 @@ KEY_AGGS = ["COUNT"]
 LOGICAL_OPERATORS = ["AND", "OR"]
 
 # [TODO]: remove
-# imdb_col_info = json.load(open("data/imdb_dtype_dict.json"))
-# HASH_CODES = imdb_col_info["hash_codes"]
-# NOTES = imdb_col_info["notes"]
-# IDS = imdb_col_info["ids"]
-# PRIMARY_KEYS = imdb_col_info["primary_keys"]
-
-IDS = []
-NOTES = []
-HASH_CODES = []
-PRIMARY_KEYS = {}
+imdb_col_info = json.load(open("/home/hjkim/shpark/PRODA/src/sql_generator/data/imdb_dtype_dict.json"))
+HASH_CODES = imdb_col_info["hash_codes"]
+NOTES = imdb_col_info["notes"]
+IDS = imdb_col_info["ids"]
+PRIMARY_KEYS = imdb_col_info["primary_keys"]
 
 
-def get_possbie_inner_query_idxs(args, inner_query_objs):
+def are_relation_node_equivalent(node1, node2):
+    return (
+        node1.node_name == node2.node_name
+        and node1.entity_name == node2.entity_name
+        and node1.is_primary == node2.is_primary
+    )
+
+
+def get_tab_name_alias(tab_name):
+    return tab_name
+
+
+def get_val_alias(op, val):
+    alias = val
+    if op in ["IN", "NOT IN"]:
+        try:
+            alias = literal_eval(alias)
+            if isinstance(alias, tuple):
+                alias = [str(inst) for inst in alias]
+                alias = "{" + ", ".join(alias) + "}"
+        except:
+            alias = val
+    if op in ["LIKE", "NOT LIKE"]:
+        if val[-1] == "%" and val[0] == "%":
+            alias = val[1:-1] + " as substring"
+        elif val[-1] == "%":
+            alias = val[:-1] + " as prefix"
+        elif val[0] == "%":
+            alias = val[1:] + " as suffix"
+    return alias
+
+
+def get_col_name_alias(tab_name, col_name, agg):
+    alias = ""
+    if agg != "NONE":
+        alias += agg.lower() + " of "
+    if col_name == "*":
+        col_name = "all"
+    alias += col_name
+    return alias
+
+
+def get_tree_header(prefix, table_name, column_name, agg):
+    if agg != "NONE":
+        if column_name == "*":
+            column_name = "all"
+        column_name = agg.lower() + "_" + column_name
+
+    if column_name != "*" and table_name != None:
+        column_name = table_name + "_" + column_name
+
+    if column_name != "*" and prefix != None:
+        column_name = prefix + column_name
+
+    return column_name
+
+
+def get_prefix(nesting_level, nesting_block_idx, having=None):
+    return "N" + str(nesting_level) + "_" + str(nesting_block_idx) + "_"
+
+
+def get_random_tables(args, rng, tables, max_size):
+    selected_tables = rng.choice(tables, size=max_size, replace=False)
+    return selected_tables
+
+
+def get_possibie_inner_query_idxs(args, inner_query_objs):
     idxs = []
 
     for idx in range(len(inner_query_objs)):
         select_columns = inner_query_objs[idx]["select"]
-        if len(select_columns) == 1:
+        if len(select_columns) == 1 and not inner_query_objs[idx]["is_having_child"]:
             idxs.append(idx)
 
     return idxs
@@ -90,13 +171,13 @@ def alias_generator(args):
     return ALIAS_TO_TABLE_NAME, TABLE_NAME_TO_ALIAS
 
 
-def get_str_op_values(op, val, distinct_values, rng, num_in_max):
+def get_str_op_values(op, val, distinct_values, all_values, rng, num_in_max):
     if op == "=":
         return val
     elif op == "!=":
-        v = rng.choice(distinct_values)
-        while (len(distinct_values) > 1) and (v is val):
-            v = rng.choice(distinct_values)  # not test yet
+        v = rng.choice(all_values)
+        while (len(all_values) > 1) and (v is val):
+            v = rng.choice(all_values)  # not test yet
         return str(v).strip()
     elif op == "LIKE":
         val = str(rng.choice(val.split(" ")))
@@ -120,8 +201,8 @@ def get_str_op_values(op, val, distinct_values, rng, num_in_max):
         for i in range(10):  # param
             if len(distinct_values) == 1:
                 return rng.choice([f"{val}%", f"%{val}", f"%{val}%"])
-            distinct_values = distinct_values
-            candidate_val = str(rng.choice(distinct_values)).strip()
+            # distinct_values = distinct_values
+            candidate_val = str(rng.choice(all_values)).strip()
 
             candidate_val = str(rng.choice(candidate_val.split(" ")))
             if len(candidate_val) > 7:
@@ -146,10 +227,15 @@ def get_str_op_values(op, val, distinct_values, rng, num_in_max):
         return candidate_vals[candidate_op_idx].replace('"', '\\"')
     elif op == "IN":
         num_in_values = rng.randint(1, num_in_max + 1)  # param
-        index = np.argwhere(distinct_values == val)
-        distinct_values = np.delete(distinct_values, index)
-        candidate_val = rng.choice(distinct_values, size=min(len(distinct_values), num_in_values - 1), replace=False)
-        in_values = np.insert(candidate_val, 0, val)
+        all_candidate_values = copy.deepcopy(all_values)
+        all_candidate_values = np.delete(all_candidate_values, np.where(all_candidate_values == val))
+        in_values = [val]
+        for i in range(num_in_values - 1):
+            if len(all_candidate_values) < 1:
+                break
+            candidate_val = rng.choice(all_candidate_values)
+            in_values.append(candidate_val)
+            all_candidate_values = np.delete(all_candidate_values, np.where(all_candidate_values == candidate_val))
         num_in_values = len(in_values)
 
         if type(in_values[0]) == str:
@@ -164,9 +250,15 @@ def get_str_op_values(op, val, distinct_values, rng, num_in_max):
 
     elif op == "NOT IN":
         num_in_values = rng.randint(1, num_in_max + 1)  # param
-        index = np.argwhere(distinct_values == val)
-        distinct_values = np.delete(distinct_values, index)
-        in_values = rng.choice(distinct_values, size=min(len(distinct_values), num_in_values), replace=False)
+        all_candidate_values = copy.deepcopy(all_values)
+        all_candidate_values = np.delete(all_candidate_values, np.where(all_candidate_values == val))
+        in_values = [val]
+        for i in range(num_in_values - 1):
+            if len(all_candidate_values) < 1:
+                break
+            candidate_val = rng.choice(all_candidate_values)
+            in_values.append(candidate_val)
+            all_candidate_values = np.delete(all_candidate_values, np.where(all_candidate_values == candidate_val))
         num_in_values = len(in_values)
 
         if type(in_values[0]) == str:
@@ -182,6 +274,42 @@ def get_str_op_values(op, val, distinct_values, rng, num_in_max):
         return "None"
     elif op == "IS_NOT_NULL":
         return "None"
+
+
+def split_predicate_tree_with_condition_dnf(predicates):
+    if not isinstance(predicates, list) or len(predicates) < 2:
+        return
+    if predicates[1] not in ["AND", "OR"]:
+        return
+
+    parent_cond = False
+    if len(predicates) == 4:
+        parent_cond = predicates[3]
+
+    if predicates[1] == "AND":
+        predicates[0].append(parent_cond)
+        predicates[2].append(True)
+    else:
+        predicates[0].append(False)
+        predicates[2].append(False)
+
+    split_predicate_tree_with_condition_dnf(predicates[0])
+    split_predicate_tree_with_condition_dnf(predicates[2])
+
+
+def renumbering_tree_predicates(predicates, idx):
+    if not isinstance(predicates, list):
+        assert False, "[renumbering tree predicates], {} is not supported format of predicate".format(predicates)
+    if len(predicates) < 2:
+        predicates[0] = idx
+        return predicates, idx + 1
+
+    assert len(predicates) == 3, "[renumbering tree predicates], {} is not supported format of predicate".format(
+        predicates
+    )
+    predicates[0], left_idx = renumbering_tree_predicates(predicates[0], idx)
+    predicates[2], right_idx = renumbering_tree_predicates(predicates[2], left_idx)
+    return predicates, right_idx
 
 
 def split_predicate_tree_with_condition(predicates):
@@ -231,14 +359,14 @@ def build_predicate_tree(rng, predicates):
     return predicates[0]
 
 
-def build_predicate_tree_cnf(rng, predicates):  # [ [ [A OR B] AND [C OR D] ] AND [E OR F] ] [ [A AND B] ]
+def build_predicate_tree_dnf(rng, predicates):  # [ [ [A OR B] AND [C OR D] ] AND [E OR F] ] [ [A AND B] ]
     while len(predicates) > 1:
         selected_idx = rng.choice(range(len(predicates)), 2, replace=False)
         selected_predicates = [predicates[i] for i in selected_idx]
-        if len(selected_predicates[0]) > 1 and selected_predicates[0][1] == "AND":
-            op = "AND"
-        elif len(selected_predicates[1]) > 1 and selected_predicates[1][1] == "AND":
-            op = "AND"
+        if len(selected_predicates[0]) > 1 and selected_predicates[0][1] == "OR":
+            op = "OR"
+        elif len(selected_predicates[1]) > 1 and selected_predicates[1][1] == "OR":
+            op = "OR"
         else:
             op = rng.choice(LOGICAL_OPERATORS)
 
@@ -261,25 +389,240 @@ def restore_predicate_tree(tree, predicates):
     return [left, tree[1], right]
 
 
-def preorder_traverse_to_get_graph(tree, cnf_idx):
+def preorder_traverse_to_get_graph(tree, dnf_idx):
     if not isinstance(tree, tuple) and not isinstance(tree, list):
-        operations = [(tree, cnf_idx)]
-        return operations, cnf_idx
+        operations = [(tree, dnf_idx)]
+        return operations, dnf_idx
     if len(tree) == 1:
-        operations, new_cnf_idx = preorder_traverse_to_get_graph(tree[0], cnf_idx)
-        return operations, new_cnf_idx
+        operations, new_dnf_idx = preorder_traverse_to_get_graph(tree[0], dnf_idx)
+        return operations, new_dnf_idx
 
     elif len(tree) == 3:
         left, op, right = tree
 
-    left_operations, after_left_cnf_idx = preorder_traverse_to_get_graph(left, cnf_idx)
-    if op == "AND":
-        after_left_cnf_idx += 1
-    right_operations, after_right_cnf_idx = preorder_traverse_to_get_graph(right, after_left_cnf_idx)
+    left_operations, after_left_dnf_idx = preorder_traverse_to_get_graph(left, dnf_idx)
+    if op == "OR":
+        after_left_dnf_idx += 1
+    right_operations, after_right_dnf_idx = preorder_traverse_to_get_graph(right, after_left_dnf_idx)
 
     operations = left_operations + right_operations
 
-    return operations, after_right_cnf_idx
+    return operations, after_right_dnf_idx
+
+
+def preorder_traverse_to_make_df_query(tree, values, df_name):
+    if not isinstance(tree, tuple) and not isinstance(tree, list):
+        value = values[tree]
+        prefix = value[0]
+        col = value[1]
+        op = value[2]
+        val = value[3]
+        query_string = None
+        correal = None
+
+        if len(value) == 5:
+            obj = value[4]
+            df_query = obj["df_query"]
+            query_string = "SELECT " + df_query["SELECT"] + " FROM " + df_query["FROM"]
+            if "WHERE" in df_query.keys():
+                query_string += " WHERE " + df_query["WHERE"]
+            if "GROUPBY" in df_query.keys():
+                query_string += " GROUP BY " + df_query["GROUPBY"]
+            if "HAVING" in df_query.keys():
+                query_string += " HAVING " + df_query["HAVING"]
+            if "ORDERBY" in df_query.keys():
+                query_string += " ORDER BY " + df_query["ORDERBY"]
+            if "LIMIT" in df_query.keys():
+                query_string += " LIMIT " + df_query["LIMIT"]
+        if len(value) == 6:
+            prefix_outer = value[5]
+            val = prefix_outer + "df.`" + val + "`"
+        if prefix is not None:
+            col = df_name + ".`" + col + "`"
+            if query_string is not None:
+                val = "(" + query_string + ")"
+        else:
+            if query_string is not None:
+                if col is None:
+                    col = ""
+                    val = "(" + query_string + ")"
+                else:
+                    col = "(" + query_string + ")"
+                    if val is None:
+                        val = ""
+            else:
+                assert False
+
+        return col + " " + op + " " + val
+
+    if len(tree) == 1:
+        return preorder_traverse_to_make_df_query(tree[0], values, df_name)
+    elif len(tree) == 3:
+        left, op, right = tree
+
+    return (
+        "("
+        + preorder_traverse_to_make_df_query(left, values, df_name)
+        + " "
+        + op
+        + " "
+        + preorder_traverse_to_make_df_query(right, values, df_name)
+        + ")"
+    )
+
+
+def preorder_traverse_to_make_df_query_having(tree, values, df_name):
+    if not isinstance(tree, tuple) and not isinstance(tree, list):
+        value = values[tree]
+        prefix = value[0]
+        agg = value[1]
+        col = value[2]
+        op = value[3]
+        val = value[4]
+        assert len(value) == 5
+
+        if agg != "NONE":
+            if col != "*":
+                tree = agg + "(" + df_name + ".`" + col + "`)"
+            else:
+                tree = agg + "(" + col + ")"
+        else:
+            tree = df_name + ".`" + col + "`"
+
+        tree += " " + op + " " + val
+
+        return tree
+
+    assert len(tree) == 3 or len(tree) == 1
+
+    if len(tree) == 1:
+        return preorder_traverse_to_make_df_query_having(tree[0], values, df_name)
+    elif len(tree) == 3:
+        left, op, right = tree
+
+    return (
+        "("
+        + preorder_traverse_to_make_df_query_having(left, values, df_name)
+        + " "
+        + op
+        + " "
+        + preorder_traverse_to_make_df_query_having(right, values, df_name)
+        + ")"
+    )
+
+
+def get_grouping_query_elements(
+    sql_type_dict,
+    dtype_dict,
+    prefix,
+    table_columns,
+    joins,
+    tables,
+    used_tables,
+    select_columns,
+    agg_cols,
+    where_predicates,
+    tree_predicates_origin,
+    predicates_origin,
+    group_columns,
+    group_columns_origin,
+):
+    grouping_query_elements = {}
+
+    grouping_query_elements["sql_type_dict"] = {}
+    grouping_query_elements["sql_type_dict"]["where"] = sql_type_dict["where"]
+    grouping_query_elements["sql_type_dict"]["group"] = sql_type_dict["group"]
+    grouping_query_elements["sql_type_dict"]["having"] = False
+    grouping_query_elements["sql_type_dict"]["order"] = False
+    grouping_query_elements["sql_type_dict"]["limit"] = False
+
+    grouping_query_elements["where_predicates"] = where_predicates
+    grouping_query_elements["tree_predicates_origin"] = tree_predicates_origin
+    grouping_query_elements["predicates_origin"] = predicates_origin
+
+    grouping_query_elements["group_columns"] = group_columns
+
+    grouping_query_elements["having_predicates"] = []
+    grouping_query_elements["order_columns"] = []
+    grouping_query_elements["limit_num"] = 0
+
+    # Add all possible columns to project
+    # Consider all possible aggregation for each selected columns
+    having_candidate_columns = [
+        table_column for table_column in table_columns if table_column not in list(group_columns)
+    ] + ["*"]
+    grouping_query_agg_cols = []
+    grouping_query_select_columns = []
+    grouping_query_used_tables = copy.deepcopy(used_tables)
+    for col in having_candidate_columns:
+        if col == "*" or dtype_dict[col] == "str":
+            aggs = TEXTUAL_AGGS
+        else:
+            aggs = NUMERIC_AGGS
+        for agg in aggs:
+            assert agg != "NONE"
+            if col == "*":
+                col_rep = agg + "(*)"
+                grouping_query_select_columns.append(col_rep)
+                grouping_query_agg_cols.append((agg, "*"))
+            else:
+                distinct = ""
+                if agg == "COUNT" and col not in IDS:  # Use distinct if COUNT + non_key_column
+                    # distinct = "DISTINCT "
+                    pass  # disabled distinct
+                col_rep = agg + "(" + distinct + prefix + col + ")"
+                grouping_query_select_columns.append(col_rep)
+                grouping_query_agg_cols.append((agg, col))
+                grouping_query_used_tables.add(col.split(".")[0])
+    grouping_query_select_columns = list(group_columns) + grouping_query_select_columns
+    grouping_query_agg_cols = [("NONE", group_col) for group_col in group_columns_origin] + grouping_query_agg_cols
+
+    grouping_query_elements["select_columns"] = grouping_query_select_columns
+    grouping_query_elements["agg_cols"] = grouping_query_agg_cols
+
+    grouping_query_elements["necessary_tables"], grouping_query_elements["necessary_joins"] = find_join_path(
+        joins, tables, grouping_query_used_tables
+    )
+
+    return grouping_query_elements
+
+
+def preorder_traverse_dataframe(tree):
+    if not isinstance(tree, tuple) and not isinstance(tree, list):
+        return tree
+
+    assert len(tree) == 3 or len(tree) == 1
+
+    if len(tree) == 1:
+        assert len(tree[0]) == 3
+        left, op, right = tree[0]
+    elif len(tree) == 3:
+        left, op, right = tree
+
+    return "(" + preorder_traverse_dataframe(left) + " " + op.lower() + " " + preorder_traverse_dataframe(right) + ")"
+
+
+def preorder_traverse_to_replace_alias(tree, org, rep):
+    if not isinstance(tree, tuple) and not isinstance(tree, list):
+        return tree.replace(org, rep)
+
+    assert len(tree) == 3 or len(tree) == 1
+
+    if len(tree) == 1:
+        assert len(tree[0]) == 3
+        left, op, right = tree[0]
+    elif len(tree) == 3:
+        left, op, right = tree
+
+    return (
+        "("
+        + preorder_traverse_to_replace_alias(left, org, rep)
+        + " "
+        + op
+        + " "
+        + preorder_traverse_to_replace_alias(right, org, rep)
+        + ")"
+    )
 
 
 def preorder_traverse(tree):
@@ -309,10 +652,733 @@ def get_updated_used_tables(used_tables, columns):
 def find_existing_rel_node(rel_nodes, cur_rel_node):
     equi_idx = -1
     for idx, rel_node in enumerate(rel_nodes):
-        if rel_node.is_equivalent(rel_node, cur_rel_node):
+        if are_relation_node_equivalent(rel_node, cur_rel_node):
             assert equi_idx == -1
             equi_idx = idx
     return equi_idx
+
+
+def tree_and_graph_formation(
+    args,
+    sql_type_dict,
+    tables,
+    joins,
+    outer_inner,
+    select,
+    where=None,
+    group=None,
+    having=None,
+    order=None,
+    limit=None,
+    used_tables=None,
+    make_graph=False,
+    select_agg_cols=None,
+    tree_predicates_origin=None,
+    predicates_origin=None,
+    having_tree_predicates_origin=None,
+    having_predicates_origin=None,
+    nesting_level=None,
+    nesting_block_idx=None,
+    inner_select_nodes=None,
+    sql=None,
+    childs=None,
+    child_query_graphs=None,
+    correlation_predicates_origin=None,
+):
+    prefix = get_prefix(nesting_level, nesting_block_idx)
+
+    graph = Query_graph(prefix[:-1])
+    rel_nodes = []
+
+    if sql_type_dict["having"] or sql_type_dict["aggregated_order"]:
+        assert len(childs) == 1
+        child_prefix = get_prefix(childs[0][0], childs[0][1])
+        child_tree = child_query_graphs[child_prefix][0]
+        base_tables = [child_tree.root]
+        tab_name_graph = child_prefix[:-1]
+        tab_name_alias = child_prefix + "results"
+
+        projections = []
+        # normal projection
+        for col_info in select_agg_cols:
+            agg = col_info[0]
+            col = col_info[1]
+            table_idx = 0
+            if col != "*":
+                tab_name = col.split(".")[0]
+                col_name = col.split(".")[1]
+            else:
+                tab_name = None
+                col_name = col
+
+            col_name_tree = get_tree_header(child_prefix, tab_name, col_name, agg)
+            new_col_name_tree = get_tree_header(prefix, tab_name, col_name, agg)
+
+            projection = Projection(get_global_index(base_tables, table_idx, col_name_tree), alias=new_col_name_tree)
+            projections.append(projection)
+
+            ##### GRAPH START #######
+            cur_rel_node = Relation(tab_name_graph, tab_name_alias, is_primary=True)
+            idx = find_existing_rel_node(rel_nodes, cur_rel_node)
+            if idx == -1:
+                rel_nodes.append(cur_rel_node)
+            else:
+                cur_rel_node = rel_nodes[idx]
+
+            col_name_graph = "s_" + get_tree_header(child_prefix, tab_name, col_name, agg)
+            col_name_alias = get_col_name_alias(tab_name, col_name, agg)
+            cur_col_node = Attribute(col_name_graph, col_name_alias)
+
+            graph.connect_membership(cur_rel_node, cur_col_node)
+            ##### GRAPH END   #######
+
+        operations = projections
+        # having
+        if sql_type_dict["having"]:
+            predicates, max_dnf_idx = preorder_traverse_to_get_graph(having_tree_predicates_origin, 0)
+            conditions = [[] for _ in range(max_dnf_idx + 1)]
+
+            for operation_idx, dnf_idx in predicates:
+                operation = having_predicates_origin[operation_idx]
+                prefix_stored = operation[0]
+                agg = operation[1]
+                col = operation[2]
+                op = operation[3]
+                val = operation[4]
+
+                if col != "*":
+                    tab_name = col.split(".")[0]
+                    col_name = col.split(".")[1]
+                else:
+                    tab_name = None
+                    col_name = col
+                col_name_tree = get_tree_header(child_prefix, tab_name, col_name, agg)
+
+                table_idx = 0
+                where_condition = Condition(
+                    l_operand=get_global_index(base_tables, table_idx, col_name_tree),
+                    operator=op,
+                    r_operand=val,
+                )
+                conditions[dnf_idx].append(where_condition)
+
+                ###### GRAPH START ######
+                val_name_graph = val
+                val_alias_graph = get_val_alias(op, val)
+                cur_val_node = Value(val_name_graph, val_alias_graph)
+
+                cur_operator_graph = operatorNameToType[op]
+
+                cur_rel_node = Relation(tab_name_graph, tab_name_alias, is_primary=True)  # Nesting level is always 0
+                idx = find_existing_rel_node(rel_nodes, cur_rel_node)
+                if idx == -1:
+                    rel_nodes.append(cur_rel_node)
+                else:
+                    cur_rel_node = rel_nodes[idx]
+
+                col_name_graph = "h_" + get_tree_header(child_prefix, tab_name, col_name, agg)
+                col_name_alias = get_col_name_alias(tab_name, col_name, agg)
+                cur_col_node = Attribute(col_name_graph, col_name_alias)
+
+                graph.connect_selection(cur_rel_node, cur_col_node)
+                graph.connect_predicate(cur_col_node, cur_val_node, cur_operator_graph, dnf_idx)
+                ###### GRAPH END   ######
+            clauses = []
+            for condition in conditions:
+                clauses.append(Clause(conditions=condition))
+            selection_operation = Selection(clauses=clauses)
+            operations.append(selection_operation)
+
+        if sql_type_dict["order"]:
+            for order_col_raw in order:
+                order_col = order_col_raw
+                agg = "NONE"
+                table_idx = 0
+                for candidate_agg in NUMERIC_AGGS:
+                    if candidate_agg + "(" in order_col_raw:
+                        assert ")" in order_col_raw
+                        agg = candidate_agg
+                        order_col = order_col_raw.split(agg + "(")[1].split(")")[0]
+                        break
+
+                if order_col != "*":
+                    order_alias = order_col.split(".")[0]
+                    tab_name = order_alias.split(prefix)[1]
+                    col_name = order_col.split(".")[1]
+                else:
+                    col_name = order_col
+                    tab_name = None
+                col_name_tree = get_tree_header(child_prefix, tab_name, col_name, agg)
+                operations.append(Ordering(get_global_index(base_tables, table_idx, col_name_tree)))
+                ###### GRAPH START ######
+
+                cur_rel_node = Relation(tab_name_graph, tab_name_alias, is_primary=True)  # Nesting level is always 0
+                idx = find_existing_rel_node(rel_nodes, cur_rel_node)
+                if idx == -1:
+                    rel_nodes.append(cur_rel_node)
+                else:
+                    cur_rel_node = rel_nodes[idx]
+
+                col_name_graph = "o_" + get_tree_header(child_prefix, tab_name, col_name, agg)
+                col_name_alias = get_col_name_alias(tab_name, col_name, agg)
+                cur_col_node = Attribute(col_name_graph, col_name_alias)
+                graph.connect_order(cur_rel_node, cur_col_node)
+                ###### GRAPH END   ######
+        if sql_type_dict["limit"]:
+            operations.append(Limit(limit))
+            ###### GRAPH START ######
+            graph.set_limit(limit)
+            ###### GRAPH END   ######
+
+        node = QueryBlock(child_tables=base_tables, operations=operations, sql=sql)
+        tree = QueryTree(root=node, sql=sql)
+    else:
+        # base table define
+        base_tables = []
+        table_name_to_idx = {}
+        for i, table_name in enumerate(tables):
+            headers = args.table_info[table_name]
+            table_obj = BaseTable(headers, [], name=table_name)
+            base_tables.append(table_obj)
+            table_name_to_idx[table_name] = i
+
+        if childs:
+            num_base_tables = len(base_tables)
+            for i, child in enumerate(childs):
+                child_prefix = get_prefix(child[0], child[1])
+                child_table_name = child_prefix[:-1]
+                child_tree = child_query_graphs[child_prefix][0]
+                base_tables.append(child_tree.root)
+                table_name_to_idx[child_table_name] = i + num_base_tables
+
+        # Get primary relations
+        primary_relations = set()
+        for col_info in select_agg_cols:
+            agg = col_info[0]
+            col = col_info[1]
+            if col != "*":
+                tab_name = col.split(".")[0]
+                table_idx = table_name_to_idx[tab_name]
+                col_name = col.split(".")[1]
+            else:
+                table_idx = 0
+                tab_name = tables[0]
+                col_name = col
+            primary_relations.add(tab_name)
+
+        # join condition found
+        join_conditions = []
+        for join in joins:
+            table1, col1, table2, col2 = get_table_join_key_from_join_clause(join)
+            join_obj = Selection(
+                clauses=[
+                    Clause(
+                        conditions=[
+                            Condition(
+                                get_global_index(base_tables, table_name_to_idx[table1], col1),
+                                "=",
+                                get_global_index(base_tables, table_name_to_idx[table2], col2),
+                            )
+                        ]
+                    )
+                ]
+            )
+            join_conditions.append(join_obj)
+            ##### GRAPH START #######
+            rel_name_A = table1
+            rel_name_A_alias = get_tab_name_alias(table1)
+            is_primary = table1 in primary_relations
+            cur_rel_node_A = Relation(rel_name_A, rel_name_A_alias, is_primary=is_primary)  # Nesting level is always 0
+            idx = find_existing_rel_node(rel_nodes, cur_rel_node_A)
+            if idx == -1:
+                rel_nodes.append(cur_rel_node_A)
+            else:
+                cur_rel_node_A = rel_nodes[idx]
+
+            rel_name_B = table2
+            rel_name_B_alias = get_tab_name_alias(table2)
+            is_primary = table2 in primary_relations
+            cur_rel_node_B = Relation(rel_name_B, rel_name_B_alias, is_primary=is_primary)
+            idx = find_existing_rel_node(rel_nodes, cur_rel_node_B)
+            if idx == -1:
+                rel_nodes.append(cur_rel_node_B)
+            else:
+                cur_rel_node_B = rel_nodes[idx]
+
+            graph.connect_simplified_join(cur_rel_node_A, cur_rel_node_B)
+            ##### GRAPH END   #######
+
+        # correlation condition found
+        if correlation_predicates_origin:
+            for predicate in correlation_predicates_origin:
+                assert len(predicate) == 6
+                prefix_inner = predicate[0]
+                inner_col = predicate[1]
+                op = predicate[2]
+                col = predicate[3]
+                mark = predicate[4]
+                prefix_outer = predicate[5]
+                assert mark == "correal"
+
+                inner_tab_name = inner_col.split(".")[0]
+                inner_col_name = inner_col.split(".")[1]
+
+                outer_tab_name = col.split(".")[0]
+                outer_col_name = col.split(".")[1]
+
+                inner_table_block_name = prefix_inner[:-1]
+                inner_col_name_tree = get_tree_header(prefix_inner, inner_tab_name, inner_col_name, "NONE")
+
+                # [TODO] add projection and ForEach to child node
+
+                operations = []
+                query_block = base_tables[table_name_to_idx[inner_table_block_name]]
+                headers = query_block.get_headers()
+                found_global_idx = -1
+                for idx, header in enumerate(headers):
+                    if inner_col_name_tree == header:
+                        found_global_idx = idx
+
+                if found_global_idx != -1:
+                    for_each = Foreach(column_id=found_global_idx)
+                    operations.append(for_each)
+                else:
+                    child_tables = query_block.get_child_tables()
+
+                    inner_table_idx = [child_table.get_name() for child_table in child_tables].index(inner_tab_name)
+
+                    for_each = Foreach(get_global_index(child_tables, inner_table_idx, inner_col_name))
+                    operations.append(for_each)
+
+                    projection = Projection(
+                        column_id=get_global_index(child_tables, inner_table_idx, inner_col_name),
+                        alias=inner_col_name_tree,
+                    )
+                    operations.append(projection)
+
+                query_block.add_operations(operations)
+                base_tables[table_name_to_idx[inner_table_block_name]] = query_block
+
+                join_obj = Selection(
+                    clauses=[
+                        Clause(
+                            conditions=[
+                                Condition(
+                                    get_global_index(
+                                        base_tables, table_name_to_idx[inner_table_block_name], inner_col_name_tree
+                                    ),
+                                    "=",
+                                    get_global_index(base_tables, table_name_to_idx[outer_tab_name], outer_col_name),
+                                )
+                            ]
+                        )
+                    ]
+                )
+                join_conditions.append(join_obj)
+
+                ##### GRAPH START #######
+                rel_name_A = outer_tab_name
+                rel_name_A_alias = get_tab_name_alias(outer_tab_name)
+                is_primary = outer_tab_name in primary_relations
+                cur_rel_node_A = Relation(
+                    rel_name_A, rel_name_A_alias, is_primary=is_primary
+                )  # Nesting level is always 0
+                idx = find_existing_rel_node(rel_nodes, cur_rel_node_A)
+                if idx == -1:
+                    rel_nodes.append(cur_rel_node_A)
+                else:
+                    cur_rel_node_A = rel_nodes[idx]
+
+                rel_name_B = inner_table_block_name
+                rel_name_B_alias = get_tab_name_alias(inner_table_block_name)
+                is_primary = inner_table_block_name in primary_relations
+                cur_rel_node_B = Relation(rel_name_B, rel_name_B_alias, is_primary=is_primary)
+                idx = find_existing_rel_node(rel_nodes, cur_rel_node_B)
+                if idx == -1:
+                    rel_nodes.append(cur_rel_node_B)
+                else:
+                    cur_rel_node_B = rel_nodes[idx]
+
+                graph.connect_simplified_join(cur_rel_node_A, cur_rel_node_B)
+                ##### GRAPH END   #######
+
+        projections = []
+        projected_columns = []
+        aggregations = []
+        # normal projection
+        for col_info in select_agg_cols:
+            agg = col_info[0]
+            col = col_info[1]
+            if col != "*":
+                tab_name = col.split(".")[0]
+                table_idx = table_name_to_idx[tab_name]
+                col_name = col.split(".")[1]
+            else:
+                table_idx = 0
+                tab_name = None
+                col_name = col
+            # if col not in projected_columns:
+            projected_columns.append(col)
+            new_col_name = get_tree_header(prefix, tab_name, col_name, agg)
+            projection = Projection(get_global_index(base_tables, table_idx, col_name), alias=new_col_name)
+            projections.append(projection)
+
+            if agg != "NONE":
+                aggregation = Aggregation(get_global_index(base_tables, table_idx, col_name), agg.lower())
+                aggregations.append(aggregation)
+
+            ##### GRAPH START #######
+            if tab_name == None:
+                tab_name = tables[0]
+            tab_name_alias = get_tab_name_alias(tab_name)
+            is_primary = tab_name in primary_relations
+            cur_rel_node = Relation(tab_name, tab_name_alias, is_primary=is_primary)
+            idx = find_existing_rel_node(rel_nodes, cur_rel_node)
+            if idx == -1:
+                rel_nodes.append(cur_rel_node)
+            else:
+                cur_rel_node = rel_nodes[idx]
+
+            col_name_graph = "s_" + get_tree_header(prefix, tab_name, col_name, "NONE")
+            col_name_alias = get_col_name_alias(tab_name, col_name, agg)
+            cur_col_node = Attribute(col_name_graph, col_name_alias)
+            if agg != "NONE":
+                cur_agg_node = Function(aggregationNameToType[agg.capitalize()])
+            else:
+                cur_agg_node = None
+
+            graph.connect_membership(cur_rel_node, cur_col_node)
+            if cur_agg_node is not None:
+                graph.connect_transformation(cur_col_node, cur_agg_node)
+            ##### GRAPH END   #######
+
+        # operations found
+        operations = projections + aggregations
+        if sql_type_dict["where"]:
+            predicates, max_dnf_idx = preorder_traverse_to_get_graph(tree_predicates_origin, 0)
+            conditions = [[] for _ in range(max_dnf_idx + 1)]
+            # Q: how to know correlation
+            for operation_idx, dnf_idx in predicates:
+                operation = predicates_origin[operation_idx]
+                prefix_cur = operation[0]
+                col = operation[1]
+                op = operation[2]
+                val = operation[3]
+                if len(operation) == 5:  # nested query
+                    obj = operation[4]
+                    inner_query_global_idx = (obj["nesting_level"], obj["unique_alias"])
+                    inner_table_prefix = get_prefix(inner_query_global_idx[0], inner_query_global_idx[1])
+                    inner_table_block_name = inner_table_prefix[:-1]
+                    if prefix_cur is not None:  # comparison operator
+                        tab_name = col.split(".")[0]
+                        col_name = col.split(".")[1]
+
+                        assert len(obj["agg_cols"]) == 1
+                        inner_agg_col = obj["agg_cols"][0]
+                        inner_agg = inner_agg_col[0]
+                        inner_col = inner_agg_col[1]
+                        inner_tab_name = col.split(".")[0]
+                        inner_col_name = col.split(".")[1]
+
+                        inner_col_name_tree = get_tree_header(
+                            inner_table_prefix, inner_tab_name, inner_col_name, inner_agg
+                        )
+                        where_condition = Condition(
+                            l_operand=get_global_index(base_tables, table_name_to_idx[tab_name], col_name),
+                            operator=op,
+                            r_operand=get_global_index(
+                                base_tables, table_name_to_idx[inner_table_block_name], inner_col_name_tree
+                            ),
+                        )
+                        conditions[dnf_idx].append(where_condition)
+
+                        ###### GRAPH START ######
+                        inner_col_name_graph = (
+                            "w_" + str(operation_idx) + "_" + inner_col_name_tree
+                        )  # In WHERE clause, same column can be used more than once so operation_idx is used for labeling
+                        inner_col_name_alias = get_col_name_alias(inner_tab_name, inner_col_name, inner_agg)
+                        cur_inner_col_node = Attribute(inner_col_name_graph, inner_col_name_alias)
+
+                        inner_tab_name_graph = inner_table_block_name
+                        inner_tab_name_alias = get_tab_name_alias(inner_table_block_name)
+                        is_primary_inner = inner_table_block_name in primary_relations
+                        cur_inner_rel_node = Relation(
+                            inner_tab_name_graph, inner_tab_name_alias, is_primary=is_primary_inner
+                        )  # Q: can I mark inner tables? (nesting level) user_study_queries example 화인
+                        idx = find_existing_rel_node(rel_nodes, cur_inner_rel_node)
+                        if idx == -1:
+                            rel_nodes.append(cur_inner_rel_node)
+                        else:
+                            cur_inner_rel_node = rel_nodes[idx]
+
+                        cur_operator_graph = operatorNameToType[op]
+
+                        tab_name_graph = tab_name
+                        tab_name_alias = get_tab_name_alias(tab_name)
+                        is_primary = tab_name in primary_relations
+                        cur_rel_node = Relation(tab_name_graph, tab_name_alias, is_primary=is_primary)
+                        idx = find_existing_rel_node(rel_nodes, cur_rel_node)
+                        if idx == -1:
+                            rel_nodes.append(cur_rel_node)
+                        else:
+                            cur_rel_node = rel_nodes[idx]
+
+                        cur_col_name_graph = "w_" + str(operation_idx) + "_" + col_name
+                        cur_col_name_alias = get_col_name_alias(tab_name, col_name, "NONE")
+                        cur_col_node = Attribute(cur_col_name_graph, cur_col_name_alias)
+
+                        graph.connect_selection(cur_rel_node, cur_col_node)
+                        graph.connect_predicate(cur_col_node, cur_inner_col_node, cur_operator_graph, dnf_idx)
+                        graph.connect_membership(cur_inner_rel_node, cur_inner_col_node)
+
+                        ###### GRAPH END   ######
+                    else:
+                        if col is None:  # EXISTS / NOT EXISTS
+                            assert len(obj["agg_cols"]) == 1
+                            inner_agg_col = obj["agg_cols"][0]
+                            inner_agg = inner_agg_col[0]
+                            inner_col = inner_agg_col[1]
+                            if inner_col != "*":
+                                inner_tab_name = inner_col.split(".")[0]
+                                inner_col_name = inner_col.split(".")[1]
+                            else:
+                                inner_tab_name = None
+                                inner_col_name = inner_col
+
+                            inner_col_name_tree = get_tree_header(
+                                inner_table_prefix, inner_tab_name, inner_col_name, inner_agg
+                            )
+                            where_condition = Condition(
+                                l_operand=-1,
+                                operator=op,
+                                r_operand=get_global_index(
+                                    base_tables, table_name_to_idx[inner_table_block_name], inner_col_name_tree
+                                ),
+                            )
+                            conditions[dnf_idx].append(where_condition)
+
+                            ###### GRAPH START ######
+                            inner_tables = obj["tables"]
+                            if inner_tab_name == None:
+                                inner_tab_name = list(set(inner_tables) & set(tables))[0]
+                            inner_col_name_graph = "w_" + str(operation_idx) + "_" + inner_col_name_tree
+                            inner_col_name_alias = get_col_name_alias(inner_tab_name, inner_col_name, inner_agg)
+                            cur_inner_col_node = Attribute(inner_col_name_graph, inner_col_name_alias)
+
+                            inner_tab_name_graph = inner_table_block_name
+                            inner_tab_name_alias = get_tab_name_alias(inner_table_block_name)
+                            is_primary_inner = inner_table_block_name in primary_relations
+                            cur_inner_rel_node = Relation(
+                                inner_tab_name_graph, inner_tab_name_alias, is_primary=is_primary_inner
+                            )  # Q: can I mark inner tables? (nesting level) user_study_queries example check
+                            idx = find_existing_rel_node(rel_nodes, cur_inner_rel_node)
+                            if idx == -1:
+                                rel_nodes.append(cur_inner_rel_node)
+                            else:
+                                cur_inner_rel_node = rel_nodes[idx]
+
+                            cur_operator_graph = operatorNameToType[op]
+
+                            tab_name_graph = inner_tab_name
+                            tab_name_alias = get_tab_name_alias(inner_tab_name)
+                            is_primary = inner_tab_name in primary_relations
+                            cur_rel_node = Relation(tab_name_graph, tab_name_alias, is_primary=is_primary)
+                            idx = find_existing_rel_node(rel_nodes, cur_rel_node)
+                            if idx == -1:
+                                rel_nodes.append(cur_rel_node)
+                            else:
+                                cur_rel_node = rel_nodes[idx]
+
+                            star_node_name_out = "w_" + str(operation_idx) + "_*_out"
+                            star_node_name_in = "w_" + str(operation_idx) + "_*_in"
+
+                            star_node1 = Attribute(star_node_name_out, " ")
+                            star_node2 = Attribute(star_node_name_in, " ")
+                            graph.connect_selection(cur_rel_node, star_node1)
+                            graph.connect_predicate(star_node1, star_node2, cur_operator_graph, dnf_idx)
+                            graph.connect_membership(cur_inner_rel_node, star_node2)
+                            ###### GRAPH END   ######
+                        else:  # ( SELECT ... ) op value
+                            assert len(obj["agg_cols"]) == 1
+                            inner_agg_col = obj["agg_cols"][0]
+                            inner_agg = inner_agg_col[0]
+                            inner_col = inner_agg_col[1]
+                            if inner_col != "*":
+                                inner_tab_name = inner_col.split(".")[0]
+                                inner_col_name = inner_col.split(".")[1]
+                            else:
+                                inner_tab_name = None
+                                inner_col_name = inner_col
+
+                            inner_col_name_tree = get_tree_header(
+                                inner_table_prefix, inner_tab_name, inner_col_name, inner_agg
+                            )
+                            where_condition = Condition(
+                                l_operand=get_global_index(
+                                    base_tables, table_name_to_idx[inner_table_block_name], inner_col_name_tree
+                                ),
+                                operator=op,
+                                r_operand=val,
+                            )
+                            conditions[dnf_idx].append(where_condition)
+
+                            ###### GRAPH START ######
+                            inner_col_name_graph = (
+                                "w_" + str(operation_idx) + "_" + inner_col_name_tree
+                            )  # Q: 중복이 있으면 어떡하지? and/or 구분은 어떻게 하지?
+                            inner_col_name_alias = get_col_name_alias(inner_tab_name, inner_col_name, inner_agg)
+                            cur_inner_col_node = Attribute(inner_col_name_graph, inner_col_name_alias)
+
+                            inner_tab_name_graph = inner_table_block_name
+                            inner_tab_name_alias = get_tab_name_alias(inner_table_block_name)
+                            is_primary_inner = inner_table_block_name in primary_relations
+                            cur_inner_rel_node = Relation(
+                                inner_tab_name_graph, inner_tab_name_alias, is_primary=is_primary_inner
+                            )  # Q: can I mark inner tables? (nesting level) user_study_queries example check
+                            idx = find_existing_rel_node(rel_nodes, cur_inner_rel_node)
+                            if idx == -1:
+                                rel_nodes.append(cur_inner_rel_node)
+                            else:
+                                cur_inner_rel_node = rel_nodes[idx]
+
+                            cur_operator_graph = operatorNameToType[op]
+
+                            val_name_graph = val
+                            val_alias_graph = get_val_alias(op, val)
+                            cur_val_node = Value(val_name_graph, val_alias_graph)
+
+                            graph.connect_selection(cur_inner_rel_node, cur_inner_col_node)
+                            graph.connect_predicate(cur_inner_col_node, cur_val_node, cur_operator_graph, dnf_idx)
+                            ###### GRAPH END   ######
+
+                elif len(operation) == 6:  # correlated predicate
+                    # Correlated predicate is in inner query but inner query does not call this function
+                    pass
+                else:
+                    tab_name = col.split(".")[0]
+                    col_name = col.split(".")[1]
+
+                    where_condition = Condition(
+                        l_operand=get_global_index(base_tables, table_name_to_idx[tab_name], col_name),
+                        operator=op,
+                        r_operand=val,
+                    )
+                    conditions[dnf_idx].append(where_condition)
+
+                    ###### GRAPH START ######
+                    val_name_graph = val
+                    val_alias_graph = get_val_alias(op, val)
+                    cur_val_node = Value(val_name_graph, val_alias_graph)
+
+                    cur_operator_graph = operatorNameToType[op]
+                    tab_name_graph = tab_name
+                    tab_name_alias = get_tab_name_alias(tab_name_graph)
+                    is_primary = tab_name in primary_relations
+                    cur_rel_node = Relation(
+                        tab_name_graph, tab_name_alias, is_primary=is_primary
+                    )  # Nesting level is always 0
+                    idx = find_existing_rel_node(rel_nodes, cur_rel_node)
+                    if idx == -1:
+                        rel_nodes.append(cur_rel_node)
+                    else:
+                        cur_rel_node = rel_nodes[idx]
+
+                    col_name_graph = "w_" + str(operation_idx) + "_" + col_name
+                    col_name_alias = get_col_name_alias(tab_name, col_name, "NONE")
+                    cur_col_node = Attribute(col_name_graph, col_name_alias)
+
+                    graph.connect_selection(cur_rel_node, cur_col_node)
+                    graph.connect_predicate(cur_col_node, cur_val_node, cur_operator_graph, dnf_idx)
+                    ###### GRAPH END   ######
+            clauses = []
+            for condition in conditions:
+                clauses.append(Clause(conditions=condition))
+            selection_operation = Selection(clauses=clauses)
+            operations.append(selection_operation)
+
+        if sql_type_dict["group"]:
+            for group_col in group:
+                group_alias = group_col.split(".")[0]
+                tab_name = group_alias.split(prefix)[1]
+                col_name = group_col.split(".")[1]
+                agg = "NONE"
+                operations.append(Grouping(get_global_index(base_tables, table_name_to_idx[tab_name], col_name)))
+
+                ###### GRAPH START ######
+                tab_name_graph = tab_name
+                tab_name_alias = get_tab_name_alias(tab_name)
+                is_primary = tab_name in primary_relations
+                cur_rel_node = Relation(
+                    tab_name_graph, tab_name_alias, is_primary=is_primary
+                )  # Nesting level is always 0
+                idx = find_existing_rel_node(rel_nodes, cur_rel_node)
+                if idx == -1:
+                    rel_nodes.append(cur_rel_node)
+                else:
+                    cur_rel_node = rel_nodes[idx]
+
+                col_name_graph = "g_" + col_name
+                col_name_alias = get_col_name_alias(tab_name, col_name, agg)
+                cur_col_node = Attribute(col_name_graph, col_name_alias)
+                graph.connect_grouping(cur_rel_node, cur_col_node)
+                ###### GRAPH END   ######
+
+        # normal order by
+        if sql_type_dict["order"]:
+            for order_col_raw in order:
+                order_col = order_col_raw
+                agg = "NONE"
+                for candidate_agg in NUMERIC_AGGS:
+                    if candidate_agg + "(" in order_col_raw:
+                        assert ")" in order_col_raw
+                        agg = candidate_agg
+                        order_col = order_col_raw.split(agg + "(")[1].split(")")[0]
+                        break
+                if agg != "NONE":
+                    raise Exception("[tree and graph formation] aggregated order cannot be in this code")
+
+                if order_col != "*":
+                    order_alias = order_col.split(".")[0]
+                    tab_name = order_alias.split(prefix)[1]
+                    col_name = order_col.split(".")[1]
+                    table_idx = table_name_to_idx[tab_name]
+                else:
+                    table_idx = 0
+                    col_name = order_col
+                operations.append(Ordering(get_global_index(base_tables, table_idx, col_name)))
+
+                ###### GRAPH START ######
+                tab_name_graph = tab_name
+                tab_name_alias = get_tab_name_alias(tab_name)
+                is_primary = tab_name in primary_relations
+                cur_rel_node = Relation(
+                    tab_name_graph, tab_name_alias, is_primary=is_primary
+                )  # Nesting level is always 0
+                idx = find_existing_rel_node(rel_nodes, cur_rel_node)
+                if idx == -1:
+                    rel_nodes.append(cur_rel_node)
+                else:
+                    cur_rel_node = rel_nodes[idx]
+
+                col_name_graph = "o_" + col_name
+                col_name_alias = get_col_name_alias(tab_name, col_name, agg)
+                cur_col_node = Attribute(col_name_graph, col_name_alias)
+                graph.connect_order(cur_rel_node, cur_col_node)
+                ###### GRAPH END   ######
+
+        if sql_type_dict["limit"]:
+            operations.append(Limit(limit))
+            ###### GRAPH START ######
+            graph.set_limit(limit)
+            ###### GRAPH END   ######
+
+        node = QueryBlock(
+            child_tables=base_tables, join_conditions=join_conditions, operations=operations, sql=sql, name=prefix[:-1]
+        )
+        tree = QueryTree(root=node, sql=sql)
+
+    graph_obj = (tree, graph)
+    return graph_obj
 
 
 def sql_formation(
@@ -327,84 +1393,35 @@ def sql_formation(
     having=None,
     order=None,
     limit=None,
-    make_graph=False,
     select_agg_cols=None,
     tree_predicates_origin=None,
     predicates_origin=None,
+    having_tree_predicates_origin=None,
+    having_predicates_origin=None,
     nesting_level=None,
     nesting_block_idx=None,
     inner_select_nodes=None,
 ):
     ALIAS_TO_TABLE_NAME, TABLE_NAME_TO_ALIAS = alias_generator(args)
-    graph = Query_graph()
-    rel_nodes = []
+    prefix = "N" + str(nesting_level) + "_" + str(nesting_block_idx) + "_"
+
     select_clause = "SELECT " + ", ".join(select)
-    if make_graph:  # add projection edges
-        for col_info in select_agg_cols:
-            agg = col_info[0]
-            col = col_info[1]
-            if col == "*":
-                rel_name = tables[0]
-                col = rel_name + ".*"
-            else:
-                rel_name = col.split(".")[0]
 
-            if outer_inner == "non-nested":
-                cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                if idx == -1:
-                    rel_nodes.append(cur_rel_node)
-                else:
-                    cur_rel_node = rel_nodes[idx]
-                cur_col_node = Attribute(col)
-                if agg != "NONE":
-                    cur_agg_node = Function(aggregationNameToType[agg.capitalize()])
-                else:
-                    cur_agg_node = None
-            elif outer_inner == "outer":
-                cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                if idx == -1:
-                    rel_nodes.append(cur_rel_node)
-                else:
-                    cur_rel_node = rel_nodes[idx]
-                cur_col_node = Attribute(col)
-                if agg != "NONE":
-                    cur_agg_node = Function(aggregationNameToType[agg.capitalize()])
-                else:
-                    cur_agg_node = None
-            elif outer_inner == "inner":
-                cur_rel_node = Relation(
-                    rel_name, query_block_idx=nesting_block_idx, nesting_level=nesting_level
-                )  # Nesting level should be given
-                idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                if idx == -1:
-                    rel_nodes.append(cur_rel_node)
-                else:
-                    cur_rel_node = rel_nodes[idx]
-                cur_col_node = Attribute(col, query_block_idx=nesting_block_idx, nesting_level=nesting_level)
-                if agg != "NONE":
-                    cur_agg_node = Function(
-                        aggregationNameToType[agg.capitalize()],
-                        query_block_idx=nesting_block_idx,
-                        nesting_level=nesting_level,
-                    )
-                else:
-                    cur_agg_node = None
-                inner_select_nodes.append((cur_rel_node, cur_col_node, cur_agg_node))
-            else:
-                assert False, "Currently not supported function: build graph for {outer_inner} query"
+    df_query = {}
 
-            graph.connect_projection(cur_rel_node, cur_col_node)
-            if cur_agg_node is not None:
-                graph.connect_aggregation(cur_col_node, cur_agg_node)
-
-    if outer_inner == "outer":
-        prefix = "O_"
-    elif outer_inner == "inner":
-        prefix = "I_"
-    else:
-        prefix = ""
+    select_cols_df = []
+    for col_info in select_agg_cols:
+        agg = col_info[0]
+        col = col_info[1]
+        if col != "*":
+            col_df = prefix + "df" + ".'" + col + "'"
+        else:
+            col_df = col
+        if agg != "NONE":
+            col_df = agg + "(" + col_df + ")"
+        select_cols_df.append(col_df)
+    df_query["SELECT"] = ", ".join(select_cols_df)
+    df_query["FROM"] = "df " + prefix + "df"
 
     # FROM clause generation
     if TABLE_NAME_TO_ALIAS:
@@ -424,528 +1441,86 @@ def sql_formation(
     if len(join_token) >= 1:
         from_clause += " ON " + join_string
 
-    if make_graph:  # add join edges
-        for join_c in joins:
-            col_A, col_B = join_c.split("=")
-            rel_name_A = col_A.split(".")[0]
-            rel_name_B = col_B.split(".")[0]
-            if outer_inner == "non-nested":
-                cur_rel_node_A = Relation(rel_name_A)  # Nesting level is always 0
-                idx = find_existing_rel_node(rel_nodes, cur_rel_node_A)
-                if idx == -1:
-                    rel_nodes.append(cur_rel_node_A)
-                else:
-                    cur_rel_node_A = rel_nodes[idx]
-
-                cur_rel_node_B = Relation(rel_name_B)
-                idx = find_existing_rel_node(rel_nodes, cur_rel_node_B)
-                if idx == -1:
-                    rel_nodes.append(cur_rel_node_B)
-                else:
-                    cur_rel_node_B = rel_nodes[idx]
-
-                cur_col_node_A = Attribute(col_A)
-                cur_col_node_B = Attribute(col_B)
-            elif outer_inner == "outer":
-                cur_rel_node_A = Relation(rel_name_A)  # Nesting level is always 0
-                idx = find_existing_rel_node(rel_nodes, cur_rel_node_A)
-                if idx == -1:
-                    rel_nodes.append(cur_rel_node_A)
-                else:
-                    cur_rel_node_A = rel_nodes[idx]
-
-                cur_rel_node_B = Relation(rel_name_B)
-                idx = find_existing_rel_node(rel_nodes, cur_rel_node_B)
-                if idx == -1:
-                    rel_nodes.append(cur_rel_node_B)
-                else:
-                    cur_rel_node_B = rel_nodes[idx]
-
-                cur_col_node_A = Attribute(col_A)
-                cur_col_node_B = Attribute(col_B)
-            elif outer_inner == "inner":
-                cur_rel_node_A = Relation(
-                    rel_name_A, query_block_idx=nesting_block_idx, nesting_level=nesting_level
-                )  # Nesting level should be given
-                idx = find_existing_rel_node(rel_nodes, cur_rel_node_A)
-                if idx == -1:
-                    rel_nodes.append(cur_rel_node_A)
-                else:
-                    cur_rel_node_A = rel_nodes[idx]
-
-                cur_rel_node_B = Relation(rel_name_B, query_block_idx=nesting_block_idx, nesting_level=nesting_level)
-                idx = find_existing_rel_node(rel_nodes, cur_rel_node_B)
-                if idx == -1:
-                    rel_nodes.append(cur_rel_node_B)
-                else:
-                    cur_rel_node_B = rel_nodes[idx]
-
-                cur_col_node_A = Attribute(col_A, query_block_idx=nesting_block_idx, nesting_level=nesting_level)
-                cur_col_node_B = Attribute(col_B, query_block_idx=nesting_block_idx, nesting_level=nesting_level)
-            else:
-                assert False, "Currently not supported function: build graph for {outer_inner} query"
-
-            graph.connect_join(cur_rel_node_A, cur_col_node_A, cur_col_node_B, cur_rel_node_B)
-
     # WHERE clause generation
     if sql_type_dict["where"]:
         where_clause = " WHERE " + preorder_traverse(where)
-        if make_graph:  # add selection edges
-            assert tree_predicates_origin
-            operations, _ = preorder_traverse_to_get_graph(tree_predicates_origin, 0)
-            for operation_idx, cnf_idx in operations:
-                if outer_inner == "non-nested":
-                    operation = predicates_origin[operation_idx]
-                    col = operation[0]
-                    op = operation[1]
-                    val = operation[2]
-                    rel_name = col.split(".")[0]
-
-                    cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                    idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                    if idx == -1:
-                        rel_nodes.append(cur_rel_node)
-                    else:
-                        cur_rel_node = rel_nodes[idx]
-                    cur_col_node = Attribute(col)
-                    cur_op_type = operatorNameToType[op]
-                    cur_val_node = Value(val)
-
-                    graph.connect_selection(cur_rel_node, cur_col_node)
-                    graph.connect_operation(cur_col_node, cur_op_type, cur_val_node)
-                elif outer_inner == "outer":
-                    # [TODO] Make graph for inner query block
-                    operation = predicates_origin[operation_idx]
-                    left = operation[0]
-                    op = operation[1]
-                    right = operation[2]
-                    if len(operation) == 4:  # nested predicate
-                        inner_obj = operation[3]
-                        inner_select_nodes = []
-
-                        _, inner_graph = sql_formation(
-                            args,
-                            inner_obj["type"],
-                            inner_obj["tables"],
-                            inner_obj["joins"],
-                            "inner",
-                            inner_obj["select"],
-                            inner_obj["where"],
-                            inner_obj["group"],
-                            inner_obj["having"],
-                            inner_obj["order"],
-                            inner_obj["limit"],
-                            make_graph=True,
-                            select_agg_cols=inner_obj["agg_cols"],
-                            tree_predicates_origin=inner_obj["tree_predicates_origin"],
-                            predicates_origin=inner_obj["predicates_origin"],
-                            nesting_block_idx=0,
-                            nesting_level=1,
-                            inner_select_nodes=inner_select_nodes,
-                        )
-                        assert len(inner_select_nodes) > 0
-                        graph = nx.compose(graph, inner_graph)
-                        correlation_column = inner_obj["correlation_column"]
-                        # correlation_predicate = 'O_' + outer_correlation_column + ' = I_' + outer_correlation_column
-                        if correlation_column is not None:
-                            # get correlated node
-                            rel_name_correlation = correlation_column.split(".")[0]
-                            cur_rel_node_correlation = Relation(rel_name_correlation)  # Nesting level is always 0
-                            idx = find_existing_rel_node(rel_nodes, cur_rel_node_correlation)
-                            if idx == -1:
-                                rel_nodes.append(cur_rel_node_correlation)
-                            else:
-                                cur_rel_node_correlation = rel_nodes[idx]
-
-                            cur_col_node_correlation = Attribute(correlation_column)
-                            cur_op_type_correlation = operatorNameToType["="]
-
-                            cur_col_node_correlation_inner = Attribute(correlation_column, 0, 1)
-                            cur_rel_node_correlation_inner = inner_graph.get_equivalent_node(
-                                Relation(rel_name_correlation, 0, 1)
-                            )
-                            assert cur_rel_node_correlation_inner is not None
-
-                            graph.connect_selection(cur_rel_node_correlation, cur_col_node_correlation)
-                            graph.connect_operation(
-                                cur_col_node_correlation, cur_op_type_correlation, cur_col_node_correlation_inner
-                            )
-                            graph.connect_projection(cur_col_node_correlation_inner, cur_rel_node_correlation_inner)
-
-                        if left is None:  # EXISTS
-                            assert correlation_column is not None
-                            # dummy node
-                            rel_name = correlation_column.split(".")[0]
-                            cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                            idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                            if idx == -1:
-                                rel_nodes.append(cur_rel_node)
-                            else:
-                                cur_rel_node = rel_nodes[idx]
-
-                            cur_col_node = Attribute("*")
-                            cur_op_type = operatorNameToType[op]
-
-                            cur_col_node_inner = inner_select_nodes[0][1]
-                            # cur_rel_node_inner = inner_select_nodes[0][0]
-                            if inner_select_nodes[0][2] is not None:
-                                cur_col_node_inner = inner_select_nodes[0][2]
-
-                            assert cur_col_node_inner is not None
-
-                            graph.connect_selection(cur_rel_node, cur_col_node)
-                            graph.connect_operation(cur_col_node, cur_op_type, cur_col_node_inner)
-
-                        elif left.startswith("(") and left.endswith(")"):  # ( inner query ) op val
-                            assert correlation_column is not None
-                            val = right
-
-                            cur_col_node_inner = inner_select_nodes[0][1]
-                            cur_rel_node_inner = inner_select_nodes[0][0]
-                            cur_op_type = operatorNameToType[op]
-                            cur_val_node = Value(val)
-
-                            assert cur_col_node_inner is not None
-
-                            graph.connect_selection(cur_rel_node_inner, cur_col_node_inner)
-                            if inner_select_nodes[0][2] is not None:
-                                cur_agg_node_inner = inner_select_nodes[0][2]
-                                graph.connect_aggregation(cur_col_node_inner, cur_agg_node_inner)
-                                graph.connect_operation(cur_agg_node_inner, cur_op_type, cur_val_node)
-                            else:
-                                graph.connect_operation(cur_col_node_inner, cur_op_type, cur_val_node)
-                            # get mu node
-                        else:
-                            col = left
-                            assert col.startswith("O_")
-                            col = col[2:]
-                            rel_name = col.split(".")[0]
-                            cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                            idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                            if idx == -1:
-                                rel_nodes.append(cur_rel_node)
-                            else:
-                                cur_rel_node = rel_nodes[idx]
-
-                            quantifier = ""
-                            if "ALL" in op or "ANY" in op:
-                                quantifier = op[-3:]
-                                op = op[:-4]
-
-                            cur_col_node = Attribute(col)
-                            cur_op_type = operatorNameToType[op]
-
-                            # get mu node
-                            cur_col_node_inner = inner_select_nodes[0][1]
-                            # cur_rel_node_inner = inner_select_nodes[0][0]
-                            if inner_select_nodes[0][2] is not None:
-                                cur_col_node_inner = inner_select_nodes[0][2]
-
-                            assert cur_col_node_inner is not None
-                            graph.connect_selection(cur_rel_node, cur_col_node)
-                            graph.connect_operation(
-                                cur_col_node, cur_op_type, cur_col_node_inner, quantifier=quantifier
-                            )
-                    else:
-                        col = left
-                        assert col.startswith("O_")
-                        col = col[2:]
-                        val = right
-                        rel_name = col.split(".")[0]
-                        cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                        idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                        if idx == -1:
-                            rel_nodes.append(cur_rel_node)
-                        else:
-                            cur_rel_node = rel_nodes[idx]
-                        cur_col_node = Attribute(col)
-                        cur_op_type = operatorNameToType[op]
-                        cur_val_node = Value(val)
-
-                        graph.connect_selection(cur_rel_node, cur_col_node)
-                        graph.connect_operation(cur_col_node, cur_op_type, cur_val_node)
-                elif outer_inner == "inner":
-                    operation = predicates_origin[operation_idx]
-                    col = operation[0]
-                    assert col.startswith("I_")
-                    col = col[2:]
-                    op = operation[1]
-                    val = operation[2]
-                    rel_name = col.split(".")[0]
-
-                    cur_rel_node = Relation(
-                        rel_name, query_block_idx=nesting_block_idx, nesting_level=nesting_level
-                    )  # Nesting level is always 0
-                    idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                    if idx == -1:
-                        rel_nodes.append(cur_rel_node)
-                    else:
-                        cur_rel_node = rel_nodes[idx]
-                    cur_col_node = Attribute(col, query_block_idx=nesting_block_idx, nesting_level=nesting_level)
-                    cur_op_type = operatorNameToType[op]
-                    cur_val_node = Value(val, query_block_idx=nesting_block_idx, nesting_level=nesting_level)
-
-                    graph.connect_selection(cur_rel_node, cur_col_node)
-                    graph.connect_operation(cur_col_node, cur_op_type, cur_val_node)
-                else:
-                    assert False, "Currently not supported function: build graph for {outer_inner} query"
+        if outer_inner == "non-nested":
+            df_query["WHERE"] = preorder_traverse_to_make_df_query(
+                tree_predicates_origin, predicates_origin, prefix + "df"
+            )
+        elif outer_inner == "outer":
+            df_query["WHERE"] = preorder_traverse_to_make_df_query(
+                tree_predicates_origin, predicates_origin, prefix + "df"
+            )
+        elif outer_inner == "inner":
+            df_query["WHERE"] = preorder_traverse_to_make_df_query(
+                tree_predicates_origin, predicates_origin, prefix + "df"
+            )
+        else:
+            assert False, "[sql_fomation] Not implemented types of queries"
     else:
         where_clause = ""
 
     # GROUP BY clause generation
     if sql_type_dict["group"]:
         group_clause = " GROUP BY " + ", ".join(group)
-        if make_graph:  # add group by edges
-            for group_col in group:
-                rel_name = group_col.split(".")[0]
-                if outer_inner == "non-nested":
-                    cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                    idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                    if idx == -1:
-                        rel_nodes.append(cur_rel_node)
-                    else:
-                        cur_rel_node = rel_nodes[idx]
-                    cur_col_node = Attribute(group_col)
-                elif outer_inner == "outer":
-                    assert rel_name.startswith("O_")
-                    rel_name = rel_name[2:]
-                    cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                    idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                    if idx == -1:
-                        rel_nodes.append(cur_rel_node)
-                    else:
-                        cur_rel_node = rel_nodes[idx]
-                    assert group_col.startswith("O_")
-                    group_col_origin = group_col[2:]
-                    cur_col_node = Attribute(group_col_origin)
-                elif outer_inner == "inner":
-                    assert rel_name.startswith("I_")
-                    rel_name = rel_name[2:]
-                    cur_rel_node = Relation(
-                        rel_name, query_block_idx=nesting_block_idx, nesting_level=nesting_level
-                    )  # Nesting level is always 0
-                    idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                    if idx == -1:
-                        rel_nodes.append(cur_rel_node)
-                    else:
-                        cur_rel_node = rel_nodes[idx]
-                    assert group_col.startswith("I_")
-                    group_col_origin = group_col[2:]
-                    cur_col_node = Attribute(
-                        group_col_origin, query_block_idx=nesting_block_idx, nesting_level=nesting_level
-                    )
-                else:
-                    assert False, "Currently not supported function: build graph for {outer_inner} query"
-                graph.connect_group(cur_rel_node, cur_col_node)
+        group_df = []
+        for group_col in group:
+            group_alias = group_col.split(".")[0]
+            rel_name = group_alias.split(prefix)[1]
+            col_name = group_col.split(".")[1]
+            col_df = prefix + "df" + ".`" + rel_name + "." + col_name + "`"
+            group_df.append(col_df)
+        df_query["GROUPBY"] = ", ".join(group_df)
     else:
         group_clause = ""
 
     # HAVING clause generation
     if sql_type_dict["having"]:
         having_clause = " HAVING " + preorder_traverse(having)
-        if make_graph:  # add having edges
-            operations, _ = preorder_traverse_to_get_graph(having, 0)
-            for operation_string, cnf_idx in operations:
-                if outer_inner == "non-nested":
-                    agg_col = operation_string.split(" ")[0]
-                    assert "(" in agg_col and ")" in agg_col
-                    agg = agg_col.split("(")[0]
-                    col = agg_col.split("(")[1].split(")")[0]
-                    op = operation_string.split(" ")[1]
-                    val = " ".join(operation_string.split(" ")[2:])
-                    if op == "NOT":
-                        op += " " + operation_string.split(" ")[2]
-                        val = " ".join(operation_string.split(" ")[3:])
-
-                    if col == "*":
-                        rel_name = tables[0]
-                        col = rel_name + ".*"
-                    else:
-                        rel_name = col.split(".")[0]
-
-                    cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                    idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                    if idx == -1:
-                        rel_nodes.append(cur_rel_node)
-                    else:
-                        cur_rel_node = rel_nodes[idx]
-                    cur_agg_node = Function(aggregationNameToType[agg.capitalize()])
-                    cur_col_node = Attribute(col)
-                    cur_op_type = operatorNameToType[op]
-                    cur_val_node = Value(val)
-
-                    graph.connect_having(cur_rel_node, cur_col_node)
-                    graph.connect_aggregation(cur_col_node, cur_agg_node)
-                    graph.connect_operation(cur_agg_node, cur_op_type, cur_val_node)
-                elif outer_inner == "outer":
-                    agg_col = operation_string.split(" ")[0]
-                    assert "(" in agg_col and ")" in agg_col
-                    agg = agg_col.split("(")[0]
-                    col = agg_col.split("(")[1].split(")")[0]
-                    assert col == "*" or col.startswith("O_")
-                    if col.startswith("O_"):
-                        col = col[2:]
-                    op = operation_string.split(" ")[1]
-                    val = " ".join(operation_string.split(" ")[2:])
-                    if op == "NOT":
-                        op += " " + operation_string.split(" ")[2]
-                        val = " ".join(operation_string.split(" ")[3:])
-
-                    if col == "*":
-                        rel_name = tables[0]
-                        col = rel_name + ".*"
-                    else:
-                        rel_name = col.split(".")[0]
-
-                    cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                    idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                    if idx == -1:
-                        rel_nodes.append(cur_rel_node)
-                    else:
-                        cur_rel_node = rel_nodes[idx]
-                    cur_agg_node = Function(aggregationNameToType[agg.capitalize()])
-                    cur_col_node = Attribute(col)
-                    cur_op_type = operatorNameToType[op]
-                    cur_val_node = Value(val)
-
-                    graph.connect_having(cur_rel_node, cur_col_node)
-                    graph.connect_aggregation(cur_col_node, cur_agg_node)
-                    graph.connect_operation(cur_agg_node, cur_op_type, cur_val_node)
-                elif outer_inner == "inner":
-                    agg_col = operation_string.split(" ")[0]
-                    assert "(" in agg_col and ")" in agg_col
-                    agg = agg_col.split("(")[0]
-                    col = agg_col.split("(")[1].split(")")[0]
-                    assert col == "*" or col.startswith("I_")
-                    if col.startswith("I_"):
-                        col = col[2:]
-                    op = operation_string.split(" ")[1]
-                    val = " ".join(operation_string.split(" ")[2:])
-                    if op == "NOT":
-                        op += " " + operation_string.split(" ")[2]
-                        val = " ".join(operation_string.split(" ")[3:])
-
-                    if col == "*":
-                        rel_name = tables[0]
-                        col = rel_name + ".*"
-                    else:
-                        rel_name = col.split(".")[0]
-
-                    cur_rel_node = Relation(
-                        rel_name, query_block_idx=nesting_block_idx, nesting_level=nesting_level
-                    )  # Nesting level should be given
-                    idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                    if idx == -1:
-                        rel_nodes.append(cur_rel_node)
-                    else:
-                        cur_rel_node = rel_nodes[idx]
-                    cur_agg_node = Function(
-                        aggregationNameToType[agg.capitalize()],
-                        query_block_idx=nesting_block_idx,
-                        nesting_level=nesting_level,
-                    )
-                    cur_col_node = Attribute(col, query_block_idx=nesting_block_idx, nesting_level=nesting_level)
-                    cur_op_type = operatorNameToType[op]
-                    cur_val_node = Value(val, query_block_idx=nesting_block_idx, nesting_level=nesting_level)
-
-                    graph.connect_having(cur_rel_node, cur_col_node)
-                    graph.connect_aggregation(cur_col_node, cur_agg_node)
-                    graph.connect_operation(cur_agg_node, cur_op_type, cur_val_node)
-                else:
-                    assert False, "Currently not supported function: build graph for {outer_inner} query"
+        df_query["HAVING"] = preorder_traverse_to_make_df_query_having(
+            having_tree_predicates_origin, having_predicates_origin, prefix + "df"
+        )
     else:
         having_clause = ""
 
     # ORDER BY clause generation
     if sql_type_dict["order"]:
         order_clause = " ORDER BY " + ", ".join(order)
-        if make_graph:  # add order by edges
-            for order_col in order:
-                assert "(" not in order_col, "Currently not support aggregation in order by"
-                rel_name = order_col.split(".")[0]
-                if outer_inner == "non-nested":
-                    cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                    idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                    if idx == -1:
-                        rel_nodes.append(cur_rel_node)
-                    else:
-                        cur_rel_node = rel_nodes[idx]
-                    cur_col_node = Attribute(order_col)
-                elif outer_inner == "outer":
-                    assert rel_name.startswith("O_")
-                    assert order_col.startswith("O_")
-                    rel_name = rel_name[2:]
-                    cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                    idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                    if idx == -1:
-                        rel_nodes.append(cur_rel_node)
-                    else:
-                        cur_rel_node = rel_nodes[idx]
-                    order_col_origin = order_col[2:]
-                    cur_col_node = Attribute(order_col_origin)
-                elif outer_inner == "inner":
-                    assert rel_name.startswith("I_")
-                    assert order_col.startswith("I_")
-                    rel_name = rel_name[2:]
-                    cur_rel_node = Relation(
-                        rel_name, query_block_idx=nesting_block_idx, nesting_level=nesting_level
-                    )  # Nesting level should be given
-                    idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                    if idx == -1:
-                        rel_nodes.append(cur_rel_node)
-                    else:
-                        cur_rel_node = rel_nodes[idx]
-                    order_col_origin = order_col[2:]
-                    cur_col_node = Attribute(
-                        order_col_origin, query_block_idx=nesting_block_idx, nesting_level=nesting_level
-                    )
-                else:
-                    assert False, "Currently not supported function: build graph for {outer_inner} query"
-                graph.connect_order(cur_rel_node, cur_col_node, is_asc=True)  # [TODO]: add order by desc
+        order_df = []
+        for order_col_raw in order:
+            order_col = order_col_raw
+            agg = "NONE"
+            for candidate_agg in NUMERIC_AGGS:
+                if candidate_agg + "(" in order_col_raw:
+                    assert ")" in order_col_raw
+                    agg = candidate_agg
+                    order_col = order_col_raw.split(agg + "(")[1].split(")")[0]
+                    break
+            if order_col != "*":
+                order_alias = order_col.split(".")[0]
+                rel_name = order_alias.split(prefix)[1]
+                col_name = order_col.split(".")[1]
+                col_df = prefix + "df" + ".`" + rel_name + "." + col_name + "`"
+            else:
+                col_df = order_col
+            if agg != "NONE":
+                col_df = agg + "(" + col_df + ")"
+            order_df.append(col_df)
+        df_query["ORDERBY"] = ", ".join(order_df)
     else:
         order_clause = ""
 
     # LIMIT clause generation
     if sql_type_dict["limit"]:
         limit_clause = " LIMIT " + str(limit)
-        if make_graph:  # add limit edges
-            rel_name = tables[0]
-            if outer_inner == "non-nested":
-                cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                if idx == -1:
-                    rel_nodes.append(cur_rel_node)
-                else:
-                    cur_rel_node = rel_nodes[idx]
-                cur_val_node = Value(limit)
-            elif outer_inner == "outer":
-                cur_rel_node = Relation(rel_name)  # Nesting level is always 0
-                idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                if idx == -1:
-                    rel_nodes.append(cur_rel_node)
-                else:
-                    cur_rel_node = rel_nodes[idx]
-                cur_val_node = Value(limit)
-            elif outer_inner == "inner":
-                cur_rel_node = Relation(rel_name, query_block_idx=nesting_block_idx, nesting_level=nesting_level)
-                idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-                if idx == -1:
-                    rel_nodes.append(cur_rel_node)
-                else:
-                    cur_rel_node = rel_nodes[idx]
-                cur_val_node = Value(limit)
-            else:
-                assert False, "Currently not supported function: build graph for {outer_inner} query"
-            graph.connect_limit(cur_rel_node, cur_val_node)
+        df_query["LIMIT"] = str(limit)
     else:
         limit_clause = ""
 
     line = select_clause + from_clause + where_clause + group_clause + having_clause + order_clause + limit_clause
 
-    if make_graph and outer_inner != "inner":
-        graph.set_join_directions()
-
-    return line, graph
+    return line, df_query
 
 
 def get_table_from_clause(join_clause):
@@ -967,7 +1542,14 @@ def get_possible_join(selected_joins, avaliable_joins):
 
 
 def get_query_token(
-    all_table_set, join_key_list, df_columns, df_columns_not_null, join_clause_list, rng, join_key_pred=True
+    all_table_set,
+    join_key_list,
+    df_columns,
+    df_columns_not_null,
+    join_clause_list,
+    rng,
+    join_key_pred=True,
+    inner_query_tables=None,
 ):
     avaliable_join_keys = list()
     avaliable_pred_cols = list(df_columns)
@@ -1002,7 +1584,8 @@ def get_query_token(
 
     table = rng.choice(avaliable_tables)
     table_set.add(table)
-    cont = rng.choice([0, min(1, len(avaliable_join_list))], p=[1 - prob, prob])
+
+    cont = rng.choice([0, 1], p=[1 - prob, prob])
 
     if cont == 1:
         available_init_join = []
@@ -1020,6 +1603,7 @@ def get_query_token(
         table_set.add(t2)
 
         cont = rng.choice([0, 1], p=[1 - prob, prob])
+
         while cont == 1:
             candidate_joins = get_possible_join(joins, avaliable_join_list)
             if len(candidate_joins) == 0:
@@ -1033,6 +1617,17 @@ def get_query_token(
             table_set.add(t2)
 
             cont = rng.choice([0, 1], p=[1 - prob, prob])
+
+    if inner_query_tables is not None:
+        for inner_table in inner_query_tables:
+            if inner_table not in table_set:
+                edges = copy.deepcopy(avaliable_join_list)
+                nodes = copy.deepcopy(table_set)
+                target = copy.deepcopy(inner_table)
+                new_tables, new_joins = find_join_path_target(edges, nodes, target)
+                for new_table in new_tables:
+                    table_set.add(new_table)
+                joins += new_joins
 
     for col in avaliable_pred_cols:
         if col.split(".")[0] in table_set:
@@ -1064,11 +1659,17 @@ def determine_degree_1_table(tables, joins):
     return d1_table
 
 
-def alias_join_clause(txt, TABLE_NAME_TO_ALIAS, prefix):
+def get_table_join_key_from_join_clause(txt):
     token = txt.split("=")
     assert len(token) == 2
     t1, k1 = token[0].split(".")
     t2, k2 = token[1].split(".")
+    return t1, k1, t2, k2
+
+
+def alias_join_clause(txt, TABLE_NAME_TO_ALIAS, prefix):
+    t1, k1, t2, k2 = get_table_join_key_from_join_clause(txt)
+
     if TABLE_NAME_TO_ALIAS:
         t1 = TABLE_NAME_TO_ALIAS[t1]
         t2 = TABLE_NAME_TO_ALIAS[t2]
@@ -1090,11 +1691,40 @@ def bfs(edges, parents, observed, targets):
                     candidates.append(c)
                     observed.append(c)
                     cp_condition[c] = (p, join_clause)
+    assert len(candidates) > 0
     path, joins = bfs(edges, candidates, observed, targets)
     src_parent, src_join = cp_condition[path[-1]]
     path.append(src_parent)
     joins.append(src_join)
     return path, joins
+
+
+def find_join_path_target(joins, used_tables, target_table):
+    # Step 1. Draw schema graph
+    edges = {}
+    for join_clause in joins:
+        t1, t2 = get_table_from_clause(join_clause)
+        if t1 in edges:
+            edges[t1].append((t2, join_clause))
+        else:
+            edges[t1] = [(t2, join_clause)]
+        if t2 in edges:
+            edges[t2].append((t1, join_clause))
+        else:
+            edges[t2] = [(t1, join_clause)]
+
+    used_tables = list(used_tables)
+    for used_table in used_tables:
+        if used_table not in edges.keys():
+            edges[used_table] = []
+    found_tables = [target_table]
+    found_joins = []
+
+    path, joins = bfs(edges, used_tables, [], found_tables)
+    found_tables = list(set(found_tables) | set(path))
+    found_joins = list(set(found_joins) | set(joins))
+
+    return found_tables, found_joins
 
 
 def find_join_path(joins, tables, used_tables):
@@ -1155,6 +1785,11 @@ def predicate_generator(col, op, val):
         if op == "NOT LIKE":
             query_predicate = "not " + query_predicate
     elif op == "=":
+        if not is_numeric(val) and not (val[0] == '"' and val[-1] == '"'):
+            query_predicate = "`" + col + '` == "' + val + '"'
+        else:
+            query_predicate = "`" + col + "` == " + val
+    elif op == "!=":
         if not is_numeric(val) and not (val[0] == '"' and val[-1] == '"'):
             query_predicate = "`" + col + '` == "' + val + '"'
         else:

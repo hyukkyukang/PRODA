@@ -22,6 +22,7 @@ import sql_gen_utils.join_utils
 
 # +@ add
 import datetime
+
 # parser = argparse.ArgumentParser()
 # parser.add_argument(
 #     '--join_pred',
@@ -33,9 +34,12 @@ import datetime
 
 # args = parser.parse_args()
 
-class A():
+
+class A:
     def __init__(self):
         self.join_pred = True
+
+
 args = A()
 
 # Assuming the join columns contain only non-negative values.
@@ -48,13 +52,11 @@ NULL = -1
 
 
 def get_jct_count_columns(join_spec):
-    return get_fanout_columns_impl(join_spec, "{table}.{key}.cnt",
-                                   "{table}.{key}.cnt")
+    return get_fanout_columns_impl(join_spec, "{table}.{key}.cnt", "{table}.{key}.cnt")
 
 
 def get_fanout_columns(join_spec):
-    return get_fanout_columns_impl(join_spec, "__fanout_{table}",
-                                   "__fanout_{table}__{key}")
+    return get_fanout_columns_impl(join_spec, "__fanout_{table}", "__fanout_{table}__{key}")
 
 
 def get_fanout_columns_impl(join_spec, single_key_fmt, multi_key_fmt):
@@ -89,9 +91,7 @@ def get_distribution(series):
 
 
 class JoinCountTableActor(object):
-
-    def __init__(self, table, jct, join_spec,rust_random_seed):
-
+    def __init__(self, table, jct, join_spec, rust_random_seed):
         self.jct = jct
         self.table = table
         parents = list(join_spec.join_tree.predecessors(table))
@@ -103,10 +103,10 @@ class JoinCountTableActor(object):
             self.parent_join_key = f"{parent}.{join_keys[parent]}"
             null_row_offset = self._insert_null_to_jct()
             self.index_provider = rustlib.IndexProvider(
-                f"{join_spec.join_name}/{table}.jk.indices", null_row_offset,rust_random_seed)
+                f"{join_spec.join_name}/{table}.jk.indices", null_row_offset, rust_random_seed
+            )
         else:
-            self.jct_distribution = get_distribution(
-                self.jct[f"{self.table}.weight"])
+            self.jct_distribution = get_distribution(self.jct[f"{self.table}.weight"])
         # log.info(f"JoinCountTableActor `{table}` is ready.")
 
     def _insert_null_to_jct(self):
@@ -122,10 +122,16 @@ class JoinCountTableActor(object):
         if rng is None:
             rng = np.random.default_rng()
         if parent_sample is None:
-            indices = rng.choice(np.arange(self.jct.shape[0]),
-                                 size=sample_size,
-                                 replace=True,
-                                 p=self.jct_distribution)
+            # indices = rng.choice(np.arange(self.jct.shape[0]),
+            #                     size=sample_size,
+            #                     replace=True,
+            #                     p=self.jct_distribution)
+            indices = rng.choice(
+                np.arange(self.jct.shape[0]),
+                size=min(self.jct.shape[0], sample_size),
+                replace=False,
+                p=self.jct_distribution,
+            )
             sample = self.jct.iloc[indices].reset_index(drop=True)
             return sample
         keys = parent_sample[self.parent_join_key].values
@@ -140,26 +146,22 @@ class JoinCountTableActor(object):
 
 
 def load_data_table(table, join_keys, usecols):
-    return data_utils.load_table(table,
-                                 usecols=usecols,
-                                 dtype={k: np.int64 for k in join_keys})
+    return data_utils.load_table(table, usecols=usecols, dtype={k: np.int64 for k in join_keys})
 
 
 class DataTableActor(object):
-
-    def __init__(self, table_name, join_keys, df, join_name,rust_random_seed):
+    def __init__(self, table_name, join_keys, df, join_name, rust_random_seed):
         self.table = table_name
         self.df = df
         self.join_keys = [f"{table_name}.{k}" for k in join_keys]
         self.df.columns = [f"{table_name}.{k}" for k in self.df.columns]
         self.indicator_column = f"__in_{table_name}"
         # +@
-        if args.join_pred :
-            self.sample_columns = [ c for c in self.df.columns]
-        else :
-            self.sample_columns = [c for c in self.df.columns if c not in self.join_keys] # exclude join keys
-        self.index_provider = rustlib.IndexProvider(
-            f"{join_name}/{table_name}.pk.indices", NULL,rust_random_seed)
+        if args.join_pred:
+            self.sample_columns = [c for c in self.df.columns]
+        else:
+            self.sample_columns = [c for c in self.df.columns if c not in self.join_keys]  # exclude join keys
+        self.index_provider = rustlib.IndexProvider(f"{join_name}/{table_name}.pk.indices", NULL, rust_random_seed)
         # log.info(f"DataTableActor of `{table_name}` is ready.")
 
     def ready(self):
@@ -185,36 +187,35 @@ class DataTableActor(object):
 
 
 def load_jct(table, join_name):
-    return data_utils.load(f"{join_name}/{table}.jct",
-                           f"join count table of `{table}`")
+    return data_utils.load(f"{join_name}/{table}.jct", f"join count table of `{table}`")
 
 
 def _make_sampling_table_ordering(tables, root_name):
     """
     Returns a list of table names with the join_root at the front.
     """
-    return [root_name
-           ] + [table.name for table in tables if table.name != root_name]
+    return [root_name] + [table.name for table in tables if table.name != root_name]
 
 
 class FactorizedSampler(object):
     """Unbiased join sampler using the Exact Weight algorithm."""
 
-    def __init__(self,
-                 loaded_tables,
-                 join_spec,
-                 sample_batch_size,
-                 # +@ add parameter for other datasets in prepare process
-                 data_dir,
-                 dataset,
-                 use_cols,
-                 rust_random_seed,
-
-                 rng=None,
-                 disambiguate_column_names=True,
-                 add_full_join_indicators=True,
-                 add_full_join_fanouts=True):
-        prepare_utils.prepare(join_spec,data_dir,dataset,use_cols)
+    def __init__(
+        self,
+        loaded_tables,
+        join_spec,
+        sample_batch_size,
+        # +@ add parameter for other datasets in prepare process
+        data_dir,
+        dataset,
+        use_cols,
+        rust_random_seed,
+        rng=None,
+        disambiguate_column_names=True,
+        add_full_join_indicators=True,
+        add_full_join_fanouts=True,
+    ):
+        prepare_utils.prepare(join_spec, data_dir, dataset, use_cols)
         self.join_spec = join_spec
         self.sample_batch_size = sample_batch_size
         self.rng = rng
@@ -222,43 +223,32 @@ class FactorizedSampler(object):
         self.add_full_join_indicators = add_full_join_indicators
         self.add_full_join_fanouts = add_full_join_fanouts
         self.dt_actors = [
-            DataTableActor(table.name, join_spec.join_keys[table.name],
-                           table.data, join_spec.join_name,rust_random_seed)
+            DataTableActor(
+                table.name, join_spec.join_keys[table.name], table.data, join_spec.join_name, rust_random_seed
+            )
             for table in loaded_tables
         ]
-        jcts = {
-            table: load_jct(table, join_spec.join_name)
-            for table in join_spec.join_tables
-        }
+        jcts = {table: load_jct(table, join_spec.join_name) for table in join_spec.join_tables}
         self.jct_actors = {
-            table: JoinCountTableActor(table, jct, join_spec,rust_random_seed)
-            for table, jct in jcts.items()
+            table: JoinCountTableActor(table, jct, join_spec, rust_random_seed) for table, jct in jcts.items()
         }
-        self.sampling_tables_ordering = _make_sampling_table_ordering(
-            loaded_tables, join_spec.join_root)
+        self.sampling_tables_ordering = _make_sampling_table_ordering(loaded_tables, join_spec.join_root)
         self.all_columns = None
         self.rename_dict = None
         self.jct_count_columns = get_jct_count_columns(self.join_spec)
-        self.fanout_columns = get_fanout_columns(
-            self.join_spec) if add_full_join_fanouts else []
+        self.fanout_columns = get_fanout_columns(self.join_spec) if add_full_join_fanouts else []
 
         root = join_spec.join_root
-        self.join_card = self.jct_actors[root].jct["{}.weight".format(
-            root)].sum()
+        self.join_card = self.jct_actors[root].jct["{}.weight".format(root)].sum()
 
     def take_jct_sample(self):
         sample = None
         for table in self.sampling_tables_ordering:
-            sample = self.jct_actors[table].take_sample(sample,
-                                                        self.sample_batch_size,
-                                                        self.rng)
+            sample = self.jct_actors[table].take_sample(sample, self.sample_batch_size, self.rng)
         return sample
 
     def _construct_complete_sample(self, join_count_sample):
-        table_samples = [
-            table.construct_sample(join_count_sample)
-            for table in self.dt_actors
-        ]
+        table_samples = [table.construct_sample(join_count_sample) for table in self.dt_actors]
         if self.add_full_join_fanouts:
             df_cnt = join_count_sample[self.jct_count_columns]
             df_cnt.columns = self.fanout_columns
@@ -270,23 +260,15 @@ class FactorizedSampler(object):
         """Rearranges the output columns into the conventional order."""
         if self.all_columns is None:
             content_columns = [c for c in df.columns if not c.startswith("_")]
-            indicator_columns = [
-                "__in_{}".format(t) for t in self.join_spec.join_tables
-            ] if self.add_full_join_indicators else []
+            indicator_columns = (
+                ["__in_{}".format(t) for t in self.join_spec.join_tables] if self.add_full_join_indicators else []
+            )
             fanout_columns = self.fanout_columns
             self.all_columns = content_columns + indicator_columns + fanout_columns
             if self.disambiguate_column_names:
-                self.rename_dict = {
-                    c: c.replace(".", ":")
-                    for c in df.columns
-                    if not c.startswith("_")
-                }
+                self.rename_dict = {c: c.replace(".", ":") for c in df.columns if not c.startswith("_")}
             else:  # used in make_job_queries.py
-                self.rename_dict = {
-                    c: ".".join(c.split(".")[-2:])
-                    for c in df.columns
-                    if not c.startswith("_")
-                }
+                self.rename_dict = {c: ".".join(c.split(".")[-2:]) for c in df.columns if not c.startswith("_")}
         df = df[self.all_columns]
         df.rename(self.rename_dict, axis=1, inplace=True)
         return df
@@ -303,43 +285,44 @@ class FactorizedSamplerIterDataset(common.SamplerBasedIterDataset):
     """An IterableDataset that scales to multiple equivalence classes."""
 
     def _init_sampler(self):
-        self.sampler = FactorizedSampler(self.tables, self.join_spec,
-                                         self.sample_batch_size, 
-                                         # +@ pass parameter for prepare
-                                         self.data_dir,
-                                         self.dataset,
-                                         self.use_cols,
-                                         self.rust_random_seed,
-
-                                         self.rng,
-                                         self.disambiguate_column_names,
-                                         self.add_full_join_indicators,
-                                         self.add_full_join_fanouts)
+        self.sampler = FactorizedSampler(
+            self.tables,
+            self.join_spec,
+            self.sample_batch_size,
+            # +@ pass parameter for prepare
+            self.data_dir,
+            self.dataset,
+            self.use_cols,
+            self.rust_random_seed,
+            self.rng,
+            self.disambiguate_column_names,
+            self.add_full_join_indicators,
+            self.add_full_join_fanouts,
+        )
         # +@ for train data logging
         self.logging_train = False
 
-
     def _run_sampler(self):
-        if not self.logging_train: 
+        if not self.logging_train:
             return self.sampler.run()
         # +@ logging training tuples
-        else :
+        else:
             sample = self.sampler.run()
 
-            now = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S:%f')
-            out_dir = f'./sample_tuples/{self.join_spec.join_name}_{self.use_cols}_{self.sample_batch_size}'
+            now = datetime.datetime.now().strftime("%Y%m%d-%H:%M:%S:%f")
+            out_dir = f"./sample_tuples/{self.join_spec.join_name}_{self.use_cols}_{self.sample_batch_size}"
             if not os.path.isdir(out_dir):
                 os.mkdir(out_dir)
             save_point = f"{out_dir}/TRAIN_{self.join_spec.join_name}_{now}.csv"
             # +@ hardcoding
-            sep = '|'
-            if self.dataset == 'imdb':
-                sep = '#'
-            sample.to_csv(save_point,sep=sep,index=False)
+            sep = "|"
+            if self.dataset == "imdb":
+                sep = "#"
+            sample.to_csv(save_point, sep=sep, index=False)
             return self.sampler.run()
 
     # +@ for changing log attr
-    def SetLogTrain(self,mode) :
+    def SetLogTrain(self, mode):
         self.logging_train = mode
 
 
@@ -352,33 +335,26 @@ def main():
     prepare_utils.prepare(join_spec)
     loaded_tables = []
     for t in join_spec.join_tables:
-        print('Loading', t)
+        print("Loading", t)
         table = datasets.LoadImdb(t, use_cols=config["use_cols"])
         table.data.info()
         loaded_tables.append(table)
 
     t_start = time.time()
     join_iter_dataset = FactorizedSamplerIterDataset(
-        loaded_tables,
-        join_spec,
-        sample_batch_size=1000 * 100,
-        disambiguate_column_names=True)
+        loaded_tables, join_spec, sample_batch_size=1000 * 100, disambiguate_column_names=True
+    )
 
-    table = common.ConcatTables(loaded_tables,
-                                join_spec.join_keys,
-                                sample_from_join_dataset=join_iter_dataset)
+    table = common.ConcatTables(loaded_tables, join_spec.join_keys, sample_from_join_dataset=join_iter_dataset)
 
     join_iter_dataset = common.FactorizedSampleFromJoinIterDataset(
-        join_iter_dataset,
-        base_table=table,
-        factorize_blacklist=[],
-        word_size_bits=10,
-        factorize_fanouts=True)
+        join_iter_dataset, base_table=table, factorize_blacklist=[], word_size_bits=10, factorize_fanouts=True
+    )
     t_end = time.time()
     # log.info(f"> Initialization took {t_end - t_start} seconds.")
 
     join_iter_dataset.join_iter_dataset._sample_batch()
-    print('-' * 60)
+    print("-" * 60)
     print("Done")
 
 

@@ -8,18 +8,19 @@ import sqlite3
 from glob import glob
 from tqdm import tqdm
 from pandas.api.types import is_string_dtype, is_numeric_dtype
-import src.sql_generator.sql_gen_utils.query_graph
-import src.sql_generator.sql_gen_utils.utils as utils
-import src.sql_generator.tools.experiments
+import src.pylogos.query_graph.koutrika_query_graph as query_graph
+from src.pylogos.translate import translate as logos_translate
+import sql_gen_utils.utils as utils
+import tools.experiments
 import sampler.common
 import datasets.datasets as datasets
-import src.sql_generator.sql_gen_utils.join_utils as join_utils
-from src.sql_generator.tools.gen_schema_new import SCHEMA as spider_schema
-from src.sql_generator.tools.gen_schema import SCHEMA as original_schema
-from src.sql_generator.sql_gen_utils.sql_genetion_modules import query_generator
-from src.sql_generator.sql_gen_utils.sql_genetion_utils import alias_generator, TEXTUAL_AGGS, NUMERIC_AGGS
-from src.sql_generator.datasets.type_dicts import imdbDtypeDict, tpcdsDtypeDict
-from src.sql_generator.sampler.factorized_sampler import FactorizedSamplerIterDataset, JoinCountTableActor
+import sql_gen_utils.join_utils as join_utils
+from tools.gen_schema_new import SCHEMA as spider_schema
+from tools.gen_schema import SCHEMA as original_schema
+from sql_gen_utils.sql_genetion_modules import query_generator
+from sql_gen_utils.sql_genetion_utils import alias_generator, TEXTUAL_AGGS, NUMERIC_AGGS
+from datasets.type_dicts import imdbDtypeDict, tpcdsDtypeDict
+from sampler.factorized_sampler import FactorizedSamplerIterDataset, JoinCountTableActor
 
 SCHEMA = {k: v for k, v in list(spider_schema.items()) + list(original_schema.items())}
 # SCHEMA = {k: v for k, v in list(original_schema.items())}
@@ -37,14 +38,14 @@ def str2bool(v):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--num_queries", help="Number of queries", type=int, default=10)  # 10k
-parser.add_argument("--output", type=str, default="result.out")
+parser.add_argument("--num_queries", help="Number of queries", type=int, default=40)  # 10k
+parser.add_argument("--output", type=str, default="result3.out")
 parser.add_argument("--sep", type=str, default="#")
 parser.add_argument("--seed", type=int, default=1234)
-parser.add_argument("--num_in_max", type=int, default=2)
-parser.add_argument("--num_select_max", type=int, default=3)
+parser.add_argument("--num_in_max", type=int, default=5)
+parser.add_argument("--num_select_max", type=int, default=2)
 parser.add_argument("--num_select_min", type=int, default=0)
-parser.add_argument("--num_pred_max", type=int, default=3)
+parser.add_argument("--num_pred_max", type=int, default=4)
 parser.add_argument("--num_pred_min", type=int, default=1)
 parser.add_argument("--num_group_max", type=int, default=2)
 parser.add_argument("--num_group_min", type=int, default=1)
@@ -54,10 +55,12 @@ parser.add_argument("--num_order_max", type=int, default=2)
 parser.add_argument("--num_order_min", type=int, default=1)
 parser.add_argument("--num_limit_max", type=int, default=5)
 parser.add_argument("--num_limit_min", type=int, default=1)
+parser.add_argument("--num_nested_pred_max", type=int, default=2)
+parser.add_argument("--num_nested_pred_min", type=int, default=1)
 parser.add_argument(
     "--query_type",
     type=str,
-    default="spj-mix",
+    default="nested",
     help="""One of (spj-non-nested, spj-nested, spj-mix, non-nested, nested, mix)\n
         Each type stands for non-nested spj query, 
         nested query consists of spj queries, 
@@ -66,29 +69,37 @@ parser.add_argument(
         nested query consists of complex queries, 
         and both non-nested and nested queries consists of complex queries""",
 )
-parser.add_argument("--set_clause_by_clause", action="store_true", default=False)
-parser.add_argument("--has_where", action="store_true", default=False)
-parser.add_argument("--has_group", action="store_true", default=False)
-parser.add_argument("--has_having", action="store_true", default=False)
-parser.add_argument("--has_order", action="store_true", default=False)
-parser.add_argument("--has_limit", action="store_true", default=False)
-parser.add_argument("--set_nested_query_type", action="store_true", default=False)
-parser.add_argument("--has_type_n", action="store_true", default=False)
-parser.add_argument("--has_type_a", action="store_true", default=False)
-parser.add_argument("--has_type_j", action="store_true", default=False)
-parser.add_argument("--has_type_ja", action="store_true", default=False)
+parser.add_argument("--set_clause_by_clause", action="store_true")
+parser.add_argument("--has_where", action="store_true")
+parser.add_argument("--has_group", action="store_true")
+parser.add_argument("--has_having", action="store_true")
+parser.add_argument("--has_order", action="store_true")
+parser.add_argument("--has_limit", action="store_true")
+parser.add_argument("--set_nested_query_type", action="store_true")
+parser.add_argument("--has_type_n", action="store_true")
+parser.add_argument("--has_type_a", action="store_true")
+parser.add_argument("--has_type_j", action="store_true")
+parser.add_argument("--has_type_ja", action="store_true")
 parser.add_argument("--log_path", type=str, default="query_generator.log")
-parser.add_argument("--schema_name", type=str, default="pets_1")
+parser.add_argument("--schema_name", type=str, default="car_1")
 parser.add_argument("--db", type=str, default="spider")
 parser.add_argument("--join_key_pred", type=str2bool, default="False")
-parser.add_argument("--inner_query_paths", nargs="+", default=None)
+parser.add_argument("--global_idx", type=int, default=100)
+parser.add_argument("--used_for_inner_query", type=bool, default=True)
+parser.add_argument(
+    "--inner_query_paths",
+    nargs="+",
+    default=["/home/hjkim/PRODA/non-nested/result.out", "/home/hjkim/PRODA/non-nested/result2.out"],
+)
 args = parser.parse_args()
 
 ALIAS_TO_TABLE_NAME, TABLE_NAME_TO_ALIAS = alias_generator(args)
 
 
 def check_sql_result(db_id, sql):
-    conn = sqlite3.connect("data/database/" + db_id + "/" + db_id + ".sqlite")
+    conn = sqlite3.connect(
+        "/home/hjkim/shpark/PRODA/src/sql_generator/data/database/" + db_id + "/" + db_id + ".sqlite"
+    )
     curs = conn.cursor()
 
     try:
@@ -128,9 +139,34 @@ def file_len(fname):
     return i + 1
 
 
+def decode_key_column(df, db_id):
+    spiderReplacement = json.load(open("/home/hjkim/shpark/PRODA/src/sql_generator/data/spider_replacement.json"))
+    rep = spiderReplacement[db_id]
+    join_groups = rep["join_groups"]
+
+    for col in df.columns:
+        cur_col_group = None
+        for g_idx in join_groups.keys():
+            group = join_groups[g_idx]
+            if col in group:
+                cur_col_group = g_idx
+                break
+
+        if cur_col_group:
+            df[col] = df.apply(
+                lambda x: rep["replacement"][cur_col_group][str(int(x[col]))]
+                if not np.isnan(x[col]) and str(int(x[col])) in rep["replacement"][cur_col_group].keys()
+                else x[col],
+                axis=1,
+            )
+
+    return df
+
+
 def main(
     schema,
     dvs,
+    vs,
     column_dtype_dict,
     num_queries,
     output_path,
@@ -156,7 +192,7 @@ def main(
     t2 = time.time()
     df = sampler.run()
     if schema["dataset"] == "spider":
-        df = utils.decode_key_column(df, schema["use_cols"])
+        df = decode_key_column(df, schema["use_cols"])
 
     lines = list()
     graphs = list()
@@ -168,7 +204,9 @@ def main(
     elif schema["dataset"] == "tpcds":
         dtype_dict = tpcdsDtypeDict
     elif schema["dataset"] == "spider":
-        dtype_dict = json.load(open("data/spider_dtype_dict.json"))[schema["use_cols"]]
+        dtype_dict = json.load(open("/home/hjkim/shpark/PRODA/src/sql_generator/data/spider_dtype_dict.json"))[
+            schema["use_cols"]
+        ]
 
     # for n in range(1,num_queries+1):
     pbar = tqdm(total=num_queries)
@@ -189,6 +227,8 @@ def main(
         inner_query_objs = None
         inner_query_graphs = None
 
+    global_unique_query_idx = args.global_idx
+
     while num_success < num_queries:
         num_iter += 1
         if num_success == 0 and num_iter > 10000:
@@ -197,40 +237,71 @@ def main(
         if n >= len(df.notna()):
             n = 1
 
-        line, graph, obj = query_generator(
-            args, df, n, rng, all_table_set, join_key_list, join_clause_list, join_key_pred, dtype_dict, dvs
-        )
-        # try:
-        #    line, graph, obj = query_generator(
-        #        args,
-        #        df,
-        #        n,
-        #        rng,
-        #        all_table_set,
-        #        join_key_list,
-        #        join_clause_list,
-        #        join_key_pred,
-        #        dtype_dict,
-        #        dvs,
-        #        inner_query_objs,
-        #        inner_query_graphs,
-        #    )
-        # except Exception as e:
-        #    print(e)
-        #    # break
-        #    continue
+        if False:
+            line, graph, obj = query_generator(
+                args,
+                df,
+                n,
+                rng,
+                all_table_set,
+                join_key_list,
+                join_clause_list,
+                join_key_pred,
+                dtype_dict,
+                dvs,
+                vs,
+                inner_query_objs,
+                inner_query_graphs,
+                global_unique_query_idx,
+            )
+            for i in range(len(line)):
+                print(f"SQL ({i}): ")
+                print(line[0].strip())
+                print(f"Translation  ({i}): ")
+                text, _ = logos_translate(graph[i][1])
+                print(text + "\n")
+        else:
+            try:
+                line, graph, obj = query_generator(
+                    args,
+                    df,
+                    n,
+                    rng,
+                    all_table_set,
+                    join_key_list,
+                    join_clause_list,
+                    join_key_pred,
+                    dtype_dict,
+                    dvs,
+                    vs,
+                    inner_query_objs,
+                    inner_query_graphs,
+                    global_unique_query_idx,
+                )
+                for i in range(len(line)):
+                    print(f"SQL ({i}): ")
+                    print(line[i].strip())
+                    print(f"Translation  ({i}): ")
+                    text, _ = logos_translate(graph[i][1])
+                    print(text + "\n")
+            except Exception as e:
+                print(e)
+                n += 1
+                continue
+
         n += 1
+        global_unique_query_idx += len(line)
 
         do_write = True
         if only_executable:
             do_write = check_sql_result(schema["use_cols"], line)
 
         if do_write:
-            lines.append(line + "\n")
-            graphs.append(graph)
-            objs.append(obj)
+            lines = lines + line
+            graphs = graphs + graph
+            objs = objs + obj
             pbar.update(1)
-            num_success += 1
+            num_success += len(line)
 
         if (n + 1) % log_step == 0:
             with open(output_path, "at") as writer:
@@ -269,6 +340,7 @@ def print_full_outer_sample():
 
 def get_full_outer_sampler(schema, SEED=1234):
     loaded_tables = list()
+    args.table_info = {}
     if schema["dataset"] == "spider" and "join_unique_values" not in schema.keys():
         schema["join_unique_values"] = {}
         join_groups = []
@@ -301,6 +373,7 @@ def get_full_outer_sampler(schema, SEED=1234):
 
         table.data.info()
         loaded_tables.append(table)
+        args.table_info[table.name] = [column.name for column in table.columns]
 
     join_spec = join_utils.get_join_spec(
         {
@@ -314,14 +387,14 @@ def get_full_outer_sampler(schema, SEED=1234):
     )
 
     rng = np.random.RandomState(SEED)
-
+    # [TODO hjkim] guarantee consistent table excerpt
     ds = FactorizedSamplerIterDataset(
         loaded_tables,
         join_spec,
         data_dir=schema["data_dir"],
         dataset=schema["dataset"],
         use_cols=schema["use_cols"],
-        sample_batch_size=1000,  # args.num_queries+1,
+        sample_batch_size=100,  # args.num_queries+1,
         disambiguate_column_names=False,
         add_full_join_indicators=False,
         add_full_join_fanouts=False,
@@ -333,25 +406,35 @@ def get_full_outer_sampler(schema, SEED=1234):
 
 def get_distinct_values_dict(loaded_tables, db_id=None):
     dvs_dict = dict()
+    vs_dict = dict()
     for table in loaded_tables:
         table_name = table.Name()
         for column in table.Columns():
             col_name = column.Name()
             dvs = column.all_distinct_values
+            vs = column.all_values
 
             if db_id is not None:
                 dvs_df = pd.DataFrame({table_name + "." + col_name: dvs})
                 dvs_df = decode_key_column(dvs_df, db_id)
                 dvs = dvs_df[table_name + "." + col_name].to_numpy()
 
+                vs_df = pd.DataFrame({table_name + "." + col_name: vs})
+                vs_df = decode_key_column(vs_df, db_id)
+                vs = vs_df[table_name + "." + col_name].to_numpy()
+
             if is_numeric_dtype(dvs):
                 dvs_dict[f"{table_name}.{col_name}"] = dvs[~np.isnan(dvs)]
+                vs_dict[f"{table_name}.{col_name}"] = vs[~np.isnan(vs)]
             else:
                 if pd.isnull(dvs[0]) or dvs[0] == "nan":
                     dvs = dvs[1:]
+                if pd.isnull(vs[0]) or vs[0] == "nan":
+                    vs = vs[1:]
                 dvs_dict[f"{table_name}.{col_name}"] = dvs
+                vs_dict[f"{table_name}.{col_name}"] = vs
 
-    return dvs_dict
+    return dvs_dict, vs_dict
 
 
 def get_column_dtype_dict(loaded_tables):
@@ -372,9 +455,11 @@ if __name__ == "__main__":
     # 	print('Error in building full outer join table')
     # 	quit()
 
-    dvs = get_distinct_values_dict(loaded_tables, db_id=schema["use_cols"] if schema["dataset"] == "spider" else None)
-    column_dtype_dict = get_column_dtype_dict(loaded_tables)
-    # column_dtype_dict = None
+    dvs, vs = get_distinct_values_dict(
+        loaded_tables, db_id=schema["use_cols"] if schema["dataset"] == "spider" else None
+    )
+    # column_dtype_dict = get_column_dtype_dict(loaded_tables)
+    column_dtype_dict = None
 
     num_queries = args.num_queries
     output_path = args.output
@@ -390,6 +475,7 @@ if __name__ == "__main__":
     main(
         schema,
         dvs,
+        vs,
         column_dtype_dict,
         num_queries,
         output_path,

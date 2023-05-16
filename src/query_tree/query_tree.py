@@ -12,6 +12,10 @@ class Node(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
+    def get_name(self) -> str:
+        pass
+
+    @abc.abstractmethod
     def get_rows(self) -> List[List[Any]]:
         pass
 
@@ -42,9 +46,11 @@ class Attach(Edge):
 
 
 class BaseTable(Node):
-    def __init__(self, header: List[str], data: List[List[Any]]):
+    def __init__(self, header: List[str], data: List[List[Any]], name: Optional[str] = None):
         self.header: List[str] = header
         self.data: List[List[Any]] = data
+        if name:
+            self.name: str = name
 
     def __len__(self):
         return len(self.header)
@@ -56,6 +62,9 @@ class BaseTable(Node):
     @property
     def num_nodes(self):
         return 0
+
+    def get_name(self) -> str:
+        return self.name
 
     def get_headers(self) -> List[str]:
         return self.header
@@ -71,12 +80,14 @@ class QueryBlock(Node):
         operations: List[Operation],
         join_conditions: Optional[List[Clause]] = None,
         sql: Optional[str] = None,
+        name: Optional[str] = None,
     ):
         """Multiple Selection in the operations list are treated as conjunctions"""
         self.child_tables: List[Edge] = child_tables
         self.join_conditions: List[Clause] = join_conditions if join_conditions else []
         self.operations: List[Operation] = operations
         self.sql: str = sql
+        self.name: str = name
 
     def __len__(self):
         return sum(len(op) for op in self.operations if type(op) in [Projection, Foreach])
@@ -88,6 +99,23 @@ class QueryBlock(Node):
     @property
     def num_nodes(self) -> List[List[Any]]:
         return 1 + sum(edge.child.num_nodes for edge in self.child_tables)
+
+    def get_name(self) -> str:
+        return self.name
+
+    def add_join_conditions(self, join_conditions: List[Clause]):
+        self.join_conditions += join_conditions
+
+    def add_operations(self, operations: List[Operation]):
+        self.operations += operations
+
+    def get_child_tables(self) -> List[Edge]:
+        return self.child_tables
+
+    def get_child_table(self, name) -> Edge:
+        for child_table in self.get_child_tables():
+            if child_table.get_name() == name:
+                return child_table
 
     def get_headers(self) -> List[str]:
         # Get header names

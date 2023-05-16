@@ -7,7 +7,8 @@ import pickle
 
 
 def write_graphs(writer, graphs):
-    for graph in graphs:
+    for tree, graph in graphs:
+        pickle.dump(tree, writer, pickle.HIGHEST_PROTOCOL)
         pickle.dump(graph, writer, pickle.HIGHEST_PROTOCOL)
 
 
@@ -16,12 +17,13 @@ def load_graphs(filepath, count):
     with open(filepath, "rb") as f:
         for i in range(count):
             try:
-                data = pickle.load(f)
+                tree = pickle.load(f)
+                graph = pickle.load(f)
             except EOFError:
                 assert False, "The number of queries given by users is wrong, Only {} queries in the file {}".format(
                     i, filepath
                 )
-            graphs.append(data)
+            graphs.append([tree, graph])
     return graphs
 
 

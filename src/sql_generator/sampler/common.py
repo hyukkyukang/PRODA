@@ -11,6 +11,8 @@ import pandas as pd
 
 import torch
 from torch.utils.data import Dataset, IterableDataset
+
+
 # import argparse
 # parser = argparse.ArgumentParser()
 # parser.add_argument(
@@ -19,9 +21,11 @@ from torch.utils.data import Dataset, IterableDataset
 #     required=False,
 #     type=bool,
 #     help='Allow join predicate')
-class A():
+class A:
     def __init__(self):
         self.join_pred = True
+
+
 args = A()
 
 # args = parser.parse_args()
@@ -30,30 +34,31 @@ TYPE_NORMAL_ATTR = 0
 TYPE_INDICATOR = 1
 TYPE_FANOUT = 2
 
-def logging(txt,header='',path="./results/log.txt"):
+
+def logging(txt, header="", path="./results/log.txt"):
     torch.set_printoptions(profile="full")
-    with open(path,'at') as writer:
+    with open(path, "at") as writer:
         writer.write(f"{header}:{txt}\n")
     torch.set_printoptions(profile="default")  # reset
+
+
 # def logging_torch(logits,data,path="./results/log.csv"):
-def loggingTensor(idx,logits, data,path="./results/") :
+def loggingTensor(idx, logits, data, path="./results/"):
     logit_file_name = f"{idx:02d}_nin_logits.pt"
     data_file_name = f"{idx:02d}_nin_data.pt"
 
-    torch.save(logits,path+logit_file_name)
-    torch.save(data,path+data_file_name)
+    torch.save(logits, path + logit_file_name)
+    torch.save(data, path + data_file_name)
 
 
 def time_this(f):
-
     def timed_wrapper(*args, **kw):
         start_time = time.time()
         result = f(*args, **kw)
         end_time = time.time()
 
         # Time taken = end_time - start_time
-        print('| func:%r took: %2.4f seconds |' % \
-              (f.__name__, end_time - start_time))
+        print("| func:%r took: %2.4f seconds |" % (f.__name__, end_time - start_time))
         return result
 
     return timed_wrapper
@@ -98,20 +103,23 @@ class Column(object):
     "data" and "domain_vals" are NOT copied.
     """
 
-    def __init__(self,
-                 name,
-                 distribution_size=None,
-                 pg_name=None,
-                 factor_id=None,
-                 bit_width=None,
-                 bit_offset=None,
-                 domain_bits=None,
-                 num_bits=None):
+    def __init__(
+        self,
+        name,
+        distribution_size=None,
+        pg_name=None,
+        factor_id=None,
+        bit_width=None,
+        bit_offset=None,
+        domain_bits=None,
+        num_bits=None,
+    ):
         self.name = name
 
         # Data related fields.
         self.data = None
         self.all_distinct_values = None
+        self.all_values = None
         self.distribution_size = distribution_size
 
         # Factorization related fields.
@@ -175,13 +183,12 @@ class Column(object):
         elif val < self.all_distinct_values[0]:
             return (-1, False)
         else:
-            return (next(
-                i for i, v in enumerate(self.all_distinct_values) if v > val),
-                    False)
+            return (next(i for i, v in enumerate(self.all_distinct_values) if v > val), False)
 
     def SetDistribution(self, distinct_values):
         """This is all the values this column will ever see."""
         assert self.all_distinct_values is None
+        assert self.all_values is None
         # pd.isnull returns true for both np.nan and np.datetime64('NaT').
         is_nan = pd.isnull(distinct_values)
         contains_nan = np.any(is_nan)
@@ -191,14 +198,27 @@ class Column(object):
         # beginning.
         vs = np.sort(np.unique(dv_no_nan))
         if contains_nan and np.issubdtype(distinct_values.dtype, np.datetime64):
-            vs = np.insert(vs, 0, np.datetime64('NaT'))
+            vs = np.insert(vs, 0, np.datetime64("NaT"))
         elif contains_nan:
             vs = np.insert(vs, 0, np.nan)
         if self.distribution_size is not None:
             assert len(vs) == self.distribution_size
+
         self.all_distinct_values = vs
         self.distribution_size = len(vs)
         return self
+
+    def SetTrueDistribution(self, all_values):
+        is_nan = pd.isnull(all_values)
+        contains_nan = np.any(is_nan)
+        dv_no_nan = all_values[~is_nan]
+
+        vs_all = np.sort(dv_no_nan)
+        if contains_nan and np.issubdtype(all_values.dtype, np.datetime64):
+            vs_all = np.insert(vs_all, 0, np.datetime64("NaT"))
+        elif contains_nan:
+            vs_all = np.insert(vs_all, 0, np.nan)
+        self.all_values = vs_all
 
     def Fill(self, data_instance, infer_dist=False):
         assert self.data is None
@@ -207,26 +227,23 @@ class Column(object):
         # from data.
         if infer_dist:
             self.SetDistribution(self.data)
+            self.SetTrueDistribution(self.data)
         return self
 
     def InsertNullInDomain(self):
         # Convention: np.nan would only appear first.
         if not pd.isnull(self.all_distinct_values[0]):
-            if self.all_distinct_values.dtype == np.dtype('object'):
+            if self.all_distinct_values.dtype == np.dtype("object"):
                 # String columns: inserting nan preserves the dtype.
-                self.all_distinct_values = np.insert(self.all_distinct_values,
-                                                     0, np.nan)
+                self.all_distinct_values = np.insert(self.all_distinct_values, 0, np.nan)
             else:
                 # Assumed to be numeric columns.  np.nan is treated as a
                 # float.
-                self.all_distinct_values = np.insert(
-                    self.all_distinct_values.astype(np.float64, copy=False), 0,
-                    np.nan)
+                self.all_distinct_values = np.insert(self.all_distinct_values.astype(np.float64, copy=False), 0, np.nan)
             self.distribution_size = len(self.all_distinct_values)
 
     def __repr__(self):
-        return 'Column({}, distribution_size={})'.format(
-            self.name, self.distribution_size)
+        return "Column({}, distribution_size={})".format(self.name, self.distribution_size)
 
 
 class Table(object):
@@ -263,7 +280,7 @@ class Table(object):
             self.pg_name = name
 
     def __repr__(self):
-        return '{}({})'.format(self.name, self.columns)
+        return "{}({})".format(self.name, self.columns)
 
     def _validate_cardinality(self, columns):
         """Checks that all the columns have same the number of rows."""
@@ -285,8 +302,7 @@ class Table(object):
 
     def ColumnIndex(self, name):
         """Returns index of column with the specified name."""
-        assert name in self.name_to_index, (name,
-                                            list(self.name_to_index.keys()))
+        assert name in self.name_to_index, (name, list(self.name_to_index.keys()))
         return self.name_to_index[name]
 
     def __getitem__(self, column_name):
@@ -295,23 +311,14 @@ class Table(object):
     def TableColumnIndex(self, source_table, col):
         """Returns index of column with the specified name/source."""
         name = JoinTableAndColumnNames(source_table, col)
-        assert name in self.name_to_index, (name,
-                                            list(self.name_to_index.keys()))
+        assert name in self.name_to_index, (name, list(self.name_to_index.keys()))
         return self.name_to_index[name]
 
 
 class CsvTable(Table):
-
-    def __init__(self,
-                 name,
-                 filename_or_df,
-                 cols,
-                 type_casts,
-                 pg_name=None,
-                 pg_cols=None,
-                 dropna=False,
-                 schema=None,
-                 **kwargs):
+    def __init__(
+        self, name, filename_or_df, cols, type_casts, pg_name=None, pg_cols=None, dropna=False, schema=None, **kwargs
+    ):
         """Accepts same arguments as pd.read_csv().
 
         Args:
@@ -340,13 +347,13 @@ class CsvTable(Table):
         super(CsvTable, self).__init__(name, self.columns, pg_name)
 
     def _load(self, filename, cols, **kwargs):
-        print('Loading csv...', end=' ')
+        print("Loading csv...", end=" ")
         s = time.time()
         df = pd.read_csv(filename, usecols=cols, **kwargs)
         if cols is not None:
             # Use [cols] here anyway to reorder columns by 'cols'.
             df = df[cols]
-        print('done, took {:.1f}s'.format(time.time() - s))
+        print("done, took {:.1f}s".format(time.time() - s))
         return df
 
     def _build_columns(self, data, cols, type_casts, pg_cols):
@@ -357,7 +364,7 @@ class CsvTable(Table):
 
         Returns: a list of Columns.
         """
-        print('Parsing...', end=' ')
+        print("Parsing...", end=" ")
         s = time.time()
         for col, typ in type_casts.items():
             if col not in data:
@@ -366,9 +373,7 @@ class CsvTable(Table):
                 data[col] = data[col].astype(typ, copy=False)
             else:
                 # Both infer_datetime_format and cache are critical for perf.
-                data[col] = pd.to_datetime(data[col],
-                                           infer_datetime_format=True,
-                                           cache=True)
+                data[col] = pd.to_datetime(data[col], infer_datetime_format=True, cache=True)
 
         # Discretize & create Columns.
         columns = []
@@ -387,24 +392,27 @@ class CsvTable(Table):
             # To test for former, use np.isnan(...).any()
             # To test for latter, use np.isnat(...).any()
             col.SetDistribution(data[c].value_counts(dropna=False).index.values)
+            col.SetTrueDistribution(data[c])
             columns.append(col)
-        print('done, took {:.1f}s'.format(time.time() - s))
+        print("done, took {:.1f}s".format(time.time() - s))
         return columns
 
     def _replace_string_to_int(self, schema, tab, cols):
-        assert 'join_unique_values' in schema.keys()
+        assert "join_unique_values" in schema.keys()
 
         for col in cols:
             if pd.api.types.is_numeric_dtype(self.data[col]):
                 continue
-            tabcol = tab + '.' + col
-            for join_group in schema['join_unique_values'].keys():
+            tabcol = tab + "." + col
+            for join_group in schema["join_unique_values"].keys():
                 if tabcol in join_group:
                     for cell in self.data[col]:
-                        if cell not in schema['join_unique_values'][join_group].keys():
-                            schema['join_unique_values'][join_group][cell] = len(schema['join_unique_values'][join_group].keys())
-                    
-                    for key, value in schema['join_unique_values'][join_group].items():
+                        if cell not in schema["join_unique_values"][join_group].keys():
+                            schema["join_unique_values"][join_group][cell] = len(
+                                schema["join_unique_values"][join_group].keys()
+                            )
+
+                    for key, value in schema["join_unique_values"][join_group].items():
                         self.data[col].replace(key, value)
 
 
@@ -417,10 +425,8 @@ class FactorizedTable(Dataset):
         self.base_table = self.table_dataset.table
         self.word_size_bits = word_size_bits
         self.word_size = 2**self.word_size_bits
-        self.columns, self.factorized_tuples_np = self._factorize(
-            self.table_dataset.tuples_np)
-        self.factorized_tuples = torch.as_tensor(
-            self.factorized_tuples_np.astype(copy=False, dtype=np.float32))
+        self.columns, self.factorized_tuples_np = self._factorize(self.table_dataset.tuples_np)
+        self.factorized_tuples = torch.as_tensor(self.factorized_tuples_np.astype(copy=False, dtype=np.float32))
         self.cardinality = table_dataset.table.cardinality
 
     def _factorize(self, tuples_np):
@@ -433,9 +439,9 @@ class FactorizedTable(Dataset):
             dom = col.DistributionSize()
             if dom <= self.word_size:
                 factorized_data.append(tuples_np[:, i])
-                new_col = Column(col.name,
-                                 distribution_size=col.distribution_size)
+                new_col = Column(col.name, distribution_size=col.distribution_size)
                 new_col.SetDistribution(col.all_distinct_values)
+                new_col.SetTrueDistribution(col.all_values)
                 cols.append(new_col)
                 print("col", i, col.name, "not factorized")
             else:
@@ -446,30 +452,33 @@ class FactorizedTable(Dataset):
                     bit_width = min(num_bits, self.word_size_bits)
                     num_bits -= self.word_size_bits
                     if num_bits < 0:
-                        factorized_data.append(tuples_np[:, i] &
-                                               (word_mask >> -num_bits))
+                        factorized_data.append(tuples_np[:, i] & (word_mask >> -num_bits))
                         dist_size = len(np.unique(factorized_data[-1]))
-                        assert dist_size <= 2**(self.word_size_bits + num_bits)
-                        f_col = Column(col.name + "_fact_" + str(j),
-                                       distribution_size=dist_size,
-                                       factor_id=j,
-                                       bit_width=bit_width,
-                                       bit_offset=0,
-                                       domain_bits=domain_bits,
-                                       num_bits=num_bits)
+                        assert dist_size <= 2 ** (self.word_size_bits + num_bits)
+                        f_col = Column(
+                            col.name + "_fact_" + str(j),
+                            distribution_size=dist_size,
+                            factor_id=j,
+                            bit_width=bit_width,
+                            bit_offset=0,
+                            domain_bits=domain_bits,
+                            num_bits=num_bits,
+                        )
                     else:
-                        factorized_data.append((tuples_np[:, i] >> num_bits) &
-                                               word_mask)
+                        factorized_data.append((tuples_np[:, i] >> num_bits) & word_mask)
                         dist_size = len(np.unique(factorized_data[-1]))
                         assert dist_size <= self.word_size
-                        f_col = Column(col.name + "_fact_" + str(j),
-                                       distribution_size=dist_size,
-                                       factor_id=j,
-                                       bit_width=bit_width,
-                                       bit_offset=num_bits,
-                                       domain_bits=domain_bits,
-                                       num_bits=num_bits)
+                        f_col = Column(
+                            col.name + "_fact_" + str(j),
+                            distribution_size=dist_size,
+                            factor_id=j,
+                            bit_width=bit_width,
+                            bit_offset=num_bits,
+                            domain_bits=domain_bits,
+                            num_bits=num_bits,
+                        )
                     f_col.SetDistribution(factorized_data[-1])
+                    f_col.SetTrueDistribution(factorized_data[-1])
                     cols.append(f_col)
                     print("fact col", i, num_bits, factorized_data[-1])
                     j += 1
@@ -501,14 +510,12 @@ class TableDataset(Dataset):
         super(TableDataset, self).__init__()
         self.table = copy.deepcopy(table)
 
-        print('Discretizing table...', end=' ')
+        print("Discretizing table...", end=" ")
         s = time.time()
         # [cardianlity, num cols].
-        self.tuples_np = np.stack(
-            [self.Discretize(c) for c in self.table.Columns()], axis=1)
-        self.tuples = torch.as_tensor(
-            self.tuples_np.astype(np.float32, copy=False))
-        print('done, took {:.1f}s'.format(time.time() - s))
+        self.tuples_np = np.stack([self.Discretize(c) for c in self.table.Columns()], axis=1)
+        self.tuples = torch.as_tensor(self.tuples_np.astype(np.float32, copy=False))
+        print("done, took {:.1f}s".format(time.time() - s))
 
     def Discretize(self, col):
         """Discretize values into its Column's bins.
@@ -562,7 +569,7 @@ def Discretize(col, data=None, fail_out_of_domain=True):
         assert len(bin_ids) == len(data), (len(bin_ids), len(data))
         if fail_out_of_domain:
             # Check that non-NaN values are all in the dictionary 'dvs'.
-            assert (bin_ids[~pd.isnull(data)] >= 0).all() or ('_fanout' in col.name), (col, data, bin_ids)
+            assert (bin_ids[~pd.isnull(data)] >= 0).all() or ("_fanout" in col.name), (col, data, bin_ids)
         else:
             # Throw out out-of-domain vals, but keep nulls.
             bin_ids = bin_ids[(bin_ids >= 0) | (pd.isnull(data))]
@@ -587,12 +594,7 @@ def Discretize(col, data=None, fail_out_of_domain=True):
 class FactorizedSampleFromJoinIterDataset(IterableDataset):
     """Wraps a SampleFromJoinIterDataset to factorize large-card columns."""
 
-    def __init__(self,
-                 join_iter,
-                 base_table,
-                 factorize_blacklist=[],
-                 word_size_bits=5,
-                 factorize_fanouts=False):
+    def __init__(self, join_iter, base_table, factorize_blacklist=[], word_size_bits=5, factorize_fanouts=False):
         """Column factorization with join sampling.
 
         Args:
@@ -613,8 +615,7 @@ class FactorizedSampleFromJoinIterDataset(IterableDataset):
         self.word_size_bits = word_size_bits
         self.word_size = 2**self.word_size_bits
         self.factorize_fanouts = factorize_fanouts
-        self.fact_col_mapping = defaultdict(
-            list)  # Mapping from table col to fact cols.
+        self.fact_col_mapping = defaultdict(list)  # Mapping from table col to fact cols.
         self.base_table = base_table
         self.base_table_cols = self.join_iter_dataset.columns_in_join()
         self.cardinality = self.base_table.cardinality
@@ -637,9 +638,9 @@ class FactorizedSampleFromJoinIterDataset(IterableDataset):
             # assumes virtual columns are not factorized.  Flag
             # 'factorize_fanouts' is unsafe in general (unless inference is
             # modified to sample from factorized fanouts).
-            if column.name.startswith('__in'):
+            if column.name.startswith("__in"):
                 return True
-            if column.name.startswith('__fanout'):
+            if column.name.startswith("__fanout"):
                 return not self.factorize_fanouts
 
             return False
@@ -647,25 +648,20 @@ class FactorizedSampleFromJoinIterDataset(IterableDataset):
         cols = []
         self.combined_columns_types = []  # Column types for factorized columns.
         self.table_indexes = []  # Fact col index -> Table index.
-        self.table_num_columns = [0] * len(
-            self.join_iter_dataset.table_num_columns)
+        self.table_num_columns = [0] * len(self.join_iter_dataset.table_num_columns)
         for i, col in enumerate(self.base_table_cols):
             dom = col.DistributionSize()
             if _should_not_factorize(col):
                 # Don't factorize this column.
-                new_col = Column(col.name,
-                                 distribution_size=col.distribution_size)
+                new_col = Column(col.name, distribution_size=col.distribution_size)
                 new_col.SetDistribution(col.all_distinct_values)
                 cols.append(new_col)
-                self.combined_columns_types.append(
-                    self.join_iter_dataset.combined_columns_types[i])
-                self.table_indexes.append(
-                    self.join_iter_dataset.table_indexes[i])
-                if not col.name.startswith('__'):
+                self.combined_columns_types.append(self.join_iter_dataset.combined_columns_types[i])
+                self.table_indexes.append(self.join_iter_dataset.table_indexes[i])
+                if not col.name.startswith("__"):
                     # table_num_columns should count content columns only.
-                    self.table_num_columns[
-                        self.join_iter_dataset.table_indexes[i]] += 1
-                print('col', i, col.name, 'not factorized')
+                    self.table_num_columns[self.join_iter_dataset.table_indexes[i]] += 1
+                print("col", i, col.name, "not factorized")
             else:
                 domain_bits = num_bits = len(bin(dom)) - 2
                 word_mask = self.word_size - 1
@@ -677,41 +673,42 @@ class FactorizedSampleFromJoinIterDataset(IterableDataset):
                     if num_bits < 0:
                         fact_col_dv = col_dv & (word_mask >> -num_bits)
                         dist_size = len(np.unique(fact_col_dv))
-                        assert dist_size <= 2**(self.word_size_bits + num_bits)
-                        f_col = Column(col.name + '_fact_' + str(j),
-                                       distribution_size=dist_size,
-                                       factor_id=j,
-                                       bit_width=bit_width,
-                                       bit_offset=0,
-                                       domain_bits=domain_bits,
-                                       num_bits=num_bits)
+                        assert dist_size <= 2 ** (self.word_size_bits + num_bits)
+                        f_col = Column(
+                            col.name + "_fact_" + str(j),
+                            distribution_size=dist_size,
+                            factor_id=j,
+                            bit_width=bit_width,
+                            bit_offset=0,
+                            domain_bits=domain_bits,
+                            num_bits=num_bits,
+                        )
                     else:
                         fact_col_dv = (col_dv >> num_bits) & word_mask
                         dist_size = len(np.unique(fact_col_dv))
                         assert dist_size <= self.word_size
-                        f_col = Column(col.name + '_fact_' + str(j),
-                                       distribution_size=dist_size,
-                                       factor_id=j,
-                                       bit_width=bit_width,
-                                       bit_offset=num_bits,
-                                       domain_bits=domain_bits,
-                                       num_bits=num_bits)
+                        f_col = Column(
+                            col.name + "_fact_" + str(j),
+                            distribution_size=dist_size,
+                            factor_id=j,
+                            bit_width=bit_width,
+                            bit_offset=num_bits,
+                            domain_bits=domain_bits,
+                            num_bits=num_bits,
+                        )
                     f_col.SetDistribution(fact_col_dv)
                     cols.append(f_col)
                     self.fact_col_mapping[col].append(f_col)
-                    self.combined_columns_types.append(
-                        self.join_iter_dataset.combined_columns_types[i])
-                    self.table_indexes.append(
-                        self.join_iter_dataset.table_indexes[i])
+                    self.combined_columns_types.append(self.join_iter_dataset.combined_columns_types[i])
+                    self.table_indexes.append(self.join_iter_dataset.table_indexes[i])
 
-                    if not col.name.startswith('__'):
+                    if not col.name.startswith("__"):
                         # table_num_columns should count content columns only.
-                        self.table_num_columns[
-                            self.join_iter_dataset.table_indexes[i]] += 1
-                    print('fact col', i, col.name, num_bits, fact_col_dv)
+                        self.table_num_columns[self.join_iter_dataset.table_indexes[i]] += 1
+                    print("fact col", i, col.name, num_bits, fact_col_dv)
                     j += 1
-                print('orig', i, col.all_distinct_values)
-        print('Factored table', cols)
+                print("orig", i, col.all_distinct_values)
+        print("Factored table", cols)
         return cols
 
     def _factorize_data(self, data):
@@ -736,8 +733,7 @@ class FactorizedSampleFromJoinIterDataset(IterableDataset):
         return self.columns
 
     def ColumnIndex(self, name):
-        assert name in self.name_to_index, (name,
-                                            list(self.name_to_index.keys()))
+        assert name in self.name_to_index, (name, list(self.name_to_index.keys()))
         return self.name_to_index[name]
 
     def __iter__(self):
@@ -755,25 +751,25 @@ class SamplerBasedIterDataset(IterableDataset):
     """A base class for sampler-based datasets."""
 
     def __init__(
-            self,
-            loaded_tables,
-            join_spec,
-            # +@ factorzied sampler
-            rng,
-            data_dir,
-            dataset,
-            use_cols,
-            rust_random_seed,
-
-            sample_batch_size=512,
-            build_indexes=True,
-            disambiguate_column_names=False,
-            add_full_join_indicators=True,
-            add_full_join_fanouts=True,
-            initialize_sampler=True,
-            # Experimental: save/load CSV.
-            save_samples=None,
-            load_samples=None):
+        self,
+        loaded_tables,
+        join_spec,
+        # +@ factorzied sampler
+        rng,
+        data_dir,
+        dataset,
+        use_cols,
+        rust_random_seed,
+        sample_batch_size=512,
+        build_indexes=True,
+        disambiguate_column_names=False,
+        add_full_join_indicators=True,
+        add_full_join_fanouts=True,
+        initialize_sampler=True,
+        # Experimental: save/load CSV.
+        save_samples=None,
+        load_samples=None,
+    ):
         # +@ set new attr
         self.data_dir = data_dir
         self.dataset = dataset
@@ -783,12 +779,12 @@ class SamplerBasedIterDataset(IterableDataset):
         self.join_spec = join_spec
         self.join_keys = join_spec.join_keys
         self.how = join_spec.join_how
-        assert self.how in ['inner', 'outer'], join_spec
+        assert self.how in ["inner", "outer"], join_spec
         self.tables = loaded_tables
         self.table_dict = {t.name: t for t in self.tables}
         self.dfs = [t.data for t in loaded_tables]
         self.disambiguate_column_names = disambiguate_column_names
-        assert not (save_samples and load_samples), 'Set at most one of them.'
+        assert not (save_samples and load_samples), "Set at most one of them."
         self.save_samples = save_samples
         self.load_samples = load_samples
 
@@ -810,8 +806,7 @@ class SamplerBasedIterDataset(IterableDataset):
         self.combined_columns = []
         self.combined_columns_types = []
         self.table_indexes = []  # column index -> table index
-        self.table_num_columns = [0] * len(
-            self.tables)  # table index -> num normal attrs of that table
+        self.table_num_columns = [0] * len(self.tables)  # table index -> num normal attrs of that table
         for i, t in enumerate(self.tables):
             for c in t.columns:
                 # Assume that there are no filters on join keys.
@@ -831,27 +826,21 @@ class SamplerBasedIterDataset(IterableDataset):
                     if disambiguate_column_names:
                         c.name = JoinTableAndColumnNames(t.name, c.name)
 
-        self._maybe_add_full_join_virtual_columns(self.combined_columns,
-                                                  self.combined_columns_types,
-                                                  self.table_indexes)
+        self._maybe_add_full_join_virtual_columns(
+            self.combined_columns, self.combined_columns_types, self.table_indexes
+        )
 
-        if self.how == 'outer':
+        if self.how == "outer":
             # Necessary for discretization.
-            print(
-                'Full outer join specified, inserting np.nan to all column domains'
-            )
+            print("Full outer join specified, inserting np.nan to all column domains")
             for col in self.combined_columns:
                 # TODO: technically don't need to add NULL to the fanout cols.
                 col.InsertNullInDomain()
 
         if disambiguate_column_names:
-            self.join_keys_set = set(
-                JoinTableAndColumnNames(t, c)
-                for t, cs in self.join_keys.items()
-                for c in cs)
+            self.join_keys_set = set(JoinTableAndColumnNames(t, c) for t, cs in self.join_keys.items() for c in cs)
         else:
-            self.join_keys_set = set(
-                c for cs in self.join_keys.values() for c in cs)
+            self.join_keys_set = set(c for cs in self.join_keys.values() for c in cs)
 
         # +@ set rng
         self.rng = rng
@@ -871,25 +860,20 @@ class SamplerBasedIterDataset(IterableDataset):
     def _run_sampler(self):
         raise NotImplementedError
 
-    def _add_virtual_column(self, i, table_name, key, columns, types,
-                            table_indexes, table_df, single_key):
+    def _add_virtual_column(self, i, table_name, key, columns, types, table_indexes, table_df, single_key):
         # TODO: better yet, get this information from the join count tables
-        column = Column('__fanout_{}'.format(table_name) if single_key else
-                        '__fanout_{}__{}'.format(table_name, key))
+        column = Column("__fanout_{}".format(table_name) if single_key else "__fanout_{}__{}".format(table_name, key))
         max_count = table_df.groupby(by=[key]).size().max()
         column.SetDistribution(np.arange(max_count + 1))
+        column.SetTrueDistribution(np.arange(max_count + 1))
         columns.append(column)
         types.append(TYPE_FANOUT)
         table_indexes.append(i)
 
-    def _maybe_add_full_join_virtual_columns(self, columns, types,
-                                             table_indexes):
+    def _maybe_add_full_join_virtual_columns(self, columns, types, table_indexes):
         if self.add_full_join_indicators:
             for i, t in enumerate(self.tables):
-                columns.append(
-                    Column('__in_{}'.format(t.name)).Fill(np.array(
-                        [np.nan, 1.0]),
-                                                          infer_dist=True))
+                columns.append(Column("__in_{}".format(t.name)).Fill(np.array([np.nan, 1.0]), infer_dist=True))
                 types.append(TYPE_INDICATOR)
                 table_indexes.append(i)
         if self.add_full_join_fanouts:
@@ -903,9 +887,9 @@ class SamplerBasedIterDataset(IterableDataset):
                 table_df = self.table_dict[table.name].data
                 table_df.index.name = None
                 for key in join_keys:
-                    self._add_virtual_column(i, table.name, key, columns, types,
-                                             table_indexes, table_df,
-                                             len(join_keys) == 1)
+                    self._add_virtual_column(
+                        i, table.name, key, columns, types, table_indexes, table_df, len(join_keys) == 1
+                    )
 
     def columns_in_join(self):
         return self.combined_columns
@@ -915,26 +899,20 @@ class SamplerBasedIterDataset(IterableDataset):
 
     def _maybe_save_samples(self, sampled_df):
         import filelock
+
         if self.save_samples is not None:
-            with filelock.FileLock(self.save_samples + '.lock'):
+            with filelock.FileLock(self.save_samples + ".lock"):
                 if not os.path.exists(self.save_samples):
-                    sampled_df.to_csv(self.save_samples,
-                                      mode='w',
-                                      header=True,
-                                      index=False)
+                    sampled_df.to_csv(self.save_samples, mode="w", header=True, index=False)
                 else:
-                    sampled_df.to_csv(self.save_samples,
-                                      mode='a',
-                                      header=False,
-                                      index=False)
+                    sampled_df.to_csv(self.save_samples, mode="a", header=False, index=False)
 
     def _load_samples_chunk(self):
-        print('loading')
+        print("loading")
         ptr = self.materialized_samples_ptr
         self.materialized_samples_ptr += self.sample_batch_size
         total = len(self.materialized_samples)
-        return self.materialized_samples[ptr:min(total, self.
-                                                 materialized_samples_ptr)]
+        return self.materialized_samples[ptr : min(total, self.materialized_samples_ptr)]
 
     def _sample_batch(self, do_discretize=True):
         """Samples a raw pd.DataFrame; optionally discretize into np.ndarray."""
@@ -952,27 +930,27 @@ class SamplerBasedIterDataset(IterableDataset):
         else:
             sampled_df = self._run_sampler()
 
-        assert len(sampled_df.columns) == len(self.combined_columns), (len(
-            sampled_df.columns), sampled_df.columns, len(
-                self.combined_columns), self.combined_columns)
+        assert len(sampled_df.columns) == len(self.combined_columns), (
+            len(sampled_df.columns),
+            sampled_df.columns,
+            len(self.combined_columns),
+            self.combined_columns,
+        )
 
         self._maybe_save_samples(sampled_df)
 
         self.pointer = 0
         if do_discretize:
             discretized = []
-            for i, (col_name, col) in enumerate(
-                    zip(sampled_df.columns, self.combined_columns)):
+            for i, (col_name, col) in enumerate(zip(sampled_df.columns, self.combined_columns)):
                 # Dropped join keys?
                 # assert col_name not in self.join_keys_set
 
                 # Just some extra checks.
                 if not self.disambiguate_column_names:
-                    assert col_name == col.name, (sampled_df.columns, col_name,
-                                                  col.name)
+                    assert col_name == col.name, (sampled_df.columns, col_name, col.name)
                 else:
-                    assert col.name.endswith(col_name), (sampled_df.columns,
-                                                         col_name, col.name)
+                    assert col.name.endswith(col_name), (sampled_df.columns, col_name, col.name)
 
                 discretized_col_data = Discretize(col, sampled_df.iloc[:, i])
                 discretized.append(discretized_col_data.reshape(-1, 1))
@@ -1003,18 +981,14 @@ class SampleFromJoinIterDataset(SamplerBasedIterDataset):
         raise NotImplementedError
 
 
-def ConcatTables(tables,
-                 join_keys,
-                 disambiguate_column_names=False,
-                 sample_from_join_dataset=None):
+def ConcatTables(tables, join_keys, disambiguate_column_names=False, sample_from_join_dataset=None):
     """Makes a dummy Table to represent the schema of a join result."""
     cols_in_join = sample_from_join_dataset.columns_in_join()
     names = [t.name for t in tables]
-    table = Table('-'.join(names), cols_in_join, validate_cardinality=False)
+    table = Table("-".join(names), cols_in_join, validate_cardinality=False)
     table.table_names = names
     return table
 
 
-def JoinTableAndColumnNames(table_name, column_name, sep=':'):
-    return '{}{}{}'.format(table_name, sep, column_name)
-
+def JoinTableAndColumnNames(table_name, column_name, sep=":"):
+    return "{}{}{}".format(table_name, sep, column_name)

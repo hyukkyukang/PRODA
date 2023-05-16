@@ -4,7 +4,7 @@ import json
 from typing import List
 
 from hkkang_utils import misc as misc_utils
-from pylogos.query_graph.koutrika_query_graph import (
+from src.pylogos.query_graph.koutrika_query_graph import (
     Attribute,
     Function,
     FunctionType,

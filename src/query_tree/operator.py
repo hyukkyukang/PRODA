@@ -12,6 +12,9 @@ class Projection(Operation):
         super(Projection, self).__init__(column_id)
         self.alias: str = alias
 
+    def __len__(self):
+        return 1
+
 
 class Aggregation(Operation):
     def __init__(self, column_id: int, func_type: str):
@@ -60,6 +63,9 @@ class Ordering(Operation):
 class Foreach(Operation):
     def __init__(self, *args, **kwargs):
         super(Foreach, self).__init__(*args, **kwargs)
+
+    def __len__(self):
+        return 1
 
 
 class Limit(Operation):

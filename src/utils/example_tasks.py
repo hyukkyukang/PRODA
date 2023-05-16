@@ -1,7 +1,7 @@
 import json
 import os
 
-from pylogos.translate import translate
+from src.pylogos.translate import translate
 
 from src.query_tree.query_tree import QueryTree
 from src.task.task import Task
@@ -9,8 +9,10 @@ from src.utils.example_queries import MultipleSublinksQuery2
 from src.VQA.EVQA import EVQATree
 import hkkang_utils.file as file_utils
 
+from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 
-def create_nl_and_mapping(query_graph: QueryTree, evqa: EVQATree):
+
+def create_nl_and_mapping(query_graph: Query_graph, evqa: EVQATree):
     nl, mapping_info = translate(query_graph)
     nl_mapping = []
     for x, y, value in evqa.node.mapping:

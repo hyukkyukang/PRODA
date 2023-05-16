@@ -1,8 +1,9 @@
 import os
 
-from combine_multiple_sentence import *
-from pylogos.translate import translate
+from rewrite_sentence_gpt import *
+from src.pylogos.translate import translate
 
+from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 from src.query_tree.query_tree import QueryTree
 from src.task.task import Task
 from src.utils.user_study_queries import MovieQuery1, MovieQuery2, MovieQuery3, MovieQuery5, MovieQuery6
@@ -12,6 +13,22 @@ from src.utils.example_tasks import create_nl_and_mapping
 from src.utils.data_manager import save_task_set_in_db
 
 from src.utils.example_queries import CorrelatedNestedQuery
+
+
+def templatize(history, current):
+    text = ""
+    refer_text = []
+    for i, sentence in enumerate(history):
+        text += " Q" + str(i + 1) + " is to " + sentence
+        refer_text.append("Q" + str(i + 1))
+
+    cur_idx = len(history) + 1
+    text += " Q" + str(cur_idx) + " is to " + current
+
+    text += " Write out Q" + str(cur_idx) + " in a sentence by referring to " + ", ".join(refer_text) + "."
+    # print(text)
+
+    return text
 
 
 def MovieTask1(query_object):
