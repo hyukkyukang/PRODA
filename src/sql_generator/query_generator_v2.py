@@ -4,6 +4,8 @@ import argparse
 import datetime
 import time
 import json
+import sys
+import os
 import sqlite3
 from glob import glob
 from tqdm import tqdm
@@ -45,7 +47,7 @@ parser.add_argument("--seed", type=int, default=1234)
 parser.add_argument("--num_in_max", type=int, default=5)
 parser.add_argument("--num_select_max", type=int, default=2)
 parser.add_argument("--num_select_min", type=int, default=0)
-parser.add_argument("--num_pred_max", type=int, default=4)
+parser.add_argument("--num_pred_max", type=int, default=2)
 parser.add_argument("--num_pred_min", type=int, default=1)
 parser.add_argument("--num_group_max", type=int, default=2)
 parser.add_argument("--num_group_min", type=int, default=1)
