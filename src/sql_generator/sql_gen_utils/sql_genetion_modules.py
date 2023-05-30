@@ -85,8 +85,9 @@ def non_nested_query_form_selector(args, rng):
             if args.has_limit:
                 sql_type["limit"] = True
         else:
+            prob = 0.8
             sql_type = {
-                "where": bool(rng.randint(0, 2)),
+                "where": bool(rng.choice([0, 1], p=[prob, 1 - prob])),
                 "group": bool(rng.randint(0, 2)),
                 "having": bool(rng.randint(0, 2)),
                 "order": bool(rng.randint(0, 2)),
@@ -103,17 +104,23 @@ def non_nested_query_form_selector(args, rng):
             sql_type["group"] = True
             sql_type["having"] = True
 
+    if DEBUG_ERROR:
+        sql_type["having"] = False
+        sql_type["where"] = True
+
     return sql_type
 
 
 def agg_selector(rng, use_agg, dtype_dict, join_key_list, col, outer_nesting_position=-1, outer_operator=None):
     if use_agg:
-        if dtype_dict[col] == "str":
+        if dtype_dict[col] in ["bool", "str"]:
             agg = rng.choice(TEXTUAL_AGGS)
+        elif dtype_dict[col] == "date":
+            agg = rng.choice(DATE_AGGS)
         else:
             # (FIX #1, C6) Not use AVG/SUM/MIN/MAX for key columns
-            if col in IDS:  # join_key_list:
-                agg = "COUNT"  # rng.choice(KEY_AGGS)
+            if col in IDS or is_column_id(col, join_key_list):  # join_key_list:
+                agg = rng.choice(KEY_AGGS)
             else:
                 # (FIX #7) Not use COUNT/SUM for <col> <op> <val> shaped outer query
                 if outer_nesting_position == 0:
@@ -134,7 +141,11 @@ def select_generator(
     dtype_dict,
     join_key_list,
     tables,
+    used_tables,
+    group_columns,
+    group_columns_origin,
     group=False,
+    having=False,
     outer_inner=None,
     nesting_type="non-nested",
     nesting_column=None,
@@ -142,12 +153,6 @@ def select_generator(
     outer_operator=None,
     prefix=None,
 ):
-    if outer_nesting_position != -1:
-        num_select = 1
-    else:
-        min_select, max_select = args.num_select_min, args.num_select_max
-        num_select = rng.randint(min_select, max_select)
-
     columns = []
     agg_cols = []
 
@@ -163,6 +168,28 @@ def select_generator(
         # use_agg = True if group else bool(rng.randint(0, 2))
         use_agg = True if group else bool(rng.choice([0, 1], p=[1 - tmp_prob, tmp_prob]))
 
+    if group:
+        if having:
+            project_all = rng.choice([False, True])
+        else:
+            project_all = True
+
+        if project_all:
+            columns = list(group_columns)
+            agg_cols = [("NONE", group_col) for group_col in group_columns_origin]
+        else:
+            columns = list(group_columns)
+            use_agg = False
+            agg_cols = [("NONE", group_col) for group_col in group_columns_origin]
+
+    if outer_nesting_position != -1:
+        num_select = 1
+    else:
+        min_select, max_select = args.num_select_min, args.num_select_max
+        num_select = rng.randint(min_select, max_select + 1)
+
+    candidate_cols = [col for col in cols if col not in group_columns_origin]
+
     if outer_inner == "outer":
         if prefix is None:
             prefix = "O_"
@@ -172,8 +199,6 @@ def select_generator(
     else:
         if prefix is None:
             prefix = ""
-
-    used_tables = set()
 
     if num_select == 0:
         if use_agg:
@@ -214,9 +239,9 @@ def select_generator(
             used_tables.add(col.split(".")[0])
 
         while len(columns) < num_select:
-            if not use_agg and len(columns) == len(cols):
+            if not use_agg and len(columns) == len(candidate_cols):
                 break
-            col = rng.choice(cols)
+            col = rng.choice(candidate_cols)
             agg = agg_selector(rng, use_agg, dtype_dict, join_key_list, col)
 
             distinct = ""
@@ -246,75 +271,118 @@ def non_nested_predicate_generator(
     vals = result_guarantee_tuples[[col]].iloc[tuple_idx]
     val = vals[0]
 
-    if col in IDS:  # Not generate any condition using id/hash code/note columns
+    if col in IDS or is_column_id(col, join_key_list):  # Not generate any condition using id/hash code/note columns
         return False, None, None, None
 
     if dtype_dict[col] == "str":
         v = str(val).strip()
-        if val == "nan" or pd.isnull(val):
+        if val == "nan" or pd.isnull(val) or len(dvs[col]) < 2:
             return False, None, None, None
         else:
             # (FIX C3) NO =, !=, IN, NOT IN operators for hash codes and notes
             if col in HASH_CODES + NOTES:
-                op = rng.choice(TEXTUAL_OPERATORS[2:-2])
+                op = rng.choice(HASHCODE_OPERATORS, p=HASHCODE_OPERATORS_PROBABILITY)
             else:
-                op = rng.choice(TEXTUAL_OPERATORS)
+                op = rng.choice(TEXTUAL_OPERATORS, p=TEXTUAL_OPERATORS_PROBABILITY)
 
-            if op == "NOT IN" and len(dvs[col]) < 2:
-                # op = 'IS_NULL'
-                # vals[0] = 'None'
-                return False, None, None, None
+            v = get_str_op_values(op, v, dvs[col], vs[col], rng, num_in_max=args.num_in_max)
+
+            if op == "IS_NOT_NULL":
+                val = v
             else:
-                v = get_str_op_values(op, v, dvs[col], vs[col], rng, num_in_max=args.num_in_max)
-
-                if op == "IS_NOT_NULL":
-                    val = v
-                else:
-                    if op in ["IN", "NOT IN"]:
-                        v, num_val = v
-                        if num_val <= 1:
-                            op = "=" if op == "IN" else "!="
-                            v = v[1:-1]
-                            val = f'''\"{v}\"'''
-                        else:
-                            val = v
-                    else:
+                if op in ["IN", "NOT IN"]:
+                    v, num_val = v
+                    if num_val <= 1:
+                        op = "=" if op == "IN" else "!="
+                        v = v[1:-1]
                         val = f'''\"{v}\"'''
+                    else:
+                        val = v
+                else:
+                    val = f'''\"{v}\"'''
 
     elif dtype_dict[col] == "date":
-        if val == "nan" or pd.isnull(val):
+        if val == "nan" or pd.isnull(val) or len(dvs[col]) < 2:
             # op = 'IS_NULL'
             # vals[0] = 'None'
             return False, None, None, None
         else:
-            op = rng.choice(NUMERIC_OPERATORS)
+            op = rng.choice(NUMERIC_OPERATORS, p=NUMERIC_OPERATORS_PROBABILITY)
             if op == "!=":
                 v = rng.choice(vs[col])
                 while (len(vs[col]) > 1) and (v == val):
                     v = rng.choice(vs[col])
+            elif op != "=":
+                is_range = rng.choice([0, 1], p=[0.8, 0.2])
+                if is_range:
+                    v = rng.choice(vs[col])
+
+                    v_date = get_date_time(v)
+                    val_date = get_date_time(val)
+                    if v_date == val_date:
+                        op = "="
+                    else:
+                        if op in [">", ">="]:
+                            op2 = rng.choice(["<", "<="])
+                            op = (op, op2)
+                        else:
+                            op2 = rng.choice([">", ">="])
+                            op = (op2, op)
+                        if v_date < val_date:
+                            v = (v, val)
+                        else:
+                            v = (val, v)
+                else:
+                    v = val
+            else:
+                v = val
+
             val = v
 
     else:
-        if np.isnan(val):
+        if np.isnan(val) or len(dvs[col]) < 2:
             # op = 'IS_NULL'
             # vals[0] = 'None'
             return False, None, None, None
         else:
             # (FIX #4) Not choose lte, lt, gte, gt for key column
-            if col in join_key_list:
-                op = rng.choice(KEY_OPERATORS)
+            if col in join_key_list or dtype_dict[col] == "bool":
+                op = rng.choice(KEY_OPERATORS, p=KEY_OPERATORS_PROBABILITY)
             else:
-                op = rng.choice(NUMERIC_OPERATORS)
+                op = rng.choice(NUMERIC_OPERATORS, p=NUMERIC_OPERATORS_PROBABILITY)
 
             if op == "!=":
                 v = rng.choice(vs[col])
                 while (len(vs[col]) > 1) and (v == val):
                     v = rng.choice(vs[col])
+            elif op != "=":
+                is_range = rng.choice([0, 1], p=[0.8, 0.2])
+                if is_range:
+                    v = rng.choice(vs[col])
+                    if v == val:
+                        op = "="
+                    else:
+                        if op in [">", ">="]:
+                            op2 = rng.choice(["<", "<="])
+                            op = (op, op2)
+                        else:
+                            op2 = rng.choice([">", ">="])
+                            op = (op2, op)
+
+                        if v < val:
+                            v = (v, val)
+                        else:
+                            v = (val, v)
+                else:
+                    v = val
             else:
                 v = val
 
             if dtype_dict[col] == "int":
-                val = int(v)
+                if isinstance(v, tuple):
+                    val = (int(v[0]), int(v[1]))
+                else:
+                    val = int(v)
             else:
                 val = v
     return True, col, op, val
@@ -324,12 +392,11 @@ def having_generator(
     args,
     rng,
     table_columns,
+    join_key_list,
     table_columns_all,
     group_columns,
     dtype_dict,
     df,
-    dvs,
-    vs,
     n,
     used_tables,
     grouping_query_elements,
@@ -367,12 +434,23 @@ def having_generator(
         not result_guarantee_tuples.empty
     ), "[having generator] result guarantee tuples is empty after group by and where"
 
+    dvs = {}
+    vs = {}
+    for df_col in result_guarantee_tuples.columns[len(group_columns) :]:
+        dvs[df_col] = get_value_set(result_guarantee_tuples[df_col].value_counts(dropna=False).index.values)
+        vs[df_col] = get_value_set(result_guarantee_tuples[df_col])
+
     # having_candidate_columns_origin = [
     #    table_column for table_column in table_columns if table_column not in list(group_columns)
     # ] + ["*"] # [WARING] NEED TO BE MODIFIED!!!!!!
 
     having_candidate_columns_origin = [
-        table_column for table_column in table_columns_all if table_column not in list(group_columns)
+        table_column
+        for table_column in table_columns_all
+        if table_column not in list(group_columns)
+        and dtype_dict[table_column] not in ["bool", "str"]
+        and table_column not in IDS
+        and not is_column_id(table_column, join_key_list)
     ] + ["*"]
 
     having_candidate_columns = []
@@ -435,10 +513,14 @@ def having_generator(
 
         col = having_candidate_columns[column_idx]
 
-        if col == "*" or dtype_dict[col] == "str":
+        if col == "*":
             agg = rng.choice(TEXTUAL_AGGS)
+        elif dtype_dict[col] in ["bool", "str"] or col in IDS or is_column_id(col, join_key_list):
+            continue
+        elif dtype_dict[col] == "date":
+            agg = rng.choice(DATE_AGGS[1:])
         else:
-            agg = rng.choice(NUMERIC_AGGS)
+            agg = rng.choice(NUMERIC_AGGS[1:])
 
         agg_col_idx = -1
         for i, (group_query_agg, group_query_col) in enumerate(grouping_query_elements["agg_cols"]):
@@ -464,44 +546,35 @@ def having_generator(
 
         val_stored = val
 
-        if new_dtype == "str":
-            v = str(val).strip()
-
-            if col in HASH_CODES + NOTES:
-                op = rng.choice(TEXTUAL_OPERATORS[2:-2])
-            else:
-                op = rng.choice(TEXTUAL_OPERATORS)
-
-            if op == "NOT IN" and len(dvs[col]) < 2:
-                # op = 'IS_NULL'
-                # vals[i] = 'None'
-                continue
-            else:
-                v = get_str_op_values(op, v, dvs[col], vs[col], rng, num_in_max=args.num_in_max)
-                if op == "IS_NOT_NULL":
-                    val_stored = v
-                else:
-                    val_stored = f'''\"{v}\"'''
+        if new_dtype in ["bool", "str"]:
+            assert False, "[Having generator] It can't be string type column"
+            pass
         elif new_dtype == "date":
-            op = rng.choice(NUMERIC_OPERATORS)
+            op = rng.choice(NUMERIC_OPERATORS, p=NUMERIC_OPERATORS_PROBABILITY)
+            if len(dvs[df_column]) < 2:
+                continue
             if op == "!=":
-                v = rng.choice(vs[col])
-                while (len(vs[col]) > 1) and (v == val):
-                    v = rng.choice(vs[col])
+                v = rng.choice(vs[df_column])
+                while (len(vs[df_column]) > 1) and (v == val):
+                    v = rng.choice(vs[df_column])
+            else:
+                v = val
             val_stored = v
         else:
-            op = rng.choice(NUMERIC_OPERATORS)
+            op = rng.choice(NUMERIC_OPERATORS, p=NUMERIC_OPERATORS_PROBABILITY)
             if agg == "COUNT":
                 val_stored = int(val)
             else:
+                if len(dvs[df_column]) < 2:
+                    continue
                 if op == "!=":
-                    v = rng.choice(vs[col])
-                    while (len(vs[col]) > 1) and (v == val):
-                        v = rng.choice(vs[col])
+                    v = rng.choice(vs[df_column])
+                    while (len(vs[df_column]) > 1) and (v == val):
+                        v = rng.choice(vs[df_column])
                 else:
                     v = val
 
-                if dtype_dict[col] == "int":
+                if new_dtype == "int":
                     val_stored = int(v)
                 else:
                     val_stored = v
@@ -579,13 +652,12 @@ def where_generator(
     nest_or_not = [True for _ in range(num_nested_predicates)] + [False for _ in range(num_nonnest_predicates)]
     rng.shuffle(nest_or_not)
 
-    predicates = list()
-    predicates_origin = list()
-    nested_predicates = list()
-    nested_predicates_origin = list()
+    predicates = [None] * num_predicates
+    predicates_origin = [None] * num_predicates
 
     result_guarantee_predicates = list()
-    result_guarantee_tuples = df.copy(deep=True)
+    original_result_guarantee_tuples = df.copy(deep=True)
+    result_guarantee_tuples = original_result_guarantee_tuples.copy(deep=True)
     is_updated_result_guarantee_tuples = False
 
     if outer_inner == "outer":
@@ -605,6 +677,7 @@ def where_generator(
     cond_idx = 0
     nested_predicates_graphs = {}
     correlation_predicates_origin = []
+    visited_columns = []
 
     while cond_idx < num_predicates:
         if continue_cnt > 100:
@@ -612,17 +685,30 @@ def where_generator(
 
         result_condition = sorted_conditions[cond_idx][1]
         if not nest_or_not[cond_idx]:
+            if not result_condition and is_updated_result_guarantee_tuples:
+                original_result_guarantee_tuples = pd.concat(
+                    [original_result_guarantee_tuples, result_guarantee_tuples]
+                ).drop_duplicates(keep=False)
+                result_guarantee_tuples = original_result_guarantee_tuples
+                is_updated_result_guarantee_tuples = False
+                visited_columns = []
+            current_columns = [col for col in table_columns if col not in visited_columns]
             done, col, op, val = non_nested_predicate_generator(
-                args, rng, result_guarantee_tuples, table_columns, dvs, vs, dtype_dict, join_key_list
+                args, rng, result_guarantee_tuples, current_columns, dvs, vs, dtype_dict, join_key_list
             )
-            vals[current_nonnest_idx] = val
             if not done:
                 continue_cnt += 1
                 continue
 
-            if not result_condition and is_updated_result_guarantee_tuples:
-                result_guarantee_tuples = df.copy(deep=True)
-            query_predicate = predicate_generator(col, op, str(vals[current_nonnest_idx]))
+            vals[current_nonnest_idx] = val
+
+            is_bool = dtype_dict[col] == "bool"
+            if isinstance(op, tuple):
+                query_predicate = predicate_generator(
+                    col, op, (str(vals[current_nonnest_idx][0]), str(vals[current_nonnest_idx][1])), is_bool
+                )
+            else:
+                query_predicate = predicate_generator(col, op, str(vals[current_nonnest_idx]), is_bool)
 
             # num_result = len(df.query(' AND '.join(result_guarantee_predicates)))
             new_result_guarantee_tuples = result_guarantee_tuples.query(query_predicate)
@@ -638,19 +724,35 @@ def where_generator(
             else:
                 result_guarantee_tuples = new_result_guarantee_tuples
             is_updated_result_guarantee_tuples = True
+            visited_columns.append(col)
             result_guarantee_predicates.append(query_predicate)
 
             used_tables.add(col.split(".")[0])
+
+            if isinstance(op, tuple):
+                additional_pred_idx = len(predicates)
+                predicate_str2 = prefix + col + " " + op[1] + " " + str(val[1])
+                predicate_tuple_origin2 = (prefix, col, op[1], str(val[1]))
+
+                tree_predicates = restore_predicate_tree_one(
+                    tree_predicates, cond_idx, [[cond_idx, result_condition], "AND", [additional_pred_idx, "TRUE"]]
+                )
+                tree_predicates_origin = restore_predicate_tree_one(
+                    tree_predicates_origin, cond_idx, [[cond_idx], "AND", [additional_pred_idx]]
+                )
+                predicates_origin.append(predicate_tuple_origin2)
+                predicates.append(predicate_str2)
+                op = op[0]
+                val = val[0]
+
             if op in ["IS_NULL", "IS_NOT_NULL"]:
                 predicate_str = prefix + col + " " + op
-                predicate_tuple = (prefix_col, op, None)
                 predicate_tuple_origin = (prefix, col, op, None)
             else:
-                predicate_str = prefix + col + " " + op + " " + str(vals[current_nonnest_idx])
-                predicate_tuple = (prefix + col, op, str(vals[current_nonnest_idx]))
-                predicate_tuple_origin = (prefix, col, op, str(vals[current_nonnest_idx]))
-            predicates_origin.append(predicate_tuple_origin)
-            predicates.append(predicate_str)
+                predicate_str = prefix + col + " " + op + " " + str(val)
+                predicate_tuple_origin = (prefix, col, op, str(val))
+            predicates_origin[cond_idx] = predicate_tuple_origin
+            predicates[cond_idx] = predicate_str
             cond_idx += 1
             current_nonnest_idx += 1
         else:
@@ -660,7 +762,12 @@ def where_generator(
             nesting_type = nesting_type_selector(args, rng, only_nested=True, only_nonnested=False, inner_query_obj=obj)
             nesting_position = nesting_position_selector(args, rng, nesting_type, inner_query_obj=obj)
             if not result_condition and is_updated_result_guarantee_tuples:
-                result_guarantee_tuples = df.copy(deep=True)
+                original_result_guarantee_tuples = pd.concat(
+                    [original_result_guarantee_tuples, result_guarantee_tuples]
+                ).drop_duplicates(keep=False)
+                result_guarantee_tuples = original_result_guarantee_tuples
+                is_updated_result_guarantee_tuples = False
+                visited_column = []
             (
                 done,
                 nested_predicate,
@@ -701,12 +808,10 @@ def where_generator(
                 correlation_predicates_origin.append(correlation_predicate_origin)
 
             used_tables = used_tables.union(used_tables_nested)
-            nested_predicates.append(nested_predicate)
             inner_prefix = get_prefix(obj["nesting_level"], obj["unique_alias"])
             nested_predicates_graphs[inner_prefix] = nested_predicate_graph
-            nested_predicates_origin.append(nested_predicate_origin)
-            predicates.append(nested_predicate)
-            predicates_origin.append(nested_predicate_origin)
+            predicates[cond_idx] = nested_predicate
+            predicates_origin[cond_idx] = nested_predicate_origin
             cond_idx += 1
             current_nested_idx += 1
 
@@ -802,10 +907,16 @@ def nested_predicate_generator(
             if nesting_type in ["type-a", "type-ja"] and col not in table_columns_except_id:
                 continue_cnt += 1
                 continue
+
+            is_bool = False
             if dtype_dict[col] == "str" and nesting_type not in ["type-a", "type-ja"]:
-                op = rng.choice(TEXTUAL_OPERATORS[0:3])
+                sum_p = sum(TEXTUAL_OPERATORS_PROBABILITY[0:3])
+                op = rng.choice(TEXTUAL_OPERATORS[0:3], p=[i / sum_p for i in TEXTUAL_OPERATORS_PROBABILITY[0:3]])
+            elif dtype_dict[col] == "bool" and nesting_type not in ["type-a", "type-ja"]:
+                op = rng.choice(KEY_OPERATORS, p=KEY_OPERATORS_PROBABILITY)
+                is_bool = True
             else:
-                op = rng.choice(NUMERIC_OPERATORS)
+                op = rng.choice(NUMERIC_OPERATORS, p=NUMERIC_OPERATORS_PROBABILITY)
 
             (
                 inner_query,
@@ -854,7 +965,7 @@ def nested_predicate_generator(
                             result_val = '"' + result_val + '"'
                         else:
                             result_val = '"' + rng.choice(["%", ""]) + result_val + rng.choice(["%", ""]) + '"'
-                    query_predicate = predicate_generator(col, op, str(result_val))
+                    query_predicate = predicate_generator(col, op, str(result_val), is_bool)
                     query_result = tpl.query(query_predicate)
                     if len(query_result) > 0:
                         new_result_guarantee_tuples = pd.concat([new_result_guarantee_tuples, tpl])
@@ -869,7 +980,7 @@ def nested_predicate_generator(
                         result_val = '"' + result_val + '"'
                     else:
                         result_val = '"' + rng.choice(["%", ""]) + result_val + rng.choice(["%", ""]) + '"'
-                query_predicate = predicate_generator(col, op, str(result_val))
+                query_predicate = predicate_generator(col, op, str(result_val), is_bool)
                 new_result_guarantee_tuples = result_guarantee_tuples.query(query_predicate)
 
             num_result = len(new_result_guarantee_tuples)
@@ -897,7 +1008,7 @@ def nested_predicate_generator(
             if correlation_column and col == correlation_column:
                 continue_cnt += 1
                 continue
-            op = rng.choice(["IN", "NOT IN"])
+            op = rng.choice(["IN", "NOT IN"], p=[0.8, 0.2])
 
             (
                 inner_query,
@@ -973,7 +1084,7 @@ def nested_predicate_generator(
             break
 
         elif nesting_position == 2:
-            op = rng.choice(["EXISTS", "NOT EXISTS"])
+            op = rng.choice(["EXISTS", "NOT EXISTS"], p=[0.8, 0.2])
             (
                 inner_query,
                 inner_query_result,
@@ -1035,10 +1146,15 @@ def nested_predicate_generator(
             # if correlation_column and col == correlation_column:
             #    continue
 
+            is_bool = False
             if "*" not in col and dtype_dict[col] == "str" and nesting_type not in ["type-a", "type-ja"]:
-                op = rng.choice(TEXTUAL_OPERATORS[0:3])
+                sum_p = sum(TEXTUAL_OPERATORS_PROBABILITY[0:3])
+                op = rng.choice(TEXTUAL_OPERATORS[0:3], p=[i / sum_p for i in TEXTUAL_OPERATORS_PROBABILITY[0:3]])
+            elif dtype_dict[col] == "bool" and nesting_type not in ["type-a", "type-ja"]:
+                op = rng.choice(KEY_OPERATORS, p=KEY_OPERATORS_PROBABILITY)
+                is_bool = True
             else:
-                op = rng.choice(NUMERIC_OPERATORS)
+                op = rng.choice(NUMERIC_OPERATORS, p=NUMERIC_OPERATORS_PROBABILITY)
 
             # val = randomly_select_value_from_column()
 
@@ -1113,7 +1229,8 @@ def nested_predicate_generator(
 
                 if col == "*":
                     col = correlation_column
-                query_predicate = predicate_generator(col, op, str(val))
+
+                query_predicate = predicate_generator(col, op, str(val), is_bool)
                 predicate_result = cur_group.query(query_predicate)
                 num_result = len(predicate_result)
                 if num_result > 0:
@@ -1155,11 +1272,18 @@ def nested_predicate_generator(
     )
 
 
-def group_generator(args, rng, cols, select_agg_cols, dtype_dict, group=False, outer_inner="non-nested", prefix=None):
+def group_generator(args, rng, cols, dtype_dict, group=False, outer_inner="non-nested", prefix=None):
     min_group, max_group = args.num_group_min, args.num_group_max
-    select_cols = [agg_col[1] for agg_col in select_agg_cols]
-    candidate_cols = [col for col in cols if col not in select_cols]
-    num_group = rng.randint(min_group, max_group)
+
+    categorical_cols = [col for col in cols if col in CATEGORIES]
+    if not categorical_cols:
+        categorical_cols = cols
+    candidate_cols = [col for col in categorical_cols]
+
+    max_group = min(len(candidate_cols), max_group)
+
+    prob = get_truncated_geometric_distribution(max_group - min_group + 1, 0.8)
+    num_group = rng.choice(range(min_group, max_group + 1), p=prob)
 
     if outer_inner == "outer":
         if prefix is None:
@@ -1190,7 +1314,10 @@ def order_generator(
     prefix=None,
 ):
     min_order, max_order = args.num_order_min, args.num_order_max
-    num_order = rng.randint(min_order, min(len(agg_cols) + 1, max_order))
+    max_order = min(len(agg_cols), max_order)
+
+    prob = get_truncated_geometric_distribution(max_order - min_order + 1, 0.8)
+    num_order = rng.choice(range(min_order, max_order + 1), p=prob)
 
     columns = []
     if outer_inner == "outer":
@@ -1233,7 +1360,7 @@ def order_generator(
 
 def limit_generator(args, rng):
     min_limit, max_limit = args.num_limit_min, args.num_limit_max
-    num_limit = rng.randint(min_limit, max_limit)
+    num_limit = rng.randint(min_limit, max_limit + 1)
 
     return num_limit
 
@@ -1700,6 +1827,8 @@ def non_nested_query_generator(
     global_unique_query_idx,
 ):
     df_columns_not_null = df.columns[df.notna().iloc[n]]
+
+    used_tables = set()
     tables, joins, table_columns_projection, table_columns = get_query_token(
         all_table_set,
         join_key_list,
@@ -1713,16 +1842,6 @@ def non_nested_query_generator(
 
     sql_type_dict = non_nested_query_form_selector(args, rng)
 
-    select_columns, agg_cols, (used_tables, use_agg_sel) = select_generator(
-        args,
-        rng,
-        table_columns_projection,
-        dtype_dict,
-        join_key_list,
-        tables,
-        group=sql_type_dict["group"],
-        prefix=prefix,
-    )
     if sql_type_dict["where"]:
         where_predicates, _, used_tables, _, tree_predicates_origin, predicates_origin, _ = where_generator(
             args,
@@ -1748,7 +1867,7 @@ def non_nested_query_generator(
 
     if sql_type_dict["group"]:
         group_columns_origin, group_columns = group_generator(
-            args, rng, table_columns, agg_cols, dtype_dict, group=sql_type_dict["group"], prefix=prefix
+            args, rng, table_columns, dtype_dict, group=sql_type_dict["group"], prefix=prefix
         )
     else:
         group_columns_origin = []
@@ -1756,6 +1875,8 @@ def non_nested_query_generator(
 
     if sql_type_dict["having"]:
         grouping_query_elements = get_grouping_query_elements(
+            args,
+            rng,
             sql_type_dict,
             dtype_dict,
             prefix,
@@ -1763,13 +1884,12 @@ def non_nested_query_generator(
             joins,
             tables,
             used_tables,
-            select_columns,
-            agg_cols,
             where_predicates,
             tree_predicates_origin,
             predicates_origin,
             group_columns,
             group_columns_origin,
+            join_key_list,
         )
         grouping_query_elements["nesting_level"] = 1
         grouping_query_elements["global_unique_query_idx"] = global_unique_query_idx
@@ -1777,12 +1897,11 @@ def non_nested_query_generator(
             args,
             rng,
             table_columns,
+            join_key_list,
             table_columns_projection,
             group_columns_origin,
             dtype_dict,
             df,
-            dvs,
-            vs,
             n,
             used_tables,
             grouping_query_elements,
@@ -1793,22 +1912,24 @@ def non_nested_query_generator(
         having_predicates_origin = []
         having_tree_predicates_origin = []
 
-    if sql_type_dict["group"]:
-        if sql_type_dict["having"]:
-            project_all = rng.choice([False, True])
-        else:
-            project_all = True
-
-        if project_all:
-            select_columns = list(group_columns) + select_columns
-            agg_cols = [("NONE", group_col) for group_col in group_columns_origin] + agg_cols
-        else:
-            select_columns = list(group_columns)
-            use_agg_sel = False
-            agg_cols = [("NONE", group_col) for group_col in group_columns_origin]
+    select_columns, agg_cols, (used_tables, use_agg_sel) = select_generator(
+        args,
+        rng,
+        table_columns_projection,
+        dtype_dict,
+        join_key_list,
+        tables,
+        used_tables,
+        group_columns,
+        group_columns_origin,
+        group=sql_type_dict["group"],
+        having=sql_type_dict["having"],
+        prefix=prefix,
+    )
 
     if use_agg_sel == True and not sql_type_dict["group"]:
         sql_type_dict["order"] = False
+        sql_type_dict["limit"] = False
 
     if sql_type_dict["order"]:
         done, order_columns_origin, order_columns, aggregated_order = order_generator(
@@ -1959,6 +2080,8 @@ def nested_query_generator(
     current_nesting_level = max_inner_level + 1
     prefix = get_prefix(current_nesting_level, global_unique_query_idx)
 
+    used_tables = set()
+
     df_columns_not_null = df.columns[df.notna().iloc[n]]
     tables, joins, table_columns_projection, table_columns = get_query_token(
         all_table_set,
@@ -1975,17 +2098,6 @@ def nested_query_generator(
     sql_type_dict["where"] = True
 
     # Step 1. Outer query generation
-    select_columns, agg_cols, (used_tables, use_agg_sel) = select_generator(
-        args,
-        rng,
-        table_columns_projection,
-        dtype_dict,
-        join_key_list,
-        tables,
-        group=sql_type_dict["group"],
-        outer_inner="outer",
-        prefix=prefix,
-    )
 
     (
         where_predicates,
@@ -2023,7 +2135,6 @@ def nested_query_generator(
             args,
             rng,
             table_columns,
-            agg_cols,
             dtype_dict,
             group=sql_type_dict["group"],
             outer_inner="outer",
@@ -2035,6 +2146,8 @@ def nested_query_generator(
 
     if sql_type_dict["having"]:
         grouping_query_elements = get_grouping_query_elements(
+            args,
+            rng,
             sql_type_dict,
             dtype_dict,
             prefix,
@@ -2042,13 +2155,12 @@ def nested_query_generator(
             joins,
             tables,
             used_tables,
-            select_columns,
-            agg_cols,
             where_predicates,
             tree_predicates_origin,
             predicates_origin,
             group_columns,
             group_columns_origin,
+            join_key_list,
         )
         grouping_query_elements["nesting_level"] = current_nesting_level
         grouping_query_elements["global_unique_query_idx"] = global_unique_query_idx
@@ -2056,12 +2168,11 @@ def nested_query_generator(
             args,
             rng,
             table_columns,
+            join_key_list,
             table_columns_projection,
             group_columns_origin,
             dtype_dict,
             df,
-            dvs,
-            vs,
             n,
             used_tables,
             grouping_query_elements,
@@ -2073,22 +2184,25 @@ def nested_query_generator(
         having_predicates_origin = []
         having_tree_predicates_origin = []
 
-    if sql_type_dict["group"]:
-        if sql_type_dict["having"]:
-            project_all = rng.choice([False, True])
-        else:
-            project_all = True
-
-        if project_all:
-            select_columns = list(group_columns) + select_columns
-            agg_cols = [("NONE", group_col) for group_col in group_columns_origin] + agg_cols
-        else:
-            select_columns = list(group_columns)
-            use_agg_sel = False
-            agg_cols = [("NONE", group_col) for group_col in group_columns_origin]
+    select_columns, agg_cols, (used_tables, use_agg_sel) = select_generator(
+        args,
+        rng,
+        table_columns_projection,
+        dtype_dict,
+        join_key_list,
+        tables,
+        used_tables,
+        group_columns,
+        group_columns_origin,
+        group=sql_type_dict["group"],
+        having=sql_type_dict["having"],
+        outer_inner="outer",
+        prefix=prefix,
+    )
 
     if use_agg_sel == True and not sql_type_dict["group"]:
         sql_type_dict["order"] = False
+        sql_type_dict["limit"] = False
 
     if sql_type_dict["order"]:
         done, order_columns_origin, order_columns, aggregated_order = order_generator(

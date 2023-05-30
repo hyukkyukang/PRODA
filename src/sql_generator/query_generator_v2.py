@@ -18,7 +18,7 @@ import sql_gen_utils.join_utils as join_utils
 from tools.gen_schema_new import SCHEMA as spider_schema
 from tools.gen_schema import SCHEMA as original_schema
 from sql_gen_utils.sql_genetion_modules import query_generator
-from sql_gen_utils.sql_genetion_utils import alias_generator, TEXTUAL_AGGS, NUMERIC_AGGS
+from sql_gen_utils.sql_genetion_utils import alias_generator, DEBUG_ERROR
 from datasets.type_dicts import imdbDtypeDict, tpcdsDtypeDict
 from sampler.factorized_sampler import FactorizedSamplerIterDataset, JoinCountTableActor
 
@@ -39,7 +39,7 @@ def str2bool(v):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--num_queries", help="Number of queries", type=int, default=40)  # 10k
-parser.add_argument("--output", type=str, default="result3.out")
+parser.add_argument("--output", type=str, default="result.out")
 parser.add_argument("--sep", type=str, default="#")
 parser.add_argument("--seed", type=int, default=1234)
 parser.add_argument("--num_in_max", type=int, default=5)
@@ -60,7 +60,7 @@ parser.add_argument("--num_nested_pred_min", type=int, default=1)
 parser.add_argument(
     "--query_type",
     type=str,
-    default="nested",
+    default="non-nested",
     help="""One of (spj-non-nested, spj-nested, spj-mix, non-nested, nested, mix)\n
         Each type stands for non-nested spj query, 
         nested query consists of spj queries, 
@@ -92,8 +92,6 @@ parser.add_argument(
     default=["/home/hjkim/PRODA/non-nested/result.out", "/home/hjkim/PRODA/non-nested/result2.out"],
 )
 args = parser.parse_args()
-
-ALIAS_TO_TABLE_NAME, TABLE_NAME_TO_ALIAS = alias_generator(args)
 
 
 def check_sql_result(db_id, sql):
@@ -237,7 +235,7 @@ def main(
         if n >= len(df.notna()):
             n = 1
 
-        if False:
+        if DEBUG_ERROR:
             line, graph, obj = query_generator(
                 args,
                 df,

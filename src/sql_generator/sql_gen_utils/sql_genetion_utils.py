@@ -30,6 +30,7 @@ import copy
 import networkx as nx
 import pandasql as ps
 from ast import literal_eval
+import dateutil.parser
 
 
 DEBUG_ERROR = False  # [NOTE] This should be disabled
@@ -37,9 +38,15 @@ DEBUG_ERROR = False  # [NOTE] This should be disabled
 
 # if is_null_support:
 # TEXTUAL_OPERATORS = ['=','!=','LIKE','NOT LIKE','IN','NOT IN','IS_NOT_NULL']
+TEXTUAL_OPERATORS_PROBABILITY = [0.4, 0.1, 0.15, 0.1, 0.15, 0.1]
 TEXTUAL_OPERATORS = ["=", "!=", "LIKE", "NOT LIKE", "IN", "NOT IN"]
+NUMERIC_OPERATORS_PROBABILITY = [0.18, 0.18, 0.18, 0.18, 0.2, 0.08]
 NUMERIC_OPERATORS = ["<=", "<", ">=", ">", "=", "!="]
+
+KEY_OPERATORS_PROBABILITY = [0.8, 0.2]
 KEY_OPERATORS = ["=", "!="]
+HASHCODE_OPERATORS_PROBABILITY = [0.8, 0.2]
+HASHCODE_OPERATORS = ["LIKE", "NOT LIKE"]
 POSSIBLE_AGGREGATIONS_PER_OPERATOR = {
     "=": ["MIN", "MAX", "AVG", "SUM"],
     "!=": ["MIN", "MAX", "AVG", "SUM"],
@@ -56,8 +63,9 @@ POSSIBLE_AGGREGATIONS_PER_OPERATOR = {
 }
 
 # (CONSIDERATION) larger/smaller than sum without condition is wierd? what if negative values exist
-NUMERIC_AGGS = ["MIN", "MAX", "AVG", "SUM", "COUNT"]
+NUMERIC_AGGS = ["COUNT", "MIN", "MAX", "AVG", "SUM"]
 TEXTUAL_AGGS = ["COUNT"]
+DATE_AGGS = ["COUNT", "MIN", "MAX"]
 # KEY_AGGS = ['MIN', 'MAX', 'COUNT']
 KEY_AGGS = ["COUNT"]
 LOGICAL_OPERATORS = ["AND", "OR"]
@@ -68,6 +76,7 @@ HASH_CODES = imdb_col_info["hash_codes"]
 NOTES = imdb_col_info["notes"]
 IDS = imdb_col_info["ids"]
 PRIMARY_KEYS = imdb_col_info["primary_keys"]
+CATEGORIES = imdb_col_info["categories"]
 
 
 def are_relation_node_equivalent(node1, node2):
@@ -76,6 +85,10 @@ def are_relation_node_equivalent(node1, node2):
         and node1.entity_name == node2.entity_name
         and node1.is_primary == node2.is_primary
     )
+
+
+def get_date_time(date):
+    return dateutil.parser.parse(date)
 
 
 def get_tab_name_alias(tab_name):
@@ -136,6 +149,13 @@ def get_random_tables(args, rng, tables, max_size):
     return selected_tables
 
 
+def get_truncated_geometric_distribution(N, p):
+    geomet = [p * (1 - p) ** i for i in range(N)]
+    sum_prob = sum(geomet)
+    prob = [i / sum_prob for i in geomet]
+    return prob
+
+
 def get_possibie_inner_query_idxs(args, inner_query_objs):
     idxs = []
 
@@ -149,10 +169,17 @@ def get_possibie_inner_query_idxs(args, inner_query_objs):
 
 def get_col_info(dbname):
     col_info = json.load(open("data/{dbname}_dtype_dict.json"))
+    global IDS
+    global HASH_CODES
+    global NOTES
+    global PRIMARY_KEYS
+    global CATEGORIES
+
     IDS = col_info["ids"]
     HASH_CODES = col_info["hash_codes"]
     NOTES = col_info["notes"]
     PRIMARY_KEYS = col_info["primary_keys"]
+    CATEGORIES = col_info["categories"]
 
     return IDS, HASH_CODES, NOTES, PRIMARY_KEYS
 
@@ -368,7 +395,8 @@ def build_predicate_tree_dnf(rng, predicates):  # [ [ [A OR B] AND [C OR D] ] AN
         elif len(selected_predicates[1]) > 1 and selected_predicates[1][1] == "OR":
             op = "OR"
         else:
-            op = rng.choice(LOGICAL_OPERATORS)
+            prob = 0.9
+            op = rng.choice(LOGICAL_OPERATORS, p=[prob, 1 - prob])
 
         connected_predicates = [selected_predicates[0], op, selected_predicates[1]]
 
@@ -376,6 +404,20 @@ def build_predicate_tree_dnf(rng, predicates):  # [ [ [A OR B] AND [C OR D] ] AN
         predicates = new_predicates
 
     return predicates[0]
+
+
+def restore_predicate_tree_one(tree, idx_origin, predicate):
+    if len(tree) <= 2:
+        idx = tree[0]
+        if idx == idx_origin:
+            return predicate
+        else:
+            return tree
+
+    left = restore_predicate_tree_one(tree[0], idx_origin, predicate)
+    right = restore_predicate_tree_one(tree[2], idx_origin, predicate)
+
+    return [left, tree[1], right]
 
 
 def restore_predicate_tree(tree, predicates):
@@ -512,6 +554,8 @@ def preorder_traverse_to_make_df_query_having(tree, values, df_name):
 
 
 def get_grouping_query_elements(
+    args,
+    rng,
     sql_type_dict,
     dtype_dict,
     prefix,
@@ -519,13 +563,12 @@ def get_grouping_query_elements(
     joins,
     tables,
     used_tables,
-    select_columns,
-    agg_cols,
     where_predicates,
     tree_predicates_origin,
     predicates_origin,
     group_columns,
     group_columns_origin,
+    join_key_list,
 ):
     grouping_query_elements = {}
 
@@ -555,8 +598,12 @@ def get_grouping_query_elements(
     grouping_query_select_columns = []
     grouping_query_used_tables = copy.deepcopy(used_tables)
     for col in having_candidate_columns:
-        if col == "*" or dtype_dict[col] == "str":
+        if col == "*":  # COUNT is only availble for star
             aggs = TEXTUAL_AGGS
+        elif dtype_dict[col] in ["bool", "str"] or col in IDS or is_column_id(col, join_key_list):
+            continue
+        elif dtype_dict[col] == "date":
+            aggs = DATE_AGGS
         else:
             aggs = NUMERIC_AGGS
         for agg in aggs:
@@ -580,11 +627,28 @@ def get_grouping_query_elements(
     grouping_query_elements["select_columns"] = grouping_query_select_columns
     grouping_query_elements["agg_cols"] = grouping_query_agg_cols
 
+    if len(grouping_query_used_tables) == 0:
+        grouping_query_used_tables = get_random_tables(args, rng, tables, 1)
+
     grouping_query_elements["necessary_tables"], grouping_query_elements["necessary_joins"] = find_join_path(
         joins, tables, grouping_query_used_tables
     )
 
     return grouping_query_elements
+
+
+def get_value_set(all_values):
+    is_nan = pd.isnull(all_values)
+    contains_nan = np.any(is_nan)
+    dv_no_nan = all_values[~is_nan]
+
+    vs_all = np.sort(dv_no_nan)
+    if contains_nan and np.issubdtype(all_values.dtype, np.datetime64):
+        vs_all = np.insert(vs_all, 0, np.datetime64("NaT"))
+    elif contains_nan:
+        vs_all = np.insert(vs_all, 0, np.nan)
+
+    return vs_all
 
 
 def preorder_traverse_dataframe(tree):
@@ -1541,6 +1605,12 @@ def get_possible_join(selected_joins, avaliable_joins):
     return result
 
 
+def is_column_id(col, join_key_list):
+    if col == "*":
+        return False
+    return col in join_key_list or "id" in col.split(".")[1].lower()
+
+
 def get_query_token(
     all_table_set,
     join_key_list,
@@ -1633,9 +1703,7 @@ def get_query_token(
         if col.split(".")[0] in table_set:
             candidate_cols_projection.append(col)
             # if (not join_key_pred) and (col in join_key_list): # or "id" in col.split('.')[1].lower()): # [TODO] Correction: id
-            if (not join_key_pred) and (
-                col in join_key_list or "id" in col.split(".")[1].lower()
-            ):  # [TODO] Correction: id
+            if (not join_key_pred) and is_column_id(col, join_key_list):  # [TODO] Correction: id
                 continue
             candiate_cols.append(col)
 
@@ -1768,8 +1836,10 @@ def is_numeric(val):
         return True
 
 
-def predicate_generator(col, op, val):
-    if op == "IS_NULL":
+def predicate_generator(col, op, val, is_bool=False):
+    if isinstance(op, tuple):
+        query_predicate = "`" + col + "` " + op[0] + " " + val[0] + " and " + "`" + col + "` " + op[1] + " " + val[1]
+    elif op == "IS_NULL":
         query_predicate = "`" + col + "`.isnull()"
     elif op == "IS_NOT_NULL":
         query_predicate = "not `" + col + "`.isnull()"
@@ -1785,12 +1855,12 @@ def predicate_generator(col, op, val):
         if op == "NOT LIKE":
             query_predicate = "not " + query_predicate
     elif op == "=":
-        if not is_numeric(val) and not (val[0] == '"' and val[-1] == '"'):
+        if not is_numeric(val) and not (val[0] == '"' and val[-1] == '"') and not is_bool:
             query_predicate = "`" + col + '` == "' + val + '"'
         else:
             query_predicate = "`" + col + "` == " + val
     elif op == "!=":
-        if not is_numeric(val) and not (val[0] == '"' and val[-1] == '"'):
+        if not is_numeric(val) and not (val[0] == '"' and val[-1] == '"') and not is_bool:
             query_predicate = "`" + col + '` == "' + val + '"'
         else:
             query_predicate = "`" + col + "` == " + val
