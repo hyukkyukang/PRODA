@@ -40,7 +40,7 @@ DEBUG_ERROR = False  # [NOTE] This should be disabled
 # TEXTUAL_OPERATORS = ['=','!=','LIKE','NOT LIKE','IN','NOT IN','IS_NOT_NULL']
 TEXTUAL_OPERATORS_PROBABILITY = [0.4, 0.1, 0.15, 0.1, 0.15, 0.1]
 TEXTUAL_OPERATORS = ["=", "!=", "LIKE", "NOT LIKE", "IN", "NOT IN"]
-NUMERIC_OPERATORS_PROBABILITY = [0.18, 0.18, 0.18, 0.18, 0.2, 0.08]
+NUMERIC_OPERATORS_PROBABILITY = [0.2, 0.2, 0.2, 0.2, 0.1, 0.1]
 NUMERIC_OPERATORS = ["<=", "<", ">=", ">", "=", "!="]
 
 KEY_OPERATORS_PROBABILITY = [0.8, 0.2]
@@ -181,7 +181,7 @@ def get_col_info(dbname):
     PRIMARY_KEYS = col_info["primary_keys"]
     CATEGORIES = col_info["categories"]
 
-    return IDS, HASH_CODES, NOTES, PRIMARY_KEYS
+    return IDS, HASH_CODES, NOTES, PRIMARY_KEYS, CATEGORIES
 
 
 def alias_generator(args):
@@ -202,9 +202,10 @@ def get_str_op_values(op, val, distinct_values, all_values, rng, num_in_max):
     if op == "=":
         return val
     elif op == "!=":
-        v = rng.choice(all_values)
-        while (len(all_values) > 1) and (v is val):
-            v = rng.choice(all_values)  # not test yet
+        v = val
+        # v = rng.choice(all_values)
+        # while (len(all_values) > 1) and (v is val):
+        #    v = rng.choice(all_values)  # not test yet
         return str(v).strip()
     elif op == "LIKE":
         val = str(rng.choice(val.split(" ")))

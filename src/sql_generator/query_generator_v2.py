@@ -39,7 +39,7 @@ def str2bool(v):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--num_queries", help="Number of queries", type=int, default=40)  # 10k
-parser.add_argument("--output", type=str, default="result.out")
+parser.add_argument("--output", type=str, default="result2.out")
 parser.add_argument("--sep", type=str, default="#")
 parser.add_argument("--seed", type=int, default=1234)
 parser.add_argument("--num_in_max", type=int, default=5)
@@ -49,7 +49,7 @@ parser.add_argument("--num_pred_max", type=int, default=4)
 parser.add_argument("--num_pred_min", type=int, default=1)
 parser.add_argument("--num_group_max", type=int, default=2)
 parser.add_argument("--num_group_min", type=int, default=1)
-parser.add_argument("--num_having_max", type=int, default=3)
+parser.add_argument("--num_having_max", type=int, default=2)
 parser.add_argument("--num_having_min", type=int, default=1)
 parser.add_argument("--num_order_max", type=int, default=2)
 parser.add_argument("--num_order_min", type=int, default=1)
@@ -60,7 +60,7 @@ parser.add_argument("--num_nested_pred_min", type=int, default=1)
 parser.add_argument(
     "--query_type",
     type=str,
-    default="non-nested",
+    default="nested",
     help="""One of (spj-non-nested, spj-nested, spj-mix, non-nested, nested, mix)\n
         Each type stands for non-nested spj query, 
         nested query consists of spj queries, 
@@ -89,7 +89,7 @@ parser.add_argument("--used_for_inner_query", type=bool, default=True)
 parser.add_argument(
     "--inner_query_paths",
     nargs="+",
-    default=["/home/hjkim/PRODA/non-nested/result.out", "/home/hjkim/PRODA/non-nested/result2.out"],
+    default=["/home/hjkim/PRODA/non-nested/result.out"],
 )
 args = parser.parse_args()
 

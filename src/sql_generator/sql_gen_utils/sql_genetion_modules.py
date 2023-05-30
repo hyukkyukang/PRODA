@@ -105,7 +105,7 @@ def non_nested_query_form_selector(args, rng):
             sql_type["having"] = True
 
     if DEBUG_ERROR:
-        sql_type["having"] = False
+        sql_type["having"] = True
         sql_type["where"] = True
 
     return sql_type
@@ -168,6 +168,8 @@ def select_generator(
         # use_agg = True if group else bool(rng.randint(0, 2))
         use_agg = True if group else bool(rng.choice([0, 1], p=[1 - tmp_prob, tmp_prob]))
 
+    initial_sel_size = 0
+
     if group:
         if having:
             project_all = rng.choice([False, True])
@@ -177,10 +179,12 @@ def select_generator(
         if project_all:
             columns = list(group_columns)
             agg_cols = [("NONE", group_col) for group_col in group_columns_origin]
+            initial_sel_size = len(columns)
         else:
             columns = list(group_columns)
             use_agg = False
             agg_cols = [("NONE", group_col) for group_col in group_columns_origin]
+            initial_sel_size = len(columns)
 
     if outer_nesting_position != -1:
         num_select = 1
@@ -238,7 +242,7 @@ def select_generator(
             agg_cols.append((agg, col))
             used_tables.add(col.split(".")[0])
 
-        while len(columns) < num_select:
+        while len(columns) < num_select + initial_sel_size:
             if not use_agg and len(columns) == len(candidate_cols):
                 break
             col = rng.choice(candidate_cols)
@@ -309,13 +313,16 @@ def non_nested_predicate_generator(
         else:
             op = rng.choice(NUMERIC_OPERATORS, p=NUMERIC_OPERATORS_PROBABILITY)
             if op == "!=":
-                v = rng.choice(vs[col])
-                while (len(vs[col]) > 1) and (v == val):
-                    v = rng.choice(vs[col])
+                v = val
+                # v = rng.choice(vs[col])
+                # while (len(vs[col]) > 1) and (v == val):
+                #    v = rng.choice(vs[col])
             elif op != "=":
                 is_range = rng.choice([0, 1], p=[0.8, 0.2])
                 if is_range:
-                    v = rng.choice(vs[col])
+                    tuple_idx2 = rng.randint(0, len(result_guarantee_tuples))
+                    vals2 = result_guarantee_tuples[[col]].iloc[tuple_idx2]
+                    v = vals2[0]
 
                     v_date = get_date_time(v)
                     val_date = get_date_time(val)
@@ -352,13 +359,16 @@ def non_nested_predicate_generator(
                 op = rng.choice(NUMERIC_OPERATORS, p=NUMERIC_OPERATORS_PROBABILITY)
 
             if op == "!=":
-                v = rng.choice(vs[col])
-                while (len(vs[col]) > 1) and (v == val):
-                    v = rng.choice(vs[col])
+                v = val
+                # v = rng.choice(vs[col])
+                # while (len(vs[col]) > 1) and (v == val):
+                #    v = rng.choice(vs[col])
             elif op != "=":
                 is_range = rng.choice([0, 1], p=[0.8, 0.2])
                 if is_range:
-                    v = rng.choice(vs[col])
+                    tuple_idx2 = rng.randint(0, len(result_guarantee_tuples))
+                    vals2 = result_guarantee_tuples[[col]].iloc[tuple_idx2]
+                    v = vals2[0]
                     if v == val:
                         op = "="
                     else:
@@ -476,6 +486,8 @@ def having_generator(
     result_guarantee_tuples_origin = result_guarantee_tuples.copy(deep=True)
     is_updated_result_guarantee_tuples = False
 
+    assert len(having_candidate_columns) > 0, "[having generator] No candidate column for having"
+
     num_predicate = rng.randint(min_pred_num, min(len(having_candidate_columns), max_pred_num) + 1)
 
     tree_predicates = build_predicate_tree_dnf(rng, [[x] for x in range(num_predicate)])
@@ -501,26 +513,46 @@ def having_generator(
     # [TODO]
     continue_cnt = 0
     cond_idx = 0
-    predicates = list()
-    predicates_origin = list()
+    predicates = [None] * num_predicate
+    predicates_origin = [None] * num_predicate
+    visited_columns = []
+    visited_agg_col = {}
 
     while cond_idx < num_predicate:
         if continue_cnt > 100:
             raise Exception("[having generator] Too many continue during having predicate generation")
+
         result_condition = sorted_conditions[cond_idx][1]
-        column_idx = rng.randint(0, len(having_candidate_columns))
+        if not result_condition and is_updated_result_guarantee_tuples:
+            result_guarantee_tuples_origin = pd.concat(
+                [result_guarantee_tuples_origin, result_guarantee_tuples]
+            ).drop_duplicates(keep=False)
+            result_guarantee_tuples = result_guarantee_tuples_origin
+            is_updated_result_guarantee_tuples = False
+            visited_columns = []
+            visited_agg_col = {}
+        cur_candidate_columns = [col for col in having_candidate_columns if col not in visited_columns]
+        column_idx = rng.randint(0, len(cur_candidate_columns))
         tuple_idx = rng.randint(0, len(result_guarantee_tuples))
 
-        col = having_candidate_columns[column_idx]
+        col = cur_candidate_columns[column_idx]
 
         if col == "*":
-            agg = rng.choice(TEXTUAL_AGGS)
+            assert col not in visited_agg_col.keys(), "[having generator] * cannot be visited more than once"
+            original_agg_candidates = TEXTUAL_AGGS
         elif dtype_dict[col] in ["bool", "str"] or col in IDS or is_column_id(col, join_key_list):
             continue
         elif dtype_dict[col] == "date":
-            agg = rng.choice(DATE_AGGS[1:])
+            original_agg_candidates = DATE_AGGS[1:]
         else:
-            agg = rng.choice(NUMERIC_AGGS[1:])
+            original_agg_candidates = NUMERIC_AGGS[1:]
+
+        if col in visited_agg_col.keys():
+            agg_candidates = [agg for agg in original_agg_candidates if agg not in visited_agg_col[col]]
+        else:
+            agg_candidates = original_agg_candidates
+
+        agg = rng.choice(agg_candidates)
 
         agg_col_idx = -1
         for i, (group_query_agg, group_query_col) in enumerate(grouping_query_elements["agg_cols"]):
@@ -554,9 +586,35 @@ def having_generator(
             if len(dvs[df_column]) < 2:
                 continue
             if op == "!=":
-                v = rng.choice(vs[df_column])
-                while (len(vs[df_column]) > 1) and (v == val):
-                    v = rng.choice(vs[df_column])
+                v = val
+                # v = rng.choice(vs[df_column])
+                # while (len(vs[df_column]) > 1) and (v == val):
+                #     v = rng.choice(vs[df_column])
+                # v = val
+            elif op != "=":
+                is_range = rng.choice([0, 1], p=[0.8, 0.2])
+                if is_range:
+                    tuple_idx2 = rng.randint(0, len(result_guarantee_tuples))
+                    df_val2 = result_guarantee_tuples[[df_column]].iloc[tuple_idx2]
+                    v = df_val2[0]
+
+                    v_date = get_date_time(v)
+                    val_date = get_date_time(val)
+                    if v_date == val_date:
+                        is_range = False
+                    else:
+                        if op in [">", ">="]:
+                            op2 = rng.choice(["<", "<="])
+                            op = (op, op2)
+                        else:
+                            op2 = rng.choice([">", ">="])
+                            op = (op2, op)
+                        if v_date < val_date:
+                            v = (v, val)
+                        else:
+                            v = (val, v)
+                else:
+                    v = val
             else:
                 v = val
             val_stored = v
@@ -568,21 +626,48 @@ def having_generator(
                 if len(dvs[df_column]) < 2:
                     continue
                 if op == "!=":
-                    v = rng.choice(vs[df_column])
-                    while (len(vs[df_column]) > 1) and (v == val):
-                        v = rng.choice(vs[df_column])
+                    v = val
+                    # v = rng.choice(vs[df_column])
+                    # while (len(vs[df_column]) > 1) and (v == val):
+                    #    v = rng.choice(vs[df_column])
+                elif op != "=":
+                    is_range = rng.choice([0, 1], p=[0.8, 0.2])
+                    if is_range:
+                        tuple_idx2 = rng.randint(0, len(result_guarantee_tuples))
+                        df_val2 = result_guarantee_tuples[[df_column]].iloc[tuple_idx2]
+                        v = df_val2[0]
+
+                        if v == val:
+                            is_range = False
+                        else:
+                            if op in [">", ">="]:
+                                op2 = rng.choice(["<", "<="])
+                                op = (op, op2)
+                            else:
+                                op2 = rng.choice([">", ">="])
+                                op = (op2, op)
+
+                            if v < val:
+                                v = (v, val)
+                            else:
+                                v = (val, v)
+                    else:
+                        v = val
                 else:
                     v = val
 
                 if new_dtype == "int":
-                    val_stored = int(v)
+                    if isinstance(op, tuple):
+                        val_stored = (int(v[0]), int(v[1]))
+                    else:
+                        val_stored = int(v)
                 else:
                     val_stored = v
 
-        if not result_condition and is_updated_result_guarantee_tuples:
-            result_guarantee_tuples = result_guarantee_tuples_origin.copy(deep=True)
-
-        query_predicate = predicate_generator(df_column, op, str(val_stored))
+        if isinstance(op, tuple):
+            query_predicate = predicate_generator(df_column, op, (str(val_stored[0]), str(val_stored[1])))
+        else:
+            query_predicate = predicate_generator(df_column, op, str(val_stored))
 
         # num_result = len(df.query(' AND '.join(result_guarantee_predicates)))
         new_result_guarantee_tuples = result_guarantee_tuples.query(query_predicate)
@@ -594,12 +679,39 @@ def having_generator(
         is_updated_result_guarantee_tuples = True
 
         assert agg != "NONE"
+
+        if isinstance(op, tuple):
+            additional_pred_idx = len(predicates)
+            if col == "*":
+                predicate_str2 = agg + "(" + col + ") " + op[1] + " " + str(val_stored[1])
+            else:
+                predicate_str2 = agg + "(" + prefix + col + ") " + op[1] + " " + str(val_stored[1])
+            predicate_tuple_origin2 = (prefix, agg, col, op[1], str(val_stored[1]))
+
+            tree_predicates = restore_predicate_tree_one(
+                tree_predicates, cond_idx, [[cond_idx, result_condition], "AND", [additional_pred_idx, "TRUE"]]
+            )
+            tree_predicates_origin = restore_predicate_tree_one(
+                tree_predicates_origin, cond_idx, [[cond_idx], "AND", [additional_pred_idx]]
+            )
+            predicates_origin.append(predicate_tuple_origin2)
+            predicates.append(predicate_str2)
+            op = op[0]
+            val_stored = val_stored[0]
+
         if col == "*":
-            predicates.append(agg + "(" + col + ") " + op + " " + str(val_stored))
+            predicates[cond_idx] = agg + "(" + col + ") " + op + " " + str(val_stored)
         else:
-            predicates.append(agg + "(" + prefix + col + ") " + op + " " + str(val_stored))
+            predicates[cond_idx] = agg + "(" + prefix + col + ") " + op + " " + str(val_stored)
         predicate_tuple_origin = (prefix, agg, col, op, str(val_stored))
-        predicates_origin.append(predicate_tuple_origin)
+        predicates_origin[cond_idx] = predicate_tuple_origin
+
+        if col in visited_agg_col.keys():
+            visited_agg_col[col].append(agg)
+        else:
+            visited_agg_col[col] = [agg]
+        if len(visited_agg_col[col]) == len(original_agg_candidates):
+            visited_columns.append(col)
 
         if col != "*":
             used_tables.add(col.split(".")[0])
@@ -636,6 +748,8 @@ def where_generator(
 ):
     min_pred_num = args.num_pred_min
     max_pred_num = args.num_pred_max
+
+    assert len(table_columns) > 0, "[where generator] No candidate column for where"
 
     num_predicates = rng.randint(min_pred_num, min(len(table_columns), max_pred_num) + 1) + num_nested_predicates
     num_nonnest_predicates = num_predicates - num_nested_predicates
@@ -715,10 +829,7 @@ def where_generator(
             num_result = len(new_result_guarantee_tuples)
             if num_result < 1 or num_result == len(result_guarantee_tuples):
                 continue_cnt += 1
-                if DEBUG_ERROR:
-                    pass
-                else:
-                    continue
+                continue
             if DEBUG_ERROR:
                 pass
             else:
@@ -938,6 +1049,8 @@ def nested_predicate_generator(
                 nesting_column=col,
                 correlation_column=correlation_column,
             )
+            if inner_query_result is None:
+                return False, None, None, None, None, None, None
             if len(inner_query_result) > 1:
                 nesting_position = 1
                 continue
@@ -1030,6 +1143,8 @@ def nested_predicate_generator(
                 nesting_column=col,
                 correlation_column=correlation_column,
             )
+            if inner_query_result is None:
+                return False, None, None, None, None, None, None
             # assert len(inner_query_result) == 1, "The number of column of inner query should be 1"
             if not result_condition:
                 result_guarantee_tuples = df.copy(deep=True)
@@ -1104,6 +1219,8 @@ def nested_predicate_generator(
                 prefix,
                 correlation_column=correlation_column,
             )
+            if inner_query_result is None:
+                return False, None, None, None, None, None, None
 
             if not result_condition:  # Always correlation condition
                 result_guarantee_tuples = df.copy(deep=True)
@@ -1178,6 +1295,8 @@ def nested_predicate_generator(
                 nesting_column=col,
                 correlation_column=correlation_column,
             )
+            if inner_query_result is None:
+                return False, None, None, None, None, None, None
             # Always correlation condition
 
             if len(inner_query_result) == 0:
@@ -1272,14 +1391,15 @@ def nested_predicate_generator(
     )
 
 
-def group_generator(args, rng, cols, dtype_dict, group=False, outer_inner="non-nested", prefix=None):
+def group_generator(args, rng, cols, dtype_dict, dvs, group=False, outer_inner="non-nested", prefix=None):
     min_group, max_group = args.num_group_min, args.num_group_max
 
     categorical_cols = [col for col in cols if col in CATEGORIES]
     if not categorical_cols:
-        categorical_cols = cols
+        categorical_cols = [col for col in cols if len(dvs[col]) > 1]
     candidate_cols = [col for col in categorical_cols]
 
+    assert len(candidate_cols) > 0, "[group generator] No candidate column for group by"
     max_group = min(len(candidate_cols), max_group)
 
     prob = get_truncated_geometric_distribution(max_group - min_group + 1, 0.8)
@@ -1315,6 +1435,8 @@ def order_generator(
 ):
     min_order, max_order = args.num_order_min, args.num_order_max
     max_order = min(len(agg_cols), max_order)
+
+    assert len(agg_cols) > 0, "[order generator] No candidate column for order by"
 
     prob = get_truncated_geometric_distribution(max_order - min_order + 1, 0.8)
     num_order = rng.choice(range(min_order, max_order + 1), p=prob)
@@ -1441,7 +1563,7 @@ def inner_query_obj_to_inner_query(
 
     result_guarantee_tuples = ps.sqldf(query_string, locals())
     if result_guarantee_tuples.empty:
-        assert False, "ERROR: inner query result is empty"
+        return None, None, None, None, None
 
     # (FIX #12): Make correlation predicate as the top level predicate
     correlation_predicate_origin = None
@@ -1867,7 +1989,7 @@ def non_nested_query_generator(
 
     if sql_type_dict["group"]:
         group_columns_origin, group_columns = group_generator(
-            args, rng, table_columns, dtype_dict, group=sql_type_dict["group"], prefix=prefix
+            args, rng, table_columns, dtype_dict, dvs, group=sql_type_dict["group"], prefix=prefix
         )
     else:
         group_columns_origin = []
@@ -2136,6 +2258,7 @@ def nested_query_generator(
             rng,
             table_columns,
             dtype_dict,
+            dvs,
             group=sql_type_dict["group"],
             outer_inner="outer",
             prefix=prefix,
