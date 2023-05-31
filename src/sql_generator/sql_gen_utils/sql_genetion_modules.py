@@ -85,7 +85,7 @@ def non_nested_query_form_selector(args, rng):
             if args.has_limit:
                 sql_type["limit"] = True
         else:
-            prob = 0.8
+            prob = 0.2
             sql_type = {
                 "where": bool(rng.choice([0, 1], p=[prob, 1 - prob])),
                 "group": bool(rng.randint(0, 2)),
@@ -105,7 +105,7 @@ def non_nested_query_form_selector(args, rng):
             sql_type["having"] = True
 
     if DEBUG_ERROR:
-        sql_type["having"] = True
+        sql_type["having"] = False
         sql_type["where"] = True
 
     return sql_type
@@ -185,6 +185,7 @@ def select_generator(
             use_agg = False
             agg_cols = [("NONE", group_col) for group_col in group_columns_origin]
             initial_sel_size = len(columns)
+            return columns, agg_cols, (used_tables, use_agg)
 
     if outer_nesting_position != -1:
         num_select = 1
@@ -224,6 +225,30 @@ def select_generator(
         agg_cols.append((agg, col))
         used_tables.add(col.split(".")[0])
     else:
+        candidate_agg_cols = []
+        for col in candidate_cols:
+            if use_agg:
+                if dtype_dict[col] in ["bool", "str"]:
+                    candidate_aggs = TEXTUAL_AGGS
+                elif dtype_dict[col] == "date":
+                    candidate_aggs = DATE_AGGS
+                else:
+                    # (FIX #1, C6) Not use AVG/SUM/MIN/MAX for key columns
+                    if col in IDS or is_column_id(col, join_key_list):  # join_key_list:
+                        candidate_aggs = KEY_AGGS
+                    else:
+                        # (FIX #7) Not use COUNT/SUM for <col> <op> <val> shaped outer query
+                        if outer_nesting_position == 0:
+                            possible_aggs = POSSIBLE_AGGREGATIONS_PER_OPERATOR[outer_operator]
+                            candidate_aggs = possible_aggs
+                        else:
+                            candidate_aggs = NUMERIC_AGGS
+                for agg in candidate_aggs:
+                    candidate_agg_cols.append((agg, col))
+            else:
+                agg = "NONE"
+                candidate_agg_cols.append((agg, col))
+
         if nesting_column is not None:
             col = nesting_column
             agg = agg_selector(
@@ -241,26 +266,17 @@ def select_generator(
             columns.append(col_rep)
             agg_cols.append((agg, col))
             used_tables.add(col.split(".")[0])
+            if (agg, col) in candidate_agg_cols:
+                candidate_agg_cols.remove((agg, col))
 
-        while len(columns) < num_select + initial_sel_size:
-            if not use_agg and len(columns) == len(candidate_cols):
-                break
-            col = rng.choice(candidate_cols)
-            agg = agg_selector(rng, use_agg, dtype_dict, join_key_list, col)
-
-            distinct = ""
-            if agg == "COUNT" and col not in IDS:  # Use distinct if COUNT + non_key_column
-                # distinct = "DISTINCT "
-                pass  # disabled distinct
-
-            col_rep = agg + "(" + distinct + prefix + col + ")" if agg != "NONE" else prefix + col
-
-            if col_rep in columns:
-                continue
-            else:
-                columns.append(col_rep)
-                agg_cols.append((agg, col))
-                used_tables.add(col.split(".")[0])
+        num_select = min(num_select, len(candidate_agg_cols))
+        sampled_agg_cols_idx = rng.choice(range(len(candidate_agg_cols)), size=num_select, replace=False)
+        additional_agg_cols = [candidate_agg_cols[idx] for idx in sampled_agg_cols_idx]
+        agg_cols += additional_agg_cols
+        for agg, col in additional_agg_cols:
+            col_rep = agg + "(" + prefix + col + ")" if agg != "NONE" else prefix + col
+            columns.append(col_rep)
+            used_tables.add(col.split(".")[0])
 
     return columns, agg_cols, (used_tables, use_agg)
 
@@ -520,7 +536,10 @@ def having_generator(
 
     while cond_idx < num_predicate:
         if continue_cnt > 100:
-            raise Exception("[having generator] Too many continue during having predicate generation")
+            if DEBUG_ERROR:
+                return None, None, None, used_tables
+            else:
+                raise Exception("[having generator] Too many continue during having predicate generation")
 
         result_condition = sorted_conditions[cond_idx][1]
         if not result_condition and is_updated_result_guarantee_tuples:
@@ -795,7 +814,10 @@ def where_generator(
 
     while cond_idx < num_predicates:
         if continue_cnt > 100:
-            raise Exception("[where generator] Too many continue during where predicate generation")
+            if DEBUG_ERROR:
+                return None, None, used_tables, None, None, None, None
+            else:
+                raise Exception("[where generator] Too many continue during where predicate generation")
 
         result_condition = sorted_conditions[cond_idx][1]
         if not nest_or_not[cond_idx]:
@@ -1161,7 +1183,7 @@ def nested_predicate_generator(
                             break
                     if cur_group is None:
                         continue
-                    result_val = list(cur_group.iloc[:, 1])
+                    result_val = list(cur_group.iloc[:, 0])
 
                     column_value = tpl[col].iloc[0]
                     if (column_value in result_val and op == "IN") or (
@@ -1267,7 +1289,7 @@ def nested_predicate_generator(
             if "*" not in col and dtype_dict[col] == "str" and nesting_type not in ["type-a", "type-ja"]:
                 sum_p = sum(TEXTUAL_OPERATORS_PROBABILITY[0:3])
                 op = rng.choice(TEXTUAL_OPERATORS[0:3], p=[i / sum_p for i in TEXTUAL_OPERATORS_PROBABILITY[0:3]])
-            elif dtype_dict[col] == "bool" and nesting_type not in ["type-a", "type-ja"]:
+            elif "*" not in col and dtype_dict[col] == "bool" and nesting_type not in ["type-a", "type-ja"]:
                 op = rng.choice(KEY_OPERATORS, p=KEY_OPERATORS_PROBABILITY)
                 is_bool = True
             else:
@@ -1589,9 +1611,11 @@ def inner_query_obj_to_inner_query(
     if correlation_column is not None:
         if not use_agg_sel:
             if agg_cols[0][1] == "*":
+                # EXISTS
                 selected_columns = [correlation_column]
             else:
-                selected_columns = [correlation_column] + [col for agg, col in agg_cols]
+                # selected_columns = [correlation_column] + [col for agg, col in agg_cols]
+                selected_columns = [col for agg, col in agg_cols]
             new_result_tuples = []
 
             for key, item in result_tuples:
@@ -1600,7 +1624,8 @@ def inner_query_obj_to_inner_query(
         else:
             new_result_tuples = []
             for key, item in result_tuples:
-                new_item = item[[correlation_column]].iloc[[0]]
+                # new_item = item[[correlation_column]].iloc[[0]]
+                new_item = pd.DataFrame([])
                 for i in range(len(agg_cols)):
                     agg, col = agg_cols[i]
                     func = convert_agg_to_func(agg)
@@ -1982,6 +2007,11 @@ def non_nested_query_generator(
             used_tables,
             prefix=prefix,
         )
+        if DEBUG_ERROR and where_predicates is None:
+            sql_type_dict["where"] = False
+            where_predicates = []
+            tree_predicates_origin = []
+            predicates_origin = []
     else:
         where_predicates = []
         tree_predicates_origin = []
@@ -2029,6 +2059,11 @@ def non_nested_query_generator(
             grouping_query_elements,
             prefix=prefix,
         )
+        if having_predicates is None:
+            sql_type_dict["having"] = False
+            having_predicates = []
+            having_predicates_origin = []
+            having_tree_predicates_origin = []
     else:
         having_predicates = []
         having_predicates_origin = []
@@ -2218,6 +2253,7 @@ def nested_query_generator(
 
     sql_type_dict = non_nested_query_form_selector(args, rng)
     sql_type_dict["where"] = True
+    cur_outer_inner = "outer"
 
     # Step 1. Outer query generation
 
@@ -2251,6 +2287,13 @@ def nested_query_generator(
         inner_query_objs=inner_query_objs,
         inner_query_graphs=inner_query_graphs,
     )
+    if DEBUG_ERROR and where_predicates is None:
+        sql_type_dict["where"] = False
+        where_predicates = []
+        tree_predicates_origin = []
+        predicates_origin = []
+        childs = []
+        cur_outer_inner = "non-nested"
 
     if sql_type_dict["group"]:
         group_columns_origin, group_columns = group_generator(
@@ -2302,6 +2345,11 @@ def nested_query_generator(
             outer_inner="outer",
             prefix=prefix,
         )
+        if having_predicates is None:
+            sql_type_dict["having"] = False
+            having_predicates = []
+            having_predicates_origin = []
+            having_tree_predicates_origin = []
     else:
         having_predicates = []
         having_predicates_origin = []
@@ -2363,7 +2411,7 @@ def nested_query_generator(
             tables,
             sql_type_dict,
             used_tables,
-            "outer",
+            cur_outer_inner,
             select_columns,
             where_predicates,
             group_columns,
@@ -2404,7 +2452,7 @@ def nested_query_generator(
         sql_type_dict,
         necessary_tables,
         necessary_joins,
-        "outer",
+        cur_outer_inner,
         select_columns,
         where_predicates,
         group_columns,

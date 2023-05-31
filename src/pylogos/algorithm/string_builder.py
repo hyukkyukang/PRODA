@@ -321,7 +321,7 @@ class StringBuilder:
                                     cur_word.add_suffix(" (in ascending order)")
                                 else:
                                     tmp_o.append((rp_o, rel_o, att_o))
-                            self.ordering = tmp_o
+                            self.ordering = copy.deepcopy(tmp_o)
                         texts += cur_word
                     else:
                         tmp.append((rel, att, agg))
@@ -512,7 +512,7 @@ class StringBuilder:
                                     cur_word.add_suffix(" (in ascending order)")
                                 else:
                                     tmp_o.append((rp_o, rel_o, att_o))
-                            self.ordering = tmp_o
+                            self.ordering = copy.deepcopy(tmp_o)
                         texts += cur_word
                     else:
                         tmp.append((rel, att, agg))
