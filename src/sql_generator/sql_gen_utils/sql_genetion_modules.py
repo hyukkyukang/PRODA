@@ -534,6 +534,9 @@ def having_generator(
     visited_columns = []
     visited_agg_col = {}
 
+    clauses_op_val = [[]]
+    subset_clauses = []
+
     while cond_idx < num_predicate:
         if continue_cnt > 100:
             if DEBUG_ERROR:
@@ -550,6 +553,8 @@ def having_generator(
             is_updated_result_guarantee_tuples = False
             visited_columns = []
             visited_agg_col = {}
+            clauses_op_val.append([])
+            subset_clauses = [idx for idx in range(len(clauses_op_val[:-1]))]
         cur_candidate_columns = [col for col in having_candidate_columns if col not in visited_columns]
         column_idx = rng.randint(0, len(cur_candidate_columns))
         tuple_idx = rng.randint(0, len(result_guarantee_tuples))
@@ -699,6 +704,28 @@ def having_generator(
 
         assert agg != "NONE"
 
+        # Check if current clause is a superset of another clause
+        if len(subset_clauses) > 0:
+            removed_subset_clauses = []
+            for clause_idx in subset_clauses:
+                colA, opA, valA = None, None, None
+                for colAr, opAr, valAr in clauses_op_val[clause_idx]:
+                    if agg + "(" + col + ")" == colA:
+                        colA, opA, valA = colAr, opAr, valAr
+                        break
+                if colA == None:
+                    removed_subset_clauses.append(clause_idx)
+                    continue
+                if not check_condB_contain_condA(colA, opA, valA, new_dtype, col, op, val, new_dtype):
+                    removed_subset_clauses.append(clause_idx)
+                    continue
+            if len(subset_clauses) - len(removed_subset_clauses) > 0 and (
+                cond_idx == num_predicate - 1 or sorted_conditions[cond_idx + 1][1] == False
+            ):
+                continue_cnt += 1
+                continue
+            subset_clauses = [cidx for cidx in subset_clauses if cidx not in removed_subset_clauses]
+
         if isinstance(op, tuple):
             additional_pred_idx = len(predicates)
             if col == "*":
@@ -724,6 +751,7 @@ def having_generator(
             predicates[cond_idx] = agg + "(" + prefix + col + ") " + op + " " + str(val_stored)
         predicate_tuple_origin = (prefix, agg, col, op, str(val_stored))
         predicates_origin[cond_idx] = predicate_tuple_origin
+        clauses_op_val[-1].append((agg + "(" + col + ")", op, val))
 
         if col in visited_agg_col.keys():
             visited_agg_col[col].append(agg)
@@ -811,6 +839,8 @@ def where_generator(
     nested_predicates_graphs = {}
     correlation_predicates_origin = []
     visited_columns = []
+    clauses_op_val = [[]]
+    subset_clauses = []
 
     while cond_idx < num_predicates:
         if continue_cnt > 100:
@@ -820,14 +850,17 @@ def where_generator(
                 raise Exception("[where generator] Too many continue during where predicate generation")
 
         result_condition = sorted_conditions[cond_idx][1]
+        if not result_condition and is_updated_result_guarantee_tuples:
+            original_result_guarantee_tuples = pd.concat(
+                [original_result_guarantee_tuples, result_guarantee_tuples]
+            ).drop_duplicates(keep=False)
+            result_guarantee_tuples = original_result_guarantee_tuples
+            is_updated_result_guarantee_tuples = False
+            visited_columns = []
+            clauses_op_val.append([])
+            subset_clauses = [idx for idx in range(len(clauses_op_val[:-1]))]
+
         if not nest_or_not[cond_idx]:
-            if not result_condition and is_updated_result_guarantee_tuples:
-                original_result_guarantee_tuples = pd.concat(
-                    [original_result_guarantee_tuples, result_guarantee_tuples]
-                ).drop_duplicates(keep=False)
-                result_guarantee_tuples = original_result_guarantee_tuples
-                is_updated_result_guarantee_tuples = False
-                visited_columns = []
             current_columns = [col for col in table_columns if col not in visited_columns]
             done, col, op, val = non_nested_predicate_generator(
                 args, rng, result_guarantee_tuples, current_columns, dvs, vs, dtype_dict, join_key_list
@@ -852,15 +885,36 @@ def where_generator(
             if num_result < 1 or num_result == len(result_guarantee_tuples):
                 continue_cnt += 1
                 continue
-            if DEBUG_ERROR:
-                pass
-            else:
-                result_guarantee_tuples = new_result_guarantee_tuples
+
+            # Check if current clause is a superset of another clause
+            if len(subset_clauses) > 0:
+                removed_subset_clauses = []
+                for clause_idx in subset_clauses:
+                    colA, opA, valA = None, None, None
+                    for colAr, opAr, valAr in clauses_op_val[clause_idx]:
+                        if col == colA:
+                            colA, opA, valA = colAr, opAr, valAr
+                            break
+                    if colA == None:
+                        removed_subset_clauses.append(clause_idx)
+                        continue
+                    if not check_condB_contain_condA(colA, opA, valA, dtype_dict[colA], col, op, val, dtype_dict[col]):
+                        removed_subset_clauses.append(clause_idx)
+                        continue
+                if len(subset_clauses) - len(removed_subset_clauses) > 0 and (
+                    cond_idx == num_predicates - 1 or sorted_conditions[cond_idx + 1][1] == False
+                ):
+                    continue_cnt += 1
+                    continue
+                subset_clauses = [cidx for cidx in subset_clauses if cidx not in removed_subset_clauses]
+
+            result_guarantee_tuples = new_result_guarantee_tuples
             is_updated_result_guarantee_tuples = True
             visited_columns.append(col)
             result_guarantee_predicates.append(query_predicate)
 
             used_tables.add(col.split(".")[0])
+            clauses_op_val[-1].append((col, op, val))
 
             if isinstance(op, tuple):
                 additional_pred_idx = len(predicates)
@@ -894,13 +948,7 @@ def where_generator(
 
             nesting_type = nesting_type_selector(args, rng, only_nested=True, only_nonnested=False, inner_query_obj=obj)
             nesting_position = nesting_position_selector(args, rng, nesting_type, inner_query_obj=obj)
-            if not result_condition and is_updated_result_guarantee_tuples:
-                original_result_guarantee_tuples = pd.concat(
-                    [original_result_guarantee_tuples, result_guarantee_tuples]
-                ).drop_duplicates(keep=False)
-                result_guarantee_tuples = original_result_guarantee_tuples
-                is_updated_result_guarantee_tuples = False
-                visited_column = []
+
             (
                 done,
                 nested_predicate,

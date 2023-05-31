@@ -31,6 +31,7 @@ import networkx as nx
 import pandasql as ps
 from ast import literal_eval
 import dateutil.parser
+import math
 
 
 DEBUG_ERROR = False  # [NOTE] This should be disabled
@@ -93,6 +94,224 @@ def get_date_time(date):
 
 def get_tab_name_alias(tab_name):
     return tab_name
+
+
+def check_condB_contain_condA(colA, opA, valA, typeA, colB, opB, valB, typeB):
+    if colA != colB:
+        return False
+
+    if typeA not in ("str", "bool"):  # numeric
+        if isinstance(opA, tuple):
+            range_opA = (opA[0], opA[1], "and")
+            range_valA = valA
+        elif opA == "=":
+            range_opA = (">=", "<=", "and")
+            range_valA = (valA, valA)
+        elif opA in (">", ">="):
+            range_opA = (opA, "<", "and")
+            range_valA = (valA, math.inf)
+        elif opA in ("<", "<="):
+            range_opA = (">", opA, "and")
+            range_valA = (-math.inf, valA)
+        elif opA == "!=":
+            range_opA = (">", "<", "or")
+            range_valA = (valA, valA)
+        else:
+            assert False, f"[check_condB_contain_condA] not implemented operator {opA}"
+
+        if isinstance(opB, tuple):
+            range_opB = (opB[0], opB[1], "and")
+            range_valB = valB
+        elif opB == "=":
+            range_opB = (">=", "<=", "and")
+            range_valB = (valB, valB)
+        elif opB in (">", ">="):
+            range_opB = (opB, "<", "and")
+            range_valB = (valB, math.inf)
+        elif opB in ("<", "<="):
+            range_opB = (">", opB, "and")
+            range_valB = (-math.inf, valB)
+        elif opB == "!=":
+            range_opB = (">", "<", "or")
+            range_valB = (valB, valB)
+        else:
+            assert False, f"[check_condB_contain_condA] not implemented operator {opB}"
+
+        if range_opA[2] == "and" and range_opB[2] == "and":
+            # A in (val1, val2) or B in (val3, val4)
+            # if val3 > val1 or val4 < val2, B does not contain A
+            # else if val3 == val1 and op3 == ">" and op1 == ">=", B does not contain A
+            # else if val4 == val2 and op4 == "<" and op2 == "<=", B does not contain A
+            # otherwise, B contain A
+            if range_valB[0] > range_valA[0] or range_valB[1] < range_valA[1]:
+                return False
+            if range_valB[0] == range_valA[0] and range_opA[0] == ">=" and range_opB[0] == ">":
+                return False
+            if range_valB[1] == range_valA[1] and range_opA[1] == "<=" and range_opB[1] == "<":
+                return False
+        elif range_opA[2] == "and" and range_opB[2] == "or":
+            # A in (val1, val2) or B != val3
+            # if not val3 in (val1, val2), B contain A
+            str_pred = (
+                str(range_valB[0])
+                + range_opA[0]
+                + str(range_valA[0])
+                + " and "
+                + str(range_valB[0])
+                + range_opA[1]
+                + str(range_valA[1])
+            )
+            if eval(str_pred):
+                return False
+        elif range_opA[2] == "or" and range_opB[2] == "and":
+            # A != val1 or B in (val3, val4)
+            # if B cover (-inf, inf), then B contain A
+            # But this never occur
+            return False
+        else:
+            # range_opA[2] == "or" and range_opB[2] == "or"
+            # A != val1 or B != val3
+            # if val3 == val1, B contain A
+            if range_valA[0] != range_valB[0]:
+                return False
+    else:
+        if valA[0] == '"' and valA[-1] == '"':
+            valA = valA[1:-1]
+        if valB[0] == '"' and valB[-1] == '"':
+            valB = valB[1:-1]
+
+        if opA in ("IN", "NOT IN"):
+            valsetA = list(eval(valA))
+        elif opA in ("LIKE", "NOT LIKE"):
+            if valA[0] == "%" and valA[-1] == "%":
+                valsetA = [valA[1:-1]]
+                opsetA = "find"
+                opsetA_suffix = " + 1 "
+            elif valA[0] == "%":
+                valsetA = [valA[1:]]
+                opsetA = "endswith"
+                opsetA_suffix = ""
+            else:
+                valsetA = [valA[:-1]]
+                opsetA = "startswith"
+                opsetA_suffix = ""
+        else:
+            valsetA = [valA]
+
+        if opB in ("IN", "NOT IN"):
+            valsetB = list(eval(valB))
+        elif opB in ("LIKE", "NOT LIKE"):
+            if valB[0] == "%" and valB[-1] == "%":
+                valsetB = [valB[1:-1]]
+                opsetB = "find"
+                opsetB_suffix = " + 1 "
+            elif valB[0] == "%":
+                valsetB = [valB[1:]]
+                opsetB = "endswith"
+                opsetB_suffix = ""
+            else:
+                valsetB = [valB[:-1]]
+                opsetB = "startswith"
+                opsetB_suffix = ""
+        else:
+            valsetB = [valB]
+
+        if opB == "LIKE":
+            if opA in ("LIKE"):
+                # A LIKE "a" or B LIKE "b"
+                # If B LIKE "%val%" or opA == opB and valB is substring of valA, B contain A
+                # A LIKE "ss%" or B LIKE "%s%"
+                if opsetB == "find" or opsetB == opsetA:
+                    if valsetA[0].find(valsetB[0]) == -1:
+                        return False
+                else:
+                    return False
+            elif opA in ("=", "IN"):
+                # A IN ("a", "b", "c") OR B LIKE "valB"
+                # any value in the set of A not like valB, then B does not contain A
+                # ex) A IN ("b", "a") OR B LIKE "b%"
+                for valAc in valsetA:
+                    str_pred = '"' + str(valAc) + '".' + opsetB + '("' + str(valsetB[0]) + '")' + opsetB_suffix
+                    cond = eval(str_pred)
+                    if not cond:
+                        return False
+            else:
+                # A NOT IN ("a", "b") OR B LIKE "valB"
+                # set of A is equal to NOT LIKE "valB", then B contain A
+                # But this never occur
+                # ex) A NOT IN ("a", "c") OR B LIKE "b%".. A NOT LIKE "c%" OR B LIKE "b%".. always False
+                return False
+        elif opB == "NOT LIKE":
+            if opA in ("LIKE"):
+                # A LIKE "a" or B NOT LIKE "b"
+                return False
+            elif opA in ("NOT LIKE"):
+                # A NOT LIKE "a" or B NOT LIKE "b"
+                # If A NOT LIKE "%val%" or opA == opB and valB is substring of valA, B contain A
+                # A NOT LIKE "%s%" or B NOT LIKE "ss%"
+                if opsetA == "find" or opsetB == opsetA:
+                    if valsetB[0].find(valsetA[0]) == -1:
+                        return False
+                else:
+                    return False
+                pass
+            elif opA in ("=", "IN"):
+                # A IN ("a", "b", "c") OR B NOT LIKE "valB"
+                # any value in the set of A like valB, then B does not contain A
+                # ex) A IN ("b", "a") OR B NOT LIKE "b%"
+                for valAc in valsetA:
+                    str_pred = '"' + str(valAc) + '".' + opsetB + '("' + str(valsetB[0]) + '")' + opsetB_suffix
+                    cond = eval(str_pred)
+                    if cond:
+                        return False
+                pass
+            else:
+                # A NOT IN ("a", "b") OR B NOT LIKE "valB"
+                # all values in the set of A like valB, then B contain A
+                # set of A is equal to LIKE "valB", then B contain A
+                # But this never occur
+                # ex) A NOT IN ("b") OR B NOT LIKE ("b%").. A NOT IN ("c") OR B NOT LIKE ("b%").. always False
+                return False
+        elif opB in ("=", "IN"):
+            # A ... or B in ("a", "b")
+            if opA in ("=", "IN"):
+                # if value set A is a equi or subset of value set B, B contain A
+                # otherwise, B does not contain A
+                if not set(valsetA) <= set(valsetB):
+                    return False
+            else:
+                assert opA in ("NOT LIKE", "NOT IN", "!=", "LIKE")
+                return False
+        elif opB in ("NOT IN", "!="):
+            # B != "valueB"
+            if opA in ("NOT LIKE", "NOT IN", "!="):
+                # if value set of A have all of valueB, B contain A
+                # ex) A NOT IN ("a", "b", "c") OR B NOT IN ("a", "b"), A NOT LIKE "b%" OR B NOT IN ("b", "bb")
+                # Otherwise, B does not contain A
+                if opA == "NOT LIKE":
+                    for valBc in valsetB:
+                        str_pred = '"' + str(valBc) + '".' + opsetA + '("' + str(valsetA[0]) + '")' + opsetA_suffix
+                        cond = eval(str_pred)
+                        if not cond:
+                            return False
+                elif opA in ("!=", "NOT IN") and not set(valsetB) <= set(valsetA):
+                    return False
+            else:
+                # if value set of A does not have valueB, B contain A
+                # Otherwise, B does not contain A
+                # ex) A IN ("A", "B") OR B != "B"
+                if opA in ("=", "IN") and len(set(valsetB).union(set(valsetA))) > 0:
+                    return False
+                if opA in ("LIKE"):
+                    for valBc in valsetB:
+                        str_pred = '"' + str(valBc) + '".' + opsetA + '("' + str(valsetA[0]) + '")' + opsetA_suffix
+                        cond = eval(str_pred)
+                        if cond:
+                            return False
+        else:
+            assert False, f"[check_condB_contain_condA] not implemented operator {opB}"
+
+    return True
 
 
 def get_val_alias(op, val):
@@ -226,33 +445,34 @@ def get_str_op_values(op, val, distinct_values, all_values, rng, num_in_max):
 
         return candidate_vals[candidate_op_idx].replace('"', '\\"')
     elif op == "NOT LIKE":
-        for i in range(10):  # param
-            if len(distinct_values) == 1:
-                return rng.choice([f"{val}%", f"%{val}", f"%{val}%"])
-            # distinct_values = distinct_values
-            candidate_val = str(rng.choice(all_values)).strip()
+        return rng.choice([f"{val}%", f"%{val}", f"%{val}%"])
+        # for i in range(10):  # param
+        #    if len(distinct_values) == 1:
+        #        return rng.choice([f"{val}%", f"%{val}", f"%{val}%"])
+        #    # distinct_values = distinct_values
+        #    candidate_val = str(rng.choice(all_values)).strip()
 
-            candidate_val = str(rng.choice(candidate_val.split(" ")))
-            if len(candidate_val) > 7:
-                start_idx = rng.randint(0, len(candidate_val) - 7)
-                candidate_val = candidate_val[start_idx : start_idx + 7]
+        #    candidate_val = str(rng.choice(candidate_val.split(" ")))
+        #    if len(candidate_val) > 7:
+        #        start_idx = rng.randint(0, len(candidate_val) - 7)
+        #        candidate_val = candidate_val[start_idx : start_idx + 7]
 
-            candidate_op_idx = rng.choice([0, 1, 2])
-            candidate_vals = [f"{candidate_val}%", f"%{candidate_val}", f"%{candidate_val}%"]
+        #    candidate_op_idx = rng.choice([0, 1, 2])
+        #    candidate_vals = [f"{candidate_val}%", f"%{candidate_val}", f"%{candidate_val}%"]
 
-            if candidate_op_idx == 0:
-                if val.startswith(candidate_val):
-                    continue
-            elif candidate_op_idx == 1:
-                if val.endswith(candidate_val):
-                    continue
-            elif candidate_op_idx == 2:
-                if candidate_val in val:
-                    continue
+        #    if candidate_op_idx == 0:
+        #        if val.startswith(candidate_val):
+        #            continue
+        #    elif candidate_op_idx == 1:
+        #        if val.endswith(candidate_val):
+        #            continue
+        #    elif candidate_op_idx == 2:
+        #        if candidate_val in val:
+        #            continue
 
-            return candidate_vals[candidate_op_idx].replace('"', '\\"')
+        #    return candidate_vals[candidate_op_idx].replace('"', '\\"')
 
-        return candidate_vals[candidate_op_idx].replace('"', '\\"')
+        # return candidate_vals[candidate_op_idx].replace('"', '\\"')
     elif op == "IN":
         num_in_values = rng.randint(1, num_in_max + 1)  # param
         all_candidate_values = copy.deepcopy(all_values)
