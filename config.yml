@@ -2,15 +2,15 @@ visibleToClient:
     frontend:
         IP: 141.223.197.243
         Port: 3000
-        Protocol: http # Either https or http
+        Protocol: https # Either https or http
     backend:
         IP: 141.223.197.243
         Port: 40101
-        Protocol: http # Either https or http
+        Protocol: https # Either https or http
 backend:
     IP: localhost
     Port: 4001
-    Protocol: http # Either https or http
+    Protocol: https # Either https or http
 DB:
     IP: localhost
     Port: 5432
@@ -30,6 +30,7 @@ DB:
         UserPW: collection_user_pw
         CollectionTableName: collection
         TaskTableName: task
+        TaskSetTableName: task_set
 SSLCertPath: "/home/proda/certificates/localhost.crt"
 SSLKeyPath: "/home/proda/certificates/localhost.key"
 SSLCaPath: "/home/proda/certificates/localhost.key"
