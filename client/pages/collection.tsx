@@ -7,6 +7,7 @@ import { fetchTask, sendWorkerAnswer } from "../api/connect";
 import { AnswerSheet, UserAnswer } from "../components/Collection/answerSheet";
 import { QuerySheet } from "../components/Collection/querySheet";
 import { Task } from "../components/Collection/task";
+import { OverallTaskDescription } from "../components/Collection/overallTaskDescription";
 import { Header } from "../components/Header/collectionHeader";
 import { RefContext } from "../pages/_app";
 import { TaskDescription } from "../components/Collection/taskDescription";
@@ -25,7 +26,11 @@ export const Collection = (props: any) => {
     const [assignmentId, setAssignmentId] = useState("");
     const [turkSubmitTo, setTurkSubmitTo] = useState("");
     const [workerID, setWorkerID] = useState("");
+<<<<<<< HEAD
     const [taskID, setTaskID] = useState(-1);
+=======
+    const [taskSetID, setTaskSetID] = useState<number | null>(null);
+>>>>>>> 3852206c33520deb109d3f8ae41a25238b1d87ba
     // Variables to change state step-by-step to call API once
     const [isInitalized, setIsInitalized] = useState(false);
     const [isURLParsed, setIsURLParsed] = useState(false);
@@ -41,7 +46,11 @@ export const Collection = (props: any) => {
         isSuccess,
         mutate: mutate,
     } = useMutation({
+<<<<<<< HEAD
         mutationFn: (params: { workerID: string; taskID: number | undefined; isSkip: boolean }) => fetchTask(params),
+=======
+        mutationFn: (params: { workerID: string; taskSetID: number | undefined | null; isSkip: boolean }) => fetchTask(params),
+>>>>>>> 3852206c33520deb109d3f8ae41a25238b1d87ba
     });
     const taskSet = useMemo<{ taskSetID: number; tasks: Task[] } | null>(() => (data?.isTaskReturned ? data.taskSet : null), [data]);
     const currentTask = useMemo<Task | null>(() => (taskSet && taskSet.tasks.length > taskSetIdx ? taskSet.tasks[taskSetIdx] : null), [taskSet, taskSetIdx]);
@@ -62,7 +71,11 @@ export const Collection = (props: any) => {
     };
 
     const onSkipHandler = () => {
+<<<<<<< HEAD
         mutate({ workerID: workerID, taskID: taskID, isSkip: true });
+=======
+        mutate({ workerID: workerID, taskSetID: taskSet?.taskSetID, isSkip: true });
+>>>>>>> 3852206c33520deb109d3f8ae41a25238b1d87ba
     };
 
     const getAMTInfo = () => {
@@ -72,14 +85,22 @@ export const Collection = (props: any) => {
         const assignmentId = queryParams.get("assignmentId") ? queryParams.get("assignmentId") : "";
         const turkSubmitTo = queryParams.get("turkSubmitTo") ? queryParams.get("turkSubmitTo") : "";
         const workerID = queryParams.get("workerId") ? queryParams.get("workerId") : "a";
+<<<<<<< HEAD
         const taskID = queryParams.get("taskID") ? queryParams.get("taskID") : "";
+=======
+        const taskSetID = queryParams.get("taskSetID") ? queryParams.get("taskSetID") : "";
+>>>>>>> 3852206c33520deb109d3f8ae41a25238b1d87ba
 
         // Set AMT information
         setHitId(hitId === null ? "" : hitId);
         setAssignmentId(assignmentId === null ? "" : assignmentId);
         setTurkSubmitTo(turkSubmitTo === null ? "" : turkSubmitTo);
         setWorkerID(workerID === null ? "" : workerID);
+<<<<<<< HEAD
         setTaskID(taskID === null ? -1 : parseInt(taskID));
+=======
+        setTaskSetID(taskSetID === null ? -1 : parseInt(taskSetID));
+>>>>>>> 3852206c33520deb109d3f8ae41a25238b1d87ba
     };
 
     // Cascading useEffects to call API once
@@ -96,15 +117,24 @@ export const Collection = (props: any) => {
 
     useEffect(() => {
         if (isURLParsed) {
+<<<<<<< HEAD
             mutate({ workerID: workerID, taskID: taskID, isSkip: false });
+=======
+            mutate({ workerID: workerID, taskSetID: taskSetID, isSkip: false });
+>>>>>>> 3852206c33520deb109d3f8ae41a25238b1d87ba
         }
     }, [isURLParsed]);
 
     //  Update taskID when data is updated
     useEffect(() => {
+<<<<<<< HEAD
         console.log(`data: ${JSON.stringify(data)} isloading:${isLoading}`);
         if (!isLoading && data) {
             setTaskID(data?.task?.taskID);
+=======
+        if (!isLoading && data) {
+            setTaskSetID(data?.taskSet?.taskSetID);
+>>>>>>> 3852206c33520deb109d3f8ae41a25238b1d87ba
         }
     }, [data]);
 
@@ -124,7 +154,11 @@ export const Collection = (props: any) => {
             <br />
             {/* Show saquery information for the current task */}
             <Paper elevation={2}>
+<<<<<<< HEAD
                 <TaskDescription evql={currentTask?.evql} />
+=======
+                <OverallTaskDescription evql={currentTask?.evql} />
+>>>>>>> 3852206c33520deb109d3f8ae41a25238b1d87ba
             </Paper>
             <br />
             <Paper elevation={2}>
@@ -185,7 +219,11 @@ export const Collection = (props: any) => {
         } else {
             return collectionBody;
         }
+<<<<<<< HEAD
     }, [isTaskSetComplete, isLoading, isError, data, answer, taskID, currentTask]);
+=======
+    }, [isTaskSetComplete, isLoading, isError, data, answer, taskSetID, currentTask]);
+>>>>>>> 3852206c33520deb109d3f8ae41a25238b1d87ba
 
     return (
         <React.Fragment>

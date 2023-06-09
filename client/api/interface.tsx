@@ -10,7 +10,11 @@ export interface IUpdateAnswerRequest {
 }
 
 export interface IFetchTaskRequest {
+<<<<<<< HEAD
     workerId: string;
+=======
+    workerID: string;
+>>>>>>> 3852206c33520deb109d3f8ae41a25238b1d87ba
     taskSetID: number;
     isSkip: boolean;
 }

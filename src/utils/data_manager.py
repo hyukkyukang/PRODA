@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 import pickle
-from typing import Any, List
+from typing import Any, List, Dict, Union
 
 import hkkang_utils.file as file_utils
 
@@ -28,6 +28,40 @@ def save_data(data: Any, path: str) -> None:
     os.makedirs(dir_path, exist_ok=True)
     with open(path, "wb") as f:
         pickle.dump(data, f)
+
+def save_json(data: Union[Dict, str], path: str) -> None:
+    def save_json_string() -> None:
+        # Check if data is JSON
+        try:
+            json.loads(data)
+        except:
+            raise ValueError("Data is not JSON")
+        with open(path, "wb") as f:
+            f.write(data.encode("utf-8"))
+    def save_json_object() -> None:
+        # check if valid json object
+        try:
+            json_str = json.dumps(data)
+        except:
+            raise ValueError("Data is not JSON")
+        with open(path, "w", encoding="utf8") as f:
+            json.dump(data, f)
+    
+    # Create directory if not exists
+    dir_path, _ = file_utils.split_path_into_dir_and_file_name(path)
+    os.makedirs(dir_path, exist_ok=True)
+    if type(data) == str:
+        save_json_string()
+    else:
+        save_json_object()
+
+def save_task_set_in_db(
+    task_ids: List[int],
+):
+    pg = PostgresConnector(DBUserID, DBUserPW, IP, port, DBName)
+    task_ids_str = "{" + ",".join(map(lambda k: f'"{str(k)}"', task_ids)) + "}"
+    pg.execute(f"INSERT INTO {DBTaskSetTableName} (task_ids) VALUES ('{task_ids_str}') RETURNING id")
+    return pg.fetchone()[0]
 
 
 def save_task_set_in_db(

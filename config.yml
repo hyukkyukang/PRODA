@@ -1,12 +1,18 @@
 visibleToClient:
     frontend:
-        IP: 141.223.197.243
+        IP: localhost
         Port: 3000
         Protocol: https # Either https or http
     backend:
+<<<<<<< HEAD
         IP: 141.223.197.243
         Port: 40101
         Protocol: https # Either https or http
+=======
+        IP: localhost
+        Port: 4001
+        Protocol: http # Either https or http
+>>>>>>> 3852206c33520deb109d3f8ae41a25238b1d87ba
 backend:
     IP: localhost
     Port: 4001

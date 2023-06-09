@@ -169,7 +169,7 @@ export const TableExcerpt = (props: React.ComponentProps<any>) => {
             dataSource={toAntdDataSource(flatRows)}
             bordered
             rowClassName={(record, index) => (index % 2 === 0 ? "table-row-light" : "table-row-dark")}
-            style={{ overflow: "auto" }}
+            style={{ overflow: "auto", width: "1300px" }}
         />
     );
 };

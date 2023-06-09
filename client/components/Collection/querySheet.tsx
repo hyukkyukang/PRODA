@@ -1,11 +1,11 @@
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { Box, Grid } from "@mui/material";
-import Collapse from "@mui/material/Collapse";
-import IconButton from "@mui/material/IconButton";
+import { Grid } from "@mui/material";
+import Typography from "@mui/material/Typography";
 import React, { useEffect, useMemo, useState } from "react";
 import { isEmptyObject } from "../../utils";
+import { Accordion, AccordionDetails, AccordionSummary } from "../Accordion/customAccordian";
 import { TableExcerpt } from "../TableExcerpt/TableExcerpt";
 import { EVQLTable } from "../VQL/EVQLTable";
+import { QueryHistorySheet } from "./queryHistorySheet";
 import { Task } from "./task";
 import { flattenEVQLInPostOrder } from "../VQL/utils";
 import { EVQLNode } from "../VQL/EVQL";
@@ -29,10 +29,10 @@ const spanSplicer = (str: string, last_idx: number, start_idx: number, end_idx: 
 
 export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
     const { currentTask } = props;
-    const [isCollapse, setIsCollapse] = useState<boolean>(true);
     const [selectedCoordinate, SetSelectedCoordinate] = useState<{ x: number; y: number }>({ x: -1, y: -1 });
     const [highlightList, setHighlightList] = useState<Array<[number, number]>>([]);
     const nl_mapping = useMemo(() => currentTask?.nl_mapping, [currentTask]);
+<<<<<<< HEAD
     const expandCollapseHandler = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         setIsCollapse(!isCollapse);
     };
@@ -42,6 +42,9 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
         transform: isCollapse ? "rotate(180deg)" : "",
         transition: "transform 150ms ease", // smooth transition
     };
+=======
+    const reversedSubTaskHistory = useMemo(() => (currentTask?.history ? [...currentTask.history].reverse() : []), [currentTask?.history]);
+>>>>>>> 3852206c33520deb109d3f8ae41a25238b1d87ba
 
     const highlightedNL = (nl: string, highlightIndices: Array<[number, number]>) => {
         let last_idx = 0;
@@ -72,6 +75,7 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
     return (
         <React.Fragment>
             {currentTask ? (
+<<<<<<< HEAD
                 <Box style={{ marginLeft: "15px", marginRight: "15px", paddingTop: "15px" }}>
                     {currentTask.history.map((subTask) => QueryHistorySheet(subTask))}
                     <Collapse in={isCollapse}>
@@ -107,6 +111,51 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
                         </IconButton>
                     </div>
                 </Box>
+=======
+                <React.Fragment>
+                    {reversedSubTaskHistory.map((subTask, subTaskIdx) => (
+                        <Accordion>
+                            <AccordionSummary aria-controls={`panel${subTaskIdx}a-content`} id={`panel${subTaskIdx}a-header`}>
+                                <span>{subTask.evql.node.name}</span>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <QueryHistorySheet task={subTask} />
+                            </AccordionDetails>
+                        </Accordion>
+                    ))}
+                    <Accordion>
+                        <AccordionSummary aria-controls={`panela-content`} id={`panela-header`}>
+                            <span>{currentTask.evql.node.name}</span>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            <Grid container spacing={2}>
+                                <Grid item xs={12} sm={12}>
+                                    <CoordinateContext.Provider value={{ selectedCoordinate, SetSelectedCoordinate }}>
+                                        {currentTask?.tableExcerpt ? <h3>Table:</h3> : null}
+                                        {currentTask?.tableExcerpt ? <TableExcerpt queryResult={currentTask.tableExcerpt} /> : null}
+                                        <br />
+                                        {currentTask?.evql ? (
+                                            <EVQLTable
+                                                evqlRoot={{ node: currentTask.evql.node, children: currentTask.evql.children }}
+                                                childListPath={[]}
+                                                editable={false}
+                                                isFirstNode={true}
+                                            />
+                                        ) : null}
+                                    </CoordinateContext.Provider>
+                                    <br />
+                                    <h3>Result Table:</h3>
+                                    <TableExcerpt queryResult={currentTask.resultTable} />
+                                </Grid>
+                            </Grid>
+                            <h2>Sentence:</h2>
+                            <Typography variant="body1" gutterBottom>
+                                {highlightedNL(currentTask?.nl, highlightList)}
+                            </Typography>
+                        </AccordionDetails>
+                    </Accordion>
+                </React.Fragment>
+>>>>>>> 3852206c33520deb109d3f8ae41a25238b1d87ba
             ) : null}
         </React.Fragment>
     );

@@ -1,4 +1,5 @@
 import os
+import json
 from enum import IntEnum
 from typing import Any, Dict, List
 
@@ -6,7 +7,7 @@ import attrs
 import hkkang_utils.string as string_utils
 
 from src.table_excerpt.table_excerpt import TableExcerpt
-from src.utils.data_manager import save_task_in_db, save_data
+from src.utils.data_manager import save_task_in_db, save_json
 from src.VQL.EVQL import EVQLTree
 
 
@@ -33,16 +34,18 @@ class Task:
     def save(cls, dir_path):
         # Generate file paths
         rand_id = string_utils.generate_random_str(size=10)
-        evql_file_path = os.path.join(dir_path, f"evql/{rand_id}.pkl")
-        table_excerpt_path = os.path.join(dir_path, f"table_excerpt/{rand_id}.pkl")
-        result_table_path = os.path.join(dir_path, f"result_table/{rand_id}.pkl")
-        nl_mapping_path = os.path.join(dir_path, f"nl_mapping/{rand_id}.pkl")
+        evql_file_path = os.path.join(dir_path, f"evql/{rand_id}.json")
+        table_excerpt_path = os.path.join(dir_path, f"table_excerpt/{rand_id}.json")
+        result_table_path = os.path.join(dir_path, f"result_table/{rand_id}.json")
+        nl_mapping_path = os.path.join(dir_path, f"nl_mapping/{rand_id}.json")
 
-        # Save as file
-        save_data(cls.evql, evql_file_path)
-        save_data(cls.table_excerpt, table_excerpt_path)
-        save_data(cls.result_table, result_table_path)
-        save_data(cls.nl_mapping, nl_mapping_path)
+        print(evql_file_path)
+
+        # Save as json file
+        save_json(cls.evql.dump_json(), evql_file_path)
+        save_json(cls.table_excerpt.dump_json(), table_excerpt_path)
+        save_json(cls.result_table.dump_json(), result_table_path)
+        save_json(json.dumps(cls.nl_mapping), nl_mapping_path)
 
         # Save in DB
         return save_task_in_db(

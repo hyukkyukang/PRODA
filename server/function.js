@@ -32,13 +32,15 @@ demoDBUserPW = config.DB.demo.UserPW;
 demoDBName = config.DB.demo.DBName;
 demoDBTableName = config.DB.demo.tableName;
 
+const spawnSync = require("child_process");
+
 /* Fetch configs */
 function getConfig() {
     const client = new pg();
     client.connectSync(`user=${configDBUserID} password=${configDBUserPW} port=${DBPort} host=${DBIP} dbname=${configDBName}`);
     const fetchedConfigs = client.querySync(`SELECT * FROM ${configDBTableName};`);
     const fetchedQueryGoalNums = client.querySync(`SELECT * FROM ${configDBQueryGoalNumsTableName};`);
-
+    client.end();
     // Parse configs into JSON
     assert.equal(fetchedConfigs.length, 1);
     const systemConfig = {
@@ -55,9 +57,8 @@ function getConfig() {
 
 /* Fetch information */
 function getEVQL(queryType) {
-    var spawnSync = require("child_process").spawnSync;
-    var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/utils/example_queries.py`, "--query_type", queryType]);
-    var json_dumped_evql = spawnedProcess.stdout.toString();
+    const spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/utils/example_queries.py`, "--query_type", queryType]);
+    const json_dumped_evql = spawnedProcess.stdout.toString();
     var evql = null;
     // Check if empty
     if (!json_dumped_evql) {
@@ -95,10 +96,10 @@ function getTask(taskID, getHistory = true) {
     const table_excerpt_path = result.table_excerpt_path;
     const nl_mapping_path = result.nl_mapping_path;
     // Retrieve data from Python script
-    const evql_object = getJsonDataFromFile(evql_path);
-    const result_table_object = getJsonDataFromFile(result_table_path);
-    const table_excerpt_object = getJsonDataFromFile(table_excerpt_path);
-    const nl_mapping_object = getJsonDataFromFile(nl_mapping_path);
+    const evql_object = readJsonFile(evql_path);
+    const result_table_object = readJsonFile(result_table_path);
+    const table_excerpt_object = readJsonFile(table_excerpt_path);
+    const nl_mapping_object = readJsonFile(nl_mapping_path);
     // Replace path with the real data
     delete result.evql_path;
     delete result.result_table_path;
@@ -169,8 +170,7 @@ function getTaskSet(taskSetID = null, isSkip = false) {
 }
 
 /* Read in JSON object from file */
-function getJsonDataFromFile(file_path) {
-    var spawnSync = require("child_process").spawnSync;
+function readPickleFile(file_path) {
     // Retrieve data from Python script
     var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/utils/data_manager.py`, "--file_path", file_path]);
     var result = spawnedProcess.stdout.toString();
@@ -186,6 +186,10 @@ function getJsonDataFromFile(file_path) {
         }
     }
     return json_object;
+}
+
+function readJsonFile(file_path) {
+    return require(file_path);
 }
 
 /* Fetch Log data */
@@ -274,7 +278,6 @@ function logWorkerAnswer(logData) {
 
 /* Utils */
 function EVQLToSQL(evql) {
-    var spawnSync = require("child_process").spawnSync;
     var spawnedProcess = spawnSync("python3", [`${PathToPythonSrc}/VQL/EVQL_to_SQL.py`, "--evql_in_json_str", JSON.stringify(evql)]);
     var result = spawnedProcess.stdout.toString();
     return result;
@@ -292,10 +295,13 @@ async function queryDB(sql) {
     });
     client.connect();
     result = await client.query({ text: sql, rowMode: "array" });
+    client.end();
     return result;
 }
 
 module.exports = {
+    readPickleFile: readPickleFile,
+    readJsonFile: readJsonFile,
     getConfig: getConfig,
     getEVQL: getEVQL,
     getTask: getTask,
