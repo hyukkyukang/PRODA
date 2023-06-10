@@ -98,6 +98,7 @@ export const Collection = (props: any) => {
         const assignmentId = queryParams.get("assignmentId") ? queryParams.get("assignmentId") : "";
         const turkSubmitTo = queryParams.get("turkSubmitTo") ? queryParams.get("turkSubmitTo") : "";
         const workerID = queryParams.get("workerId") ? queryParams.get("workerId") : "";
+        const taskID = queryParams.get("taskID") ? queryParams.get("taskID") : "";
         const taskSetID = queryParams.get("taskSetID") ? queryParams.get("taskSetID") : "";
 
         // Set AMT information

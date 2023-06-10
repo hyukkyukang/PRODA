@@ -29,7 +29,7 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
     const [selectedCoordinate, SetSelectedCoordinate] = useState<{ x: number; y: number }>({ x: -1, y: -1 });
     const [highlightList, setHighlightList] = useState<Array<[number, number]>>([]);
     const nl_mapping = useMemo(() => currentTask?.nl_mapping, [currentTask]);
-    const reversedSubTaskHistory = useMemo(() => (currentTask?.history ? [...currentTask.history].reverse() : []), [currentTask, currentTask?.history]);
+    const reversedSubTaskHistory = useMemo(() => (currentTask?.history ? [...currentTask.history].reverse() : []), [currentTask?.history]);
 
     const highlightedNL = (nl: string, highlightIndices: Array<[number, number]>) => {
         let last_idx = 0;
