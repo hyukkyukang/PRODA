@@ -80,7 +80,7 @@ sh setup.sh
 
 Prerequisite: Note that NL text is generated from a query graph. To translate a SQL query, a corresponding query graph should be given, which is generated along _SQL Geneartion_ process.
 
-Below code snippet shows an example that generates NL text for a SQL query.
+Below code snippet shows an example that generates NL text for a SQL query with a single query block.
 
 ```python
 from typing import List, Tuple
@@ -91,18 +91,63 @@ from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 NUM_OF_QUERY_TO_READ = 10
 
 # Prerequisite: SQL file should be generated with src.sql_generator.query_generator_v2.py
-sql_out_file_path = None
+sql_out_file_path: str = None
 
 # Load SQL and query graph
 objs = load_objs(filepath + ".obj", NUM_OF_QUERY_TO_READ)
 graphs: List[Query_graph] = load_graphs(filepath + ".graph", NUM_OF_QUERY_TO_READ)
 
 # Translate each SQL query
-sql_nl_pair: List[Tuple[str, str]] = []
+sql_nl_pairs: List[Tuple[str, str]] = []
 for obj, graph in zip(objs, graphs):
     sql = obj["sql"]
     nl, _ = translate(graph[1])
-    sql_nl_pair.append((sql, nl))
+    sql_nl_pairs.append((sql, nl))
+```
+
+Below code snippet shows an example that generates NL text for a SQL query with multiple query blocks.
+
+```python
+from typing import List, Tuple
+from src.utils.rewrite_sentence_gpt import set_openai
+from src.pylogos.translate_progressive import translate_progressive
+from src.sql_generator.sql_gen_utils.utils import load_graphs, load_objs
+from src.pylogos.query_graph.koutrika_query_graph import Query_graph
+from src.sql_generator.sql_gen_utils.sql_genetion_utils import get_prefix
+
+# Setup for OpenAI API calls
+set_openai()
+
+# Prerequisite: Query block files should be generated with src.sql_generator.query_generator_v2.py
+sql_out_file_paths: List[str] = None
+
+query_objs = {}
+query_graphs = {}
+query_trees = []
+sql_nl_pair: List[Tuple[str, str]] = []
+# Load each query block information from files
+for sql_out_file_path in sql_out_file_paths:
+    # Get number of queries saved in the file
+    with open(sql_out_file_path, "r") as fp:
+        num_of_queries = len(fp.readlines())
+    # Load query objs and graphs
+    objs = load_objs(f"{query_path}.obj", num_of_queries)
+    graphs = load_graphs(f"{query_path}.graph", num_of_queries)
+    # Format input datas
+    for obj, graph in zip(objs, graphs):
+        # Get block name
+        block_name = get_prefix(loaded_obj["nesting_level"], loaded_obj["unique_alias"])[:-1]
+        query_objs[block_name] = obj
+        query_graphs[block_name] = graph[1]
+        query_trees.append((block_name, graph[0]))
+
+# Translate each query blocks
+sql_nl_pairs: List[Tuple[str, str]] = []
+for key, query_tree in query_trees:
+    if key.startswith("N1"): # hkkang: Not sure what this means.
+        sql = query_objs[query_tree[0]]["sql"]
+        gpt_input_text, result_text = translate_progressive(query_tree, key, query_objs, query_graphs)
+        sql_nl_pairs.append((sql, result_text))
 ```
 
 # Web Server (Front-end)
