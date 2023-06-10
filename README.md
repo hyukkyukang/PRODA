@@ -9,7 +9,7 @@ This is a software to collect natural language and SQL pair data
 
 # How to run
 
-1. Setup docker container 
+1. Setup docker container
 2. Install and setup database
 3. Run server and client programs
 4. Access through web browser:
@@ -35,13 +35,13 @@ docker-compose up -d
 # Setting system DBs
 
 0. Install and start Postgresql
+
 ```
 apt update
 apt install postgresql postgresql-contrib
 service postgresql start
 pip install -r src/requirements.txt
 ```
-
 
 1. change user to get privilege
 
@@ -70,10 +70,46 @@ cd database/dataCollection
 sh setup.sh
 ```
 
+# Data Generation
+
+## SQL Generation
+
+<!-- TODO: Need to add description for SQL generation -->
+
+## NL Generation
+
+Prerequisite: Note that NL text is generated from a query graph. To translate a SQL query, a corresponding query graph should be given, which is generated along _SQL Geneartion_ process.
+
+Below code snippet shows an example that generates NL text for a SQL query.
+
+```python
+from typing import List, Tuple
+from src.pylogos.translate import translate
+from src.sql_generator.sql_gen_utils.utils import load_graphs, load_objs
+from src.pylogos.query_graph.koutrika_query_graph import Query_graph
+
+NUM_OF_QUERY_TO_READ = 10
+
+# Prerequisite: SQL file should be generated with src.sql_generator.query_generator_v2.py
+sql_out_file_path = None
+
+# Load SQL and query graph
+objs = load_objs(filepath + ".obj", NUM_OF_QUERY_TO_READ)
+graphs: List[Query_graph] = load_graphs(filepath + ".graph", NUM_OF_QUERY_TO_READ)
+
+# Translate each SQL query
+sql_nl_pair: List[Tuple[str, str]] = []
+for obj, graph in zip(objs, graphs):
+    sql = obj["sql"]
+    nl, _ = translate(graph[1])
+    sql_nl_pair.append((sql, nl))
+```
+
 # Web Server (Front-end)
 
 The code for the Front-end server are in the `client` directory.
 Please change the working directory `cd ./client` and follow the below instructions.
+
 ## Setup configs
 
 Please check the environment variables in the `.env` file and change them if necessary.
@@ -84,6 +120,7 @@ Please check the environment variables in the `.env` file and change them if nec
 2. yarn start
 
 ## Development
+
 Please use `yarn dev` or `yarn dev-https`, according to the protocol you desire.
 
 # API Server (Back-end)
@@ -97,8 +134,8 @@ Please change the working directory `cd ./client` and follow the below instructi
 # Creating Human Intelligence Tasks (HITs) with Amazon Mechanical Turk (AMT)
 
 Below script will create a new HIT and its address will be printed on the console.
+
 ```
 cd src/task/
 python hit_generator.py
 ```
-
