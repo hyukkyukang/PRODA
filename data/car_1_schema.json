@@ -1,0 +1,48 @@
+{
+    "car_1": {
+        "join_tables": [
+          "continents",
+          "countries",
+          "car_makers",
+          "model_list",
+          "car_names",
+          "cars_data"
+        ],
+        "join_keys": {
+          "continents": [
+            "ContId"
+          ],
+          "countries": [
+            "Continent",
+            "CountryId"
+          ],
+          "car_makers": [
+            "Country",
+            "Id"
+          ],
+          "model_list": [
+            "Maker",
+            "Model"
+          ],
+          "car_names": [
+            "Model",
+            "MakeId"
+          ],
+          "cars_data": [
+            "Id"
+          ]
+        },
+        "join_clauses": [
+          "continents.ContId=countries.Continent",
+          "countries.CountryId=car_makers.Country",
+          "car_makers.Id=model_list.Maker",
+          "model_list.Model=car_names.Model",
+          "car_names.MakeId=cars_data.Id"
+        ],
+        "dataset": "car_1",
+        "join_root": "continents",
+        "join_how": "outer",
+        "use_cols": "car_1",
+        "data_dir": "data/csv/car_1/"
+      }
+}

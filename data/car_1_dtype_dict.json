@@ -1,0 +1,45 @@
+{
+    "car_1": {
+       "dtype_dict": {
+        "continents": {},
+        "countries": {},
+        "car_makers": {},
+        "model_list": {},
+        "car_names": {},
+        "cars_data": {},
+        "continents.ContId": "int",
+        "continents.Continent": "str",
+        "countries.CountryId": "int",
+        "countries.CountryName": "str",
+        "countries.Continent": "int",
+        "car_makers.Id": "int",
+        "car_makers.Maker": "str",
+        "car_makers.FullName": "str",
+        "car_makers.Country": "int",
+        "model_list.ModelId": "int",
+        "model_list.Maker": "int",
+        "model_list.Model": "str",
+        "car_names.MakeId": "int",
+        "car_names.Model": "str",
+        "car_names.Make": "str",
+        "cars_data.Id": "int",
+        "cars_data.MPG": "int",
+        "cars_data.Cylinders": "int",
+        "cars_data.Edispl": "float",
+        "cars_data.Horsepower": "int",
+        "cars_data.Weight": "int",
+        "cars_data.Accelerate": "float",
+        "cars_data.Year": "int"
+      },
+      "hash_codes": [
+      ],
+      "notes": [
+      ],
+      "ids": [
+      ],
+      "primary_keys": {
+      },
+      "categories": [
+      ]
+    }
+}
