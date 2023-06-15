@@ -148,7 +148,7 @@ CREATE TABLE IF NOT EXISTS "ratings" (
 );
 END;
 
--- Insert values 
+-- Insert values to the final tables
 INSERT INTO directors (director_id, director_name, director_url) SELECT DISTINCT director_id, director_name, director_url FROM ori_movies;
 INSERT INTO movies (movie_id, movie_title, movie_release_year, movie_url, movie_title_language, movie_popularity, movie_image_url, director_id) SELECT DISTINCT movie_id, movie_title, movie_release_year, movie_url, movie_title_language, movie_popularity, movie_image_url, director_id FROM ori_movies;
 INSERT INTO users (user_id, user_trialist, user_subscriber, user_avatar_image_url, user_cover_image_url, user_eligible_for_trial, user_has_payment_method, user_update_date_utc, user_update_by_action) SELECT DISTINCT user_id, user_trialist, user_subscriber, user_avatar_image_url, user_cover_image_url, user_eligible_for_trial, user_has_payment_method, rating_date_utc, 'RATING' FROM ori_ratings_users;
@@ -158,9 +158,18 @@ INSERT INTO lists (list_id, user_id, list_update_timestamp_utc, list_creation_ti
 INSERT INTO ratings (rating_id, movie_id, user_id, rating_url, rating_score, rating_timestamp_utc, critic, critic_likes, critic_comments) SELECT DISTINCT rating_id, movie_id, user_id, rating_url, rating_score, rating_timestamp_utc, critic, critic_likes, critic_comments FROM ori_ratings WHERE user_id IN (SELECT user_id FROM users) AND movie_id IN (SELECT movie_id FROM movies);
 
 
--- Drop tables
+-- Drop redundant tables
 DROP TABLE ori_movies;
 DROP TABLE ori_ratings_users;
 DROP TABLE ori_lists_users;
 DROP TABLE ori_lists;
 DROP TABLE ori_ratings;
+
+-- Grant privileges
+GRANT ALL PRIVILEGES ON DATABASE mubi_svod_platform TO data_user;
+GRANT ALL PRIVILEGES ON TABLE directors TO data_user;
+GRANT ALL PRIVILEGES ON TABLE movies TO data_user;
+GRANT ALL PRIVILEGES ON TABLE users TO data_user;
+GRANT ALL PRIVILEGES ON TABLE lists TO data_user;
+GRANT ALL PRIVILEGES ON TABLE ratings TO data_user;
+GRANT ALL ON SCHEMA public TO data_user;

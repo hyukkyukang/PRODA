@@ -45,10 +45,33 @@
             "ratings.critic_likes": "int",
             "ratings.critic_comments": "int"
         },
-        "hash_codes": [],
-        "notes": [],
-        "ids": [],
+        "hash_codes": [
+            "directors.director_url",
+            "movies.movie_url",
+            "movies.movie_image_url",
+            "users.user_avatar_image_url",
+            "users.user_cover_image_url",
+            "users.user_update_by_action",
+            "lists.list_url",
+            "lists.list_cover_image_url",
+            "lists.list_first_image_url",
+            "lists.list_second_image_url",
+            "lists.list_third_image_url",
+            "ratings.rating_url"
+        ],
+        "notes": ["lists.list_description", "ratings.critic"],
+        "ids": [
+            "lists.list_id",
+            "lists.user_id",
+            "directors.director_id",
+            "movies.movie_id",
+            "users.user_id",
+            "ratings.rating_id",
+            "ratings.movie_id",
+            "ratings.user_id",
+            "movies.director_id"
+        ],
         "primary_keys": { "directors": "director_id", "movies": "movie_id", "lists": "list_id", "ratings": "rating_id", "users": "user_id" },
-        "categories": []
+        "categories": ["movies.movie_title_language"]
     }
 }
