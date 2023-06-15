@@ -41,8 +41,6 @@
         ],
         "dataset": "car_1",
         "join_root": "continents",
-        "join_how": "outer",
-        "use_cols": "car_1",
-        "data_dir": "data/csv/car_1/"
+        "use_cols": "car_1"
       }
 }
