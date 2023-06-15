@@ -1,16 +1,18 @@
 import ContentPasteGoIcon from "@mui/icons-material/ContentPasteGo";
+import SendIcon from "@mui/icons-material/Send";
 import { Button, createTheme, FormGroup, Paper, ThemeProvider, Typography } from "@mui/material";
-import TextField from "@mui/material/TextField";
 import Checkbox from "@mui/material/Checkbox";
 import { pink } from "@mui/material/colors";
-import Tooltip from "@mui/material/Tooltip";
-import React, { useMemo } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import SendIcon from "@mui/icons-material/Send";
+import Snackbar from "@mui/material/Snackbar";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import React, { useMemo } from "react";
+import MuiAlert, { AlertProps } from "@mui/material/Alert";
 
 export interface UserAnswer {
     nl: string;
@@ -62,6 +64,10 @@ const enabledSubmitButton = (onSubmitHandler: any) => {
     );
 };
 
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
+    return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
+
 const disabledSubmitButton = (
     <Button variant="contained" endIcon={<SendIcon />} disabled>
         Submit
@@ -80,13 +86,27 @@ export const AnswerSheet = (props: AnswerSheetProps) => {
     const [yesIsChecked, setYesIsChecked] = React.useState<boolean>(false);
     const [noIsChecked, setNoIsChecked] = React.useState<boolean>(false);
     const [isDialogOpen, setIsDialogOpen] = React.useState<boolean>(false);
+    const [isSnackbarOpen, setIsSnackbarOpen] = React.useState<boolean>(false);
 
     const isYesNoButtonClicked = useMemo(() => yesIsChecked || noIsChecked, [yesIsChecked, noIsChecked]);
     const secondInstruction = useMemo(() => (yesIsChecked ? instructionAskingRephrase : instructionAskingRevise), [yesIsChecked]);
 
+    const openSnackbar = () => {
+        setIsSnackbarOpen(true);
+    };
+
+    const closeSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
+        if (reason === "clickaway") {
+            return;
+        }
+        setIsSnackbarOpen(false);
+    };
+
     const submitButtonHandler = () => {
         const isSubmitted = onSubmitHandler();
         if (isSubmitted) {
+            onSubmitHandler();
+            openSnackbar();
             // Clear answer fields
             setYesIsChecked(false);
             setNoIsChecked(false);
@@ -126,6 +146,14 @@ export const AnswerSheet = (props: AnswerSheetProps) => {
     const pasteClickHandler = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         setAnswer({ ...answer, nl: taskNL ? taskNL : "" });
     };
+
+    const submissionSnackbar = (
+        <Snackbar open={isSnackbarOpen} autoHideDuration={3000} onClose={closeSnackbar} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+            <Alert onClose={closeSnackbar} severity="success" sx={{ width: "100%" }}>
+                Answer submitted
+            </Alert>
+        </Snackbar>
+    );
 
     const yesNoButtons = (
         <ThemeProvider theme={theme}>
@@ -232,6 +260,7 @@ export const AnswerSheet = (props: AnswerSheetProps) => {
                     </React.Fragment>
                 ) : null}
             </Paper>
+            {submissionSnackbar}
         </React.Fragment>
     );
 };
