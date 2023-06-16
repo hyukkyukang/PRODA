@@ -14,7 +14,7 @@ backend:
     Protocol: https # Either https or http
 DB:
     IP: localhost
-    Port: 5432
+    Port: 5434
     config:
         DBName: proda_config
         UserID: config_user
@@ -32,7 +32,7 @@ DB:
         CollectionTableName: collection
         TaskTableName: task
         TaskSetTableName: task_set
-ProjectPath: "/home/hjkim/PRODA"
+ProjectPath: "/root/proda"
 SSLCertPath: "./certificates/localhost.crt"
 SSLKeyPath: "./certificates/localhost.key"
 SSLCaPath: "./certificates/DigiCertCA.pem"
