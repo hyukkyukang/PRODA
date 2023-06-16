@@ -10,14 +10,14 @@ services:
             - "3000:3000"
             - "4001:4001"
         volumes:
-            - .:/root/proda
+            - ./:/root/proda/
     proda-db:
         image: postgres:latest
         container_name: postgres
         stdin_open: true
         tty: true
         ports:
-            - "5433:5432"
+            - "5434:5432"
         environment:
             POSTGRES_USER: "postgres"
             POSTGRES_PASSWORD: "postgres"

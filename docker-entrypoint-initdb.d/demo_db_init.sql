@@ -1,5 +1,12 @@
-BEGIN;
+-- Create database
+CREATE DATABASE proda_demo;
+\c proda_demo;
 
+-- Set time zone
+SET TIME ZONE 'Asia/Seoul';
+
+-- Create tables
+BEGIN;
 CREATE TABLE IF NOT EXISTS cars (
     id integer PRIMARY KEY,
     model character varying(255) DEFAULT NULL,
@@ -8,7 +15,6 @@ CREATE TABLE IF NOT EXISTS cars (
     year integer DEFAULT NULL,
     price float DEFAULT null
 );
-
 INSERT INTO cars (id, model, horsepower, max_speed, year, price) VALUES
 ('1', 'ford', '10', '230', '2010', '31000'),
 ('2', 'cherolet', '10', '330', '2010', '41000'),
@@ -22,5 +28,13 @@ INSERT INTO cars (id, model, horsepower, max_speed, year, price) VALUES
 ('10', 'kia', '10', '1030', '2014', '101000'),
 ('11', 'genesis', '10', '1130', '2014', '111000'),
 ('12', 'genesis', '11', '1140', '2015', '112000');
-
 END;
+
+-- Create user
+DROP ROLE IF EXISTS demo_user;
+CREATE USER demo_user WITH PASSWORD 'demo_user_pw';
+
+-- Grant privileges
+GRANT CONNECT ON DATABASE proda_demo TO demo_user;
+GRANT insert, delete, update, select on cars to demo_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO demo_user;

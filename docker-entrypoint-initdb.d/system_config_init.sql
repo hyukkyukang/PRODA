@@ -1,5 +1,13 @@
-BEGIN;
+-- Create database
+CREATE DATABASE proda_config;
+\c proda_config;
 
+-- Set time zone
+SET TIME ZONE 'Asia/Seoul';
+
+
+-- Create tables
+BEGIN;
 CREATE TABLE IF NOT EXISTS config (
     original_balance double precision NOT NULL,
     remaining_balance double precision NOT NULL,
@@ -33,5 +41,14 @@ INSERT INTO query_goal VALUES('HAVINGExistentialCheckingWithNotExists', 10);
 INSERT INTO query_goal VALUES('FROMScalarSubQuery', 10);
 INSERT INTO query_goal VALUES('FROMAggSubQuery', 10);
 INSERT INTO query_goal VALUES('FROMNotScalarNotAggSubQuery', 10);
-
 END;
+
+-- Create user
+DROP ROLE IF EXISTS config_user;
+CREATE USER config_user WITH PASSWORD 'config_user_pw';
+
+-- Grant privileges
+GRANT CONNECT ON DATABASE proda_config TO config_user;
+GRANT insert, delete, update, select on config to config_user;
+GRANT insert, delete, update, select on query_goal to config_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO config_user;

@@ -1,5 +1,12 @@
-BEGIN;
+-- Create database
+CREATE DATABASE proda_collection;
+\c proda_collection;
 
+-- Set time zone
+SET TIME ZONE 'Asia/Seoul';
+
+-- Create tables
+BEGIN;
 -- Table to collect user response
 CREATE TABLE IF NOT EXISTS collection (
     id SERIAL PRIMARY KEY,
@@ -32,7 +39,15 @@ CREATE TABLE IF NOT EXISTS task_set (
     task_ids INTEGER[] NOT NULL,
     date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
-SET TIME ZONE 'Asia/Seoul';
-
 END;
+
+-- Create user
+DROP ROLE IF EXISTS collection_user;
+CREATE USER collection_user WITH PASSWORD 'collection_user_pw';
+
+-- Grant privileges
+GRANT CONNECT ON DATABASE proda_collection TO collection_user;
+GRANT insert, delete, update, select on collection to collection_user;
+GRANT insert, delete, update, select on task to collection_user;
+GRANT insert, delete, update, select on task_set to collection_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO collection_user;
