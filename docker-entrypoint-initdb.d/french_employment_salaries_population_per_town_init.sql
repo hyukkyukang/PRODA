@@ -89,10 +89,10 @@ END;
 
 -- Insert data from csv file
 BEGIN;
-\copy "town" FROM 'base.csv' CSV HEADER;
-\copy "population" FROM 'population.csv' CSV HEADER;
-\copy "net_salary_per_town" FROM 'net_salary_per_town.csv' CSV HEADER;
-\copy "ori_name_geographic_information" FROM 'name_geographic_information.csv' CSV HEADER;
+\copy "town" FROM '/docker-entrypoint-initdb.d/data/french_employmnet_salaries_population_per_town/base.csv' CSV HEADER;
+\copy "population" FROM '/docker-entrypoint-initdb.d/data/french_employmnet_salaries_population_per_town/population.csv' CSV HEADER;
+\copy "net_salary_per_town" FROM '/docker-entrypoint-initdb.d/data/french_employmnet_salaries_population_per_town/net_salary_per_town.csv' CSV HEADER;
+\copy "ori_name_geographic_information" FROM '/docker-entrypoint-initdb.d/data/french_employmnet_salaries_population_per_town/name_geographic_information.csv' CSV HEADER;
 END;
 
 -- Final table
