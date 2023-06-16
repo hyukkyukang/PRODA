@@ -10,65 +10,20 @@ This is a software to collect natural language and SQL pair data
 # How to run
 
 1. Setup docker container
-2. Install and setup database
-3. Run server and client programs
-4. Access through web browser:
+2. Run server and client programs
+3. Access through web browser:
     - {ip}:{port}/collection
     - {ip}:{port}/tutorial
     - {ip}:{port}/admin
 
 # Docker
 
-Using Dockerfile
+Use Docker compose to setup two containers (i.e., proda and postgresql).
 
 ```bash
-docker pull hyukkyukang/proda:latest
-docker run -it -p 3000:3000 -p 4001:4001 -p 5432:5432 -v ./:/app --name proda hyukkyukang/proda:latest /bin/bash
+docker compose up -d
 ```
 
-or using docker-compose
-
-```bash
-docker-compose up -d
-```
-
-# Setting system DBs
-
-0. Install and start Postgresql
-
-```
-apt update
-apt install postgresql postgresql-contrib
-service postgresql start
-pip install -r src/requirements.txt
-```
-
-1. change user to get privilege
-
-```bash
-su postgres
-```
-
-2. set config DB
-
-```bash
-cd database/systemConfig
-sh setup.sh
-```
-
-3. set Demo DB
-
-```bash
-cd database/demoDB
-sh setup.sh
-```
-
-4. set data collection DB
-
-```bash
-cd database/dataCollection
-sh setup.sh
-```
 
 # Data Generation
 
