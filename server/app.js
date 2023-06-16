@@ -3,6 +3,7 @@ const func = require("./function.js");
 const https = require("https");
 var express = require("express");
 var cors = require("cors");
+var path = require('path');
 
 /* Load config */
 console.log("Reading config file...");
@@ -11,8 +12,9 @@ const config = utils.loadYamlFile("../config.yml");
 const protocol = config.backend.Protocol;
 const IP = config.backend.IP;
 const port = config.backend.Port;
-const SSLCertPath = config.SSLCertPath;
-const SSLKeyPath = config.SSLKeyPath;
+const projectPath = config.ProjectPath;
+const SSLCertPath = path.join(projectPath, config.SSLCertPath);
+const SSLKeyPath = path.join(projectPath, config.SSLKeyPath);
 
 console.log("Begin server");
 
