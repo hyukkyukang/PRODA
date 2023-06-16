@@ -77,11 +77,11 @@ END;
 
 -- Insert data from CSV files
 BEGIN;
-\copy ori_lists_users FROM '/docker-entrypoint-initdb.d/data/mubi_svod_platform/lists_users.csv' CSV HEADER
-\copy ori_lists FROM '/docker-entrypoint-initdb.d/data/mubi_svod_platform/lists.csv' CSV HEADER
-\copy ori_movies FROM '/docker-entrypoint-initdb.d/data/mubi_svod_platform/movies.csv' CSV HEADER
-\copy ori_ratings_users FROM '/docker-entrypoint-initdb.d/data/mubi_svod_platform/ratings_users.csv' CSV HEADER
-\copy ori_ratings FROM '/docker-entrypoint-initdb.d/data/mubi_svod_platform/ratings.csv' CSV HEADER
+\copy ori_lists_users FROM '/docker-entrypoint-initdb.d/csv_data/mubi_svod_platform/lists_users.csv' CSV HEADER
+\copy ori_lists FROM '/docker-entrypoint-initdb.d/csv_data/mubi_svod_platform/lists.csv' CSV HEADER
+\copy ori_movies FROM '/docker-entrypoint-initdb.d/csv_data/mubi_svod_platform/movies.csv' CSV HEADER
+\copy ori_ratings_users FROM '/docker-entrypoint-initdb.d/csv_data/mubi_svod_platform/ratings_users.csv' CSV HEADER
+\copy ori_ratings FROM '/docker-entrypoint-initdb.d/csv_data/mubi_svod_platform/ratings.csv' CSV HEADER
 END;
 
 
