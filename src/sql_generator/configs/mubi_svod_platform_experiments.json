@@ -1,13 +1,13 @@
 {
     "global_idx": 0,
-    "db": "car_1",
-    "schema_name": "car_1",
-    "num_queries": 300,
-    "output": "result.out",
+    "db": "mubi_svod_platform",
+    "schema_name": "smaller",
+    "num_queries": 30,
+    "output": "mubi_svod_platform.out",
     "sep": "#",
     "seed": 1234,
     "data_dir": "data/",
-    "log_path": "query_generator.log",
+    "log_path": "mubi_svod_platform.log",
     "hyperparams":
     {
         "num_in_max": 3,

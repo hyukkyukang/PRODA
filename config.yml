@@ -32,6 +32,9 @@ DB:
         CollectionTableName: collection
         TaskTableName: task
         TaskSetTableName: task_set
+    data:
+        UserID: data_user
+        UserPW: data_user_pw
 ProjectPath: "/home/hjkim/PRODA"
 SSLCertPath: "./certificates/localhost.crt"
 SSLKeyPath: "./certificates/localhost.key"

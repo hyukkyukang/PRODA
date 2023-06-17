@@ -23,7 +23,7 @@
         "car_names.Model": "str",
         "car_names.Make": "str",
         "cars_data.Id": "int",
-        "cars_data.MPG": "int",
+        "cars_data.MPG": "float",
         "cars_data.Cylinders": "int",
         "cars_data.Edispl": "float",
         "cars_data.Horsepower": "int",
@@ -37,7 +37,19 @@
       ],
       "ids": [
       ],
+      "foreign_keys": {
+        "continents": [],
+        "car_makers": ["country"],
+        "countries": ["continent"],
+        "model_list": ["maker"],
+        "car_names": ["model"],
+        "cars_data": []
+      },
       "categories": [
+        "cars_data.year",
+        "car_names.model",
+        "coutries.countryname",
+        "continents.continent"
       ]
     }
 }

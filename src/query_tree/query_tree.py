@@ -109,6 +109,9 @@ class QueryBlock(Node):
     def add_operations(self, operations: List[Operation]):
         self.operations += operations
 
+    def update_child_table(self, idx, new_child_table):
+        self.child_tables[idx] = new_child_table
+
     def get_child_tables(self) -> List[Edge]:
         return self.child_tables
 

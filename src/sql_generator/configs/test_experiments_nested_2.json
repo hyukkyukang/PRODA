@@ -1,21 +1,21 @@
 {
-    "global_idx": 0,
+    "global_idx": 500,
     "db": "car_1",
     "schema_name": "car_1",
-    "num_queries": 300,
-    "output": "result.out",
+    "num_queries": 100,
+    "output": "result3.out",
     "sep": "#",
     "seed": 1234,
     "data_dir": "data/",
-    "log_path": "query_generator.log",
+    "log_path": "query_generator_nested2.log",
     "hyperparams":
     {
         "num_in_max": 3,
         "num_word_in_like_max": 3,
         "num_select_max": 3,
         "num_select_min": 0,
-        "num_pred_max": 3,
-        "num_pred_min": 1,
+        "num_pred_max": 2,
+        "num_pred_min": 0,
         "num_group_max": 2,
         "num_group_min": 1,
         "num_having_max": 4,
@@ -35,7 +35,7 @@
         "prob_where": 0.8,
         "prob_group": 0.2,
         "prob_having": 0.3,
-        "prob_or": 0.8,
+        "prob_or": 0.5,
         "prob_order": 0.2,
         "prob_limit": 0.5,
         "__prob_having_info__": "Ratio of having over group by queries",
@@ -44,12 +44,12 @@
     "sql_info":
     {
         "__type_info__": "non-nested or nested",
-        "type": "non-nested",
-        "inner_query_paths": null
+        "type": "nested",
+        "inner_query_paths": ["non-nested/result2.out"]
     },
     "constraints":
     {
-        "used_as_inner_query": true,
+        "used_as_inner_query": false,
         "join_key_pred": false,
         "set_clause_by_clause": false,
         "has_where": false,
