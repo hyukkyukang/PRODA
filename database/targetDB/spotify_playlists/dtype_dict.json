@@ -1,0 +1,67 @@
+{
+    "spotify_playlists": {
+        "dtype_dict": {
+            "artists.artist_id": "str",
+            "artists.artist_popularity": "int",
+            "artists.artist_followers": "int",
+            "artists.name": "str",
+
+            "artist_genres.artist_id":"str",
+            "artist_genres.genres":"str",
+
+            "playlists.playlist_id": "str",
+            "playlists.name": "str",
+            "playlists.description": "str",
+            "playlists.query": "str",
+            "playlists.author": "str",
+            "playlists.n_tracks": "int",
+            "playlists.playlist_followers": "int",
+
+            "participation.track_id":"str",
+            "participation.artist_id":"str",
+
+            "track_in_playlist.track_id":"str",
+            "track_in_playlist.playlist_id":"str",      
+
+            "tracklists.track_id": "str",
+            "tracklists.name": "str",
+            "tracklists.popularity": "int",
+            "tracklists.album_type": "str",
+            "tracklists.is_playable": "bool",
+            "tracklists.release_date": "date",
+            "tracklists.danceability": "float",
+            "tracklists.energy": "float",
+            "tracklists.key": "int",
+            "tracklists.loudness": "float",
+            "tracklists.mode": "int",
+            "tracklists.speechiness": "float",
+            "tracklists.acousticness": "float",
+            "tracklists.instrumentalness": "float",
+            "tracklists.liveness": "float",
+            "tracklists.valence": "float",
+            "tracklists.tempo": "float",
+            "tracklists.analysis_url": "str",
+            "tracklists.duration_ms": "int",
+            "tracklists.time_signature": "int"
+            
+        },
+        "hash_codes": [
+            "tracklists.analysis_url"
+        ],
+        "notes": [
+            "playlists.description"
+        ],
+        "ids": [
+            "artists.artist_id",
+            "artist_genres.artist_id",
+            "playlists.playlist_id",
+            "participation.track_id",
+            "participation.artist_id",
+            "track_in_playlist.track_id",
+            "track_in_playlist.playlist_id",
+            "tracklists.track_id"
+        ],
+        "primary_keys": { "artists": "artist_id", "playlists": "playlist_id", "tracklists": "track_id"},
+        "categories": ["artist_genres.genres","tracklists.album_type"]
+    }
+}

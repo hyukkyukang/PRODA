@@ -1,5 +1,5 @@
 {
-    "FIFA_23_Complete_Player": {
+    "fifa_23_complete_player": {
         "dtype_dict": {
             "coaches.coach_id": "int",
             "coaches.coach_url": "str",

@@ -1,7 +1,7 @@
 {
     "global_idx": 0,
-    "db": "fifa_23_complete_player",
-    "schema_name": "fifa_23_complete_player",
+    "db": "spotify_playlists",
+    "schema_name": "spotify_playlists",
     "num_queries": 10,
     "output": "result.out",
     "sep": "#",
