@@ -51,7 +51,11 @@ def templatize(template, variables, variable_to_val):
 
 
 def translate_progressive(
-    query_tree: QueryBlock, root_block_name: str, query_objs: Dict[str, Dict], query_graphs: Dict[str, Query_graph]
+    query_tree: QueryBlock,
+    root_block_name: str,
+    query_objs: Dict[str, Dict],
+    query_graphs: Dict[str, Query_graph],
+    use_gpt: bool = True,
 ) -> Tuple[str, Dict[str, Any]]:
     def update_query_graph(cur_block_name, cur_query_graph, correlation_predicate, cur_query_obj, cur_node):
         rel_name_A = correlation_predicate
@@ -69,11 +73,19 @@ def translate_progressive(
         cur_rel_node = Relation(correlated_tab_name, correlated_tab_alias, is_primary=True)  # Nesting level is always 0
         idx = find_existing_rel_node(rel_nodes, cur_rel_node)
         if idx == -1:
-            cur_rel_node = Relation(correlated_tab_name, correlated_tab_alias, is_primary=False)
-            idx = find_existing_rel_node(rel_nodes, cur_rel_node)
-            # set is_primary = True
+            cur_rel_node_2 = Relation(correlated_tab_name, correlated_tab_alias, is_primary=False)
+            idx = find_existing_rel_node(rel_nodes, cur_rel_node_2)
+
+        if idx != -1:
             cur_rel_node = rel_nodes[idx]
             cur_rel_node.is_primary = True
+            pushdowned_foreach_block = None
+        else:  # HAVING QUERY
+            assert len(rel_nodes) == 1 and rel_nodes[0].node_name.startswith(prefix.split("_")[0])
+            idx = 0
+            cur_rel_node = rel_nodes[0]
+            correlated_tab_name = cur_rel_node.node_name
+            pushdowned_foreach_block = cur_rel_node.node_name
 
         assert idx != -1
 
@@ -96,7 +108,7 @@ def translate_progressive(
 
         graph.connect_membership(cur_rel_node, s_cur_col_node)
 
-        return graph
+        return graph, pushdowned_foreach_block
 
     def preorder_traverse(parent, cur_node, query_objs, idx, map):
         childs = query_objs[cur_node]["childs"]
@@ -126,20 +138,35 @@ def translate_progressive(
     # Build a mapping tree: global key to block id by pre-order traversal
     _, key_to_block_id = preorder_traverse(None, root_block_name, query_objs, 1, {})
 
-    candidates = [(None, root_block_name, query_tree.root)]
+    candidates = [(None, root_block_name, query_tree)]
+    pushdowned_foreach_blocks = {}
     while len(candidates) > 0:
         parent_block_name, cur_block_name, cur_node = candidates.pop(0)
         cur_query_graph = query_graphs[cur_block_name]
         cur_query_obj = query_objs[cur_block_name]
 
         if parent_block_name and cur_block_name in correlation_predicates[parent_block_name].keys():
-            cur_query_graph = update_query_graph(
+            cur_query_graph, pushdowned_foreach_block = update_query_graph(
                 cur_block_name,
                 cur_query_graph,
                 correlation_predicates[parent_block_name][cur_block_name],
                 cur_query_obj,
                 cur_node,
             )
+            if pushdowned_foreach_block:
+                assert pushdowned_foreach_block not in pushdowned_foreach_blocks.keys()
+                pushdowned_foreach_blocks[pushdowned_foreach_block] = correlation_predicates[parent_block_name][
+                    cur_block_name
+                ]
+        elif parent_block_name and cur_block_name in pushdowned_foreach_blocks.keys():
+            cur_query_graph, pushdowned_foreach_block = update_query_graph(
+                cur_block_name,
+                cur_query_graph,
+                pushdowned_foreach_blocks[cur_block_name],
+                cur_query_obj,
+                cur_node,
+            )
+            assert pushdowned_foreach_block is None
         text, mapping = MRP()(cur_query_graph.query_subjects[0], None, None, cur_query_graph)
 
         # simplify block name
@@ -207,7 +234,11 @@ def translate_progressive(
         global_text = templatize(template["text"], template["variables"], variable_to_val)
 
     templatized_text = whole_text + global_text + "\n"
-    final_text = rewrite_sentence(templatized_text)  # 비싼 모델은 돈이 듭니다. 참고만 하세요.
+    if use_gpt:
+        final_text = rewrite_sentence(templatized_text)  # 비싼 모델은 돈이 듭니다. 참고만 하세요.
+    else:
+        templatized_text = templatized_text.replace("\n", " ")
+        final_text = ""
 
     return templatized_text, final_text
 
@@ -223,6 +254,7 @@ if __name__ == "__main__":
             "/home/hjkim/PRODA/non-nested/result3.out",
         ],
     )
+    parser.add_argument("--output_path", type=str, default="/home/hjkim/PRODA/translation2")
     args = parser.parse_args()
 
     query_objs = {}
@@ -241,8 +273,12 @@ if __name__ == "__main__":
             query_trees.append((block_name, loaded_graph[0]))
 
     set_openai()
-    for key, query_tree in query_trees:
-        if key.startswith("N1"):
-            input_text, gpt_text = translate_progressive(query_tree, key, query_objs, query_graphs)
-            print("GPT INPUT: {}".format(input_text))
-            print("GPT OUTPUT: {}".format(gpt_text))
+    with open(args.output_path, "w") as wf:
+        for key, query_tree in query_trees:
+            if key.startswith("N3"):
+                input_text, gpt_text = translate_progressive(
+                    query_tree.root, key, query_objs, query_graphs, use_gpt=False
+                )
+                wf.write(f"{query_objs[key]['sql']}\t{input_text}\n")
+                print("GPT INPUT: {}".format(input_text))
+                print("GPT OUTPUT: {}".format(gpt_text))

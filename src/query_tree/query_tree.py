@@ -12,6 +12,10 @@ class Node(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
+    def get_headers_with_table_name(self) -> List[str]:
+        pass
+
+    @abc.abstractmethod
     def get_name(self) -> str:
         pass
 
@@ -69,6 +73,9 @@ class BaseTable(Node):
     def get_headers(self) -> List[str]:
         return self.header
 
+    def get_headers_with_table_name(self) -> List[str]:
+        return [self.name + "_" + colname for colname in self.header]
+
     def get_rows(self) -> List[List[Any]]:
         return self.data
 
@@ -88,6 +95,8 @@ class QueryBlock(Node):
         self.operations: List[Operation] = operations
         self.sql: str = sql
         self.name: str = name
+        self.result_guarantee_tuples: List[List[Any]] = [[]]
+        self.result_tuples: List[List[Any]] = [[]]
 
     def __len__(self):
         return sum(len(op) for op in self.operations if type(op) in [Projection, Foreach])
@@ -108,6 +117,9 @@ class QueryBlock(Node):
 
     def add_operations(self, operations: List[Operation]):
         self.operations += operations
+
+    def update_child_table(self, idx, new_child_table):
+        self.child_tables[idx] = new_child_table
 
     def get_child_tables(self) -> List[Edge]:
         return self.child_tables
@@ -135,25 +147,29 @@ class QueryBlock(Node):
                     accumulated_len += len(child_headers)
         return new_headers
 
+    def get_headers_with_table_name(self) -> List[str]:
+        # Get header names
+        new_headers = []
+        projections = [op for op in self.operations if isinstance(op, Projection)]
+        for proj in projections:
+            if proj.alias:
+                new_headers.append(proj.alias)
+            else:
+                accumulated_len = 0
+                for child_edge in self.child_tables:
+                    child_table = child_edge.child
+                    child_headers = child_table.get_headers_with_table_name()
+                    if accumulated_len + len(child_headers) > proj.column_id:
+                        new_headers.append(child_headers[proj.column_id - accumulated_len])
+                        break
+                    accumulated_len += len(child_headers)
+        return new_headers
+
     def get_rows(self) -> List[List[Any]]:
-        # new_rows = []
-        # projections = [op for op in self.operations if isinstance(op, Projection)]
-        # for proj in projections:
-        #     accumulated_len = 0
-        #     for child_edge in self.child_tables:
-        #         child_table = child_edge.child
-        #         child_headers = child_table.get_headers()
-        #         child_rows = child_table.get_rows()
-        #         if accumulated_len + len(child_headers) > proj.column_id:
-        #             for child_row in child_rows
-        #             new_rows.append(child_row[proj.column_id - accumulated_len] for child_row in child_rows)
-        #             break
-        #         accumulated_len += len(child_rows)
-        # if self.join_conditions:
-        #     # TODO
-        #     raise NotImplementedError
-        # return list_utils.do_flatten_list([t.child.get_rows() for t in self.child_tables])
-        return []
+        return self.result_guarantee_tuples
+
+    def get_result_rows(self) -> List[List[Any]]:
+        return self.result_tuples
 
 
 class QueryTree:

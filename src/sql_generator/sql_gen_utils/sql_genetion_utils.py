@@ -31,14 +31,12 @@ import networkx as nx
 import pandasql as ps
 from ast import literal_eval
 import dateutil.parser
+from numpy import inf
 import math
 
 
 DEBUG_ERROR = False  # [NOTE] This should be disabled
 
-
-# if is_null_support:
-# TEXTUAL_OPERATORS = ['=','!=','LIKE','NOT LIKE','IN','NOT IN','IS_NOT_NULL']
 TEXTUAL_OPERATORS_PROBABILITY = [0.4, 0.1, 0.15, 0.1, 0.15, 0.1]
 TEXTUAL_OPERATORS = ["=", "!=", "LIKE", "NOT LIKE", "IN", "NOT IN"]
 NUMERIC_OPERATORS_PROBABILITY = [0.2, 0.2, 0.2, 0.2, 0.1, 0.1]
@@ -46,38 +44,41 @@ NUMERIC_OPERATORS = ["<=", "<", ">=", ">", "=", "!="]
 
 KEY_OPERATORS_PROBABILITY = [0.8, 0.2]
 KEY_OPERATORS = ["=", "!="]
-HASHCODE_OPERATORS_PROBABILITY = [0.8, 0.2]
-HASHCODE_OPERATORS = ["LIKE", "NOT LIKE"]
-POSSIBLE_AGGREGATIONS_PER_OPERATOR = {
-    "=": ["MIN", "MAX", "AVG", "SUM"],
-    "!=": ["MIN", "MAX", "AVG", "SUM"],
-    "=_w": ["MIN", "MAX", "AVG", "SUM"],
-    "!=_w": ["MIN", "MAX", "AVG", "SUM"],
-    "<=": ["AVG", "SUM"],
-    "<": ["MAX", "AVG", "SUM"],
-    ">=": ["AVG", "SUM"],
-    ">": ["MIN", "AVG", "SUM"],
-    "<=_w": ["MAX", "AVG", "SUM"],
-    "<_w": ["MAX", "AVG", "SUM"],
-    ">=_w": ["MIN", "AVG", "SUM"],
-    ">_w": ["MIN", "AVG", "SUM"],
-}
+NOTE_OPERATORS_PROBABILITY = [0.8, 0.2]
+NOTE_OPERATORS = ["LIKE", "NOT LIKE"]
 
 # (CONSIDERATION) larger/smaller than sum without condition is wierd? what if negative values exist
 NUMERIC_AGGS = ["COUNT", "MIN", "MAX", "AVG", "SUM"]
 TEXTUAL_AGGS = ["COUNT"]
 DATE_AGGS = ["COUNT", "MIN", "MAX"]
-# KEY_AGGS = ['MIN', 'MAX', 'COUNT']
 KEY_AGGS = ["COUNT"]
 LOGICAL_OPERATORS = ["AND", "OR"]
 
-# [TODO]: remove
-imdb_col_info = json.load(open("/home/hjkim/shpark/PRODA/src/sql_generator/data/imdb_dtype_dict.json"))
-HASH_CODES = imdb_col_info["hash_codes"]
-NOTES = imdb_col_info["notes"]
-IDS = imdb_col_info["ids"]
-PRIMARY_KEYS = imdb_col_info["primary_keys"]
-CATEGORIES = imdb_col_info["categories"]
+
+def get_view_name(type, args):
+    if type == "main":
+        db_name = args[0]
+        sample_name = args[1]
+        return (db_name + "__" + sample_name).lower()
+    elif type == "where_generator":
+        main_view_name = args[0]
+        prefix = args[1]
+        dnf_idx = args[2]
+        cond_idx = args[3]
+        return (main_view_name + "___" + prefix + "___w" + str(dnf_idx) + "___" + str(cond_idx)).lower()
+    elif type == "having_generator":
+        main_view_name = args[0]
+        prefix = args[1]
+        dnf_idx = args[2]
+        cond_idx = args[3]
+        return (main_view_name + "___" + prefix + "___h" + str(dnf_idx) + "___" + str(cond_idx)).lower()
+    else:
+        main_view_name = args[0]
+        prefix = args[1]
+        suffix = args[2]
+        return (main_view_name + "___" + prefix + "___" + str(suffix)).lower()
+
+    return ""
 
 
 def are_relation_node_equivalent(node1, node2):
@@ -89,14 +90,17 @@ def are_relation_node_equivalent(node1, node2):
 
 
 def get_date_time(date):
-    return dateutil.parser.parse(date)
+    if isinstance(date, str):
+        return dateutil.parser.parse(date)
+    else:
+        return date
 
 
 def get_tab_name_alias(tab_name):
     return tab_name
 
 
-def check_condB_contain_condA(colA, opA, valA, typeA, colB, opB, valB, typeB):
+def check_condB_contain_condA(colA, opA, valA, typeA, colB, opB, valB, typeB, args):
     if colA != colB:
         return False
 
@@ -109,6 +113,7 @@ def check_condB_contain_condA(colA, opA, valA, typeA, colB, opB, valB, typeB):
             range_valA = (valA, valA)
         elif opA in (">", ">="):
             range_opA = (opA, "<", "and")
+
             range_valA = (valA, math.inf)
         elif opA in ("<", "<="):
             range_opA = (">", opA, "and")
@@ -117,7 +122,8 @@ def check_condB_contain_condA(colA, opA, valA, typeA, colB, opB, valB, typeB):
             range_opA = (">", "<", "or")
             range_valA = (valA, valA)
         else:
-            assert False, f"[check_condB_contain_condA] not implemented operator {opA}"
+            args.logger.error(f"Not implemented operator {opA}")
+            assert False
 
         if isinstance(opB, tuple):
             range_opB = (opB[0], opB[1], "and")
@@ -127,15 +133,16 @@ def check_condB_contain_condA(colA, opA, valA, typeA, colB, opB, valB, typeB):
             range_valB = (valB, valB)
         elif opB in (">", ">="):
             range_opB = (opB, "<", "and")
-            range_valB = (valB, math.inf)
+            range_valB = (valB, inf)
         elif opB in ("<", "<="):
             range_opB = (">", opB, "and")
-            range_valB = (-math.inf, valB)
+            range_valB = (-inf, valB)
         elif opB == "!=":
             range_opB = (">", "<", "or")
             range_valB = (valB, valB)
         else:
-            assert False, f"[check_condB_contain_condA] not implemented operator {opB}"
+            args.logger.error(f"Not implemented operator {opB}")
+            assert False
 
         if range_opA[2] == "and" and range_opB[2] == "and":
             # A in (val1, val2) or B in (val3, val4)
@@ -280,6 +287,8 @@ def check_condB_contain_condA(colA, opA, valA, typeA, colB, opB, valB, typeB):
                 if not set(valsetA) <= set(valsetB):
                     return False
             else:
+                if opA not in ("NOT LIKE", "NOT IN", "!=", "LIKE"):
+                    args.logger.error("This cannot be happend")
                 assert opA in ("NOT LIKE", "NOT IN", "!=", "LIKE")
                 return False
         elif opB in ("NOT IN", "!="):
@@ -309,7 +318,8 @@ def check_condB_contain_condA(colA, opA, valA, typeA, colB, opB, valB, typeB):
                         if cond:
                             return False
         else:
-            assert False, f"[check_condB_contain_condA] not implemented operator {opB}"
+            args.logger.error(f"Not implemented operator {opB}")
+            assert False
 
     return True
 
@@ -368,6 +378,13 @@ def get_random_tables(args, rng, tables, max_size):
     return selected_tables
 
 
+def get_truncated_normal_distribution(N):
+    norm = [int((math.factorial(N - 1)) / ((math.factorial(r)) * math.factorial(N - 1 - r))) for r in range(N)]
+    sum_prob = sum(norm)
+    prob = [i / sum_prob for i in norm]
+    return prob
+
+
 def get_truncated_geometric_distribution(N, p):
     geomet = [p * (1 - p) ** i for i in range(N)]
     sum_prob = sum(geomet)
@@ -375,7 +392,7 @@ def get_truncated_geometric_distribution(N, p):
     return prob
 
 
-def get_possibie_inner_query_idxs(args, inner_query_objs):
+def get_possible_inner_query_idxs(args, inner_query_objs):
     idxs = []
 
     for idx in range(len(inner_query_objs)):
@@ -386,96 +403,37 @@ def get_possibie_inner_query_idxs(args, inner_query_objs):
     return idxs
 
 
-def get_col_info(dbname):
-    col_info = json.load(open("data/{dbname}_dtype_dict.json"))
-    global IDS
-    global HASH_CODES
-    global NOTES
-    global PRIMARY_KEYS
-    global CATEGORIES
-
+def set_col_info(col_info):
     IDS = col_info["ids"]
     HASH_CODES = col_info["hash_codes"]
     NOTES = col_info["notes"]
-    PRIMARY_KEYS = col_info["primary_keys"]
     CATEGORIES = col_info["categories"]
+    FOREIGN_KEYS = col_info["foreign_keys"]
 
-    return IDS, HASH_CODES, NOTES, PRIMARY_KEYS, CATEGORIES
-
-
-def alias_generator(args):
-    # [TODO]: make alias generators when given a table namd and the current nested block index
-    ALIAS_TO_TABLE_NAME = None
-
-    if ALIAS_TO_TABLE_NAME:
-        TABLE_NAME_TO_ALIAS = dict()
-        for k, v in ALIAS_TO_TABLE_NAME.items():
-            TABLE_NAME_TO_ALIAS[v] = k
-    else:
-        TABLE_NAME_TO_ALIAS = None
-
-    return ALIAS_TO_TABLE_NAME, TABLE_NAME_TO_ALIAS
+    return IDS, HASH_CODES, NOTES, CATEGORIES, FOREIGN_KEYS
 
 
-def get_str_op_values(op, val, distinct_values, all_values, rng, num_in_max):
-    if op == "=":
+def get_str_op_values(op, val, vs, rng, num_word_in_like_max, num_in_max):
+    if op == "=" or op == "!=":
         return val
-    elif op == "!=":
-        v = val
-        # v = rng.choice(all_values)
-        # while (len(all_values) > 1) and (v is val):
-        #    v = rng.choice(all_values)  # not test yet
-        return str(v).strip()
-    elif op == "LIKE":
+    elif op == "LIKE" or op == "NOT LIKE":
         val = str(rng.choice(val.split(" ")))
         candidate_op_idx = rng.choice([0, 1, 2])
-        if len(val) > 7:
+        if len(val) > num_word_in_like_max:
             if candidate_op_idx == 0:
-                val = val[:7]
+                val = val[:num_word_in_like_max]
             elif candidate_op_idx == 1:
-                val = val[-7:]
+                val = val[-num_word_in_like_max:]
             elif candidate_op_idx == 2:
-                start_idx = rng.randint(0, len(val) - 7)
-                val = val[start_idx : start_idx + 7]
+                start_idx = rng.randint(0, len(val) - num_word_in_like_max)
+                val = val[start_idx : start_idx + num_word_in_like_max]
 
         candidate_vals = [f"{val}%", f"%{val}", f"%{val}%"]
 
-        # val = val.replace('"', '\\\"')
-        # return rng.choice([f"{val}%",f"%{val}",f"%{val}%"])
-
         return candidate_vals[candidate_op_idx].replace('"', '\\"')
-    elif op == "NOT LIKE":
-        return rng.choice([f"{val}%", f"%{val}", f"%{val}%"])
-        # for i in range(10):  # param
-        #    if len(distinct_values) == 1:
-        #        return rng.choice([f"{val}%", f"%{val}", f"%{val}%"])
-        #    # distinct_values = distinct_values
-        #    candidate_val = str(rng.choice(all_values)).strip()
-
-        #    candidate_val = str(rng.choice(candidate_val.split(" ")))
-        #    if len(candidate_val) > 7:
-        #        start_idx = rng.randint(0, len(candidate_val) - 7)
-        #        candidate_val = candidate_val[start_idx : start_idx + 7]
-
-        #    candidate_op_idx = rng.choice([0, 1, 2])
-        #    candidate_vals = [f"{candidate_val}%", f"%{candidate_val}", f"%{candidate_val}%"]
-
-        #    if candidate_op_idx == 0:
-        #        if val.startswith(candidate_val):
-        #            continue
-        #    elif candidate_op_idx == 1:
-        #        if val.endswith(candidate_val):
-        #            continue
-        #    elif candidate_op_idx == 2:
-        #        if candidate_val in val:
-        #            continue
-
-        #    return candidate_vals[candidate_op_idx].replace('"', '\\"')
-
-        # return candidate_vals[candidate_op_idx].replace('"', '\\"')
-    elif op == "IN":
-        num_in_values = rng.randint(1, num_in_max + 1)  # param
-        all_candidate_values = copy.deepcopy(all_values)
+    elif op == "IN" or op == "NOT IN":
+        num_in_values = rng.randint(2, num_in_max + 1)  # param
+        all_candidate_values = copy.deepcopy(vs)
         all_candidate_values = np.delete(all_candidate_values, np.where(all_candidate_values == val))
         in_values = [val]
         for i in range(num_in_values - 1):
@@ -487,41 +445,29 @@ def get_str_op_values(op, val, distinct_values, all_values, rng, num_in_max):
         num_in_values = len(in_values)
 
         if type(in_values[0]) == str:
-            in_value_txt = ",".join(["'%s'" % (v.strip().replace("'", "\\'").replace('"', '\\"')) for v in in_values])
+            in_value_txt = ",".join(["'%s'" % (v.strip().replace("'", "''")) for v in in_values])
         else:
-            in_values = list(
-                map(lambda i: "'%s'" % (str(i).strip().replace("'", "\\'").replace('"', '\\"')), in_values)
-            )
+            in_values = list(map(lambda i: "'%s'" % (str(i).strip().replace("'", "''")), in_values))
             in_value_txt = ",".join(in_values)
         in_value_txt = f"({in_value_txt})"
         return in_value_txt, num_in_values
 
-    elif op == "NOT IN":
-        num_in_values = rng.randint(1, num_in_max + 1)  # param
-        all_candidate_values = copy.deepcopy(all_values)
-        all_candidate_values = np.delete(all_candidate_values, np.where(all_candidate_values == val))
-        in_values = [val]
-        for i in range(num_in_values - 1):
-            if len(all_candidate_values) < 1:
-                break
-            candidate_val = rng.choice(all_candidate_values)
-            in_values.append(candidate_val)
-            all_candidate_values = np.delete(all_candidate_values, np.where(all_candidate_values == candidate_val))
-        num_in_values = len(in_values)
 
-        if type(in_values[0]) == str:
-            in_value_txt = ",".join(["'%s'" % (v.strip().replace("'", "\\'").replace('"', '\\"')) for v in in_values])
-        else:
-            in_values = list(
-                map(lambda i: "'%s'" % (str(i).strip().replace("'", "\\'").replace('"', '\\"')), in_values)
-            )
-            in_value_txt = ",".join(in_values)
-        in_value_txt = f"({in_value_txt})"
-        return in_value_txt, num_in_values
-    elif op == "IS_NULL":
-        return "None"
-    elif op == "IS_NOT_NULL":
-        return "None"
+def renumbering_tree_predicates(predicates, idx):
+    if not isinstance(predicates, list):
+        args.logger.error(f"{predicates} is not supported format of predicate")
+        assert False
+    if len(predicates) < 2:
+        predicates[0] = idx
+        return predicates, idx + 1
+
+    if len(predicates) != 3:
+        args.logger.error(f"{predicates} is not supported format of predicate")
+    assert len(predicates) == 3
+
+    predicates[0], left_idx = renumbering_tree_predicates(predicates[0], idx)
+    predicates[2], right_idx = renumbering_tree_predicates(predicates[2], left_idx)
+    return predicates, right_idx
 
 
 def split_predicate_tree_with_condition_dnf(predicates):
@@ -543,21 +489,6 @@ def split_predicate_tree_with_condition_dnf(predicates):
 
     split_predicate_tree_with_condition_dnf(predicates[0])
     split_predicate_tree_with_condition_dnf(predicates[2])
-
-
-def renumbering_tree_predicates(predicates, idx):
-    if not isinstance(predicates, list):
-        assert False, "[renumbering tree predicates], {} is not supported format of predicate".format(predicates)
-    if len(predicates) < 2:
-        predicates[0] = idx
-        return predicates, idx + 1
-
-    assert len(predicates) == 3, "[renumbering tree predicates], {} is not supported format of predicate".format(
-        predicates
-    )
-    predicates[0], left_idx = renumbering_tree_predicates(predicates[0], idx)
-    predicates[2], right_idx = renumbering_tree_predicates(predicates[2], left_idx)
-    return predicates, right_idx
 
 
 def split_predicate_tree_with_condition(predicates):
@@ -607,7 +538,7 @@ def build_predicate_tree(rng, predicates):
     return predicates[0]
 
 
-def build_predicate_tree_dnf(rng, predicates):  # [ [ [A OR B] AND [C OR D] ] AND [E OR F] ] [ [A AND B] ]
+def build_predicate_tree_dnf(args, rng, predicates):  # [ [ [A OR B] AND [C OR D] ] AND [E OR F] ] [ [A AND B] ]
     while len(predicates) > 1:
         selected_idx = rng.choice(range(len(predicates)), 2, replace=False)
         selected_predicates = [predicates[i] for i in selected_idx]
@@ -616,8 +547,8 @@ def build_predicate_tree_dnf(rng, predicates):  # [ [ [A OR B] AND [C OR D] ] AN
         elif len(selected_predicates[1]) > 1 and selected_predicates[1][1] == "OR":
             op = "OR"
         else:
-            prob = 0.9
-            op = rng.choice(LOGICAL_OPERATORS, p=[prob, 1 - prob])
+            prob = args.hyperparams["prob_or"]
+            op = rng.choice(LOGICAL_OPERATORS, p=[1 - prob, prob])
 
         connected_predicates = [selected_predicates[0], op, selected_predicates[1]]
 
@@ -673,107 +604,6 @@ def preorder_traverse_to_get_graph(tree, dnf_idx):
     return operations, after_right_dnf_idx
 
 
-def preorder_traverse_to_make_df_query(tree, values, df_name):
-    if not isinstance(tree, tuple) and not isinstance(tree, list):
-        value = values[tree]
-        prefix = value[0]
-        col = value[1]
-        op = value[2]
-        val = value[3]
-        query_string = None
-        correal = None
-
-        if len(value) == 5:
-            obj = value[4]
-            df_query = obj["df_query"]
-            query_string = "SELECT " + df_query["SELECT"] + " FROM " + df_query["FROM"]
-            if "WHERE" in df_query.keys():
-                query_string += " WHERE " + df_query["WHERE"]
-            if "GROUPBY" in df_query.keys():
-                query_string += " GROUP BY " + df_query["GROUPBY"]
-            if "HAVING" in df_query.keys():
-                query_string += " HAVING " + df_query["HAVING"]
-            if "ORDERBY" in df_query.keys():
-                query_string += " ORDER BY " + df_query["ORDERBY"]
-            if "LIMIT" in df_query.keys():
-                query_string += " LIMIT " + df_query["LIMIT"]
-        if len(value) == 6:
-            prefix_outer = value[5]
-            val = prefix_outer + "df.`" + val + "`"
-        if prefix is not None:
-            col = df_name + ".`" + col + "`"
-            if query_string is not None:
-                val = "(" + query_string + ")"
-        else:
-            if query_string is not None:
-                if col is None:
-                    col = ""
-                    val = "(" + query_string + ")"
-                else:
-                    col = "(" + query_string + ")"
-                    if val is None:
-                        val = ""
-            else:
-                assert False
-
-        return col + " " + op + " " + val
-
-    if len(tree) == 1:
-        return preorder_traverse_to_make_df_query(tree[0], values, df_name)
-    elif len(tree) == 3:
-        left, op, right = tree
-
-    return (
-        "("
-        + preorder_traverse_to_make_df_query(left, values, df_name)
-        + " "
-        + op
-        + " "
-        + preorder_traverse_to_make_df_query(right, values, df_name)
-        + ")"
-    )
-
-
-def preorder_traverse_to_make_df_query_having(tree, values, df_name):
-    if not isinstance(tree, tuple) and not isinstance(tree, list):
-        value = values[tree]
-        prefix = value[0]
-        agg = value[1]
-        col = value[2]
-        op = value[3]
-        val = value[4]
-        assert len(value) == 5
-
-        if agg != "NONE":
-            if col != "*":
-                tree = agg + "(" + df_name + ".`" + col + "`)"
-            else:
-                tree = agg + "(" + col + ")"
-        else:
-            tree = df_name + ".`" + col + "`"
-
-        tree += " " + op + " " + val
-
-        return tree
-
-    assert len(tree) == 3 or len(tree) == 1
-
-    if len(tree) == 1:
-        return preorder_traverse_to_make_df_query_having(tree[0], values, df_name)
-    elif len(tree) == 3:
-        left, op, right = tree
-
-    return (
-        "("
-        + preorder_traverse_to_make_df_query_having(left, values, df_name)
-        + " "
-        + op
-        + " "
-        + preorder_traverse_to_make_df_query_having(right, values, df_name)
-        + ")"
-    )
-
-
 def get_grouping_query_elements(
     args,
     rng,
@@ -812,33 +642,37 @@ def get_grouping_query_elements(
 
     # Add all possible columns to project
     # Consider all possible aggregation for each selected columns
+    # DOES NOT CONSIDER not used tables
+    grouping_query_used_tables = copy.deepcopy(used_tables)
+    grouping_query_used_tables = get_updated_used_tables(used_tables, group_columns_origin)
+
     having_candidate_columns = [
-        table_column for table_column in table_columns if table_column not in list(group_columns)
+        table_column
+        for table_column in table_columns
+        if table_column not in list(group_columns) and table_column.split(".")[0] in grouping_query_used_tables
     ] + ["*"]
     grouping_query_agg_cols = []
     grouping_query_select_columns = []
-    grouping_query_used_tables = copy.deepcopy(used_tables)
+
     for col in having_candidate_columns:
         if col == "*":  # COUNT is only availble for star
             aggs = TEXTUAL_AGGS
-        elif dtype_dict[col] in ["bool", "str"] or col in IDS or is_column_id(col, join_key_list):
+        elif dtype_dict[col] in ["bool", "str"] or is_id_column(args, col, join_key_list):
             continue
         elif dtype_dict[col] == "date":
             aggs = DATE_AGGS
         else:
             aggs = NUMERIC_AGGS
         for agg in aggs:
+            if agg == "NONE":
+                args.logger.error("This cannot be happend")
             assert agg != "NONE"
             if col == "*":
                 col_rep = agg + "(*)"
                 grouping_query_select_columns.append(col_rep)
                 grouping_query_agg_cols.append((agg, "*"))
             else:
-                distinct = ""
-                if agg == "COUNT" and col not in IDS:  # Use distinct if COUNT + non_key_column
-                    # distinct = "DISTINCT "
-                    pass  # disabled distinct
-                col_rep = agg + "(" + distinct + prefix + col + ")"
+                col_rep = agg + "(" + prefix + col + ")"
                 grouping_query_select_columns.append(col_rep)
                 grouping_query_agg_cols.append((agg, col))
                 grouping_query_used_tables.add(col.split(".")[0])
@@ -858,37 +692,13 @@ def get_grouping_query_elements(
     return grouping_query_elements
 
 
-def get_value_set(all_values):
-    is_nan = pd.isnull(all_values)
-    contains_nan = np.any(is_nan)
-    dv_no_nan = all_values[~is_nan]
-
-    vs_all = np.sort(dv_no_nan)
-    if contains_nan and np.issubdtype(all_values.dtype, np.datetime64):
-        vs_all = np.insert(vs_all, 0, np.datetime64("NaT"))
-    elif contains_nan:
-        vs_all = np.insert(vs_all, 0, np.nan)
-
-    return vs_all
-
-
-def preorder_traverse_dataframe(tree):
-    if not isinstance(tree, tuple) and not isinstance(tree, list):
-        return tree
-
-    assert len(tree) == 3 or len(tree) == 1
-
-    if len(tree) == 1:
-        assert len(tree[0]) == 3
-        left, op, right = tree[0]
-    elif len(tree) == 3:
-        left, op, right = tree
-
-    return "(" + preorder_traverse_dataframe(left) + " " + op.lower() + " " + preorder_traverse_dataframe(right) + ")"
-
-
 def preorder_traverse_to_replace_alias(tree, org, rep):
     if not isinstance(tree, tuple) and not isinstance(tree, list):
+        if isinstance(org, list):
+            tree_replaced = tree
+            for o, r in zip(org, rep):
+                tree_replaced = tree_replaced.replace(o, r)
+            return tree_replaced
         return tree.replace(org, rep)
 
     assert len(tree) == 3 or len(tree) == 1
@@ -948,7 +758,6 @@ def tree_and_graph_formation(
     sql_type_dict,
     tables,
     joins,
-    outer_inner,
     select,
     where=None,
     group=None,
@@ -1115,7 +924,7 @@ def tree_and_graph_formation(
             graph.set_limit(limit)
             ###### GRAPH END   ######
 
-        node = QueryBlock(child_tables=base_tables, operations=operations, sql=sql)
+        node = QueryBlock(child_tables=base_tables, operations=operations, sql=sql, name=prefix[:-1])
         tree = QueryTree(root=node, sql=sql)
     else:
         # base table define
@@ -1230,16 +1039,65 @@ def tree_and_graph_formation(
                 else:
                     child_tables = query_block.get_child_tables()
 
-                    inner_table_idx = [child_table.get_name() for child_table in child_tables].index(inner_tab_name)
+                    # IF correlated column is not in the projection columns of child query
+                    child_table_names = [child_table.get_name() for child_table in child_tables]
+                    if inner_tab_name not in child_table_names:
+                        if len(child_table_names) != 1:
+                            args.logger.error("This is impossible")
+                            assert False
+                        grandchild_query_block = child_tables[0]
+                        great_grandchild_tables = grandchild_query_block.get_child_tables()
+                        gg_table_names = [gg_table.get_name() for gg_table in great_grandchild_tables]
+                        if inner_tab_name not in gg_table_names:
+                            args.logger.error("This is impossible")
+                            assert False
 
-                    for_each = Foreach(get_global_index(child_tables, inner_table_idx, inner_col_name))
-                    operations.append(for_each)
+                        prefix_grandinner = child_table_names[0] + "_"
+                        grandinner_col_name_tree = get_tree_header(
+                            prefix_grandinner, inner_tab_name, inner_col_name, "NONE"
+                        )
 
-                    projection = Projection(
-                        column_id=get_global_index(child_tables, inner_table_idx, inner_col_name),
-                        alias=inner_col_name_tree,
-                    )
-                    operations.append(projection)
+                        gg_inner_table_idx = gg_table_names.index(inner_tab_name)
+
+                        grandchild_operations = []
+                        # add for_each to grand_child
+                        grandchild_for_each = Foreach(
+                            get_global_index(great_grandchild_tables, gg_inner_table_idx, inner_col_name)
+                        )
+                        grandchild_operations.append(grandchild_for_each)
+
+                        grandchild_projection = Projection(
+                            column_id=get_global_index(great_grandchild_tables, gg_inner_table_idx, inner_col_name),
+                            alias=grandinner_col_name_tree,
+                        )
+                        grandchild_operations.append(grandchild_projection)
+                        grandchild_query_block.add_operations(grandchild_operations)
+                        query_block.update_child_table(0, grandchild_query_block)
+
+                        child_tables = query_block.get_child_tables()
+                        inner_table_idx = 0
+                        test = query_block.get_headers()
+
+                        for_each = Foreach(get_global_index(child_tables, inner_table_idx, grandinner_col_name_tree))
+                        operations.append(for_each)
+
+                        projection = Projection(
+                            column_id=get_global_index(child_tables, inner_table_idx, grandinner_col_name_tree),
+                            alias=inner_col_name_tree,
+                        )
+                        operations.append(projection)
+
+                    else:
+                        inner_table_idx = [child_table.get_name() for child_table in child_tables].index(inner_tab_name)
+
+                        for_each = Foreach(get_global_index(child_tables, inner_table_idx, inner_col_name))
+                        operations.append(for_each)
+
+                        projection = Projection(
+                            column_id=get_global_index(child_tables, inner_table_idx, inner_col_name),
+                            alias=inner_col_name_tree,
+                        )
+                        operations.append(projection)
 
                 query_block.add_operations(operations)
                 base_tables[table_name_to_idx[inner_table_block_name]] = query_block
@@ -1671,7 +1529,6 @@ def sql_formation(
     sql_type_dict,
     tables,
     joins,
-    outer_inner,
     select,
     where=None,
     group=None,
@@ -1687,125 +1544,89 @@ def sql_formation(
     nesting_block_idx=None,
     inner_select_nodes=None,
 ):
-    ALIAS_TO_TABLE_NAME, TABLE_NAME_TO_ALIAS = alias_generator(args)
     prefix = "N" + str(nesting_level) + "_" + str(nesting_block_idx) + "_"
 
-    select_clause = "SELECT " + ", ".join(select)
-
-    df_query = {}
-
-    select_cols_df = []
-    for col_info in select_agg_cols:
-        agg = col_info[0]
-        col = col_info[1]
-        if col != "*":
-            col_df = prefix + "df" + ".'" + col + "'"
-        else:
-            col_df = col
-        if agg != "NONE":
-            col_df = agg + "(" + col_df + ")"
-        select_cols_df.append(col_df)
-    df_query["SELECT"] = ", ".join(select_cols_df)
-    df_query["FROM"] = "df " + prefix + "df"
+    select_clause = "SELECT DISTINCT " + ", ".join(select)
 
     # FROM clause generation
-    if TABLE_NAME_TO_ALIAS:
-        table_token = sorted([f"{table} {prefix}{TABLE_NAME_TO_ALIAS[table]}" for table in tables])
+    # Check ALL table in tables has join_c
+    if len(tables) > 1:
+        joined_tables = set()
+        for join_c in joins:
+            t1, k1, t2, k2 = get_table_join_key_from_join_clause(join_c)
+            joined_tables.add(t1)
+            joined_tables.add(t2)
+        given_tables = set(tables)
+        assert joined_tables == given_tables
+
+        table_string = ""
+        visited_tables = set([tables[0]])
+        root_table_ref = f"{tables[0]} AS {prefix}{tables[0]}"
+        table_string += root_table_ref
+
+        remaining_joins = copy.deepcopy(joins)
+        while len(remaining_joins) > 0:
+            new_remaining_joins = []
+            for join_c in remaining_joins:
+                t1, k1, t2, k2 = get_table_join_key_from_join_clause(join_c)
+                t1_ref = f"{t1} AS {prefix}{t1}"
+                t2_ref = f"{t2} AS {prefix}{t2}"
+                join_c_ref = alias_join_clause(join_c, prefix)
+
+                if t1 in visited_tables:
+                    if t2 in visited_tables:
+                        table_string += f" AND {join_c_ref}"
+                    else:
+                        table_string += f" JOIN {t2_ref} ON {join_c_ref}"
+                        visited_tables.add(t2)
+                elif t2 in visited_tables:
+                    if t1 in visited_tables:
+                        table_string += f" AND {join_c_ref}"
+                    else:
+                        table_string += f" JOIN {t1_ref} ON {join_c_ref}"
+                        visited_tables.add(t1)
+                else:
+                    new_remaining_joins.append(join_c)
+            assert new_remaining_joins != remaining_joins
+            remaining_joins = copy.deepcopy(new_remaining_joins)
     else:
-        if prefix:
-            table_token = sorted([f"{table} {prefix}{table}" for table in tables])
-        else:
-            table_token = sorted([f"{table}" for table in tables])
-
-    table_string = " JOIN ".join(table_token)
-
-    join_token = sorted([alias_join_clause(join_c, TABLE_NAME_TO_ALIAS, prefix) for join_c in joins])
-    join_string = " AND ".join(join_token)
+        table_string = f"{tables[0]} AS {prefix}{tables[0]}"
 
     from_clause = " FROM " + table_string
-    if len(join_token) >= 1:
-        from_clause += " ON " + join_string
 
     # WHERE clause generation
     if sql_type_dict["where"]:
         where_clause = " WHERE " + preorder_traverse(where)
-        if outer_inner == "non-nested":
-            df_query["WHERE"] = preorder_traverse_to_make_df_query(
-                tree_predicates_origin, predicates_origin, prefix + "df"
-            )
-        elif outer_inner == "outer":
-            df_query["WHERE"] = preorder_traverse_to_make_df_query(
-                tree_predicates_origin, predicates_origin, prefix + "df"
-            )
-        elif outer_inner == "inner":
-            df_query["WHERE"] = preorder_traverse_to_make_df_query(
-                tree_predicates_origin, predicates_origin, prefix + "df"
-            )
-        else:
-            assert False, "[sql_fomation] Not implemented types of queries"
     else:
         where_clause = ""
 
     # GROUP BY clause generation
     if sql_type_dict["group"]:
         group_clause = " GROUP BY " + ", ".join(group)
-        group_df = []
-        for group_col in group:
-            group_alias = group_col.split(".")[0]
-            rel_name = group_alias.split(prefix)[1]
-            col_name = group_col.split(".")[1]
-            col_df = prefix + "df" + ".`" + rel_name + "." + col_name + "`"
-            group_df.append(col_df)
-        df_query["GROUPBY"] = ", ".join(group_df)
     else:
         group_clause = ""
 
     # HAVING clause generation
     if sql_type_dict["having"]:
         having_clause = " HAVING " + preorder_traverse(having)
-        df_query["HAVING"] = preorder_traverse_to_make_df_query_having(
-            having_tree_predicates_origin, having_predicates_origin, prefix + "df"
-        )
     else:
         having_clause = ""
 
     # ORDER BY clause generation
     if sql_type_dict["order"]:
         order_clause = " ORDER BY " + ", ".join(order)
-        order_df = []
-        for order_col_raw in order:
-            order_col = order_col_raw
-            agg = "NONE"
-            for candidate_agg in NUMERIC_AGGS:
-                if candidate_agg + "(" in order_col_raw:
-                    assert ")" in order_col_raw
-                    agg = candidate_agg
-                    order_col = order_col_raw.split(agg + "(")[1].split(")")[0]
-                    break
-            if order_col != "*":
-                order_alias = order_col.split(".")[0]
-                rel_name = order_alias.split(prefix)[1]
-                col_name = order_col.split(".")[1]
-                col_df = prefix + "df" + ".`" + rel_name + "." + col_name + "`"
-            else:
-                col_df = order_col
-            if agg != "NONE":
-                col_df = agg + "(" + col_df + ")"
-            order_df.append(col_df)
-        df_query["ORDERBY"] = ", ".join(order_df)
     else:
         order_clause = ""
 
     # LIMIT clause generation
     if sql_type_dict["limit"]:
         limit_clause = " LIMIT " + str(limit)
-        df_query["LIMIT"] = str(limit)
     else:
         limit_clause = ""
 
     line = select_clause + from_clause + where_clause + group_clause + having_clause + order_clause + limit_clause
 
-    return line, df_query
+    return line
 
 
 def get_table_from_clause(join_clause):
@@ -1826,22 +1647,68 @@ def get_possible_join(selected_joins, avaliable_joins):
     return result
 
 
-def is_column_id(col, join_key_list):
+def get_initial_nesting_positions(args):
+    return {"type-a": [0], "type-n": [0, 1], "type-j": [0, 1, 2, 3], "type-ja": [0, 3]}
+
+
+def get_initial_nesting_types(args):
+    return ["type-a", "type-n", "type-ja", "type-j"]
+
+
+def is_hashcode_column(args, col):
+    return col in args.HASH_CODES
+
+
+def is_note_column(args, col):
+    return col in args.NOTES
+
+
+def is_correlatable_column(args, col):
+    return True
+
+
+def is_categorical_column(args, col):
+    return col in args.CATEGORIES
+
+
+def is_id_column(args, col, join_key_list):
     if col == "*":
         return False
-    return col in join_key_list or "id" in col.split(".")[1].lower()
+    return col in join_key_list or "id" in col.split(".")[1].lower() or col in args.IDS
+
+
+def is_foreign_key(args, tab_col):
+    if tab_col == "*":
+        return False
+    tab, col = tab_col.split(".")
+    return col in args.FOREIGN_KEYS[tab]
 
 
 def get_query_token(
+    args,
     all_table_set,
     join_key_list,
-    df_columns,
-    df_columns_not_null,
+    data_manager,
     join_clause_list,
+    sql_type_dict,
     rng,
-    join_key_pred=True,
     inner_query_tables=None,
 ):
+    df_columns = []
+    for table in all_table_set:
+        columns = data_manager.fetch_column_names(table)
+        df_columns += [table + "." + column for column in columns]
+
+    df_columns_not_null = []
+    for column in df_columns:
+        alias = column.replace(".", "__")
+        data_manager.execute(f"SELECT COUNT(*) FROM {args.fo_view_name} WHERE {alias} IS NOT NULL")
+        result = data_manager.fetchall()
+        if result[0][0] > 0:
+            df_columns_not_null.append(column)
+
+    ### sampling tables
+
     avaliable_join_keys = list()
     avaliable_pred_cols = list(df_columns)
     for col in df_columns_not_null:
@@ -1863,7 +1730,16 @@ def get_query_token(
             avaliable_table_set.add(table)
 
     avaliable_tables = list(avaliable_table_set)
-    num_join_clause = rng.randint(0, len(avaliable_join_list) + 1)
+
+    max_join = min(args.hyperparams["num_join_max"], len(avaliable_join_list) + 1)
+    min_join = args.hyperparams["num_join_min"]
+    if min_join > max_join:
+        args.logger.warning(
+            f"Sampling table is failed: minimum number of joins is greater than maximum number of joins"
+        )
+        assert False
+    prob = get_truncated_geometric_distribution(max_join - min_join + 1, 1 - args.hyperparams["prob_join"])
+    num_join_clause = rng.choice(range(min_join, max_join + 1), p=prob)
 
     table_set = set()
     tables = list()
@@ -1871,14 +1747,25 @@ def get_query_token(
     candiate_cols = list()
     predicates_cols = list()
     candidate_cols_projection = list()
-    prob = 0.5
 
-    table = rng.choice(avaliable_tables)
+    if sql_type_dict["group"]:
+        # choose table having categorical columns
+        candidate_root_tables = set()
+        for column in df_columns_not_null:
+            if is_categorical_column(args, column):
+                candidate_root_tables.add(column.split(".")[0])
+        candidate_root_tables = list(candidate_root_tables)
+
+        if len(candidate_root_tables) == 0:
+            args.logger.warning("No table has a categorical column but we will generate GROUP BY clause")
+            candidate_root_tables = avaliable_tables
+        table = rng.choice(candidate_root_tables)
+    else:
+        table = rng.choice(avaliable_tables)
+
     table_set.add(table)
 
-    cont = rng.choice([0, 1], p=[1 - prob, prob])
-
-    if cont == 1:
+    if num_join_clause > 0:
         available_init_join = []
         for join_clause in avaliable_join_list:
             t1, t2 = get_table_from_clause(join_clause)
@@ -1893,9 +1780,7 @@ def get_query_token(
         table_set.add(t1)
         table_set.add(t2)
 
-        cont = rng.choice([0, 1], p=[1 - prob, prob])
-
-        while cont == 1:
+        while len(joins) < num_join_clause:
             candidate_joins = get_possible_join(joins, avaliable_join_list)
             if len(candidate_joins) == 0:
                 break
@@ -1906,8 +1791,6 @@ def get_query_token(
             t1, t2 = get_table_from_clause(next_join)
             table_set.add(t1)
             table_set.add(t2)
-
-            cont = rng.choice([0, 1], p=[1 - prob, prob])
 
     if inner_query_tables is not None:
         for inner_table in inner_query_tables:
@@ -1920,32 +1803,59 @@ def get_query_token(
                     table_set.add(new_table)
                 joins += new_joins
 
+    ### Sampling columns
+
+    key_cols = []
+    candidate_cols = []
+    candidate_cols_projection = []
     for col in avaliable_pred_cols:
         if col.split(".")[0] in table_set:
             candidate_cols_projection.append(col)
-            # if (not join_key_pred) and (col in join_key_list): # or "id" in col.split('.')[1].lower()): # [TODO] Correction: id
-            if (not join_key_pred) and is_column_id(col, join_key_list):  # [TODO] Correction: id
+            if (not args.constraints["join_key_pred"]) and (
+                is_hashcode_column(args, col) or is_id_column(args, col, join_key_list)
+            ):
+                key_cols.append(col)
                 continue
-            candiate_cols.append(col)
+            candidate_cols.append(col)
 
+    max_column = min(args.hyperparams["num_column_max"], len(candidate_cols))
+    min_column = args.hyperparams["num_column_min"]
+    if min_column > max_column or len(candidate_cols) == 0:
+        args.logger.warning(
+            f"Sampling column is failed: no candidate column or minimum number of columns is greater than maximum number of columns"
+        )
+        assert False
+    prob = get_truncated_normal_distribution(max_column - min_column + 1)
+    num_columns = rng.choice(range(min_column, max_column + 1), p=prob)
+
+    sampled_cols = list(rng.choice(candidate_cols, num_columns, replace=False))
+
+    if sql_type_dict["group"]:
+        has_categories = False
+        for column in sampled_cols:
+            if is_categorical_column(args, column):
+                has_categories = True
+                break
+        if not has_categories:
+            max_group = args.hyperparams["num_group_max"]
+            min_group = args.hyperparams["num_group_min"]
+            # categorical column should be included
+            candidate_categories = []
+            for column in candidate_cols:
+                if is_categorical_column(args, column):
+                    candidate_categories.append(column)
+            if len(candidate_categories) == 0:
+                args.logger.warning("No table has a categorical column but we will generate GROUP BY clause")
+            else:
+                max_group = min(len(candidate_categories), max_group)
+                prob = get_truncated_geometric_distribution(max_group - min_group + 1, 0.8)
+                num_group = rng.choice(range(min_group, max_group + 1), p=prob)
+                sampled_cols += list(rng.choice(candidate_categories, num_group, replace=False))
+
+    sampled_cols_projection = key_cols + sampled_cols
     tables = list(table_set)
 
-    return tables, joins, candidate_cols_projection, candiate_cols
-
-
-def determine_degree_1_table(tables, joins):
-    degrees = {k: 0 for k in tables}
-    for join_c in joins:
-        tc1, tc2 = join_c.split("=")
-        t1, c1 = tc1.split(".")
-        t2, c2 = tc2.split(".")
-
-        degrees[t1] += 1
-        degrees[t2] += 1
-
-    d1_table = [k for k in degrees.keys() if degrees[k] == 1]
-
-    return d1_table
+    return tables, joins, sampled_cols_projection, sampled_cols
 
 
 def get_table_join_key_from_join_clause(txt):
@@ -1956,12 +1866,9 @@ def get_table_join_key_from_join_clause(txt):
     return t1, k1, t2, k2
 
 
-def alias_join_clause(txt, TABLE_NAME_TO_ALIAS, prefix):
+def alias_join_clause(txt, prefix):
     t1, k1, t2, k2 = get_table_join_key_from_join_clause(txt)
 
-    if TABLE_NAME_TO_ALIAS:
-        t1 = TABLE_NAME_TO_ALIAS[t1]
-        t2 = TABLE_NAME_TO_ALIAS[t2]
     return f"{prefix}{t1}.{k1}={prefix}{t2}.{k2}"
 
 
@@ -2041,55 +1948,59 @@ def find_join_path(joins, tables, used_tables):
     return found_tables, found_joins
 
 
-def convert_agg_to_func(agg):
-    if agg == "AVG":
-        return "mean"
-    else:
-        return agg.lower()
-
-
-def is_numeric(val):
-    try:
-        float(val)
-    except ValueError:
-        return False
-    else:
-        return True
-
-
-def predicate_generator(col, op, val, is_bool=False):
-    if isinstance(op, tuple):
-        query_predicate = "`" + col + "` " + op[0] + " " + val[0] + " and " + "`" + col + "` " + op[1] + " " + val[1]
-    elif op == "IS_NULL":
-        query_predicate = "`" + col + "`.isnull()"
-    elif op == "IS_NOT_NULL":
-        query_predicate = "not `" + col + "`.isnull()"
-    elif op == "LIKE" or op == "NOT LIKE":
-        if val[1] == "%" and val[-2] == "%":
-            query_predicate = "`" + col + '`.str.contains("' + eval('"' + val[2:-2] + '"') + '", na=False)'
-        elif val[1] == "%":
-            query_predicate = "`" + col + '`.str.endswith("' + eval('"' + val[2:]) + '", na=False)'
-        elif val[-2] == "%":
-            query_predicate = "`" + col + '`.str.startswith("' + eval(val[:-2] + '"') + '", na=False)'
+def view_predicate_generator(prefix, col, op, val, dtype, is_nested=False, inner_view_query=None):
+    if is_nested:
+        if prefix is not None:
+            val = "(" + inner_view_query + ")"
+            col_ref = col.replace(".", "__")
+            if isinstance(op, tuple):
+                query_predicate = col_ref + " " + op[0] + " " + val[0] + " and " + col_ref + " " + op[1] + " " + val[1]
+            else:
+                query_predicate = col_ref + " " + op + " " + val
         else:
-            query_predicate = "`" + col + "` == " + val
-        if op == "NOT LIKE":
-            query_predicate = "not " + query_predicate
-    elif op == "=":
-        if not is_numeric(val) and not (val[0] == '"' and val[-1] == '"') and not is_bool:
-            query_predicate = "`" + col + '` == "' + val + '"'
-        else:
-            query_predicate = "`" + col + "` == " + val
-    elif op == "!=":
-        if not is_numeric(val) and not (val[0] == '"' and val[-1] == '"') and not is_bool:
-            query_predicate = "`" + col + '` == "' + val + '"'
-        else:
-            query_predicate = "`" + col + "` == " + val
-    elif op == "IN":
-        query_predicate = "`" + col + "` == " + str(list(eval(val[1:-1])))
-    elif op == "NOT IN":
-        query_predicate = "`" + col + "` != " + str(list(eval(val[1:-1])))
+            if col is None:
+                query_predicate = op + " (" + inner_view_query + ")"
+            else:
+                if op not in ("IN", "NOT IN") and dtype == "str" and not val.startswith("'"):
+                    val = f"""'{val}'"""
+                elif dtype == "date":
+                    val = f"""'{val}'::date"""
+                query_predicate = "(" + inner_view_query + ")" + " " + op + " " + str(val)
     else:
-        query_predicate = "`" + col + "` " + op + " " + val
+        col_ref = col.replace(".", "__")
+        if isinstance(op, tuple):
+            if dtype == "date":
+                query_predicate = (
+                    col_ref + " " + op[0] + " " + f"""'{val[0]}'::date""" + " and " + col_ref + " " + op[1] + " " + f"""'{val[1]}'::date"""
+                )
+            else:
+                query_predicate = (
+                    col_ref + " " + op[0] + " " + str(val[0]) + " and " + col_ref + " " + op[1] + " " + str(val[1])
+                )
+        else:
+            if op not in ("IN", "NOT IN") and dtype == "str" and not val.startswith("'"):
+                val = f"""'{val}'"""
+            elif dtype == "date":
+                val = f"""'{val}'::date"""
+            query_predicate = col_ref + " " + op + " " + str(val)
 
     return query_predicate
+
+
+def get_removed_subset_clauses(subset_clauses, clauses_op_val, col, op, val, dtype_dict, args):
+    removed_subset_clauses = []
+
+    for clause_idx in subset_clauses:
+        colA, opA, valA = None, None, None
+        for colAr, opAr, valAr in clauses_op_val[clause_idx]:
+            if col == colAr:
+                colA, opA, valA = colAr, opAr, valAr
+                break
+        if colA == None:
+            removed_subset_clauses.append(clause_idx)
+            continue
+        if not check_condB_contain_condA(colA, opA, valA, dtype_dict[colA], col, op, val, dtype_dict[col], args):
+            removed_subset_clauses.append(clause_idx)
+            continue
+
+    return removed_subset_clauses

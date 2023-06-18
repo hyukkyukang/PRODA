@@ -1,0 +1,39 @@
+{
+    "mubi_svod_platform": {
+        "join_tables": ["directors", "movies", "users", "lists", "ratings"],
+        "join_keys": {
+            "directors": ["director_id"],
+            "movies": ["movie_id", "director_id"],
+            "users": ["user_id"],
+            "lists": ["user_id"],
+            "ratings": ["movie_id", "user_id"]
+        },
+        "join_clauses": [
+            "directors.director_id=movies.director_id",
+            "movies.movie_id=ratings.movie_id",
+            "users.user_id=lists.user_id",
+            "users.user_id=ratings.user_id"
+        ],
+        "dataset": "mubi_svod_platform",
+        "join_root": "movies",
+        "join_how": "outer",
+        "use_cols": "mubi_svod_platform"
+    },
+    
+    "smaller": {
+        "join_tables": ["directors", "movies", "ratings"],
+        "join_keys": {
+            "directors": ["director_id"],
+            "movies": ["movie_id", "director_id"],
+            "ratings": ["movie_id", "user_id"]
+        },
+        "join_clauses": [
+            "directors.director_id=movies.director_id",
+            "movies.movie_id=ratings.movie_id"
+        ],
+        "dataset": "mubi_svod_platform",
+        "join_root": "movies",
+        "join_how": "outer",
+        "use_cols": "smaller"
+    }
+}

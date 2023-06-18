@@ -65,3 +65,10 @@ certificates/
 database/dataCollection/tasks*
 *.sqlite3
 *cache*
+
+
+# tmp
+non-nested/
+result*.out*
+src/sql_generator/another_version/
+src/table_excerpt/

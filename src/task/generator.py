@@ -1,21 +1,25 @@
 import json
 import random
-from typing import List
+from typing import List, Dict
 
 from hkkang_utils.misc import property_with_cache
-from pylogos.query_graph.koutrika_query_graph import Query_graph
-from pylogos.translate import translate
+from src.pylogos.query_graph.koutrika_query_graph import Query_graph
+from src.pylogos.translate_progressive import translate_progressive
 
-from src.query_tree.query_tree import Node, QueryBlock
+from src.query_tree.query_tree import Node, QueryBlock, QueryTree
 from src.task import Task
 from src.utils.example_queries import CorrelatedNestedQuery
 from src.utils.pg_connector import PostgresConnector
 from src.VQA.EVQA import EVQATree
 
+import argparse
+from src.sql_generator.sql_gen_utils.utils import load_graphs, load_objs
+from src.sql_generator.sql_gen_utils.sql_genetion_utils import get_prefix
+from src.sql_generator.tools.storage.db import PostgreSQLDatabase
+from src.VQA.query_tree_to_EVQA import convert_queryTree_to_EVQATree
+
 # TASK_TYPES = [1, 2]
 TASK_TYPES = [1]
-
-dummy_query = CorrelatedNestedQuery()
 
 
 class Task_Generator:
@@ -83,37 +87,88 @@ class Task_Generator:
 
         return selected_type
 
+    def get_query_type(self, query_objs, query_id):
+        ### [nesting_type]__[#tables]__[where]__[groupby]__[having]__[orderby]__[limit]
+        query_type = ""
+        obj = query_objs[query_id]
+        if query_id.startswith("N1"):
+            query_type += "non-nested"
+        else:
+            assert len(obj["childs"]) > 0
+            nesting_types = []
+            for child in obj["childs"]:
+                is_correlated = False
+                for correlation_predicate in correlation_predicates_origin:
+                    prefix_inner = correlation_predicate[0]
+                    if prefix_inner == child:
+                        is_correlated = True
+                        break
+
+                child_obj = query_objs[child]
+                is_aggregated = child_obj["use_agg_sel"]
+
+                if not is_correlated and not is_aggregated:
+                    nesting_types.append("type-n")
+                elif not is_correlated and is_aggregated:
+                    nesting_types.append("type-a")
+                elif is_correlated and not is_aggregated:
+                    nesting_types.append("type-j")
+                elif is_correlated and is_aggregated:
+                    nesting_types.append("type-ja")
+                else:
+                    assert False
+            query_type += ",".join(nesting_types)
+        query_type += "__" + str(len(obj["tables"]))
+        query_type += "__" + str(obj["type"]["where"])
+        query_type += "__" + str(obj["type"]["group"])
+        query_type += "__" + str(obj["type"]["having"])
+        query_type += "__" + str(obj["type"]["order"])
+        query_type += "__" + str(obj["type"]["limit"])
+
+        return query_type
+
+    def get_task_type(self, query_objs, query_id):
+        return "NONE"
+
     def _query_to_task(
-        self, evqa: EVQATree, query_tree: Node, query_graphs: List[Query_graph], is_recursive_call=False
+        self,
+        evqa: EVQATree,
+        query_tree: Node,
+        query_graphs: Dict[str, Query_graph],
+        query_objs: Dict[str, Dict],
+        query_id,
+        is_recursive_call=False,
     ):
         # Select a query type to generate
-        query_type = self.query_type
-        task_type = self.task_type
+        query_type = self.get_query_type(query_objs, query_id)
+        task_type = self.get_task_type(query_objs, query_id)
 
         # Generate SQL
         sql = evqa.node.sql
         table_excerpt = evqa.node.table_excerpt
+        result_table = evqa.node.result_table
 
         # Generate NL
-        generated_nl, mapping_info = translate(query_graphs[0])
+        full_nl, generated_nl = translate_progressive(query_tree, query_id, query_objs, query_graphs)
 
         # Add Alignment annotation
         nl_mapping = []
-        for x, y, value in evqa.node.mapping:
-            key_str = f"{x},{y}"
-            for item in filter(lambda k: value in [k["table"], k["column"]], mapping_info):
-                nl_mapping.append((key_str, item["start"], item["end"]))
-        nl_mapping = sorted(nl_mapping, key=lambda x: x[1])
+        # for x, y, value in evqa.node.mapping:
+        #    key_str = f"{x},{y}"
+        #    for item in filter(lambda k: value in [k["table"], k["column"]], mapping_info):
+        #        nl_mapping.append((key_str, item["start"], item["end"]))
+        # nl_mapping = sorted(nl_mapping, key=lambda x: x[1])
 
         # Create history
         child_query_blocks = [edge.child for edge in query_tree.child_tables if type(edge.child) == QueryBlock]
+        child_query_ids = [child for child in query_objs[query_id]["childs"]]
         assert len(child_query_blocks) == len(evqa.children), f"{len(child_query_blocks)} != {len(evqa.children)}"
         history = (
             []
             if is_recursive_call
             else [
-                self._query_to_task(child_node, child_block, query_graphs[1:])
-                for child_node, child_block in zip(evqa.children, child_query_blocks)
+                self._query_to_task(child_node, child_block, query_graphs, query_objs, child_query_ids)
+                for child_node, child_block, child_id in zip(evqa.children, child_query_blocks, child_query_ids)
             ]
         )
 
@@ -130,27 +185,40 @@ class Task_Generator:
             task_type=task_type,
             db_name="db_name",
             table_excerpt=table_excerpt,
-            result_table=None,
+            result_table=result_table,
             history=history,
         )
 
-    def __call__(self) -> List[Task]:
+    def __call__(self, evqa, query_tree, query_graphs, query_objs, query_id) -> List[Task]:
         # Generate SQL
-        evqa = dummy_query.evqa
-        query_tree_root_node = dummy_query.query_tree.root
-        query_graphs = dummy_query.query_graphs
+        query_tree_root_node = query_tree.root
 
         # For each evqa node
 
         # Wrap with Task class
         # TODO: handle table_excerpt, result table, and history
-        return [self._query_to_task(evqa, query_tree_root_node, query_graphs)]
+        return [self._query_to_task(evqa, query_tree_root_node, query_graphs, query_objs, query_id)]
 
     def convert_tasks_into_json_string(self, tasks: List[Task]) -> str:
         return json.dumps([task.dump_json() for task in tasks][0])
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--query_paths",
+        nargs="+",
+        default=[
+            "/home/hjkim/PRODA/non-nested/result.out",
+            "/home/hjkim/PRODA/non-nested/result2.out",
+            "/home/hjkim/PRODA/non-nested/result3.out",
+        ],
+    )
+    parser.add_argument("--dbname", default="car_1")
+    parser.add_argument("--use_cols", default="car_1")
+    parser.add_argument("--output_path", type=str, default="/home/hjkim/PRODA/result_with_te.out")
+    args = parser.parse_args()
+
     admin_db_config = {
         "host": "localhost",
         "userid": "config_user",
@@ -169,6 +237,44 @@ if __name__ == "__main__":
         "table_name": "collection",
     }
 
+    database_db_config = {
+        "host": "localhost",
+        "userid": "data_user",
+        "passwd": "data_user_pw",
+        "port": "5432",
+        "db_name": args.dbname,
+    }
+
+    query_objs = {}
+    query_graphs = {}
+    query_trees = []
+    keys = []
+    for query_path in args.query_paths:
+        with open(query_path, "r") as fp:
+            q_count = len(fp.readlines())
+        loaded_objs = load_objs(query_path + ".obj", q_count)
+        loaded_graphs = load_graphs(query_path + ".graph", q_count)
+        for loaded_obj, loaded_graph in zip(loaded_objs, loaded_graphs):
+            block_name = get_prefix(loaded_obj["nesting_level"], loaded_obj["unique_alias"])[:-1]
+            query_objs[block_name] = loaded_obj
+            query_graphs[block_name] = loaded_graph[1]
+            query_trees.append((block_name, loaded_graph[0]))
+
     task_generator = Task_Generator(admin_db_config, data_db_config)
-    new_tasks = task_generator()
-    print(task_generator.convert_tasks_into_json_string(new_tasks))
+    data_manager = PostgreSQLDatabase(
+        database_db_config["userid"],
+        database_db_config["passwd"],
+        database_db_config["host"],
+        database_db_config["port"],
+        database_db_config["db_name"],
+    )
+
+    for key, query_tree in query_trees:
+        if key.startswith("N3"):  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
+            query_tree_with_te = query_tree
+            # query_tree_with_te = update_query_tree_with_table_excerpt(
+            #    args.dbname, args.use_cols, data_manager, query_tree, query_graphs, query_objs, key
+            # )
+            evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
+            new_tasks = task_generator(evqa, query_tree_with_te.root, query_graphs, query_objs, key)
+            print(task_generator.convert_tasks_into_json_string(new_tasks))
