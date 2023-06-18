@@ -1,25 +1,27 @@
+import argparse
+import functools
 import json
+import os
 import random
-from typing import List, Dict
+from typing import Dict, List
 
-from hkkang_utils.misc import property_with_cache
+from src.config import config
 from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 from src.pylogos.translate_progressive import translate_progressive
-
 from src.query_tree.query_tree import Node, QueryBlock, QueryTree
+from src.sql_generator.sql_gen_utils.sql_genetion_utils import get_prefix
+from src.sql_generator.sql_gen_utils.utils import load_graphs, load_objs
+from src.sql_generator.tools.storage.db import PostgreSQLDatabase
 from src.task import Task
 from src.utils.example_queries import CorrelatedNestedQuery
 from src.utils.pg_connector import PostgresConnector
 from src.VQA.EVQA import EVQATree
-
-import argparse
-from src.sql_generator.sql_gen_utils.utils import load_graphs, load_objs
-from src.sql_generator.sql_gen_utils.sql_genetion_utils import get_prefix
-from src.sql_generator.tools.storage.db import PostgreSQLDatabase
 from src.VQA.query_tree_to_EVQA import convert_queryTree_to_EVQATree
 
 # TASK_TYPES = [1, 2]
 TASK_TYPES = [1]
+project_path = config.ProjectPath
+
 
 
 class Task_Generator:
@@ -60,13 +62,13 @@ class Task_Generator:
                 cnt_dic[query_type] = 0
         return cnt_dic
 
-    @property_with_cache
+    @functools.cached_property
     def task_type(self):
         """Randomly select a task type to generate"""
         selected_type = random.choice(TASK_TYPES)
         return selected_type
 
-    @property_with_cache
+    @functools.cached_property
     def query_type(self):
         """Randomly select a query type to generate"""
         # Read goal number of queries for each query type
@@ -209,39 +211,39 @@ if __name__ == "__main__":
         "--query_paths",
         nargs="+",
         default=[
-            "/home/hjkim/PRODA/non-nested/result.out",
-            "/home/hjkim/PRODA/non-nested/result2.out",
-            "/home/hjkim/PRODA/non-nested/result3.out",
+            os.path.join(project_path, "non-nested/result.out"),
+            os.path.join(project_path, "non-nested/result2.out"),
+            os.path.join(project_path, "non-nested/result3.out"),
         ],
     )
     parser.add_argument("--dbname", default="car_1")
     parser.add_argument("--use_cols", default="car_1")
-    parser.add_argument("--output_path", type=str, default="/home/hjkim/PRODA/result_with_te.out")
+    parser.add_argument("--output_path", type=str, default=os.path.join(project_path, "result_with_te.out"))
     args = parser.parse_args()
 
     admin_db_config = {
-        "host": "localhost",
-        "userid": "config_user",
-        "passwd": "config_user_pw",
-        "port": "5432",
-        "db_name": "proda_config",
-        "table_name": "query_goal",
+        "host": config.DB.IP,
+        "userid": config.DB.config.UserID,
+        "passwd": config.DB.config.UserPW,
+        "port": config.DB.Port,
+        "db_name": config.DB.config.DBName,
+        "table_name": config.DB.config.QueryGoalNumsTableName,
     }
 
     data_db_config = {
-        "host": "localhost",
-        "userid": "collection_user",
-        "passwd": "collection_user_pw",
-        "port": "5432",
-        "db_name": "proda_collection",
-        "table_name": "collection",
+        "host": config.DB.IP,
+        "userid": config.DB.collection.UserID,
+        "passwd": config.DB.collection.UserPW,
+        "port": config.DB.Port,
+        "db_name": config.DB.collection.DBName,
+        "table_name": config.DB.collection.CollectionTableName,
     }
 
     database_db_config = {
-        "host": "localhost",
-        "userid": "data_user",
-        "passwd": "data_user_pw",
-        "port": "5432",
+        "host": config.DB.IP,
+        "userid": config.DB.data.UserID,
+        "passwd": config.DB.data.UserPW,
+        "port": config.DB.Port,
         "db_name": args.dbname,
     }
 

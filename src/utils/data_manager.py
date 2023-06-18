@@ -6,13 +6,9 @@ from typing import Any, List, Dict, Union
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
-import hkkang_utils.file as file_utils
+from src.config import config
 
 from src.utils.pg_connector import PostgresConnector
-
-# Must be given an absolute path
-config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
-config = file_utils.read_yaml_file(config_file_path)
 
 IP = config["DB"]["IP"]
 port = config["DB"]["Port"]

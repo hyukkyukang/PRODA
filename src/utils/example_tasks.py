@@ -1,13 +1,13 @@
 import json
 import os
+
+from src.config import config
+from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 from src.pylogos.translate import translate
 from src.query_tree.query_tree import QueryTree
 from src.task.task import Task
 from src.utils.example_queries import MultipleSublinksQuery2
 from src.VQA.EVQA import EVQATree
-import hkkang_utils.file as file_utils
-
-from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 
 
 def create_nl_and_mapping(query_graph: Query_graph, evqa: EVQATree):
@@ -23,7 +23,6 @@ def create_nl_and_mapping(query_graph: Query_graph, evqa: EVQATree):
 
 def example_task_in_the_paper():
     config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
-    config = file_utils.read_yaml_file(config_file_path)
     task_save_dir_path = os.path.join(config["ProjectPath"], config["TaskSaveDirPath"])
 
     query_object = MultipleSublinksQuery2()

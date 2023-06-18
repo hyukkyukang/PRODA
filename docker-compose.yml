@@ -3,6 +3,7 @@ version: "3"
 services:
     proda:
         image: hyukkyukang/proda:latest
+        container_name: proda
         # stdin_open: true
         tty: true
         network_mode: "host"
@@ -11,9 +12,9 @@ services:
             - "4001:4001"
         volumes:
             - ./:/root/proda/
-    proda-db:
+    proda-postgres:
         image: postgres:latest
-        container_name: postgres
+        container_name: proda-postgres
         stdin_open: true
         tty: true
         ports:

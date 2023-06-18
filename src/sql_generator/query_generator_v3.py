@@ -6,7 +6,6 @@ import argparse
 import datetime
 import time
 import json
-import hkkang_utils.file as file_utils
 import logging
 from tqdm import tqdm
 from requests.structures import CaseInsensitiveDict
@@ -16,6 +15,7 @@ import src.sql_generator.sql_gen_utils.sql_genetion_utils as sql_genetion_utils
 from src.sql_generator.sql_gen_utils.sql_genetion_modules import query_generator
 from src.pylogos.translate import translate as logos_translate
 from src.sql_generator.tools.storage.db import PostgreSQLDatabase
+from src.config import config
 
 
 def check_sql_result(data_manager, sql):
@@ -290,9 +290,6 @@ if __name__ == "__main__":
 
     SCHEMA = json.load(open(f"{args.data_dir}/{args.db}_schema.json"))
     schema = CaseInsensitiveDict(lower_case_schema_data(SCHEMA[args.schema_name]))
-
-    config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
-    config = file_utils.read_yaml_file(config_file_path)
 
     IP = config["DB"]["IP"]
     port = config["DB"]["Port"]
