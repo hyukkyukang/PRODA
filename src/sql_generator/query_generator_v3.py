@@ -195,7 +195,7 @@ def run_generator(data_manager, schema, column_info, args, check_execution_resul
                 args.logger.info(line[i].strip())
                 args.logger.info(f"Translation  ({i}): ")
                 text, _ = logos_translate(graph[i][1])
-            #    args.logger.info(text + "\n")
+                args.logger.info(text + "\n")
         global_unique_query_idx += len(line)
 
         if check_execution_result:
@@ -265,7 +265,7 @@ if __name__ == "__main__":
     filename = "src/sql_generator/configs/mubi_svod_platform_experiments.json"
     # argument
     parser = argparse.ArgumentParser()
-    parser.add_argument("--infile", type=str, default="src/sql_generator/configs/test_experiments_nested_2.json")
+    parser.add_argument("--infile", type=str, default="src/sql_generator/configs/spotify_playlists_experiments.json")
     args = parser.parse_args()
     if args.infile:
         with open(args.infile, "rt") as f:

@@ -1969,9 +1969,14 @@ def view_predicate_generator(prefix, col, op, val, dtype, is_nested=False, inner
     else:
         col_ref = col.replace(".", "__")
         if isinstance(op, tuple):
-            query_predicate = (
-                col_ref + " " + op[0] + " " + str(val[0]) + " and " + col_ref + " " + op[1] + " " + str(val[1])
-            )
+            if dtype == "date":
+                query_predicate = (
+                    col_ref + " " + op[0] + " " + f"""'{val[0]}'::date""" + " and " + col_ref + " " + op[1] + " " + f"""'{val[1]}'::date"""
+                )
+            else:
+                query_predicate = (
+                    col_ref + " " + op[0] + " " + str(val[0]) + " and " + col_ref + " " + op[1] + " " + str(val[1])
+                )
         else:
             if op not in ("IN", "NOT IN") and dtype == "str" and not val.startswith("'"):
                 val = f"""'{val}'"""
