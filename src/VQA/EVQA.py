@@ -11,28 +11,45 @@ from src.table_excerpt.table_excerpt import TableExcerpt
 # ! This must be aligned with the definition in client/components/VQA/EVQA.tsx > operators
 class Operator(IntEnum):
     equal = 1
-    lessThan = 2
-    greaterThan = 3
-    lessThanOrEqual = 4
-    greaterThanOrEqual = 5
-    exists = 6
-    notExists = 7
-    In = 8
-    NotIn = 9
+    notEqual = 2
+    lessThan = 3
+    greaterThan = 4
+    lessThanOrEqual = 5
+    greaterThanOrEqual = 6
+    exists = 7
+    notExists = 8
+    In = 9
+    notIn = 10
+    Like = 11
+    notLike = 12
 
     @staticmethod
     def from_str(op_type: str) -> IntEnum:
-        op_type = op_type.lower()
+        op_type = op_type.upper()
         if op_type == "=":
             return Operator.equal
+        if op_type == "!=":
+            return Operator.notEqual
         elif op_type == "<":
             return Operator.lessThan
         elif op_type == ">":
             return Operator.greaterThan
+        elif op_type == "<=":
+            return Operator.lessThanOrEqual
+        elif op_type == ">=":
+            return Operator.greaterThanOrEqual
         elif op_type == "EXISTS":
             return Operator.exists
         elif op_type == "NOT EXISTS":
             return Operator.notExists
+        elif op_type == "IN":
+            return Operator.In
+        elif op_type == "NOT IN":
+            return Operator.notIn
+        elif op_type == "LIKE":
+            return Operator.Like
+        elif op_type == "NOT LIKE":
+            return Operator.notLike
         else:
             raise ValueError(f"Unknown operator type: {op_type}")
 
@@ -40,14 +57,28 @@ class Operator(IntEnum):
     def to_str(op_type):
         if op_type == Operator.equal:
             return "="
+        elif op_type == Operator.notEqual:
+            return "!="
         elif op_type == Operator.lessThan:
             return "<"
         elif op_type == Operator.greaterThan:
             return ">"
+        elif op_type == Operator.lessThanOrEqual:
+            return "<="
+        elif op_type == Operator.greaterThanOrEqual:
+            return ">="
         elif op_type == Operator.exists:
             return "EXISTS"
         elif op_type == Operator.notExists:
             return "NOT EXISTS"
+        elif op_type == Operator.In:
+            return "IN"
+        elif op_type == Operator.notIn:
+            return "NOT IN"
+        elif op_type == Operator.Like:
+            return "LIKE"
+        elif op_type == Operator.notLike:
+            return "NOT LIKE"
         else:
             raise ValueError(f"Unknown operator type: {op_type}")
 
@@ -318,6 +349,7 @@ class Clause:
 class EVQANode:
     name: str = attrs.field()
     table_excerpt: TableExcerpt = attrs.field()
+    result_table: TableExcerpt = attrs.field(default=None)
     sql = attrs.field(default="")
     mapping: List[Tuple[int, int, str]] = attrs.field(
         default=attrs.Factory(list)
@@ -370,6 +402,7 @@ class EVQANode:
         # Dump in json format to pass to web clients
         json_obj = {}
         json_obj["name"] = self.name
+        json_obj["sql"] = self.sql
         json_obj["table_excerpt"] = self.table_excerpt.dump_json()
         json_obj["projection"] = self.projection.dump_json()
         json_obj["predicate"] = self.predicate.dump_json()

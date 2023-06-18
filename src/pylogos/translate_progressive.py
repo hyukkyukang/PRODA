@@ -138,7 +138,7 @@ def translate_progressive(
     # Build a mapping tree: global key to block id by pre-order traversal
     _, key_to_block_id = preorder_traverse(None, root_block_name, query_objs, 1, {})
 
-    candidates = [(None, root_block_name, query_tree.root)]
+    candidates = [(None, root_block_name, query_tree)]
     pushdowned_foreach_blocks = {}
     while len(candidates) > 0:
         parent_block_name, cur_block_name, cur_node = candidates.pop(0)
@@ -276,7 +276,9 @@ if __name__ == "__main__":
     with open(args.output_path, "w") as wf:
         for key, query_tree in query_trees:
             if key.startswith("N3"):
-                input_text, gpt_text = translate_progressive(query_tree, key, query_objs, query_graphs, use_gpt=False)
+                input_text, gpt_text = translate_progressive(
+                    query_tree.root, key, query_objs, query_graphs, use_gpt=False
+                )
                 wf.write(f"{query_objs[key]['sql']}\t{input_text}\n")
                 print("GPT INPUT: {}".format(input_text))
                 print("GPT OUTPUT: {}".format(gpt_text))
