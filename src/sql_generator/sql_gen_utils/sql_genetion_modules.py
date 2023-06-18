@@ -774,7 +774,11 @@ def having_generator(
         if col == "*":
             predicates[cond_idx] = agg + "(" + col + ") " + op + " " + str(val_stored)
         else:
-            predicates[cond_idx] = agg + "(" + prefix + col + ") " + op + " " + str(val_stored)
+            if dtype_dict[col] == "date":
+                predicates[cond_idx] = agg + "(" + prefix + col + ") " + op + " " + f"""'{val_stored}'::date"""
+            else:
+                predicates[cond_idx] = agg + "(" + prefix + col + ") " + op + " " + str(val_stored)
+            # predicates[cond_idx] = agg + "(" + prefix + col + ") " + op + " " + str(val_stored)
         predicate_tuple_origin = (prefix, agg, col, op, str(val_stored))
         predicates_origin[cond_idx] = predicate_tuple_origin
         clauses_op_val[-1].append((agg + "(" + col + ")", op, val))
@@ -1002,7 +1006,11 @@ def where_generator(
 
             if isinstance(op, tuple):
                 additional_pred_idx = len(predicates)
-                predicate_str2 = prefix + col + " " + op[1] + " " + str(val[1])
+                if dtype_dict[col] == "date":
+                    predicate_str2 = prefix + col + " " + op[1] + " " + f"""'{val[1]}'::date"""
+                else:
+                    predicate_str2 = prefix + col + " " + op[1] + " " + str(val[1])
+
                 predicate_tuple_origin2 = (prefix, col, op[1], str(val[1]))
 
                 tree_predicates = restore_predicate_tree_one(
@@ -1016,7 +1024,11 @@ def where_generator(
                 op = op[0]
                 val = val[0]
 
-            predicate_str = prefix + col + " " + op + " " + str(val)
+            # predicate_str = prefix + col + " " + op + " " + str(val)
+            if dtype_dict[col] == "date":
+                predicate_str = prefix + col + " " + op + " " + f"""'{val}'::date"""
+            else:
+                predicate_str = prefix + col + " " + op + " " + str(val)
             predicate_tuple_origin = (prefix, col, op, str(val))
             predicates_origin[cond_idx] = predicate_tuple_origin
             predicates[cond_idx] = predicate_str
@@ -1667,7 +1679,7 @@ def nested_predicate_generator(
                 f"( {inner_query })",
                 op,
                 val,
-                None,
+                new_dtype,
                 is_nested=True,
                 inner_view_query=inner_view_query,
             )
@@ -1683,7 +1695,12 @@ def nested_predicate_generator(
                 continue_cnt += 1
                 continue
 
-            predicate_str = "(" + inner_query + ") " + op + " " + str(val)
+            if new_dtype == "date":
+                predicate_str = "(" + inner_query + ") " + op + " " + f"""'{val}'::date"""
+            else:
+                predicate_str = "(" + inner_query + ") " + op + " " + str(val)
+
+            # predicate_str = "(" + inner_query + ") " + op + " " + str(val)
             nested_predicate_origin = tuple([None, "(" + inner_query + ")", op, str(val), inner_obj_stored])
             if correlation_column is not None:
                 used_tables.add(correlation_column.split(".")[0])
@@ -1848,8 +1865,6 @@ def inner_query_obj_to_inner_query(
     # (FIX #12): Make correlation predicate as the top level predicate
     correlation_predicate_origin = None
     prefix_inner = "N" + str(nesting_level) + "_" + str(unique_alias) + "_"
-    if prefix_inner == "N1_296_":
-        args.logger.warning("SHOULD BE DEBUG!!!!!")
 
     inner_view_sql_additional_conditions = ""
     if sql_type_dict["group"]:

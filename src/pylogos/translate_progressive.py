@@ -251,6 +251,7 @@ if __name__ == "__main__":
         default=[
             "/home/hjkim/PRODA/non-nested/result.out",
             "/home/hjkim/PRODA/non-nested/result2.out",
+            "/home/hjkim/PRODA/non-nested/result3.out",
         ],
     )
     parser.add_argument("--output_path", type=str, default="/home/hjkim/PRODA/translation2")
@@ -274,7 +275,7 @@ if __name__ == "__main__":
     set_openai()
     with open(args.output_path, "w") as wf:
         for key, query_tree in query_trees:
-            if key.startswith("N2"):
+            if key.startswith("N3"):
                 input_text, gpt_text = translate_progressive(query_tree, key, query_objs, query_graphs, use_gpt=False)
                 wf.write(f"{query_objs[key]['sql']}\t{input_text}\n")
                 print("GPT INPUT: {}".format(input_text))

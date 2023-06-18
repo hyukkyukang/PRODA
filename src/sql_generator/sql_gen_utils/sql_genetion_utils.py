@@ -90,7 +90,10 @@ def are_relation_node_equivalent(node1, node2):
 
 
 def get_date_time(date):
-    return dateutil.parser.parse(date)
+    if isinstance(date, str):
+        return dateutil.parser.parse(date)
+    else:
+        return date
 
 
 def get_tab_name_alias(tab_name):
@@ -1850,7 +1853,6 @@ def get_query_token(
                 sampled_cols += list(rng.choice(candidate_categories, num_group, replace=False))
 
     sampled_cols_projection = key_cols + sampled_cols
-
     tables = list(table_set)
 
     return tables, joins, sampled_cols_projection, sampled_cols
@@ -1959,6 +1961,10 @@ def view_predicate_generator(prefix, col, op, val, dtype, is_nested=False, inner
             if col is None:
                 query_predicate = op + " (" + inner_view_query + ")"
             else:
+                if op not in ("IN", "NOT IN") and dtype == "str" and not val.startswith("'"):
+                    val = f"""'{val}'"""
+                elif dtype == "date":
+                    val = f"""'{val}'::date"""
                 query_predicate = "(" + inner_view_query + ")" + " " + op + " " + str(val)
     else:
         col_ref = col.replace(".", "__")
@@ -1968,7 +1974,9 @@ def view_predicate_generator(prefix, col, op, val, dtype, is_nested=False, inner
             )
         else:
             if op not in ("IN", "NOT IN") and dtype == "str" and not val.startswith("'"):
-                val = f"""\'{val}\'"""
+                val = f"""'{val}'"""
+            elif dtype == "date":
+                val = f"""'{val}'::date"""
             query_predicate = col_ref + " " + op + " " + str(val)
 
     return query_predicate
