@@ -1735,15 +1735,15 @@ def group_generator(args, rng, cols, used_tables, dtype_dict, data_manager, curr
             group_counts = data_manager.get_distinct_value_counts(current_view_name, col_in_view)
             row_counts = data_manager.get_row_counts(current_view_name)
             ratio = group_counts / row_counts
-            if group_counts > 1 and ratio < 0.3:  # [TODO] make hyperparameter
+            if group_counts > 1 and ratio < 0.001:  # [TODO] make hyperparameter
                 categorical_cols.append(col)
 
     foreign_keys = [col for col in cols if is_foreign_key(args, col)]
     groupable_cols = categorical_cols + foreign_keys
 
-    if len(groupable_cols) == 0:
-        args.logger.warning("CANNOT FIND ANY GROUPING COLUMN... USE ALL")
-        groupable_cols = cols
+    # if len(groupable_cols) == 0:
+    #    args.logger.warning("CANNOT FIND ANY GROUPING COLUMN... USE ALL")
+    #    groupable_cols = cols
 
     if len(groupable_cols) == 0:
         args.logger.warning("[group generator] No candidate column for group by")
@@ -1926,22 +1926,31 @@ def inner_query_obj_to_inner_query(
         inner_view_sql_origin = f"""SELECT DISTINCT {select_col_view} FROM {inner_join_view_name} WHERE {inner_join_view_name}.{correlation_col_view} = {args.fo_view_name}.{correlation_col_view} """
         inner_view_sql_origin += inner_view_sql_additional_conditions
 
-        inner_query_result = []
-        # FOR EACH
-        meta_groups = data_manager.fetch_distinct_values(current_view_name, correlation_col_view)
-        for group in meta_groups:
-            correlation_predicate_view = view_predicate_generator(
-                prefix_inner, correlation_column, "=", group, dtype_dict[correlation_column]
-            )
+        if sql_type_dict["group"]:
+            inner_view_sql_group = f"""SELECT DISTINCT T.C1, array_agg(C2) FROM 
+                ( SELECT unnest(array_agg({correlation_col_view})) AS C1, {select_col_view} AS C2 FROM {inner_join_view_name} {inner_view_sql_additional_conditions} ) AS T
+                GROUP BY T.C1"""
+        else:
+            inner_view_sql_group = f"""SELECT DISTINCT T.C1, array_agg(C2) FROM 
+                    ( SELECT {correlation_col_view} AS C1, {select_col_view} AS C2 FROM {inner_join_view_name} {inner_view_sql_additional_conditions} ) AS T
+                    GROUP BY T.C1"""
+        data_manager.execute(inner_view_sql_group)
+        inner_query_result = data_manager.fetchall()
+        # inner_query_result = []
+        # meta_groups = data_manager.fetch_distinct_values(current_view_name, correlation_col_view)
+        # for group in meta_groups:
+        #    correlation_predicate_view = view_predicate_generator(
+        #        prefix_inner, correlation_column, "=", group, dtype_dict[correlation_column]
+        #    )
 
-            inner_view_sql_group = (
-                f"""SELECT DISTINCT {select_col_view} FROM {inner_join_view_name} WHERE {correlation_predicate_view}"""
-            )
-            inner_view_sql_group += inner_view_sql_additional_conditions
+        #    inner_view_sql_group = (
+        #        f"""SELECT DISTINCT {select_col_view} FROM {inner_join_view_name} WHERE {correlation_predicate_view}"""
+        #    )
+        #    inner_view_sql_group += inner_view_sql_additional_conditions
 
-            data_manager.execute(inner_view_sql_group)
-            group_result = [datum[0] for datum in data_manager.fetchall()]
-            inner_query_result.append([group, group_result])
+        #    data_manager.execute(inner_view_sql_group)
+        #    group_result = [datum[0] for datum in data_manager.fetchall()]
+        #    inner_query_result.append([group, group_result])
 
     else:
         if use_agg_sel:
