@@ -2,12 +2,13 @@ import argparse
 import json
 import os
 import pickle
-from typing import Any, List, Dict, Union
-import os
 import sys
+from typing import Any, Dict, List, Union
+
+import hkkang_utils.file as file_utils
+
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 from src.config import config
-
 from src.utils.pg_connector import PostgresConnector
 
 IP = config["DB"]["IP"]
@@ -85,7 +86,7 @@ def save_task_in_db(
     db_name: str,
     task_type: int,
     history_task_ids: List[int],
-) -> None:
+) -> int:
     pg = PostgresConnector(DBUserID, DBUserPW, IP, port, DBName)
     history_task_ids_str = "{" + ",".join(map(lambda k: f'"{str(k)}"', history_task_ids)) + "}"
     nl = nl.replace("'", "\\'")

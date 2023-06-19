@@ -1971,7 +1971,17 @@ def view_predicate_generator(prefix, col, op, val, dtype, is_nested=False, inner
         if isinstance(op, tuple):
             if dtype == "date":
                 query_predicate = (
-                    col_ref + " " + op[0] + " " + f"""'{val[0]}'::date""" + " and " + col_ref + " " + op[1] + " " + f"""'{val[1]}'::date"""
+                    col_ref
+                    + " "
+                    + op[0]
+                    + " "
+                    + f"""'{val[0]}'::date"""
+                    + " and "
+                    + col_ref
+                    + " "
+                    + op[1]
+                    + " "
+                    + f"""'{val[1]}'::date"""
                 )
             else:
                 query_predicate = (

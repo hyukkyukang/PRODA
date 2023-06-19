@@ -23,7 +23,6 @@ TASK_TYPES = [1]
 project_path = config.ProjectPath
 
 
-
 class Task_Generator:
     def __init__(self, admin_db_config, data_db_config):
         self.admin_db_config = admin_db_config
@@ -42,6 +41,23 @@ class Task_Generator:
             data_db_config["port"],
             data_db_config["db_name"],
         )
+
+    def __call__(
+        self,
+        evqa: EVQATree,
+        query_tree: QueryTree,
+        query_graphs: Query_graph,
+        query_objs: Dict[str, Dict],
+        query_id: str,
+    ) -> List[Task]:
+        # Generate SQL
+        query_tree_root_node = query_tree.root
+
+        # For each evqa node
+
+        # Wrap with Task class
+        # TODO: handle table_excerpt, result table, and history
+        return [self._query_to_task(evqa, query_tree_root_node, query_graphs, query_objs, query_id)]
 
     @property
     def query_goal_dic(self):
@@ -142,7 +158,9 @@ class Task_Generator:
         is_recursive_call=False,
     ):
         # Select a query type to generate
-        query_type = self.get_query_type(query_objs, query_id)
+        # TODO: Fix self.get_query_type (correlation_predicates_origin is not defined within this function)
+        # query_type = self.get_query_type(query_objs, query_id)
+        query_type = "None"
         task_type = self.get_task_type(query_objs, query_id)
 
         # Generate SQL
@@ -151,7 +169,8 @@ class Task_Generator:
         result_table = evqa.node.result_table
 
         # Generate NL
-        full_nl, generated_nl = translate_progressive(query_tree, query_id, query_objs, query_graphs)
+        # TODO: Need to generate NL with use_gpt=True
+        full_nl, generated_nl = translate_progressive(query_tree, query_id, query_objs, query_graphs, use_gpt=False)
 
         # Add Alignment annotation
         nl_mapping = []
@@ -162,14 +181,16 @@ class Task_Generator:
         # nl_mapping = sorted(nl_mapping, key=lambda x: x[1])
 
         # Create history
-        child_query_blocks = [edge.child for edge in query_tree.child_tables if type(edge.child) == QueryBlock]
-        child_query_ids = [child for child in query_objs[query_id]["childs"]]
+        # TODO: query_tree.chile_tables should be a list of Edge, but it is a list of Node. Not sure if Edge is redundant.
+        child_query_blocks = [node for node in query_tree.child_tables if type(node) == QueryBlock]
+        child_query_ids = [get_prefix(*child_info)[:-1] for child_info in query_objs[query_id]["childs"]]
         assert len(child_query_blocks) == len(evqa.children), f"{len(child_query_blocks)} != {len(evqa.children)}"
+        # Perform post-order traversal
         history = (
             []
             if is_recursive_call
             else [
-                self._query_to_task(child_node, child_block, query_graphs, query_objs, child_query_ids)
+                self._query_to_task(child_node, child_block, query_graphs, query_objs, child_id)
                 for child_node, child_block, child_id in zip(evqa.children, child_query_blocks, child_query_ids)
             ]
         )
@@ -190,16 +211,6 @@ class Task_Generator:
             result_table=result_table,
             history=history,
         )
-
-    def __call__(self, evqa, query_tree, query_graphs, query_objs, query_id) -> List[Task]:
-        # Generate SQL
-        query_tree_root_node = query_tree.root
-
-        # For each evqa node
-
-        # Wrap with Task class
-        # TODO: handle table_excerpt, result table, and history
-        return [self._query_to_task(evqa, query_tree_root_node, query_graphs, query_objs, query_id)]
 
     def convert_tasks_into_json_string(self, tasks: List[Task]) -> str:
         return json.dumps([task.dump_json() for task in tasks][0])
@@ -247,9 +258,9 @@ if __name__ == "__main__":
         "db_name": args.dbname,
     }
 
-    query_objs = {}
-    query_graphs = {}
-    query_trees = []
+    query_objs: Dict[str, Dict] = {}
+    query_graphs: Dict[str, Query_graph] = {}
+    query_trees: List[QueryTree] = []
     keys = []
     for query_path in args.query_paths:
         with open(query_path, "r") as fp:
@@ -263,13 +274,13 @@ if __name__ == "__main__":
             query_trees.append((block_name, loaded_graph[0]))
 
     task_generator = Task_Generator(admin_db_config, data_db_config)
-    data_manager = PostgreSQLDatabase(
-        database_db_config["userid"],
-        database_db_config["passwd"],
-        database_db_config["host"],
-        database_db_config["port"],
-        database_db_config["db_name"],
-    )
+    # data_manager = PostgreSQLDatabase(
+    #     database_db_config["userid"],
+    #     database_db_config["passwd"],
+    #     database_db_config["host"],
+    #     database_db_config["port"],
+    #     database_db_config["db_name"],
+    # )
 
     for key, query_tree in query_trees:
         if key.startswith("N3"):  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
@@ -278,5 +289,5 @@ if __name__ == "__main__":
             #    args.dbname, args.use_cols, data_manager, query_tree, query_graphs, query_objs, key
             # )
             evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
-            new_tasks = task_generator(evqa, query_tree_with_te.root, query_graphs, query_objs, key)
+            new_tasks = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key)
             print(task_generator.convert_tasks_into_json_string(new_tasks))

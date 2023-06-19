@@ -41,10 +41,10 @@ def convert_node(query_tree_node: QueryTree.Node) -> EVQA.EVQATree:
     )
 
     current_headers = query_tree_node.get_headers()
-    result_table = TableExcerpt.TableExcert(
+    result_table = TableExcerpt.TableExcerpt(
         name=query_tree_node.name,
         headers=query_tree_node.get_headers(),
-        col_types=[TableExcert.DString() for _ in current_headers],
+        col_types=[TableExcerpt.DString() for _ in current_headers],
         rows=query_tree_node.get_result_rows(),
     )
 
@@ -84,7 +84,7 @@ def create_projection_headers(query_tree_node: QueryTree.QueryBlock) -> List[EVQ
         filter(lambda k: type(k) == QueryTreeOperator.Foreach, query_tree_node.operations)
     )
 
-    # Create header for all projectoin attributes
+    # Create header for all projection attributes
     headers = []
     for projection in projections:
         column_id = projection.column_id

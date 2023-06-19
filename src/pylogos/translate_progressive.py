@@ -136,7 +136,7 @@ def translate_progressive(
     correlation_predicates = {}
 
     # Build a mapping tree: global key to block id by pre-order traversal
-    _, key_to_block_id = preorder_traverse(None, root_block_name, query_objs, 1, {})
+    _, key_to_block_id = preorder_traverse(parent=None, cur_node=root_block_name, query_objs=query_objs, idx=1, map={})
 
     candidates = [(None, root_block_name, query_tree)]
     pushdowned_foreach_blocks = {}
