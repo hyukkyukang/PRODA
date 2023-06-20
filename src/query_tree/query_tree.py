@@ -71,9 +71,19 @@ class BaseTable(Node):
         return self.name
 
     def get_headers(self) -> List[str]:
+        """Get result headers
+
+        :return: List of headers
+        :rtype: List[str]
+        """
         return self.header
 
     def get_headers_with_table_name(self) -> List[str]:
+        """Get result headers with table name
+
+        :return: List of headers with table name
+        :rtype: List[str]
+        """
         headers = self.get_headers()
         if self.name:
             headers = [self.name + "_" + colname for colname in headers]
@@ -136,9 +146,17 @@ class QueryBlock(Node):
                 return child_table
 
     def get_headers(self) -> List[str]:
-        # Get header names
+        """Get result headers
+
+        :return: List of headers
+        :rtype: List[str]
+        """
         new_headers = []
         projections = [op for op in self.operations if isinstance(op, Projection)]
+        # If star projection and add all headers
+        if any([proj.alias == "*" for proj in projections]):
+            return list_utils.do_flatten_list([child_table.get_headers() for child_table in self.child_tables])
+        # Get projecting headers
         for proj in projections:
             if proj.alias:
                 new_headers.append(proj.alias)
@@ -153,9 +171,17 @@ class QueryBlock(Node):
         return new_headers
 
     def get_headers_with_table_name(self) -> List[str]:
-        # Get header names
+        """Get result headers with table name
+
+        :return: List of headers with table name
+        :rtype: List[str]
+        """
         new_headers = []
         projections = [op for op in self.operations if isinstance(op, Projection)]
+        # If star projection and add all headers
+        if any([proj.alias == "*" for proj in projections]):
+            return list_utils.do_flatten_list([child_table.get_headers() for child_table in self.child_tables])
+        # Get projecting headers
         for proj in projections:
             if proj.alias:
                 new_headers.append(proj.alias)
@@ -178,8 +204,7 @@ class QueryBlock(Node):
                 new_dtypes.append(proj.dtype)
             else:
                 accumulated_len = 0
-                for child_edge in self.child_tables:
-                    child_table = child_edge.child
+                for child_table in self.child_tables:
                     child_dtypes = child_table.get_dtypes()
                     if accumulated_len + len(child_dtypes) > proj.column_id:
                         new_dtypes.append(child_dtypes[proj.column_id - accumulated_len])

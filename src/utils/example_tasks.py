@@ -51,7 +51,7 @@ def example_task_in_the_paper():
         db_name="IMDB",
         table_excerpt=evqa1.node.table_excerpt,
         result_table=evqa1.node.table_excerpt,
-        history_task_ids=[],
+        sub_task_ids=[],
     )
     task1_id = Task.save(sub_task1, task_save_dir_path)
 
@@ -66,7 +66,7 @@ def example_task_in_the_paper():
         db_name="IMDB",
         table_excerpt=evqa2.node.table_excerpt,
         result_table=evqa2.node.table_excerpt,
-        history_task_ids=[],
+        sub_task_ids=[],
     )
     task2_id = Task.save(sub_task2, task_save_dir_path)
 
@@ -81,7 +81,7 @@ def example_task_in_the_paper():
         db_name="IMDB",
         table_excerpt=evqa3.node.table_excerpt,
         result_table=evqa3.node.table_excerpt,
-        history_task_ids=[task2_id, task1_id],
+        sub_task_ids=[task2_id, task1_id],
     )
     task3_id = Task.save(sub_task3, task_save_dir_path)
 
@@ -96,7 +96,7 @@ def example_task_in_the_paper():
         db_name="IMDB",
         table_excerpt=evqa4.node.table_excerpt,
         result_table=evqa4.node.table_excerpt,
-        history_task_ids=[task3_id, task2_id, task1_id],
+        sub_task_ids=[task3_id, task2_id, task1_id],
     )
     task4_id = Task.save(sub_task4, task_save_dir_path)
 

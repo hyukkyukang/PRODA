@@ -85,14 +85,14 @@ def save_task_in_db(
     nl_mapping_path: str,
     db_name: str,
     task_type: int,
-    history_task_ids: List[int],
+    sub_task_ids: List[int],
 ) -> int:
     pg = PostgresConnector(DBUserID, DBUserPW, IP, port, DBName)
-    history_task_ids_str = "{" + ",".join(map(lambda k: f'"{str(k)}"', history_task_ids)) + "}"
+    sub_task_ids_str = "{" + ",".join(map(lambda k: f'"{str(k)}"', sub_task_ids)) + "}"
     nl = nl.replace("'", "\\'")
     sql = sql.replace("'", "\\'")
     pg.execute(
-        f"INSERT INTO {DBTaskTableName} (nl, sql, query_type, evqa_path, table_excerpt_path, result_table_path, nl_mapping_path, db_name, task_type, history_task_ids) VALUES (E'{nl}', E'{sql}', '{query_type}', '{evqa_path}', '{table_excerpt_path}', '{result_table_path}', '{nl_mapping_path}', '{db_name}', {task_type}, '{history_task_ids_str}') RETURNING id"
+        f"INSERT INTO {DBTaskTableName} (nl, sql, query_type, evqa_path, table_excerpt_path, result_table_path, nl_mapping_path, db_name, task_type, sub_task_ids) VALUES (E'{nl}', E'{sql}', '{query_type}', '{evqa_path}', '{table_excerpt_path}', '{result_table_path}', '{nl_mapping_path}', '{db_name}', {task_type}, '{sub_task_ids_str}') RETURNING id"
     )
     return pg.fetchone()[0]
 

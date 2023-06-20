@@ -102,7 +102,7 @@ async function getTask(taskID, getHistory = true) {
     // Append history if there are any
     const history = [];
     if (getHistory) {
-        for (const task_id of result.history_task_ids) {
+        for (const task_id of result.sub_task_ids) {
             const history_task = await getTask(task_id, false, false);
             history.push(history_task);
         }
@@ -118,7 +118,6 @@ async function getTask(taskID, getHistory = true) {
         tableExcerpt: table_excerpt_object,
         resultTable: result_table_object,
         history: history,
-        blockID: null,
         taskID: result.id,
     };
 }

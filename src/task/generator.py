@@ -5,6 +5,7 @@ import os
 import random
 from typing import Dict, List
 
+import tqdm
 from requests.structures import CaseInsensitiveDict
 
 from src.config import config
@@ -14,16 +15,14 @@ from src.query_tree.query_tree import Node, QueryBlock, QueryTree
 from src.sql_generator.sql_gen_utils.sql_genetion_utils import get_prefix
 from src.sql_generator.sql_gen_utils.utils import load_graphs, load_objs
 from src.sql_generator.tools.storage.db import PostgreSQLDatabase
-from src.table_excerpt.table_excerpt_generator import update_query_tree_with_table_excerpt
-from src.task import Task
-from src.utils.example_queries import CorrelatedNestedQuery
+from src.table_excerpt.table_excerpt_generator import \
+    update_query_tree_with_table_excerpt
+from src.task import Task, TaskTypes, TaskWithSubTasks
 from src.utils.pg_connector import PostgresConnector
 from src.utils.rewrite_sentence_gpt import *
 from src.VQA.EVQA import EVQATree
 from src.VQA.query_tree_to_EVQA import convert_queryTree_to_EVQATree
 
-# TASK_TYPES = [1, 2]
-TASK_TYPES = [1]
 project_path = config.ProjectPath
 
 
@@ -54,32 +53,9 @@ class Task_Generator:
         query_graphs: Query_graph,
         query_objs: Dict[str, Dict],
         query_id: str,
-    ) -> List[Task]:
-        # Generate SQL
-        query_tree_root_node = query_tree.root
-
-        # For each evqa node
-
-        # Wrap with Task class
+    ) -> Task:
         # TODO: handle table_excerpt, result table, and history
-        return [self._query_to_task(evqa, query_tree_root_node, query_graphs, query_objs, query_id)]
-
-    def __call__(
-        self,
-        evqa: EVQATree,
-        query_tree: QueryTree,
-        query_graphs: Query_graph,
-        query_objs: Dict[str, Dict],
-        query_id: str,
-    ) -> List[Task]:
-        # Generate SQL
-        query_tree_root_node = query_tree.root
-
-        # For each evqa node
-
-        # Wrap with Task class
-        # TODO: handle table_excerpt, result table, and history
-        return [self._query_to_task(evqa, query_tree_root_node, query_graphs, query_objs, query_id)]
+        return self.query_to_task(evqa, query_tree.root, query_graphs, query_objs, query_id)
 
     @property
     def query_goal_dic(self):
@@ -103,8 +79,7 @@ class Task_Generator:
     @functools.cached_property
     def task_type(self):
         """Randomly select a task type to generate"""
-        selected_type = random.choice(TASK_TYPES)
-        return selected_type
+        return TaskTypes.Validation
 
     @functools.cached_property
     def query_type(self):
@@ -170,7 +145,7 @@ class Task_Generator:
     def get_task_type(self, query_objs, query_id):
         return "NONE"
 
-    def _query_to_task(
+    def query_to_task(
         self,
         evqa: EVQATree,
         query_tree: Node,
@@ -178,7 +153,7 @@ class Task_Generator:
         query_objs: Dict[str, Dict],
         query_id,
         is_recursive_call=False,
-    ):
+    ) -> TaskWithSubTasks:
         # Select a query type to generate
         # TODO: Fix self.get_query_type (correlation_predicates_origin is not defined within this function)
         # query_type = self.get_query_type(query_objs, query_id)
@@ -203,25 +178,20 @@ class Task_Generator:
         # nl_mapping = sorted(nl_mapping, key=lambda x: x[1])
 
         # Create history
-        # TODO: query_tree.chile_tables should be a list of Edge, but it is a list of Node. Not sure if Edge is redundant.
         child_query_blocks = [node for node in query_tree.child_tables if type(node) == QueryBlock]
         child_query_ids = [get_prefix(*child_info)[:-1] for child_info in query_objs[query_id]["childs"]]
         assert len(child_query_blocks) == len(evqa.children), f"{len(child_query_blocks)} != {len(evqa.children)}"
-        # Perform post-order traversal
-        history = (
+        sub_tasks = (
             []
             if is_recursive_call
             else [
-                self._query_to_task(child_node, child_block, query_graphs, query_objs, child_id)
+                self.query_to_task(child_node, child_block, query_graphs, query_objs, child_id)
                 for child_node, child_block, child_id in zip(evqa.children, child_query_blocks, child_query_ids)
             ]
         )
 
-        # For each evqa node
-
         # Wrap with Task class
-        # TODO: handle table_excerpt, result table, and history
-        return Task(
+        return TaskWithSubTasks(
             nl=generated_nl,
             nl_mapping=nl_mapping,
             sql=sql,
@@ -231,11 +201,11 @@ class Task_Generator:
             db_name="db_name",
             table_excerpt=table_excerpt,
             result_table=result_table,
-            history=history,
+            sub_tasks=sub_tasks,
         )
 
-    def convert_tasks_into_json_string(self, tasks: List[Task]) -> str:
-        return json.dumps([task.dump_json() for task in tasks][0])
+    def convert_tasks_into_json_string(self, task: Task) -> str:
+        return json.dumps(task.dump_json())
 
 
 if __name__ == "__main__":
@@ -286,7 +256,7 @@ if __name__ == "__main__":
         "db_name": args.dbname,
     }
 
-    COL_INFO = json.load(open(f"{args.data_dir}/{args.db}_dtype_dict.json"))
+    COL_INFO = json.load(open(f"database/{args.db}/dtype_dict.json"))
     column_info = COL_INFO[args.db]
     dtype_dict = CaseInsensitiveDict(column_info["dtype_dict"])
 
@@ -322,12 +292,22 @@ if __name__ == "__main__":
         database_db_config["port"],
         database_db_config["db_name"],
     )
-
-    for key, query_tree in query_trees:
+    skip_cnt = 0
+    bad_cnt = 0
+    cnt = 0
+    for key, query_tree in tqdm.tqdm(query_trees[72:]):
+        # TODO: Need to ask why this condition is needed
         if not query_objs[key]["is_having_child"]:  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
             query_tree_with_te = update_query_tree_with_table_excerpt(
                 args.db, args.schema_name, data_manager, dtype_dict, query_graphs, query_objs, query_tree, key
             )
             evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
-            new_tasks = task_generator(evqa, query_tree_with_te.root, query_graphs, query_objs, key)
-            print(task_generator.convert_tasks_into_json_string(new_tasks))
+            new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key)
+            new_task.save("./data")
+            tmp = task_generator.convert_tasks_into_json_string(new_task)
+            # print(task_generator.convert_tasks_into_json_string(new_tasks))
+            cnt += 1
+        else:
+            skip_cnt += 1
+
+    print("Done!")

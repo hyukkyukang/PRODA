@@ -347,4 +347,4 @@ def type_detection(value: Any) -> str:
 
 
 if __name__ == "__main__":
-    stop = 1
+    pass

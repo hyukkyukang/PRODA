@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS task (
     nl_mapping_path VARCHAR(256) DEFAULT NULL,
     db_name VARCHAR(128) NOT NULL,
     task_type INTEGER NOT NULL,
-    history_task_ids INTEGER[] NULL
+    sub_task_ids INTEGER[] NULL
 );
 
 -- Table to collect task data
