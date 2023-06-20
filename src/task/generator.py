@@ -275,8 +275,6 @@ if __name__ == "__main__":
     )
 
     for key, query_tree in query_trees:
-        # if key not in ("N2_55",):
-        #    continue
         if not query_objs[key]["is_having_child"]:  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
             query_tree_with_te = update_query_tree_with_table_excerpt(
                 args.db, args.schema_name, data_manager, dtype_dict, query_graphs, query_objs, query_tree, key
