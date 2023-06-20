@@ -2,6 +2,11 @@
 -- PostgreSQL database dump
 --
 
+-- Create Database
+DROP DATABASE IF EXISTS car_1;
+CREATE DATABASE car_1 with owner data_user; 
+\c car_1;
+
 -- Dumped from database version 15.1 (Ubuntu 15.1-1.pgdg20.04+1)
 -- Dumped by pg_dump version 15.1 (Ubuntu 15.1-1.pgdg20.04+1)
 
