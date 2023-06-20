@@ -1,16 +1,24 @@
 {
-    "python.testing.unittestArgs": ["-v", "-s", "./tests", "-p", "test*.py"],
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./tests",
+        "-p",
+        "test*.py"
+    ],
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": true,
-    "python.formatting.provider": "black",
-    "python.formatting.blackArgs": ["--line-length=120"],
+    "python.formatting.provider": "none",
+    "python.formatting.blackArgs": [
+        "--line-length=120"
+    ],
     "[python]": {
-        "editor.defaultFormatter": null,
+        "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.insertSpaces": true,
         "editor.tabSize": 4,
         "editor.formatOnSave": true
     },
     "terminal.integrated.env.windows": {
-   	 "PYTHONPATH": "${workspaceFolder}"
-  }
+        "PYTHONPATH": "${workspaceFolder}"
+    }
 }

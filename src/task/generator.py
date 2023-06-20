@@ -5,27 +5,22 @@ import os
 import random
 from typing import Dict, List
 
+from requests.structures import CaseInsensitiveDict
+
 from src.config import config
 from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 from src.pylogos.translate_progressive import translate_progressive
-from src.utils.rewrite_sentence_gpt import *
-
 from src.query_tree.query_tree import Node, QueryBlock, QueryTree
 from src.sql_generator.sql_gen_utils.sql_genetion_utils import get_prefix
 from src.sql_generator.sql_gen_utils.utils import load_graphs, load_objs
 from src.sql_generator.tools.storage.db import PostgreSQLDatabase
+from src.table_excerpt.table_excerpt_generator import update_query_tree_with_table_excerpt
 from src.task import Task
 from src.utils.example_queries import CorrelatedNestedQuery
 from src.utils.pg_connector import PostgresConnector
+from src.utils.rewrite_sentence_gpt import *
 from src.VQA.EVQA import EVQATree
-
-import argparse
-from requests.structures import CaseInsensitiveDict
-from src.sql_generator.sql_gen_utils.utils import load_graphs, load_objs
-from src.sql_generator.sql_gen_utils.sql_genetion_utils import get_prefix
-from src.sql_generator.tools.storage.db import PostgreSQLDatabase
 from src.VQA.query_tree_to_EVQA import convert_queryTree_to_EVQATree
-from src.table_excerpt.table_excerpt_generator import update_query_tree_with_table_excerpt
 
 # TASK_TYPES = [1, 2]
 TASK_TYPES = [1]
@@ -315,7 +310,11 @@ if __name__ == "__main__":
             query_graphs[block_name] = loaded_graph[1]
             query_trees.append((block_name, loaded_graph[0]))
 
-    task_generator = Task_Generator(admin_db_config, data_db_config)
+    task_generator = Task_Generator(
+        admin_db_config,
+        data_db_config,
+        args.db,
+    )
     data_manager = PostgreSQLDatabase(
         database_db_config["userid"],
         database_db_config["passwd"],
