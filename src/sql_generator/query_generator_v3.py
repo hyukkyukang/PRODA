@@ -266,7 +266,7 @@ if __name__ == "__main__":
     filename = "src/sql_generator/configs/mubi_svod_platform_experiments.json"
     # argument
     parser = argparse.ArgumentParser()
-    parser.add_argument("--infile", type=str, default="src/sql_generator/configs/test_experiments_nested_2.json")
+    parser.add_argument("--infile", type=str, default="src/sql_generator/configs/test_experiments_not_inner.json")
     args = parser.parse_args()
     if args.infile:
         with open(args.infile, "rt") as f:

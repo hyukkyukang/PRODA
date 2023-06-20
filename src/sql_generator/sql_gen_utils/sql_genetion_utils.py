@@ -1210,7 +1210,7 @@ def tree_and_graph_formation(
             else:
                 cur_rel_node = rel_nodes[idx]
 
-            col_name_graph = "s_" + get_tree_header(prefix, tab_name, col_name, "NONE")
+            col_name_graph = "s_" + get_tree_header(prefix, tab_name, col_name, agg)
             col_name_alias = get_col_name_alias(tab_name, col_name, agg)
             cur_col_node = Attribute(col_name_graph, col_name_alias)
             if agg != "NONE":

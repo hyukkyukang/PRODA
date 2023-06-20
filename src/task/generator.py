@@ -279,6 +279,6 @@ if __name__ == "__main__":
             query_tree_with_te = update_query_tree_with_table_excerpt(
                 args.db, args.schema_name, data_manager, dtype_dict, query_graphs, query_objs, query_tree, key
             )
-            # evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
+            evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
             # new_tasks = task_generator(evqa, query_tree_with_te.root, query_graphs, query_objs, key)
             # print(task_generator.convert_tasks_into_json_string(new_tasks))

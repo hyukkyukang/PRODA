@@ -1,13 +1,13 @@
 {
-    "global_idx": 302,
+    "global_idx": 1111,
     "db": "car_1",
     "schema_name": "car_1",
-    "num_queries": 50,
+    "num_queries": 300,
     "output": "non-nested/result_not_inner.out",
     "sep": "#",
     "seed": 1234,
     "data_dir": "data/",
-    "log_path": "query_generator.log",
+    "log_path": "query_generator_not_inner.log",
     "hyperparams":
     {
         "num_in_max": 3,

@@ -249,9 +249,9 @@ if __name__ == "__main__":
         "--query_paths",
         nargs="+",
         default=[
-            "/home/hjkim/PRODA/non-nested/result.out",
-            "/home/hjkim/PRODA/non-nested/result2.out",
-            "/home/hjkim/PRODA/non-nested/result3.out",
+            "/home/hjkim/PRODA/non-nested/result_not_inner.out",
+            # "/home/hjkim/PRODA/non-nested/result.out",
+            # "/home/hjkim/PRODA/non-nested/result2.out",
         ],
     )
     parser.add_argument("--output_path", type=str, default="/home/hjkim/PRODA/translation2")
@@ -275,7 +275,9 @@ if __name__ == "__main__":
     set_openai()
     with open(args.output_path, "w") as wf:
         for key, query_tree in query_trees:
-            if key.startswith("N2"):
+            # if key != "N2_11":
+            #    continue
+            if key.startswith("N1_1158"):
                 input_text, gpt_text = translate_progressive(
                     query_tree.root, key, query_objs, query_graphs, use_gpt=False
                 )
