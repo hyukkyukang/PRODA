@@ -71,4 +71,3 @@ database/dataCollection/tasks*
 non-nested/
 result*.out*
 src/sql_generator/another_version/
-src/table_excerpt/
