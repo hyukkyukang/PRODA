@@ -100,11 +100,11 @@ async function getTask(taskID, getHistory = true) {
     delete result.result_table_path;
     delete result.table_excerpt_path;
     // Append history if there are any
-    const history = [];
+    const sub_tasks = [];
     if (getHistory) {
         for (const task_id of result.sub_task_ids) {
-            const history_task = await getTask(task_id, false, false);
-            history.push(history_task);
+            const sub_task = await getTask(task_id, false, false);
+            sub_tasks.push(sub_task);
         }
     }
     return {
@@ -117,13 +117,14 @@ async function getTask(taskID, getHistory = true) {
         dbName: result.db_name,
         tableExcerpt: table_excerpt_object,
         resultTable: result_table_object,
-        history: history,
+        subTasks: sub_tasks,
         taskID: result.id,
     };
 }
 
 async function getTaskSet(taskSetID = null, isSkip = false) {
     // Connect to DB and retrieve Task
+    console.log(`Fetching task set ${taskSetID}...`);
     if (taskSetID === null) {
         sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName});`;
     } else if (isSkip) {

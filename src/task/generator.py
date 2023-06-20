@@ -294,7 +294,7 @@ if __name__ == "__main__":
     skip_cnt = 0
     bad_cnt = 0
     cnt = 0
-    for key, query_tree in tqdm.tqdm(query_trees[72:]):
+    for key, query_tree in tqdm.tqdm(query_trees):
         # TODO: Need to ask why this condition is needed
         if not query_objs[key]["is_having_child"]:  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
             try:

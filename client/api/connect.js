@@ -21,6 +21,7 @@ export const fetchEVQA = async (params) => {
 
 export const fetchTask = async (params) => {
     const { workerID, taskSetID, isSkip } = params;
+    console.log(`${protocol}://${ip}:${serverPort}/fetchTask`);
     return (await axios.post(`${protocol}://${ip}:${serverPort}/fetchTask`, { workerID: workerID, taskSetID: taskSetID, isSkip: isSkip }, axioscConfig)).data;
 };
 
