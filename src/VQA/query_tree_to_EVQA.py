@@ -33,10 +33,11 @@ def convert_node(query_tree_node: QueryTree.Node) -> EVQA.EVQATree:
             for child_table in query_tree_node.child_tables
         ]
     )
+    all_dtypes = list_utils.do_flatten_list([child_table.get_dtypes() for child_table in query_tree_node.child_tables])
     table_excerpt = TableExcerpt.TableExcerpt(
         name=query_tree_node.name,
         headers=all_headers,
-        col_types=[TableExcerpt.DString() for _ in all_headers],
+        col_types=all_dtypes,
         rows=query_tree_node.get_rows(),
     )
 
@@ -44,7 +45,7 @@ def convert_node(query_tree_node: QueryTree.Node) -> EVQA.EVQATree:
     result_table = TableExcerpt.TableExcerpt(
         name=query_tree_node.name,
         headers=query_tree_node.get_headers(),
-        col_types=[TableExcerpt.DString() for _ in current_headers],
+        col_types=query_tree_node.get_dtypes(),
         rows=query_tree_node.get_result_rows(),
     )
 

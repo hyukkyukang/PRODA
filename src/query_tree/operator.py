@@ -8,9 +8,10 @@ class Operation(metaclass=abc.ABCMeta):
 
 
 class Projection(Operation):
-    def __init__(self, column_id: int, alias: str = None):
+    def __init__(self, column_id: int, alias: str = None, dtype: str = None):
         super(Projection, self).__init__(column_id)
         self.alias: str = alias
+        self.dtype: str = dtype
 
     def __len__(self):
         return 1

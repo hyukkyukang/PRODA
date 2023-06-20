@@ -202,7 +202,8 @@ def run_generator(data_manager, schema, column_info, args, check_execution_resul
             # double checking by executing the generated query; it might takes long
             for sql in line:
                 if not check_sql_result(data_manager, sql):
-                    args.logger.error("An unexecutable SQL query is generated: f{line}")
+                    args.logger.error(f"An unexecutable SQL query is generated: {line}")
+                    args.logger.error(f"{obj}")
                     raise Exception("Unexecutable query is generated")
 
         lines = lines + line
@@ -265,7 +266,7 @@ if __name__ == "__main__":
     filename = "src/sql_generator/configs/mubi_svod_platform_experiments.json"
     # argument
     parser = argparse.ArgumentParser()
-    parser.add_argument("--infile", type=str, default="src/sql_generator/configs/spotify_playlists_experiments.json")
+    parser.add_argument("--infile", type=str, default="src/sql_generator/configs/test_experiments_not_inner.json")
     args = parser.parse_args()
     if args.infile:
         with open(args.infile, "rt") as f:

@@ -50,8 +50,9 @@ class Node(metaclass=abc.ABCMeta):
 
 
 class BaseTable(Node):
-    def __init__(self, header: List[str], data: List[List[Any]], name: Optional[str] = None):
+    def __init__(self, header: List[str], dtype: List[List[Any]], data: List[List[Any]], name: Optional[str] = None):
         self.header: List[str] = header
+        self.dtype: List[str] = dtype
         self.data: List[List[Any]] = data
         self.name: str = name
 
@@ -78,6 +79,9 @@ class BaseTable(Node):
             headers = [self.name + "_" + colname for colname in headers]
         return headers
 
+    def get_dtypes(self) -> List[str]:
+        return self.dtype
+
     def get_rows(self) -> List[List[Any]]:
         return self.data
 
@@ -97,8 +101,8 @@ class QueryBlock(Node):
         self.operations: List[Operation] = operations
         self.sql: str = sql
         self.name: str = name
-        self.result_guarantee_tuples: List[List[Any]] = [[]]
-        self.result_tuples: List[List[Any]] = [[]]
+        self.result_guarantee_tuples: List[List[Any]] = []
+        self.result_tuples: List[List[Any]] = []
 
     def __len__(self):
         return sum(len(op) for op in self.operations if type(op) in [Projection, Foreach])
@@ -155,7 +159,7 @@ class QueryBlock(Node):
         for proj in projections:
             if proj.alias:
                 new_headers.append(proj.alias)
-            else:
+            else:  # SELECT *
                 accumulated_len = 0
                 for child_table in self.child_tables:
                     child_headers = child_table.get_headers_with_table_name()
@@ -165,11 +169,41 @@ class QueryBlock(Node):
                     accumulated_len += len(child_headers)
         return new_headers
 
+    def get_dtypes(self) -> List[str]:
+        # Get dtypes for headers
+        new_dtypes = []
+        projections = [op for op in self.operations if isinstance(op, Projection)]
+        for proj in projections:
+            if proj.dtype:
+                new_dtypes.append(proj.dtype)
+            else:
+                accumulated_len = 0
+                for child_edge in self.child_tables:
+                    child_table = child_edge.child
+                    child_dtypes = child_table.get_dtypes()
+                    if accumulated_len + len(child_dtypes) > proj.column_id:
+                        new_dtypes.append(child_dtypes[proj.column_id - accumulated_len])
+                        break
+                    accumulated_len += len(child_dtypes)
+        return new_dtypes
+
     def get_rows(self) -> List[List[Any]]:
         return self.result_guarantee_tuples
 
     def get_result_rows(self) -> List[List[Any]]:
         return self.result_tuples
+
+    def add_row(self, row):
+        self.result_guarantee_tuples.append(row)
+
+    def add_rows(self, rows):
+        [self.add_row(row) for row in rows]
+
+    def add_result_row(self, row):
+        self.result_tuples.append(row)
+
+    def add_result_rows(self, rows):
+        [self.add_result_row(row) for row in rows]
 
 
 class QueryTree:

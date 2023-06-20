@@ -722,7 +722,7 @@ def preorder_traverse_to_replace_alias(tree, org, rep):
 
 def preorder_traverse(tree):
     if not isinstance(tree, tuple) and not isinstance(tree, list):
-        return tree
+        return str(tree)
 
     assert len(tree) == 3 or len(tree) == 1
 
@@ -755,6 +755,7 @@ def find_existing_rel_node(rel_nodes, cur_rel_node):
 
 def tree_and_graph_formation(
     args,
+    dtype_dict,
     sql_type_dict,
     tables,
     joins,
@@ -805,10 +806,22 @@ def tree_and_graph_formation(
                 tab_name = None
                 col_name = col
 
+            new_col_dtype = None
+
+            if agg == "COUNT":
+                new_col_dtype = "int"
+            else:
+                if col == "*":
+                    args.logger.error("This cannot be happend")
+                    assert False
+                new_col_dtype = dtype_dict[col]
+
             col_name_tree = get_tree_header(child_prefix, tab_name, col_name, agg)
             new_col_name_tree = get_tree_header(prefix, tab_name, col_name, agg)
 
-            projection = Projection(get_global_index(base_tables, table_idx, col_name_tree), alias=new_col_name_tree)
+            projection = Projection(
+                get_global_index(base_tables, table_idx, col_name_tree), alias=new_col_name_tree, dtype=new_col_dtype
+            )
             projections.append(projection)
 
             ##### GRAPH START #######
@@ -932,7 +945,8 @@ def tree_and_graph_formation(
         table_name_to_idx = {}
         for i, table_name in enumerate(tables):
             headers = args.table_info[table_name]
-            table_obj = BaseTable(headers, [], name=table_name)
+            dtypes = [dtype_dict[f"{table_name}.{header}"] for header in headers]
+            table_obj = BaseTable(headers, dtypes, [], name=table_name)
             base_tables.append(table_obj)
             table_name_to_idx[table_name] = i
 
@@ -1016,6 +1030,7 @@ def tree_and_graph_formation(
 
                 inner_tab_name = inner_col.split(".")[0]
                 inner_col_name = inner_col.split(".")[1]
+                inner_col_dtype = dtype_dict[inner_col]
 
                 outer_tab_name = col.split(".")[0]
                 outer_col_name = col.split(".")[1]
@@ -1069,6 +1084,7 @@ def tree_and_graph_formation(
                         grandchild_projection = Projection(
                             column_id=get_global_index(great_grandchild_tables, gg_inner_table_idx, inner_col_name),
                             alias=grandinner_col_name_tree,
+                            dtype=inner_col_dtype,
                         )
                         grandchild_operations.append(grandchild_projection)
                         grandchild_query_block.add_operations(grandchild_operations)
@@ -1084,6 +1100,7 @@ def tree_and_graph_formation(
                         projection = Projection(
                             column_id=get_global_index(child_tables, inner_table_idx, grandinner_col_name_tree),
                             alias=inner_col_name_tree,
+                            dtype=inner_col_dtype,
                         )
                         operations.append(projection)
 
@@ -1096,6 +1113,7 @@ def tree_and_graph_formation(
                         projection = Projection(
                             column_id=get_global_index(child_tables, inner_table_idx, inner_col_name),
                             alias=inner_col_name_tree,
+                            dtype=inner_col_dtype,
                         )
                         operations.append(projection)
 
@@ -1160,10 +1178,20 @@ def tree_and_graph_formation(
                 table_idx = 0
                 tab_name = None
                 col_name = col
+
+            if agg == "COUNT":
+                new_col_dtype = "int"
+            elif col != "*":
+                new_col_dtype = dtype_dict[col]
+            else:
+                new_col_dtype = None
+
             # if col not in projected_columns:
             projected_columns.append(col)
             new_col_name = get_tree_header(prefix, tab_name, col_name, agg)
-            projection = Projection(get_global_index(base_tables, table_idx, col_name), alias=new_col_name)
+            projection = Projection(
+                get_global_index(base_tables, table_idx, col_name), alias=new_col_name, dtype=new_col_dtype
+            )
             projections.append(projection)
 
             if agg != "NONE":
@@ -1182,7 +1210,7 @@ def tree_and_graph_formation(
             else:
                 cur_rel_node = rel_nodes[idx]
 
-            col_name_graph = "s_" + get_tree_header(prefix, tab_name, col_name, "NONE")
+            col_name_graph = "s_" + get_tree_header(prefix, tab_name, col_name, agg)
             col_name_alias = get_col_name_alias(tab_name, col_name, agg)
             cur_col_node = Attribute(col_name_graph, col_name_alias)
             if agg != "NONE":
@@ -1956,16 +1984,54 @@ def view_predicate_generator(prefix, col, op, val, dtype, is_nested=False, inner
             if isinstance(op, tuple):
                 query_predicate = col_ref + " " + op[0] + " " + val[0] + " and " + col_ref + " " + op[1] + " " + val[1]
             else:
-                query_predicate = col_ref + " " + op + " " + val
+                query_predicate = col_ref + " " + op + " " + str(val)
         else:
             if col is None:
                 query_predicate = op + " (" + inner_view_query + ")"
             else:
-                if op not in ("IN", "NOT IN") and dtype == "str" and not val.startswith("'"):
-                    val = f"""'{val}'"""
-                elif dtype == "date":
-                    val = f"""'{val}'::date"""
-                query_predicate = "(" + inner_view_query + ")" + " " + op + " " + str(val)
+                if isinstance(op, tuple):
+                    if dtype == "date":
+                        query_predicate = (
+                            "("
+                            + inner_view_query
+                            + ")"
+                            + " "
+                            + op[0]
+                            + " "
+                            + f"""'{str(val[0])}'::date"""
+                            + " and "
+                            + "("
+                            + inner_view_query
+                            + ")"
+                            + " "
+                            + op[1]
+                            + " "
+                            + f"""'{str(val[1])}'::date"""
+                        )
+                    else:
+                        query_predicate = (
+                            "("
+                            + inner_view_query
+                            + ")"
+                            + " "
+                            + op[0]
+                            + " "
+                            + str(val[0])
+                            + " and "
+                            + "("
+                            + inner_view_query
+                            + ")"
+                            + " "
+                            + op[1]
+                            + " "
+                            + str(val[1])
+                        )
+                else:
+                    if op not in ("IN", "NOT IN") and dtype == "str" and not val.startswith("'"):
+                        val = f"""'{val}'"""
+                    elif dtype == "date":
+                        val = f"""'{val}'::date"""
+                    query_predicate = "(" + inner_view_query + ")" + " " + op + " " + str(val)
     else:
         col_ref = col.replace(".", "__")
         if isinstance(op, tuple):
