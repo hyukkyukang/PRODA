@@ -115,8 +115,7 @@ class PostgreSQLDatabase(DBConnector):
         cols = [desc[0] for desc in self.description()]
         return data, cols
 
-    def create_view(self, logger, view_id, sql, type="materialized", drop_if_exists=False):
-        # Check if view_id already exists
+    def is_existing_view(self, view_id, type="materialized"):
         check_view_sql = "SELECT COUNT(*) "
         if type == "materialized":
             check_view_sql += f"""FROM pg_catalog.pg_matviews WHERE matviewname = '{view_id.lower()}';"""
@@ -124,15 +123,19 @@ class PostgreSQLDatabase(DBConnector):
             check_view_sql += f"""FROM pg_catalog.pg_views WHERE viewname = '{view_id.lower()}';"""
         self.execute(check_view_sql)
         count = self.fetchall()[0][0]
-        if count == 1:
+        assert count in (0, 1)
+
+        return count == 1
+
+    def create_view(self, logger, view_id, sql, type="materialized", drop_if_exists=False):
+        # Check if view_id already exists
+        if self.is_existing_view(view_id, type):
             if drop_if_exists:
-                count = 0
                 logger.info(f"DROP exisiting view named {view_id}")
                 self.drop_view(logger, view_id, type, cascade=True)
             else:
                 logger.info(f"Skip creating view named {view_id}: already exists")
                 return
-        assert count == 0
 
         if type == "materialized":
             view_sql = "CREATE MATERIALIZED VIEW "
@@ -143,15 +146,7 @@ class PostgreSQLDatabase(DBConnector):
         return
 
     def drop_view(self, logger, view_id, type="materialized", cascade=False):
-        # Check if view_id exists
-        check_view_sql = "SELECT COUNT(*) "
-        if type == "materialized":
-            check_view_sql += f"""FROM pg_catalog.pg_matviews WHERE matviewname = '{view_id.lower()}';"""
-        else:
-            check_view_sql += f"""FROM pg_catalog.pg_views WHERE viewname = '{view_id.lower()}';"""
-        self.execute(check_view_sql)
-        count = self.fetchall()[0][0]
-        if count == 0:
+        if not self.is_existing_view(view_id, type):
             logger.warning(f"Skip drop view named {view_id} typed {type}: not exists")
             return
 

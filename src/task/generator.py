@@ -5,6 +5,7 @@ from typing import List, Dict
 from hkkang_utils.misc import property_with_cache
 from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 from src.pylogos.translate_progressive import translate_progressive
+from src.utils.rewrite_sentence_gpt import *
 
 from src.query_tree.query_tree import Node, QueryBlock, QueryTree
 from src.task import Task
@@ -13,17 +14,19 @@ from src.utils.pg_connector import PostgresConnector
 from src.VQA.EVQA import EVQATree
 
 import argparse
+from requests.structures import CaseInsensitiveDict
 from src.sql_generator.sql_gen_utils.utils import load_graphs, load_objs
 from src.sql_generator.sql_gen_utils.sql_genetion_utils import get_prefix
 from src.sql_generator.tools.storage.db import PostgreSQLDatabase
 from src.VQA.query_tree_to_EVQA import convert_queryTree_to_EVQATree
+from src.table_excerpt.table_excerpt_generator import update_query_tree_with_table_excerpt
 
 # TASK_TYPES = [1, 2]
 TASK_TYPES = [1]
 
 
 class Task_Generator:
-    def __init__(self, admin_db_config, data_db_config):
+    def __init__(self, admin_db_config, data_db_config, db_name):
         self.admin_db_config = admin_db_config
         self.data_db_config = data_db_config
         self.admin_db_connector = PostgresConnector(
@@ -40,6 +43,7 @@ class Task_Generator:
             data_db_config["port"],
             data_db_config["db_name"],
         )
+        self.db_name = db_name
 
     @property
     def query_goal_dic(self):
@@ -149,7 +153,7 @@ class Task_Generator:
         result_table = evqa.node.result_table
 
         # Generate NL
-        full_nl, generated_nl = translate_progressive(query_tree, query_id, query_objs, query_graphs)
+        full_nl, generated_nl = translate_progressive(query_tree, query_id, query_objs, query_graphs, use_gpt=False)
 
         # Add Alignment annotation
         nl_mapping = []
@@ -161,7 +165,7 @@ class Task_Generator:
 
         # Create history
         child_query_blocks = [edge.child for edge in query_tree.child_tables if type(edge.child) == QueryBlock]
-        child_query_ids = [child for child in query_objs[query_id]["childs"]]
+        child_query_ids = [get_prefix(child[0], child[1])[:-1] for child in query_objs[query_id]["childs"]]
         assert len(child_query_blocks) == len(evqa.children), f"{len(child_query_blocks)} != {len(evqa.children)}"
         history = (
             []
@@ -205,19 +209,13 @@ class Task_Generator:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--query_paths",
-        nargs="+",
-        default=[
-            "/home/hjkim/PRODA/non-nested/result.out",
-            "/home/hjkim/PRODA/non-nested/result2.out",
-            "/home/hjkim/PRODA/non-nested/result3.out",
-        ],
-    )
-    parser.add_argument("--dbname", default="car_1")
-    parser.add_argument("--use_cols", default="car_1")
-    parser.add_argument("--output_path", type=str, default="/home/hjkim/PRODA/result_with_te.out")
+    parser.add_argument("--infile", type=str, default="src/sql_generator/configs/test_experiments_nested.json")
     args = parser.parse_args()
+    if args.infile:
+        with open(args.infile, "rt") as f:
+            t_args = argparse.Namespace()
+            t_args.__dict__.update(json.load(f))
+            args = parser.parse_args(namespace=t_args)
 
     admin_db_config = {
         "host": "localhost",
@@ -242,8 +240,14 @@ if __name__ == "__main__":
         "userid": "data_user",
         "passwd": "data_user_pw",
         "port": "5432",
-        "db_name": args.dbname,
+        "db_name": args.db,
     }
+
+    COL_INFO = json.load(open(f"{args.data_dir}/{args.db}_dtype_dict.json"))
+    column_info = COL_INFO[args.db]
+    dtype_dict = CaseInsensitiveDict(column_info["dtype_dict"])
+
+    args.query_paths = args.sql_info["inner_query_paths"] + [args.output]
 
     query_objs = {}
     query_graphs = {}
@@ -260,7 +264,8 @@ if __name__ == "__main__":
             query_graphs[block_name] = loaded_graph[1]
             query_trees.append((block_name, loaded_graph[0]))
 
-    task_generator = Task_Generator(admin_db_config, data_db_config)
+    set_openai()
+    task_generator = Task_Generator(admin_db_config, data_db_config, args.db)
     data_manager = PostgreSQLDatabase(
         database_db_config["userid"],
         database_db_config["passwd"],
@@ -270,11 +275,12 @@ if __name__ == "__main__":
     )
 
     for key, query_tree in query_trees:
-        if key.startswith("N3"):  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
-            query_tree_with_te = query_tree
-            # query_tree_with_te = update_query_tree_with_table_excerpt(
-            #    args.dbname, args.use_cols, data_manager, query_tree, query_graphs, query_objs, key
-            # )
-            evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
-            new_tasks = task_generator(evqa, query_tree_with_te.root, query_graphs, query_objs, key)
-            print(task_generator.convert_tasks_into_json_string(new_tasks))
+        # if key not in ("N2_55",):
+        #    continue
+        if not query_objs[key]["is_having_child"]:  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
+            query_tree_with_te = update_query_tree_with_table_excerpt(
+                args.db, args.schema_name, data_manager, dtype_dict, query_graphs, query_objs, query_tree, key
+            )
+            # evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
+            # new_tasks = task_generator(evqa, query_tree_with_te.root, query_graphs, query_objs, key)
+            # print(task_generator.convert_tasks_into_json_string(new_tasks))

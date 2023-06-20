@@ -275,7 +275,7 @@ if __name__ == "__main__":
     set_openai()
     with open(args.output_path, "w") as wf:
         for key, query_tree in query_trees:
-            if key.startswith("N3"):
+            if key.startswith("N2"):
                 input_text, gpt_text = translate_progressive(
                     query_tree.root, key, query_objs, query_graphs, use_gpt=False
                 )

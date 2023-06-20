@@ -1,300 +1,300 @@
-SELECT DISTINCT N1_0_cars_data.year FROM cars_data AS N1_0_cars_data GROUP BY N1_0_cars_data.year HAVING (COUNT(*) >= 27 AND COUNT(*) <= 28)
-SELECT DISTINCT N1_1_cars_data.year, COUNT(*) FROM cars_data AS N1_1_cars_data GROUP BY N1_1_cars_data.year
-SELECT DISTINCT N1_2_cars_data.year FROM cars_data AS N1_2_cars_data GROUP BY N1_2_cars_data.year HAVING COUNT(*) < 30
+SELECT DISTINCT N1_0_cars_data.year FROM cars_data AS N1_0_cars_data WHERE N1_0_cars_data.cylinders <= 4 GROUP BY N1_0_cars_data.year HAVING COUNT(*) > 22
+SELECT DISTINCT N1_1_cars_data.year, COUNT(*) FROM cars_data AS N1_1_cars_data WHERE N1_1_cars_data.cylinders <= 4 GROUP BY N1_1_cars_data.year
+SELECT DISTINCT N1_2_cars_data.year FROM cars_data AS N1_2_cars_data GROUP BY N1_2_cars_data.year HAVING COUNT(*) > 28
 SELECT DISTINCT N1_3_cars_data.year, COUNT(*) FROM cars_data AS N1_3_cars_data GROUP BY N1_3_cars_data.year
-SELECT DISTINCT N1_4_countries.countryname FROM car_makers AS N1_4_car_makers JOIN countries AS N1_4_countries ON N1_4_countries.countryid=N1_4_car_makers.country WHERE (N1_4_countries.countryname != 'usa' OR N1_4_car_makers.maker = 'chrysler')
-SELECT DISTINCT N1_5_cars_data.year FROM cars_data AS N1_5_cars_data WHERE N1_5_cars_data.cylinders != 4 GROUP BY N1_5_cars_data.year HAVING COUNT(*) >= 12
-SELECT DISTINCT N1_6_cars_data.year, COUNT(*) FROM cars_data AS N1_6_cars_data WHERE N1_6_cars_data.cylinders != 4 GROUP BY N1_6_cars_data.year
-SELECT DISTINCT * FROM cars_data AS N1_7_cars_data WHERE (N1_7_cars_data.year > 1971 OR N1_7_cars_data.year <= 1970)
-SELECT DISTINCT N1_8_cars_data.accelerate FROM cars_data AS N1_8_cars_data WHERE (N1_8_cars_data.accelerate > 12.0 AND N1_8_cars_data.accelerate < 18.5) GROUP BY N1_8_cars_data.accelerate HAVING (COUNT(*) >= 2 AND COUNT(*) <= 5)
-SELECT DISTINCT N1_9_cars_data.accelerate, COUNT(*) FROM cars_data AS N1_9_cars_data WHERE (N1_9_cars_data.accelerate > 12.0 AND N1_9_cars_data.accelerate < 18.5) GROUP BY N1_9_cars_data.accelerate
-SELECT DISTINCT N1_10_cars_data.horsepower FROM cars_data AS N1_10_cars_data WHERE N1_10_cars_data.horsepower >= 14 GROUP BY N1_10_cars_data.horsepower HAVING COUNT(*) < 7
-SELECT DISTINCT N1_11_cars_data.horsepower, COUNT(*) FROM cars_data AS N1_11_cars_data WHERE N1_11_cars_data.horsepower >= 14 GROUP BY N1_11_cars_data.horsepower
-SELECT DISTINCT N1_12_cars_data.year FROM cars_data AS N1_12_cars_data GROUP BY N1_12_cars_data.year HAVING COUNT(*) >= 30
-SELECT DISTINCT N1_13_cars_data.year, COUNT(*) FROM cars_data AS N1_13_cars_data GROUP BY N1_13_cars_data.year
-SELECT DISTINCT N1_14_cars_data.year FROM cars_data AS N1_14_cars_data WHERE N1_14_cars_data.mpg > 25.0 GROUP BY N1_14_cars_data.year HAVING COUNT(*) < 12 ORDER BY N1_14_cars_data.year LIMIT 5
-SELECT DISTINCT N1_15_cars_data.year, COUNT(*) FROM cars_data AS N1_15_cars_data WHERE N1_15_cars_data.mpg > 25.0 GROUP BY N1_15_cars_data.year
-SELECT DISTINCT * FROM cars_data AS N1_16_cars_data WHERE (N1_16_cars_data.horsepower != 30 OR N1_16_cars_data.weight <= 4034)
-SELECT DISTINCT N1_17_car_names.make FROM car_names AS N1_17_car_names WHERE N1_17_car_names.make LIKE '%oyo%' GROUP BY N1_17_car_names.make HAVING (COUNT(*) >= 2 AND COUNT(*) <= 5)
-SELECT DISTINCT N1_18_car_names.make, COUNT(*) FROM car_names AS N1_18_car_names WHERE N1_18_car_names.make LIKE '%oyo%' GROUP BY N1_18_car_names.make
-SELECT DISTINCT * FROM countries AS N1_19_countries WHERE (N1_19_countries.countryname IN ('usa','sweden') OR N1_19_countries.countryname IN ('japan','mexico','germany'))
-SELECT DISTINCT N1_20_cars_data.year FROM cars_data AS N1_20_cars_data GROUP BY N1_20_cars_data.year HAVING COUNT(*) > 28
-SELECT DISTINCT N1_21_cars_data.year, COUNT(*) FROM cars_data AS N1_21_cars_data GROUP BY N1_21_cars_data.year
-SELECT DISTINCT N1_22_cars_data.year FROM cars_data AS N1_22_cars_data GROUP BY N1_22_cars_data.year HAVING COUNT(*) >= 35 ORDER BY N1_22_cars_data.year LIMIT 3
+SELECT DISTINCT N1_4_cars_data.year FROM cars_data AS N1_4_cars_data WHERE (N1_4_cars_data.year = 1970 OR N1_4_cars_data.weight != 4100) GROUP BY N1_4_cars_data.year HAVING COUNT(*) < 30
+SELECT DISTINCT N1_5_cars_data.year, COUNT(*) FROM cars_data AS N1_5_cars_data WHERE (N1_5_cars_data.year = 1970 OR N1_5_cars_data.weight != 4100) GROUP BY N1_5_cars_data.year
+SELECT DISTINCT N1_6_continents.continent FROM continents AS N1_6_continents JOIN countries AS N1_6_countries ON N1_6_continents.contid=N1_6_countries.continent WHERE N1_6_countries.countryname NOT IN ('japan','usa','italy') GROUP BY N1_6_continents.continent HAVING COUNT(*) <= 2 ORDER BY N1_6_continents.continent LIMIT 2
+SELECT DISTINCT N1_7_continents.continent, COUNT(*) FROM continents AS N1_7_continents JOIN countries AS N1_7_countries ON N1_7_continents.contid=N1_7_countries.continent WHERE N1_7_countries.countryname NOT IN ('japan','usa','italy') GROUP BY N1_7_continents.continent
+SELECT DISTINCT N1_8_cars_data.year FROM cars_data AS N1_8_cars_data WHERE (N1_8_cars_data.year > 1974 AND N1_8_cars_data.mpg > 25.0) GROUP BY N1_8_cars_data.year HAVING COUNT(*) >= 25
+SELECT DISTINCT N1_9_cars_data.year, COUNT(*) FROM cars_data AS N1_9_cars_data WHERE (N1_9_cars_data.year > 1974 AND N1_9_cars_data.mpg > 25.0) GROUP BY N1_9_cars_data.year
+SELECT DISTINCT N1_10_cars_data.year FROM cars_data AS N1_10_cars_data GROUP BY N1_10_cars_data.year HAVING COUNT(*) > 36
+SELECT DISTINCT N1_11_cars_data.year, COUNT(*) FROM cars_data AS N1_11_cars_data GROUP BY N1_11_cars_data.year
+SELECT DISTINCT COUNT(N1_12_cars_data.id) FROM cars_data AS N1_12_cars_data WHERE ((N1_12_cars_data.horsepower >= 28 AND (N1_12_cars_data.year > 1980 AND N1_12_cars_data.year <= 1982)) OR N1_12_cars_data.edispl > 97.0)
+SELECT DISTINCT N1_13_cars_data.year FROM cars_data AS N1_13_cars_data WHERE N1_13_cars_data.cylinders <= 4 GROUP BY N1_13_cars_data.year HAVING (COUNT(*) > 8 AND COUNT(*) < 17)
+SELECT DISTINCT N1_14_cars_data.year, COUNT(*) FROM cars_data AS N1_14_cars_data WHERE N1_14_cars_data.cylinders <= 4 GROUP BY N1_14_cars_data.year
+SELECT DISTINCT N1_15_cars_data.year FROM cars_data AS N1_15_cars_data WHERE (N1_15_cars_data.year >= 1971 AND (N1_15_cars_data.weight >= 1760 AND N1_15_cars_data.horsepower <= 19)) GROUP BY N1_15_cars_data.year HAVING COUNT(*) <= 10
+SELECT DISTINCT N1_16_cars_data.year, COUNT(*) FROM cars_data AS N1_16_cars_data WHERE (N1_16_cars_data.year >= 1971 AND (N1_16_cars_data.weight >= 1760 AND N1_16_cars_data.horsepower <= 19)) GROUP BY N1_16_cars_data.year
+SELECT DISTINCT N1_17_cars_data.year FROM cars_data AS N1_17_cars_data WHERE (N1_17_cars_data.year >= 1973 AND N1_17_cars_data.edispl <= 122.0) GROUP BY N1_17_cars_data.year HAVING COUNT(*) > 14
+SELECT DISTINCT N1_18_cars_data.year, COUNT(*) FROM cars_data AS N1_18_cars_data WHERE (N1_18_cars_data.year >= 1973 AND N1_18_cars_data.edispl <= 122.0) GROUP BY N1_18_cars_data.year
+SELECT DISTINCT N1_19_car_makers.country FROM model_list AS N1_19_model_list JOIN car_names AS N1_19_car_names ON N1_19_model_list.model=N1_19_car_names.model JOIN car_makers AS N1_19_car_makers ON N1_19_car_makers.id=N1_19_model_list.maker JOIN cars_data AS N1_19_cars_data ON N1_19_car_names.makeid=N1_19_cars_data.id WHERE ((N1_19_cars_data.weight > 2065 AND N1_19_car_names.make = 'chevrolet camaro') OR N1_19_cars_data.edispl != 199.0)
+SELECT DISTINCT N1_20_cars_data.year FROM cars_data AS N1_20_cars_data WHERE (N1_20_cars_data.year != 1970 AND N1_20_cars_data.cylinders >= 4) GROUP BY N1_20_cars_data.year HAVING (COUNT(*) > 31 AND COUNT(*) <= 39)
+SELECT DISTINCT N1_21_cars_data.year, COUNT(*) FROM cars_data AS N1_21_cars_data WHERE (N1_21_cars_data.year != 1970 AND N1_21_cars_data.cylinders >= 4) GROUP BY N1_21_cars_data.year
+SELECT DISTINCT N1_22_cars_data.year FROM cars_data AS N1_22_cars_data GROUP BY N1_22_cars_data.year HAVING COUNT(*) > 30
 SELECT DISTINCT N1_23_cars_data.year, COUNT(*) FROM cars_data AS N1_23_cars_data GROUP BY N1_23_cars_data.year
-SELECT DISTINCT N1_24_continents.contid FROM car_makers AS N1_24_car_makers JOIN countries AS N1_24_countries ON N1_24_countries.countryid=N1_24_car_makers.country JOIN continents AS N1_24_continents ON N1_24_continents.contid=N1_24_countries.continent WHERE (N1_24_continents.continent != 'asia' OR N1_24_car_makers.fullname IN ('Nissan Motors','Subaru','Kia Motors')) ORDER BY N1_24_continents.contid LIMIT 2
-SELECT DISTINCT N1_25_cars_data.year FROM cars_data AS N1_25_cars_data WHERE N1_25_cars_data.edispl != 122.0 GROUP BY N1_25_cars_data.year HAVING COUNT(*) < 34
-SELECT DISTINCT N1_26_cars_data.year, COUNT(*) FROM cars_data AS N1_26_cars_data WHERE N1_26_cars_data.edispl != 122.0 GROUP BY N1_26_cars_data.year
-SELECT DISTINCT * FROM continents AS N1_27_continents JOIN countries AS N1_27_countries ON N1_27_continents.contid=N1_27_countries.continent WHERE (N1_27_continents.continent = 'america' OR N1_27_countries.countryname = 'japan')
-SELECT DISTINCT N1_28_cars_data.year FROM cars_data AS N1_28_cars_data WHERE ((N1_28_cars_data.horsepower >= 19 OR N1_28_cars_data.mpg > 16.0) OR N1_28_cars_data.year != 1973) GROUP BY N1_28_cars_data.year HAVING COUNT(*) <= 34 ORDER BY N1_28_cars_data.year LIMIT 5
-SELECT DISTINCT N1_29_cars_data.year, COUNT(*) FROM cars_data AS N1_29_cars_data WHERE ((N1_29_cars_data.horsepower >= 19 OR N1_29_cars_data.mpg > 16.0) OR N1_29_cars_data.year != 1973) GROUP BY N1_29_cars_data.year
-SELECT DISTINCT N1_30_cars_data.year FROM cars_data AS N1_30_cars_data GROUP BY N1_30_cars_data.year HAVING COUNT(*) <= 31 ORDER BY N1_30_cars_data.year LIMIT 4
-SELECT DISTINCT N1_31_cars_data.year, COUNT(*) FROM cars_data AS N1_31_cars_data GROUP BY N1_31_cars_data.year
-SELECT DISTINCT N1_32_cars_data.year FROM cars_data AS N1_32_cars_data WHERE (N1_32_cars_data.mpg <= 19.0 OR (N1_32_cars_data.year = 1976 OR N1_32_cars_data.weight != 2070))
-SELECT DISTINCT * FROM cars_data AS N1_33_cars_data WHERE ((N1_33_cars_data.mpg = 30.0 OR N1_33_cars_data.accelerate > 13.5) OR N1_33_cars_data.accelerate < 13.0)
-SELECT DISTINCT N1_34_cars_data.horsepower FROM cars_data AS N1_34_cars_data WHERE N1_34_cars_data.horsepower < 18 GROUP BY N1_34_cars_data.horsepower HAVING (COUNT(*) >= 5 AND COUNT(*) <= 13)
-SELECT DISTINCT N1_35_cars_data.horsepower, COUNT(*) FROM cars_data AS N1_35_cars_data WHERE N1_35_cars_data.horsepower < 18 GROUP BY N1_35_cars_data.horsepower
-SELECT DISTINCT N1_36_cars_data.accelerate FROM cars_data AS N1_36_cars_data WHERE N1_36_cars_data.mpg >= 18.0 GROUP BY N1_36_cars_data.accelerate HAVING COUNT(*) > 2
-SELECT DISTINCT N1_37_cars_data.accelerate, COUNT(*) FROM cars_data AS N1_37_cars_data WHERE N1_37_cars_data.mpg >= 18.0 GROUP BY N1_37_cars_data.accelerate
-SELECT DISTINCT * FROM car_makers AS N1_38_car_makers JOIN countries AS N1_38_countries ON N1_38_countries.countryid=N1_38_car_makers.country JOIN continents AS N1_38_continents ON N1_38_continents.contid=N1_38_countries.continent WHERE (N1_38_continents.continent NOT LIKE '%ica' OR N1_38_car_makers.maker = 'ford')
-SELECT DISTINCT N1_39_cars_data.year FROM cars_data AS N1_39_cars_data GROUP BY N1_39_cars_data.year HAVING (COUNT(*) >= 28 AND COUNT(*) < 40)
+SELECT DISTINCT COUNT(*) FROM countries AS N1_24_countries WHERE (N1_24_countries.countryname NOT IN ('japan','germany','france') OR N1_24_countries.countryname IN ('japan','germany'))
+SELECT DISTINCT N1_25_cars_data.year FROM cars_data AS N1_25_cars_data WHERE N1_25_cars_data.weight > 2228 GROUP BY N1_25_cars_data.year HAVING COUNT(*) <= 28
+SELECT DISTINCT N1_26_cars_data.year, COUNT(*) FROM cars_data AS N1_26_cars_data WHERE N1_26_cars_data.weight > 2228 GROUP BY N1_26_cars_data.year
+SELECT DISTINCT N1_27_cars_data.year FROM cars_data AS N1_27_cars_data GROUP BY N1_27_cars_data.year HAVING COUNT(*) < 29
+SELECT DISTINCT N1_28_cars_data.year, COUNT(*) FROM cars_data AS N1_28_cars_data GROUP BY N1_28_cars_data.year
+SELECT DISTINCT N1_29_cars_data.year FROM cars_data AS N1_29_cars_data GROUP BY N1_29_cars_data.year HAVING COUNT(*) > 29
+SELECT DISTINCT N1_30_cars_data.year, COUNT(*) FROM cars_data AS N1_30_cars_data GROUP BY N1_30_cars_data.year
+SELECT DISTINCT N1_31_cars_data.year FROM cars_data AS N1_31_cars_data WHERE N1_31_cars_data.year > 1970 GROUP BY N1_31_cars_data.year HAVING COUNT(*) > 31
+SELECT DISTINCT N1_32_cars_data.year, COUNT(*) FROM cars_data AS N1_32_cars_data WHERE N1_32_cars_data.year > 1970 GROUP BY N1_32_cars_data.year
+SELECT DISTINCT N1_33_cars_data.accelerate FROM cars_data AS N1_33_cars_data WHERE (N1_33_cars_data.weight >= 2065 OR N1_33_cars_data.accelerate > 22.2)
+SELECT DISTINCT N1_34_cars_data.year FROM cars_data AS N1_34_cars_data WHERE N1_34_cars_data.year >= 1971 GROUP BY N1_34_cars_data.year HAVING (COUNT(*) >= 30 AND COUNT(*) <= 40)
+SELECT DISTINCT N1_35_cars_data.year, COUNT(*) FROM cars_data AS N1_35_cars_data WHERE N1_35_cars_data.year >= 1971 GROUP BY N1_35_cars_data.year
+SELECT DISTINCT N1_36_cars_data.year FROM cars_data AS N1_36_cars_data GROUP BY N1_36_cars_data.year HAVING COUNT(*) > 30 ORDER BY N1_36_cars_data.year LIMIT 2
+SELECT DISTINCT N1_37_cars_data.year, COUNT(*) FROM cars_data AS N1_37_cars_data GROUP BY N1_37_cars_data.year
+SELECT DISTINCT N1_38_cars_data.id FROM cars_data AS N1_38_cars_data JOIN car_names AS N1_38_car_names ON N1_38_car_names.makeid=N1_38_cars_data.id WHERE (N1_38_car_names.make = 'ford pinto' OR (N1_38_cars_data.accelerate >= 22.2 AND N1_38_car_names.make LIKE '%tte'))
+SELECT DISTINCT N1_39_cars_data.year FROM cars_data AS N1_39_cars_data GROUP BY N1_39_cars_data.year HAVING (COUNT(*) >= 27 AND COUNT(*) < 36) ORDER BY N1_39_cars_data.year LIMIT 1
 SELECT DISTINCT N1_40_cars_data.year, COUNT(*) FROM cars_data AS N1_40_cars_data GROUP BY N1_40_cars_data.year
-SELECT DISTINCT N1_41_cars_data.year FROM cars_data AS N1_41_cars_data GROUP BY N1_41_cars_data.year HAVING COUNT(*) < 28 ORDER BY N1_41_cars_data.year LIMIT 2
+SELECT DISTINCT N1_41_cars_data.year FROM cars_data AS N1_41_cars_data GROUP BY N1_41_cars_data.year HAVING (COUNT(*) >= 29 AND COUNT(*) <= 30)
 SELECT DISTINCT N1_42_cars_data.year, COUNT(*) FROM cars_data AS N1_42_cars_data GROUP BY N1_42_cars_data.year
-SELECT DISTINCT N1_43_cars_data.accelerate FROM cars_data AS N1_43_cars_data WHERE (N1_43_cars_data.year <= 1980 OR (N1_43_cars_data.year = 1981 OR N1_43_cars_data.edispl <= 181.0))
-SELECT DISTINCT N1_44_cars_data.year FROM cars_data AS N1_44_cars_data GROUP BY N1_44_cars_data.year HAVING COUNT(*) <= 31 ORDER BY N1_44_cars_data.year LIMIT 3
-SELECT DISTINCT N1_45_cars_data.year, COUNT(*) FROM cars_data AS N1_45_cars_data GROUP BY N1_45_cars_data.year
-SELECT DISTINCT N1_46_cars_data.year FROM cars_data AS N1_46_cars_data GROUP BY N1_46_cars_data.year HAVING (COUNT(*) > 27 AND COUNT(*) <= 30)
-SELECT DISTINCT N1_47_cars_data.year, COUNT(*) FROM cars_data AS N1_47_cars_data GROUP BY N1_47_cars_data.year
-SELECT DISTINCT N1_48_cars_data.cylinders FROM cars_data AS N1_48_cars_data WHERE ((N1_48_cars_data.cylinders <= 4 OR N1_48_cars_data.edispl < 262.0) OR (N1_48_cars_data.mpg >= 13.0 AND N1_48_cars_data.mpg <= 15.0)) ORDER BY N1_48_cars_data.cylinders LIMIT 3
-SELECT DISTINCT N1_49_car_names.make FROM cars_data AS N1_49_cars_data JOIN car_names AS N1_49_car_names ON N1_49_car_names.makeid=N1_49_cars_data.id WHERE N1_49_cars_data.mpg >= 30.0 GROUP BY N1_49_car_names.make HAVING COUNT(*) <= 2
-SELECT DISTINCT N1_50_car_names.make, COUNT(*) FROM cars_data AS N1_50_cars_data JOIN car_names AS N1_50_car_names ON N1_50_car_names.makeid=N1_50_cars_data.id WHERE N1_50_cars_data.mpg >= 30.0 GROUP BY N1_50_car_names.make
-SELECT DISTINCT N1_51_continents.continent FROM car_makers AS N1_51_car_makers JOIN countries AS N1_51_countries ON N1_51_countries.countryid=N1_51_car_makers.country JOIN continents AS N1_51_continents ON N1_51_continents.contid=N1_51_countries.continent WHERE (N1_51_car_makers.maker NOT LIKE '%oyo%' OR N1_51_continents.continent = 'asia') GROUP BY N1_51_continents.continent HAVING COUNT(*) > 7 ORDER BY N1_51_continents.continent LIMIT 4
-SELECT DISTINCT N1_52_continents.continent, COUNT(*) FROM car_makers AS N1_52_car_makers JOIN countries AS N1_52_countries ON N1_52_countries.countryid=N1_52_car_makers.country JOIN continents AS N1_52_continents ON N1_52_continents.contid=N1_52_countries.continent WHERE (N1_52_car_makers.maker NOT LIKE '%oyo%' OR N1_52_continents.continent = 'asia') GROUP BY N1_52_continents.continent
-SELECT DISTINCT N1_53_cars_data.horsepower FROM cars_data AS N1_53_cars_data WHERE (N1_53_cars_data.accelerate = 14.5 AND N1_53_cars_data.horsepower > 13) GROUP BY N1_53_cars_data.horsepower HAVING COUNT(*) > 2
-SELECT DISTINCT N1_54_cars_data.horsepower, COUNT(*) FROM cars_data AS N1_54_cars_data WHERE (N1_54_cars_data.accelerate = 14.5 AND N1_54_cars_data.horsepower > 13) GROUP BY N1_54_cars_data.horsepower
-SELECT DISTINCT * FROM cars_data AS N1_55_cars_data WHERE ((N1_55_cars_data.mpg <= 25.0 OR N1_55_cars_data.year < 1976) OR N1_55_cars_data.year >= 1982)
-SELECT DISTINCT N1_56_cars_data.year FROM cars_data AS N1_56_cars_data JOIN car_names AS N1_56_car_names ON N1_56_car_names.makeid=N1_56_cars_data.id WHERE (N1_56_cars_data.year > 1970 OR (N1_56_cars_data.mpg > 22.0 OR N1_56_car_names.make != 'plymouth duster')) GROUP BY N1_56_cars_data.year HAVING COUNT(*) > 31
-SELECT DISTINCT N1_57_cars_data.year, COUNT(*) FROM cars_data AS N1_57_cars_data JOIN car_names AS N1_57_car_names ON N1_57_car_names.makeid=N1_57_cars_data.id WHERE (N1_57_cars_data.year > 1970 OR (N1_57_cars_data.mpg > 22.0 OR N1_57_car_names.make != 'plymouth duster')) GROUP BY N1_57_cars_data.year
-SELECT DISTINCT N1_58_model_list.model FROM model_list AS N1_58_model_list JOIN car_makers AS N1_58_car_makers ON N1_58_car_makers.id=N1_58_model_list.maker WHERE (N1_58_car_makers.fullname = 'Toyota' OR N1_58_car_makers.fullname LIKE 'Ame%')
-SELECT DISTINCT * FROM car_makers AS N1_59_car_makers WHERE (N1_59_car_makers.maker LIKE '%ysl%' OR N1_59_car_makers.maker = 'gm')
-SELECT DISTINCT N1_60_cars_data.edispl FROM cars_data AS N1_60_cars_data WHERE N1_60_cars_data.edispl <= 113.0 GROUP BY N1_60_cars_data.edispl HAVING (COUNT(*) > 1 AND COUNT(*) <= 12)
-SELECT DISTINCT N1_61_cars_data.edispl, COUNT(*) FROM cars_data AS N1_61_cars_data WHERE N1_61_cars_data.edispl <= 113.0 GROUP BY N1_61_cars_data.edispl
-SELECT DISTINCT N1_62_cars_data.year FROM cars_data AS N1_62_cars_data GROUP BY N1_62_cars_data.year HAVING COUNT(*) > 28 ORDER BY N1_62_cars_data.year LIMIT 4
-SELECT DISTINCT N1_63_cars_data.year, COUNT(*) FROM cars_data AS N1_63_cars_data GROUP BY N1_63_cars_data.year
-SELECT DISTINCT N1_64_car_makers.id FROM car_makers AS N1_64_car_makers JOIN countries AS N1_64_countries ON N1_64_countries.countryid=N1_64_car_makers.country WHERE (N1_64_countries.countryname NOT IN ('usa','japan','france') OR N1_64_car_makers.maker != 'honda')
-SELECT DISTINCT N1_65_cars_data.cylinders FROM cars_data AS N1_65_cars_data WHERE N1_65_cars_data.horsepower > 25 GROUP BY N1_65_cars_data.cylinders HAVING COUNT(*) >= 2
-SELECT DISTINCT N1_66_cars_data.cylinders, COUNT(*) FROM cars_data AS N1_66_cars_data WHERE N1_66_cars_data.horsepower > 25 GROUP BY N1_66_cars_data.cylinders
-SELECT DISTINCT N1_67_cars_data.edispl FROM cars_data AS N1_67_cars_data WHERE ((N1_67_cars_data.edispl >= 122.0 AND N1_67_cars_data.edispl < 302.0) AND N1_67_cars_data.mpg != 18.0) GROUP BY N1_67_cars_data.edispl HAVING COUNT(*) > 2
-SELECT DISTINCT N1_68_cars_data.edispl, COUNT(*) FROM cars_data AS N1_68_cars_data WHERE ((N1_68_cars_data.edispl >= 122.0 AND N1_68_cars_data.edispl < 302.0) AND N1_68_cars_data.mpg != 18.0) GROUP BY N1_68_cars_data.edispl
-SELECT DISTINCT N1_69_cars_data.year FROM cars_data AS N1_69_cars_data JOIN car_names AS N1_69_car_names ON N1_69_car_names.makeid=N1_69_cars_data.id WHERE ((N1_69_cars_data.edispl > 113.0 OR N1_69_car_names.make LIKE 'che%') OR N1_69_cars_data.year != 1979) GROUP BY N1_69_cars_data.year HAVING COUNT(*) > 36
-SELECT DISTINCT N1_70_cars_data.year, COUNT(*) FROM cars_data AS N1_70_cars_data JOIN car_names AS N1_70_car_names ON N1_70_car_names.makeid=N1_70_cars_data.id WHERE ((N1_70_cars_data.edispl > 113.0 OR N1_70_car_names.make LIKE 'che%') OR N1_70_cars_data.year != 1979) GROUP BY N1_70_cars_data.year
-SELECT DISTINCT N1_71_cars_data.year FROM cars_data AS N1_71_cars_data GROUP BY N1_71_cars_data.year HAVING COUNT(*) <= 30
-SELECT DISTINCT N1_72_cars_data.year, COUNT(*) FROM cars_data AS N1_72_cars_data GROUP BY N1_72_cars_data.year
-SELECT DISTINCT N1_73_cars_data.year FROM cars_data AS N1_73_cars_data WHERE (N1_73_cars_data.mpg = 25.0 OR N1_73_cars_data.horsepower = 20) GROUP BY N1_73_cars_data.year HAVING (COUNT(*) >= 2 AND COUNT(*) <= 4)
-SELECT DISTINCT N1_74_cars_data.year, COUNT(*) FROM cars_data AS N1_74_cars_data WHERE (N1_74_cars_data.mpg = 25.0 OR N1_74_cars_data.horsepower = 20) GROUP BY N1_74_cars_data.year
-SELECT DISTINCT N1_75_model_list.modelid FROM model_list AS N1_75_model_list JOIN car_makers AS N1_75_car_makers ON N1_75_car_makers.id=N1_75_model_list.maker JOIN countries AS N1_75_countries ON N1_75_countries.countryid=N1_75_car_makers.country JOIN continents AS N1_75_continents ON N1_75_continents.contid=N1_75_countries.continent WHERE (N1_75_continents.continent IN ('america','europe','asia') OR N1_75_continents.continent = 'australia')
-SELECT DISTINCT * FROM car_makers AS N1_76_car_makers JOIN countries AS N1_76_countries ON N1_76_countries.countryid=N1_76_car_makers.country WHERE (N1_76_car_makers.maker = 'amc' OR N1_76_countries.countryname = 'usa')
-SELECT DISTINCT N1_77_cars_data.id FROM cars_data AS N1_77_cars_data WHERE ((N1_77_cars_data.horsepower > 23 AND N1_77_cars_data.horsepower < 30) OR N1_77_cars_data.mpg <= 13.0)
-SELECT DISTINCT N1_78_cars_data.cylinders FROM cars_data AS N1_78_cars_data WHERE N1_78_cars_data.weight >= 2228 GROUP BY N1_78_cars_data.cylinders HAVING (COUNT(*) >= 3 AND COUNT(*) < 106) ORDER BY N1_78_cars_data.cylinders LIMIT 2
-SELECT DISTINCT N1_79_cars_data.cylinders, COUNT(*) FROM cars_data AS N1_79_cars_data WHERE N1_79_cars_data.weight >= 2228 GROUP BY N1_79_cars_data.cylinders
-SELECT DISTINCT * FROM car_makers AS N1_80_car_makers JOIN countries AS N1_80_countries ON N1_80_countries.countryid=N1_80_car_makers.country JOIN continents AS N1_80_continents ON N1_80_continents.contid=N1_80_countries.continent WHERE (N1_80_car_makers.maker = 'amc' OR N1_80_continents.continent NOT LIKE '%asi%')
-SELECT DISTINCT N1_81_cars_data.year FROM cars_data AS N1_81_cars_data GROUP BY N1_81_cars_data.year HAVING COUNT(*) > 28 ORDER BY N1_81_cars_data.year LIMIT 5
-SELECT DISTINCT N1_82_cars_data.year, COUNT(*) FROM cars_data AS N1_82_cars_data GROUP BY N1_82_cars_data.year
-SELECT DISTINCT N1_83_cars_data.year FROM cars_data AS N1_83_cars_data WHERE (N1_83_cars_data.cylinders > 4 AND N1_83_cars_data.cylinders < 8) GROUP BY N1_83_cars_data.year HAVING (COUNT(*) >= 7 AND COUNT(*) <= 13)
-SELECT DISTINCT N1_84_cars_data.year, COUNT(*) FROM cars_data AS N1_84_cars_data WHERE (N1_84_cars_data.cylinders > 4 AND N1_84_cars_data.cylinders < 8) GROUP BY N1_84_cars_data.year
-SELECT DISTINCT N1_85_cars_data.accelerate FROM cars_data AS N1_85_cars_data WHERE N1_85_cars_data.accelerate < 14.0 GROUP BY N1_85_cars_data.accelerate HAVING COUNT(*) <= 2
-SELECT DISTINCT N1_86_cars_data.accelerate, COUNT(*) FROM cars_data AS N1_86_cars_data WHERE N1_86_cars_data.accelerate < 14.0 GROUP BY N1_86_cars_data.accelerate
-SELECT DISTINCT N1_87_cars_data.year FROM cars_data AS N1_87_cars_data WHERE (N1_87_cars_data.mpg > 18.0 AND N1_87_cars_data.mpg < 19.2) GROUP BY N1_87_cars_data.year HAVING (COUNT(*) >= 1 AND COUNT(*) < 3)
-SELECT DISTINCT N1_88_cars_data.year, COUNT(*) FROM cars_data AS N1_88_cars_data WHERE (N1_88_cars_data.mpg > 18.0 AND N1_88_cars_data.mpg < 19.2) GROUP BY N1_88_cars_data.year
-SELECT DISTINCT N1_89_cars_data.year FROM cars_data AS N1_89_cars_data GROUP BY N1_89_cars_data.year HAVING (COUNT(*) >= 29 AND COUNT(*) < 31) ORDER BY N1_89_cars_data.year LIMIT 4
-SELECT DISTINCT N1_90_cars_data.year, COUNT(*) FROM cars_data AS N1_90_cars_data GROUP BY N1_90_cars_data.year
-SELECT DISTINCT N1_91_cars_data.year FROM cars_data AS N1_91_cars_data WHERE (N1_91_cars_data.year < 1974 AND N1_91_cars_data.accelerate < 14.5) GROUP BY N1_91_cars_data.year HAVING COUNT(*) < 22
-SELECT DISTINCT N1_92_cars_data.year, COUNT(*) FROM cars_data AS N1_92_cars_data WHERE (N1_92_cars_data.year < 1974 AND N1_92_cars_data.accelerate < 14.5) GROUP BY N1_92_cars_data.year
-SELECT DISTINCT N1_93_cars_data.year FROM cars_data AS N1_93_cars_data GROUP BY N1_93_cars_data.year HAVING (COUNT(*) >= 27 AND COUNT(*) <= 30) ORDER BY N1_93_cars_data.year LIMIT 4
-SELECT DISTINCT N1_94_cars_data.year, COUNT(*) FROM cars_data AS N1_94_cars_data GROUP BY N1_94_cars_data.year
-SELECT DISTINCT N1_95_cars_data.year FROM cars_data AS N1_95_cars_data WHERE N1_95_cars_data.horsepower < 15 GROUP BY N1_95_cars_data.year HAVING (COUNT(*) >= 5 AND COUNT(*) <= 16)
-SELECT DISTINCT N1_96_cars_data.year, COUNT(*) FROM cars_data AS N1_96_cars_data WHERE N1_96_cars_data.horsepower < 15 GROUP BY N1_96_cars_data.year
-SELECT DISTINCT N1_97_cars_data.accelerate FROM cars_data AS N1_97_cars_data WHERE (N1_97_cars_data.horsepower >= 14 AND N1_97_cars_data.horsepower <= 29) GROUP BY N1_97_cars_data.accelerate HAVING COUNT(*) > 2
-SELECT DISTINCT N1_98_cars_data.accelerate, COUNT(*) FROM cars_data AS N1_98_cars_data WHERE (N1_98_cars_data.horsepower >= 14 AND N1_98_cars_data.horsepower <= 29) GROUP BY N1_98_cars_data.accelerate
-SELECT DISTINCT N1_99_cars_data.year FROM cars_data AS N1_99_cars_data WHERE N1_99_cars_data.horsepower <= 32 GROUP BY N1_99_cars_data.year HAVING COUNT(*) <= 28
-SELECT DISTINCT N1_100_cars_data.year, COUNT(*) FROM cars_data AS N1_100_cars_data WHERE N1_100_cars_data.horsepower <= 32 GROUP BY N1_100_cars_data.year
-SELECT DISTINCT N1_101_countries.countryname FROM car_makers AS N1_101_car_makers JOIN countries AS N1_101_countries ON N1_101_countries.countryid=N1_101_car_makers.country WHERE (N1_101_car_makers.maker = 'chrysler' OR N1_101_countries.countryname != 'usa')
-SELECT DISTINCT N1_102_cars_data.edispl FROM cars_data AS N1_102_cars_data WHERE N1_102_cars_data.edispl < 88.0 GROUP BY N1_102_cars_data.edispl HAVING (COUNT(*) >= 1 AND COUNT(*) <= 6) ORDER BY N1_102_cars_data.edispl LIMIT 4
-SELECT DISTINCT N1_103_cars_data.edispl, COUNT(*) FROM cars_data AS N1_103_cars_data WHERE N1_103_cars_data.edispl < 88.0 GROUP BY N1_103_cars_data.edispl
-SELECT DISTINCT N1_104_cars_data.year FROM cars_data AS N1_104_cars_data WHERE (N1_104_cars_data.horsepower > 25 AND N1_104_cars_data.year >= 1977) GROUP BY N1_104_cars_data.year HAVING (COUNT(*) >= 12 AND COUNT(*) < 25)
-SELECT DISTINCT N1_105_cars_data.year, COUNT(*) FROM cars_data AS N1_105_cars_data WHERE (N1_105_cars_data.horsepower > 25 AND N1_105_cars_data.year >= 1977) GROUP BY N1_105_cars_data.year
-SELECT DISTINCT N1_106_continents.continent FROM continents AS N1_106_continents JOIN countries AS N1_106_countries ON N1_106_continents.contid=N1_106_countries.continent WHERE N1_106_countries.countryname NOT IN ('usa','japan','sweden') GROUP BY N1_106_continents.continent HAVING COUNT(*) >= 2
-SELECT DISTINCT N1_107_continents.continent, COUNT(*) FROM continents AS N1_107_continents JOIN countries AS N1_107_countries ON N1_107_continents.contid=N1_107_countries.continent WHERE N1_107_countries.countryname NOT IN ('usa','japan','sweden') GROUP BY N1_107_continents.continent
-SELECT DISTINCT N1_108_car_names.make FROM car_names AS N1_108_car_names GROUP BY N1_108_car_names.make HAVING COUNT(*) > 2
-SELECT DISTINCT N1_109_car_names.make, COUNT(*) FROM car_names AS N1_109_car_names GROUP BY N1_109_car_names.make
-SELECT DISTINCT N1_110_cars_data.year FROM cars_data AS N1_110_cars_data WHERE N1_110_cars_data.weight < 2228 GROUP BY N1_110_cars_data.year HAVING (COUNT(*) > 7 AND COUNT(*) <= 9)
-SELECT DISTINCT N1_111_cars_data.year, COUNT(*) FROM cars_data AS N1_111_cars_data WHERE N1_111_cars_data.weight < 2228 GROUP BY N1_111_cars_data.year
-SELECT DISTINCT N1_112_continents.continent FROM continents AS N1_112_continents JOIN countries AS N1_112_countries ON N1_112_continents.contid=N1_112_countries.continent WHERE ((N1_112_continents.continent LIKE '%ica' OR N1_112_continents.continent IN ('asia','europe')) OR N1_112_countries.countryname != 'new zealand') GROUP BY N1_112_continents.continent HAVING COUNT(*) < 2 ORDER BY N1_112_continents.continent LIMIT 5
-SELECT DISTINCT N1_113_continents.continent, COUNT(*) FROM continents AS N1_113_continents JOIN countries AS N1_113_countries ON N1_113_continents.contid=N1_113_countries.continent WHERE ((N1_113_continents.continent LIKE '%ica' OR N1_113_continents.continent IN ('asia','europe')) OR N1_113_countries.countryname != 'new zealand') GROUP BY N1_113_continents.continent
-SELECT DISTINCT N1_114_cars_data.year FROM cars_data AS N1_114_cars_data GROUP BY N1_114_cars_data.year HAVING (COUNT(*) >= 30 AND COUNT(*) < 35)
-SELECT DISTINCT N1_115_cars_data.year, COUNT(*) FROM cars_data AS N1_115_cars_data GROUP BY N1_115_cars_data.year
-SELECT DISTINCT N1_116_cars_data.year FROM cars_data AS N1_116_cars_data GROUP BY N1_116_cars_data.year HAVING COUNT(*) <= 29
-SELECT DISTINCT N1_117_cars_data.year, COUNT(*) FROM cars_data AS N1_117_cars_data GROUP BY N1_117_cars_data.year
-SELECT DISTINCT N1_118_cars_data.year FROM cars_data AS N1_118_cars_data WHERE (N1_118_cars_data.year <= 1973 OR (N1_118_cars_data.edispl < 250.0 OR N1_118_cars_data.horsepower > 16)) GROUP BY N1_118_cars_data.year HAVING (COUNT(*) >= 28 AND COUNT(*) < 36) ORDER BY N1_118_cars_data.year LIMIT 4
-SELECT DISTINCT N1_119_cars_data.year, COUNT(*) FROM cars_data AS N1_119_cars_data WHERE (N1_119_cars_data.year <= 1973 OR (N1_119_cars_data.edispl < 250.0 OR N1_119_cars_data.horsepower > 16)) GROUP BY N1_119_cars_data.year
-SELECT DISTINCT N1_120_cars_data.year FROM model_list AS N1_120_model_list JOIN car_makers AS N1_120_car_makers ON N1_120_car_makers.id=N1_120_model_list.maker JOIN countries AS N1_120_countries ON N1_120_countries.countryid=N1_120_car_makers.country JOIN car_names AS N1_120_car_names ON N1_120_model_list.model=N1_120_car_names.model JOIN cars_data AS N1_120_cars_data ON N1_120_car_names.makeid=N1_120_cars_data.id WHERE (N1_120_cars_data.weight >= 2310 OR N1_120_countries.countryname NOT IN ('usa','germany')) GROUP BY N1_120_cars_data.year HAVING COUNT(*) < 26
-SELECT DISTINCT N1_121_cars_data.year, COUNT(*) FROM model_list AS N1_121_model_list JOIN car_makers AS N1_121_car_makers ON N1_121_car_makers.id=N1_121_model_list.maker JOIN countries AS N1_121_countries ON N1_121_countries.countryid=N1_121_car_makers.country JOIN car_names AS N1_121_car_names ON N1_121_model_list.model=N1_121_car_names.model JOIN cars_data AS N1_121_cars_data ON N1_121_car_names.makeid=N1_121_cars_data.id WHERE (N1_121_cars_data.weight >= 2310 OR N1_121_countries.countryname NOT IN ('usa','germany')) GROUP BY N1_121_cars_data.year
-SELECT DISTINCT N1_122_cars_data.weight FROM cars_data AS N1_122_cars_data WHERE (N1_122_cars_data.weight > 2694 AND N1_122_cars_data.weight < 3563) GROUP BY N1_122_cars_data.weight HAVING COUNT(*) <= 2 ORDER BY N1_122_cars_data.weight LIMIT 5
-SELECT DISTINCT N1_123_cars_data.weight, COUNT(*) FROM cars_data AS N1_123_cars_data WHERE (N1_123_cars_data.weight > 2694 AND N1_123_cars_data.weight < 3563) GROUP BY N1_123_cars_data.weight
-SELECT DISTINCT * FROM cars_data AS N1_124_cars_data WHERE (((N1_124_cars_data.cylinders >= 6 AND N1_124_cars_data.cylinders < 8) OR N1_124_cars_data.weight < 2408) OR N1_124_cars_data.edispl >= 305.0)
-SELECT DISTINCT * FROM car_makers AS N1_125_car_makers WHERE (N1_125_car_makers.maker = 'amc' OR N1_125_car_makers.maker LIKE '%aru')
-SELECT DISTINCT N1_126_cars_data.year FROM cars_data AS N1_126_cars_data GROUP BY N1_126_cars_data.year HAVING COUNT(*) < 29
-SELECT DISTINCT N1_127_cars_data.year, COUNT(*) FROM cars_data AS N1_127_cars_data GROUP BY N1_127_cars_data.year
-SELECT DISTINCT N1_128_car_names.make FROM car_names AS N1_128_car_names GROUP BY N1_128_car_names.make HAVING (COUNT(*) > 1 AND COUNT(*) <= 4)
-SELECT DISTINCT N1_129_car_names.make, COUNT(*) FROM car_names AS N1_129_car_names GROUP BY N1_129_car_names.make
-SELECT DISTINCT N1_130_continents.continent FROM car_makers AS N1_130_car_makers JOIN countries AS N1_130_countries ON N1_130_countries.countryid=N1_130_car_makers.country JOIN continents AS N1_130_continents ON N1_130_continents.contid=N1_130_countries.continent WHERE (N1_130_countries.countryname = 'japan' OR (N1_130_continents.continent != 'america' OR N1_130_car_makers.maker LIKE 'for%')) GROUP BY N1_130_continents.continent HAVING COUNT(*) < 7 ORDER BY N1_130_continents.continent LIMIT 2
-SELECT DISTINCT N1_131_continents.continent, COUNT(*) FROM car_makers AS N1_131_car_makers JOIN countries AS N1_131_countries ON N1_131_countries.countryid=N1_131_car_makers.country JOIN continents AS N1_131_continents ON N1_131_continents.contid=N1_131_countries.continent WHERE (N1_131_countries.countryname = 'japan' OR (N1_131_continents.continent != 'america' OR N1_131_car_makers.maker LIKE 'for%')) GROUP BY N1_131_continents.continent
-SELECT DISTINCT N1_132_cars_data.year FROM cars_data AS N1_132_cars_data GROUP BY N1_132_cars_data.year HAVING COUNT(*) >= 28 ORDER BY N1_132_cars_data.year LIMIT 3
-SELECT DISTINCT N1_133_cars_data.year, COUNT(*) FROM cars_data AS N1_133_cars_data GROUP BY N1_133_cars_data.year
-SELECT DISTINCT N1_134_countries.countryname FROM car_makers AS N1_134_car_makers JOIN countries AS N1_134_countries ON N1_134_countries.countryid=N1_134_car_makers.country WHERE N1_134_car_makers.maker NOT IN ('toyota','amc','subaru') GROUP BY N1_134_countries.countryname HAVING (COUNT(*) >= 1 AND COUNT(*) < 3)
-SELECT DISTINCT N1_135_countries.countryname, COUNT(*) FROM car_makers AS N1_135_car_makers JOIN countries AS N1_135_countries ON N1_135_countries.countryid=N1_135_car_makers.country WHERE N1_135_car_makers.maker NOT IN ('toyota','amc','subaru') GROUP BY N1_135_countries.countryname
-SELECT DISTINCT N1_136_cars_data.year FROM cars_data AS N1_136_cars_data WHERE (N1_136_cars_data.cylinders >= 3 AND N1_136_cars_data.cylinders < 8) GROUP BY N1_136_cars_data.year HAVING COUNT(*) > 25 ORDER BY N1_136_cars_data.year LIMIT 3
-SELECT DISTINCT N1_137_cars_data.year, COUNT(*) FROM cars_data AS N1_137_cars_data WHERE (N1_137_cars_data.cylinders >= 3 AND N1_137_cars_data.cylinders < 8) GROUP BY N1_137_cars_data.year
-SELECT DISTINCT N1_138_cars_data.year FROM cars_data AS N1_138_cars_data WHERE (N1_138_cars_data.year > 1973 OR N1_138_cars_data.horsepower > 19) GROUP BY N1_138_cars_data.year HAVING (COUNT(*) > 28 AND COUNT(*) < 36)
-SELECT DISTINCT N1_139_cars_data.year, COUNT(*) FROM cars_data AS N1_139_cars_data WHERE (N1_139_cars_data.year > 1973 OR N1_139_cars_data.horsepower > 19) GROUP BY N1_139_cars_data.year
-SELECT DISTINCT N1_140_cars_data.year FROM cars_data AS N1_140_cars_data GROUP BY N1_140_cars_data.year HAVING (COUNT(*) >= 27 AND COUNT(*) < 30)
-SELECT DISTINCT N1_141_cars_data.year, COUNT(*) FROM cars_data AS N1_141_cars_data GROUP BY N1_141_cars_data.year
-SELECT DISTINCT N1_142_cars_data.year FROM cars_data AS N1_142_cars_data GROUP BY N1_142_cars_data.year HAVING COUNT(*) <= 29 ORDER BY N1_142_cars_data.year LIMIT 1
+SELECT DISTINCT N1_43_cars_data.year FROM cars_data AS N1_43_cars_data WHERE (N1_43_cars_data.weight >= 2774 AND N1_43_cars_data.cylinders <= 6) GROUP BY N1_43_cars_data.year HAVING COUNT(*) >= 8
+SELECT DISTINCT N1_44_cars_data.year, COUNT(*) FROM cars_data AS N1_44_cars_data WHERE (N1_44_cars_data.weight >= 2774 AND N1_44_cars_data.cylinders <= 6) GROUP BY N1_44_cars_data.year
+SELECT DISTINCT N1_45_cars_data.year FROM cars_data AS N1_45_cars_data GROUP BY N1_45_cars_data.year HAVING COUNT(*) > 29
+SELECT DISTINCT N1_46_cars_data.year, COUNT(*) FROM cars_data AS N1_46_cars_data GROUP BY N1_46_cars_data.year
+SELECT DISTINCT N1_47_cars_data.year FROM cars_data AS N1_47_cars_data GROUP BY N1_47_cars_data.year HAVING (COUNT(*) > 27 AND COUNT(*) <= 31)
+SELECT DISTINCT N1_48_cars_data.year, COUNT(*) FROM cars_data AS N1_48_cars_data GROUP BY N1_48_cars_data.year
+SELECT DISTINCT N1_49_cars_data.year FROM cars_data AS N1_49_cars_data GROUP BY N1_49_cars_data.year HAVING (COUNT(*) >= 28 AND COUNT(*) <= 31)
+SELECT DISTINCT N1_50_cars_data.year, COUNT(*) FROM cars_data AS N1_50_cars_data GROUP BY N1_50_cars_data.year
+SELECT DISTINCT N1_51_cars_data.year FROM cars_data AS N1_51_cars_data GROUP BY N1_51_cars_data.year HAVING COUNT(*) <= 29
+SELECT DISTINCT N1_52_cars_data.year, COUNT(*) FROM cars_data AS N1_52_cars_data GROUP BY N1_52_cars_data.year
+SELECT DISTINCT N1_53_cars_data.year FROM cars_data AS N1_53_cars_data WHERE (N1_53_cars_data.horsepower >= 18 OR N1_53_cars_data.accelerate <= 18.0) GROUP BY N1_53_cars_data.year HAVING COUNT(*) < 36 ORDER BY N1_53_cars_data.year LIMIT 1
+SELECT DISTINCT N1_54_cars_data.year, COUNT(*) FROM cars_data AS N1_54_cars_data WHERE (N1_54_cars_data.horsepower >= 18 OR N1_54_cars_data.accelerate <= 18.0) GROUP BY N1_54_cars_data.year
+SELECT DISTINCT N1_55_cars_data.year FROM cars_data AS N1_55_cars_data WHERE N1_55_cars_data.mpg != 25.0 GROUP BY N1_55_cars_data.year HAVING COUNT(*) <= 30
+SELECT DISTINCT N1_56_cars_data.year, COUNT(*) FROM cars_data AS N1_56_cars_data WHERE N1_56_cars_data.mpg != 25.0 GROUP BY N1_56_cars_data.year
+SELECT DISTINCT N1_57_cars_data.year FROM cars_data AS N1_57_cars_data WHERE ((N1_57_cars_data.edispl > 120.0 AND N1_57_cars_data.edispl <= 383.0) AND N1_57_cars_data.cylinders < 8) GROUP BY N1_57_cars_data.year HAVING COUNT(*) <= 9
+SELECT DISTINCT N1_58_cars_data.year, COUNT(*) FROM cars_data AS N1_58_cars_data WHERE ((N1_58_cars_data.edispl > 120.0 AND N1_58_cars_data.edispl <= 383.0) AND N1_58_cars_data.cylinders < 8) GROUP BY N1_58_cars_data.year
+SELECT DISTINCT N1_59_cars_data.year FROM cars_data AS N1_59_cars_data WHERE N1_59_cars_data.year >= 1974 GROUP BY N1_59_cars_data.year HAVING COUNT(*) <= 34
+SELECT DISTINCT N1_60_cars_data.year, COUNT(*) FROM cars_data AS N1_60_cars_data WHERE N1_60_cars_data.year >= 1974 GROUP BY N1_60_cars_data.year
+SELECT DISTINCT MIN(N1_61_cars_data.year) FROM model_list AS N1_61_model_list JOIN car_names AS N1_61_car_names ON N1_61_model_list.model=N1_61_car_names.model JOIN car_makers AS N1_61_car_makers ON N1_61_car_makers.id=N1_61_model_list.maker JOIN cars_data AS N1_61_cars_data ON N1_61_car_names.makeid=N1_61_cars_data.id WHERE (N1_61_car_makers.fullname IN ('Ford Motor Company','Chrysler','General Motors') OR N1_61_car_makers.fullname = 'American Motor Company')
+SELECT DISTINCT N1_62_cars_data.year FROM model_list AS N1_62_model_list JOIN car_names AS N1_62_car_names ON N1_62_model_list.model=N1_62_car_names.model JOIN car_makers AS N1_62_car_makers ON N1_62_car_makers.id=N1_62_model_list.maker JOIN cars_data AS N1_62_cars_data ON N1_62_car_names.makeid=N1_62_cars_data.id WHERE (N1_62_cars_data.cylinders <= 4 OR N1_62_car_makers.maker != 'gm') GROUP BY N1_62_cars_data.year HAVING COUNT(*) > 28
+SELECT DISTINCT N1_63_cars_data.year, COUNT(*) FROM model_list AS N1_63_model_list JOIN car_names AS N1_63_car_names ON N1_63_model_list.model=N1_63_car_names.model JOIN car_makers AS N1_63_car_makers ON N1_63_car_makers.id=N1_63_model_list.maker JOIN cars_data AS N1_63_cars_data ON N1_63_car_names.makeid=N1_63_cars_data.id WHERE (N1_63_cars_data.cylinders <= 4 OR N1_63_car_makers.maker != 'gm') GROUP BY N1_63_cars_data.year
+SELECT DISTINCT COUNT(*) FROM countries AS N1_64_countries WHERE (N1_64_countries.countryname = 'italy' OR N1_64_countries.countryname = 'germany')
+SELECT DISTINCT N1_65_cars_data.year FROM cars_data AS N1_65_cars_data WHERE ((N1_65_cars_data.weight < 2228 AND N1_65_cars_data.cylinders = 4) AND (N1_65_cars_data.year >= 1977 AND N1_65_cars_data.year <= 1980)) GROUP BY N1_65_cars_data.year HAVING (COUNT(*) >= 7 AND COUNT(*) < 9) ORDER BY N1_65_cars_data.year LIMIT 5
+SELECT DISTINCT N1_66_cars_data.year, COUNT(*) FROM cars_data AS N1_66_cars_data WHERE ((N1_66_cars_data.weight < 2228 AND N1_66_cars_data.cylinders = 4) AND (N1_66_cars_data.year >= 1977 AND N1_66_cars_data.year <= 1980)) GROUP BY N1_66_cars_data.year
+SELECT DISTINCT N1_67_cars_data.year FROM cars_data AS N1_67_cars_data GROUP BY N1_67_cars_data.year HAVING (COUNT(*) >= 29 AND COUNT(*) <= 36)
+SELECT DISTINCT N1_68_cars_data.year, COUNT(*) FROM cars_data AS N1_68_cars_data GROUP BY N1_68_cars_data.year
+SELECT DISTINCT N1_69_model_list.modelid FROM cars_data AS N1_69_cars_data JOIN car_names AS N1_69_car_names ON N1_69_car_names.makeid=N1_69_cars_data.id JOIN model_list AS N1_69_model_list ON N1_69_model_list.model=N1_69_car_names.model WHERE ((N1_69_cars_data.weight > 2800 AND N1_69_cars_data.weight <= 3563) OR (N1_69_cars_data.cylinders > 4 OR N1_69_cars_data.weight = 2310))
+SELECT DISTINCT * FROM continents AS N1_70_continents JOIN countries AS N1_70_countries ON N1_70_continents.contid=N1_70_countries.continent WHERE (N1_70_continents.continent NOT LIKE 'ame%' OR N1_70_countries.countryname IN ('usa','brazil'))
+SELECT DISTINCT * FROM continents AS N1_71_continents JOIN countries AS N1_71_countries ON N1_71_continents.contid=N1_71_countries.continent WHERE ((N1_71_continents.continent NOT LIKE '%ica' OR N1_71_countries.countryname LIKE 'usa%') OR N1_71_continents.continent = 'america')
+SELECT DISTINCT N1_72_countries.countryid FROM countries AS N1_72_countries WHERE (N1_72_countries.countryname NOT IN ('usa','germany','sweden') OR N1_72_countries.countryname = 'usa')
+SELECT DISTINCT N1_73_cars_data.year FROM cars_data AS N1_73_cars_data WHERE N1_73_cars_data.mpg >= 18.0 GROUP BY N1_73_cars_data.year HAVING (COUNT(*) >= 13 AND COUNT(*) < 23)
+SELECT DISTINCT N1_74_cars_data.year, COUNT(*) FROM cars_data AS N1_74_cars_data WHERE N1_74_cars_data.mpg >= 18.0 GROUP BY N1_74_cars_data.year
+SELECT DISTINCT N1_75_cars_data.year FROM cars_data AS N1_75_cars_data GROUP BY N1_75_cars_data.year HAVING COUNT(*) < 29 ORDER BY N1_75_cars_data.year LIMIT 1
+SELECT DISTINCT N1_76_cars_data.year, COUNT(*) FROM cars_data AS N1_76_cars_data GROUP BY N1_76_cars_data.year
+SELECT DISTINCT N1_77_cars_data.year FROM cars_data AS N1_77_cars_data GROUP BY N1_77_cars_data.year HAVING COUNT(*) < 29
+SELECT DISTINCT N1_78_cars_data.year, COUNT(*) FROM cars_data AS N1_78_cars_data GROUP BY N1_78_cars_data.year
+SELECT DISTINCT * FROM cars_data AS N1_79_cars_data JOIN car_names AS N1_79_car_names ON N1_79_car_names.makeid=N1_79_cars_data.id WHERE ((N1_79_car_names.make = 'ford pinto' OR N1_79_car_names.make = 'mazda 626') OR N1_79_cars_data.cylinders > 6)
+SELECT DISTINCT N1_80_cars_data.year FROM cars_data AS N1_80_cars_data WHERE ((N1_80_cars_data.cylinders >= 4 AND N1_80_cars_data.year != 1973) AND N1_80_cars_data.edispl >= 85.0) GROUP BY N1_80_cars_data.year HAVING COUNT(*) <= 31 ORDER BY N1_80_cars_data.year LIMIT 2
+SELECT DISTINCT N1_81_cars_data.year, COUNT(*) FROM cars_data AS N1_81_cars_data WHERE ((N1_81_cars_data.cylinders >= 4 AND N1_81_cars_data.year != 1973) AND N1_81_cars_data.edispl >= 85.0) GROUP BY N1_81_cars_data.year
+SELECT DISTINCT N1_82_cars_data.year FROM cars_data AS N1_82_cars_data GROUP BY N1_82_cars_data.year HAVING COUNT(*) >= 36
+SELECT DISTINCT N1_83_cars_data.year, COUNT(*) FROM cars_data AS N1_83_cars_data GROUP BY N1_83_cars_data.year
+SELECT DISTINCT N1_84_cars_data.year FROM cars_data AS N1_84_cars_data JOIN car_names AS N1_84_car_names ON N1_84_car_names.makeid=N1_84_cars_data.id WHERE N1_84_car_names.make NOT IN ('amc matador (sw)','oldsmobile starfire sx','pontiac safari (sw)') GROUP BY N1_84_cars_data.year HAVING (COUNT(*) > 34 AND COUNT(*) < 40)
+SELECT DISTINCT N1_85_cars_data.year, COUNT(*) FROM cars_data AS N1_85_cars_data JOIN car_names AS N1_85_car_names ON N1_85_car_names.makeid=N1_85_cars_data.id WHERE N1_85_car_names.make NOT IN ('amc matador (sw)','oldsmobile starfire sx','pontiac safari (sw)') GROUP BY N1_85_cars_data.year
+SELECT DISTINCT N1_86_cars_data.year FROM cars_data AS N1_86_cars_data GROUP BY N1_86_cars_data.year HAVING COUNT(*) < 30 ORDER BY N1_86_cars_data.year LIMIT 3
+SELECT DISTINCT N1_87_cars_data.year, COUNT(*) FROM cars_data AS N1_87_cars_data GROUP BY N1_87_cars_data.year
+SELECT DISTINCT N1_88_continents.continent FROM car_makers AS N1_88_car_makers JOIN countries AS N1_88_countries ON N1_88_countries.countryid=N1_88_car_makers.country JOIN continents AS N1_88_continents ON N1_88_continents.contid=N1_88_countries.continent WHERE (N1_88_car_makers.fullname = 'Chrysler' OR N1_88_continents.continent != 'america') GROUP BY N1_88_continents.continent HAVING COUNT(*) < 7
+SELECT DISTINCT N1_89_continents.continent, COUNT(*) FROM car_makers AS N1_89_car_makers JOIN countries AS N1_89_countries ON N1_89_countries.countryid=N1_89_car_makers.country JOIN continents AS N1_89_continents ON N1_89_continents.contid=N1_89_countries.continent WHERE (N1_89_car_makers.fullname = 'Chrysler' OR N1_89_continents.continent != 'america') GROUP BY N1_89_continents.continent
+SELECT DISTINCT N1_90_cars_data.year FROM cars_data AS N1_90_cars_data GROUP BY N1_90_cars_data.year HAVING COUNT(*) < 29
+SELECT DISTINCT N1_91_cars_data.year, COUNT(*) FROM cars_data AS N1_91_cars_data GROUP BY N1_91_cars_data.year
+SELECT DISTINCT N1_92_cars_data.year FROM cars_data AS N1_92_cars_data WHERE (N1_92_cars_data.year >= 1971 AND (N1_92_cars_data.weight > 2310 AND N1_92_cars_data.edispl >= 318.0)) GROUP BY N1_92_cars_data.year HAVING COUNT(*) < 5
+SELECT DISTINCT N1_93_cars_data.year, COUNT(*) FROM cars_data AS N1_93_cars_data WHERE (N1_93_cars_data.year >= 1971 AND (N1_93_cars_data.weight > 2310 AND N1_93_cars_data.edispl >= 318.0)) GROUP BY N1_93_cars_data.year
+SELECT DISTINCT N1_94_cars_data.year FROM cars_data AS N1_94_cars_data WHERE N1_94_cars_data.year <= 1973 GROUP BY N1_94_cars_data.year HAVING COUNT(*) > 29
+SELECT DISTINCT N1_95_cars_data.year, COUNT(*) FROM cars_data AS N1_95_cars_data WHERE N1_95_cars_data.year <= 1973 GROUP BY N1_95_cars_data.year
+SELECT DISTINCT N1_96_cars_data.year FROM cars_data AS N1_96_cars_data WHERE N1_96_cars_data.year > 1971 GROUP BY N1_96_cars_data.year HAVING COUNT(*) >= 28
+SELECT DISTINCT N1_97_cars_data.year, COUNT(*) FROM cars_data AS N1_97_cars_data WHERE N1_97_cars_data.year > 1971 GROUP BY N1_97_cars_data.year
+SELECT DISTINCT N1_98_cars_data.year FROM cars_data AS N1_98_cars_data WHERE N1_98_cars_data.cylinders >= 4 GROUP BY N1_98_cars_data.year HAVING COUNT(*) > 29
+SELECT DISTINCT N1_99_cars_data.year, COUNT(*) FROM cars_data AS N1_99_cars_data WHERE N1_99_cars_data.cylinders >= 4 GROUP BY N1_99_cars_data.year
+SELECT DISTINCT N1_100_cars_data.year FROM cars_data AS N1_100_cars_data WHERE (N1_100_cars_data.mpg >= 14.0 AND N1_100_cars_data.accelerate <= 18.5) GROUP BY N1_100_cars_data.year HAVING (COUNT(*) > 23 AND COUNT(*) <= 31) ORDER BY N1_100_cars_data.year LIMIT 4
+SELECT DISTINCT N1_101_cars_data.year, COUNT(*) FROM cars_data AS N1_101_cars_data WHERE (N1_101_cars_data.mpg >= 14.0 AND N1_101_cars_data.accelerate <= 18.5) GROUP BY N1_101_cars_data.year
+SELECT DISTINCT N1_102_cars_data.year FROM cars_data AS N1_102_cars_data GROUP BY N1_102_cars_data.year HAVING COUNT(*) < 30
+SELECT DISTINCT N1_103_cars_data.year, COUNT(*) FROM cars_data AS N1_103_cars_data GROUP BY N1_103_cars_data.year
+SELECT DISTINCT * FROM car_makers AS N1_104_car_makers JOIN countries AS N1_104_countries ON N1_104_countries.countryid=N1_104_car_makers.country WHERE (N1_104_countries.countryname NOT IN ('usa','japan','germany') OR N1_104_car_makers.maker IN ('ford','volkswagen'))
+SELECT DISTINCT N1_105_cars_data.year FROM cars_data AS N1_105_cars_data WHERE N1_105_cars_data.mpg < 18.0 GROUP BY N1_105_cars_data.year HAVING COUNT(*) > 10
+SELECT DISTINCT N1_106_cars_data.year, COUNT(*) FROM cars_data AS N1_106_cars_data WHERE N1_106_cars_data.mpg < 18.0 GROUP BY N1_106_cars_data.year
+SELECT DISTINCT N1_107_cars_data.year FROM cars_data AS N1_107_cars_data WHERE ((N1_107_cars_data.accelerate >= 14.5 AND (N1_107_cars_data.year >= 1974 AND N1_107_cars_data.year < 1978)) AND N1_107_cars_data.mpg <= 19.0) GROUP BY N1_107_cars_data.year HAVING COUNT(*) < 8
+SELECT DISTINCT N1_108_cars_data.year, COUNT(*) FROM cars_data AS N1_108_cars_data WHERE ((N1_108_cars_data.accelerate >= 14.5 AND (N1_108_cars_data.year >= 1974 AND N1_108_cars_data.year < 1978)) AND N1_108_cars_data.mpg <= 19.0) GROUP BY N1_108_cars_data.year
+SELECT DISTINCT N1_109_cars_data.year FROM cars_data AS N1_109_cars_data WHERE (N1_109_cars_data.horsepower <= 19 OR (N1_109_cars_data.year > 1976 AND N1_109_cars_data.horsepower < 25)) GROUP BY N1_109_cars_data.year HAVING (COUNT(*) > 3 AND COUNT(*) < 15)
+SELECT DISTINCT N1_110_cars_data.year, COUNT(*) FROM cars_data AS N1_110_cars_data WHERE (N1_110_cars_data.horsepower <= 19 OR (N1_110_cars_data.year > 1976 AND N1_110_cars_data.horsepower < 25)) GROUP BY N1_110_cars_data.year
+SELECT DISTINCT * FROM cars_data AS N1_111_cars_data WHERE ((N1_111_cars_data.cylinders < 8 OR N1_111_cars_data.year != 1972) OR N1_111_cars_data.accelerate <= 13.0)
+SELECT DISTINCT N1_112_continents.continent FROM car_makers AS N1_112_car_makers JOIN countries AS N1_112_countries ON N1_112_countries.countryid=N1_112_car_makers.country JOIN continents AS N1_112_continents ON N1_112_continents.contid=N1_112_countries.continent WHERE (N1_112_continents.continent IN ('europe','asia','america') AND N1_112_car_makers.fullname NOT LIKE '%any') GROUP BY N1_112_continents.continent HAVING COUNT(*) > 7
+SELECT DISTINCT N1_113_continents.continent, COUNT(*) FROM car_makers AS N1_113_car_makers JOIN countries AS N1_113_countries ON N1_113_countries.countryid=N1_113_car_makers.country JOIN continents AS N1_113_continents ON N1_113_continents.contid=N1_113_countries.continent WHERE (N1_113_continents.continent IN ('europe','asia','america') AND N1_113_car_makers.fullname NOT LIKE '%any') GROUP BY N1_113_continents.continent
+SELECT DISTINCT * FROM cars_data AS N1_114_cars_data WHERE (N1_114_cars_data.year > 1971 OR N1_114_cars_data.weight != 2833)
+SELECT DISTINCT N1_115_cars_data.year FROM cars_data AS N1_115_cars_data WHERE ((N1_115_cars_data.year > 1971 AND N1_115_cars_data.year < 1975) AND N1_115_cars_data.weight > 3672) GROUP BY N1_115_cars_data.year HAVING (COUNT(*) > 6 AND COUNT(*) < 17)
+SELECT DISTINCT N1_116_cars_data.year, COUNT(*) FROM cars_data AS N1_116_cars_data WHERE ((N1_116_cars_data.year > 1971 AND N1_116_cars_data.year < 1975) AND N1_116_cars_data.weight > 3672) GROUP BY N1_116_cars_data.year
+SELECT DISTINCT N1_117_model_list.modelid FROM model_list AS N1_117_model_list JOIN car_names AS N1_117_car_names ON N1_117_model_list.model=N1_117_car_names.model JOIN car_makers AS N1_117_car_makers ON N1_117_car_makers.id=N1_117_model_list.maker JOIN cars_data AS N1_117_cars_data ON N1_117_car_names.makeid=N1_117_cars_data.id WHERE (N1_117_car_makers.maker IN ('ford','nissan') OR (N1_117_cars_data.year > 1974 AND N1_117_cars_data.year <= 1977)) ORDER BY N1_117_model_list.modelid LIMIT 3
+SELECT DISTINCT N1_118_cars_data.year FROM cars_data AS N1_118_cars_data WHERE ((N1_118_cars_data.year < 1971 AND N1_118_cars_data.edispl < 304.0) OR (N1_118_cars_data.edispl >= 97.0 AND N1_118_cars_data.edispl <= 400.0)) GROUP BY N1_118_cars_data.year HAVING (COUNT(*) >= 19 AND COUNT(*) <= 24)
+SELECT DISTINCT N1_119_cars_data.year, COUNT(*) FROM cars_data AS N1_119_cars_data WHERE ((N1_119_cars_data.year < 1971 AND N1_119_cars_data.edispl < 304.0) OR (N1_119_cars_data.edispl >= 97.0 AND N1_119_cars_data.edispl <= 400.0)) GROUP BY N1_119_cars_data.year
+SELECT DISTINCT N1_120_cars_data.year FROM cars_data AS N1_120_cars_data WHERE ((N1_120_cars_data.year > 1970 AND N1_120_cars_data.weight < 2310) AND N1_120_cars_data.cylinders >= 4) GROUP BY N1_120_cars_data.year HAVING COUNT(*) > 13
+SELECT DISTINCT N1_121_cars_data.year, COUNT(*) FROM cars_data AS N1_121_cars_data WHERE ((N1_121_cars_data.year > 1970 AND N1_121_cars_data.weight < 2310) AND N1_121_cars_data.cylinders >= 4) GROUP BY N1_121_cars_data.year
+SELECT DISTINCT * FROM cars_data AS N1_122_cars_data WHERE (N1_122_cars_data.accelerate <= 18.5 OR (N1_122_cars_data.horsepower >= 29 AND N1_122_cars_data.mpg = 29.0))
+SELECT DISTINCT N1_123_cars_data.year FROM cars_data AS N1_123_cars_data GROUP BY N1_123_cars_data.year HAVING COUNT(*) >= 28
+SELECT DISTINCT N1_124_cars_data.year, COUNT(*) FROM cars_data AS N1_124_cars_data GROUP BY N1_124_cars_data.year
+SELECT DISTINCT N1_125_cars_data.year FROM cars_data AS N1_125_cars_data JOIN car_names AS N1_125_car_names ON N1_125_car_names.makeid=N1_125_cars_data.id WHERE ((N1_125_cars_data.mpg > 25.0 AND N1_125_car_names.make NOT IN ('ford mustang ii 2+2','volkswagen rabbit custom diesel')) AND (N1_125_cars_data.accelerate >= 17.0 AND N1_125_cars_data.accelerate < 22.2)) GROUP BY N1_125_cars_data.year HAVING COUNT(*) > 2
+SELECT DISTINCT N1_126_cars_data.year, COUNT(*) FROM cars_data AS N1_126_cars_data JOIN car_names AS N1_126_car_names ON N1_126_car_names.makeid=N1_126_cars_data.id WHERE ((N1_126_cars_data.mpg > 25.0 AND N1_126_car_names.make NOT IN ('ford mustang ii 2+2','volkswagen rabbit custom diesel')) AND (N1_126_cars_data.accelerate >= 17.0 AND N1_126_cars_data.accelerate < 22.2)) GROUP BY N1_126_cars_data.year
+SELECT DISTINCT N1_127_cars_data.year FROM cars_data AS N1_127_cars_data GROUP BY N1_127_cars_data.year HAVING (COUNT(*) >= 28 AND COUNT(*) <= 36)
+SELECT DISTINCT N1_128_cars_data.year, COUNT(*) FROM cars_data AS N1_128_cars_data GROUP BY N1_128_cars_data.year
+SELECT DISTINCT COUNT(N1_129_countries.continent) FROM car_makers AS N1_129_car_makers JOIN countries AS N1_129_countries ON N1_129_countries.countryid=N1_129_car_makers.country WHERE (N1_129_car_makers.maker = 'toyota' OR N1_129_car_makers.maker != 'ford')
+SELECT DISTINCT N1_130_cars_data.year FROM cars_data AS N1_130_cars_data WHERE ((N1_130_cars_data.mpg > 15.0 AND N1_130_cars_data.horsepower > 28) AND N1_130_cars_data.year <= 1980) GROUP BY N1_130_cars_data.year HAVING COUNT(*) > 4
+SELECT DISTINCT N1_131_cars_data.year, COUNT(*) FROM cars_data AS N1_131_cars_data WHERE ((N1_131_cars_data.mpg > 15.0 AND N1_131_cars_data.horsepower > 28) AND N1_131_cars_data.year <= 1980) GROUP BY N1_131_cars_data.year
+SELECT DISTINCT N1_132_cars_data.year FROM cars_data AS N1_132_cars_data WHERE N1_132_cars_data.year < 1973 GROUP BY N1_132_cars_data.year HAVING (COUNT(*) > 28 AND COUNT(*) < 35)
+SELECT DISTINCT N1_133_cars_data.year, COUNT(*) FROM cars_data AS N1_133_cars_data WHERE N1_133_cars_data.year < 1973 GROUP BY N1_133_cars_data.year
+SELECT DISTINCT N1_134_car_makers.fullname FROM car_makers AS N1_134_car_makers WHERE (N1_134_car_makers.maker = 'ford' OR N1_134_car_makers.maker LIKE '%gm%')
+SELECT DISTINCT N1_135_cars_data.year FROM cars_data AS N1_135_cars_data GROUP BY N1_135_cars_data.year HAVING (COUNT(*) >= 28 AND COUNT(*) < 40)
+SELECT DISTINCT N1_136_cars_data.year, COUNT(*) FROM cars_data AS N1_136_cars_data GROUP BY N1_136_cars_data.year
+SELECT DISTINCT N1_137_cars_data.year FROM cars_data AS N1_137_cars_data WHERE (N1_137_cars_data.year > 1973 AND (N1_137_cars_data.accelerate > 16.0 AND N1_137_cars_data.accelerate < 16.7)) GROUP BY N1_137_cars_data.year HAVING (COUNT(*) >= 1 AND COUNT(*) <= 2) ORDER BY N1_137_cars_data.year LIMIT 1
+SELECT DISTINCT N1_138_cars_data.year, COUNT(*) FROM cars_data AS N1_138_cars_data WHERE (N1_138_cars_data.year > 1973 AND (N1_138_cars_data.accelerate > 16.0 AND N1_138_cars_data.accelerate < 16.7)) GROUP BY N1_138_cars_data.year
+SELECT DISTINCT N1_139_cars_data.year FROM cars_data AS N1_139_cars_data GROUP BY N1_139_cars_data.year HAVING (COUNT(*) >= 27 AND COUNT(*) <= 34)
+SELECT DISTINCT N1_140_cars_data.year, COUNT(*) FROM cars_data AS N1_140_cars_data GROUP BY N1_140_cars_data.year
+SELECT DISTINCT N1_141_car_makers.maker FROM car_makers AS N1_141_car_makers WHERE ((N1_141_car_makers.fullname LIKE 'Toy%' OR N1_141_car_makers.fullname = 'Ford Motor Company') OR N1_141_car_makers.maker = 'opel')
+SELECT DISTINCT N1_142_cars_data.year FROM cars_data AS N1_142_cars_data GROUP BY N1_142_cars_data.year HAVING COUNT(*) > 34
 SELECT DISTINCT N1_143_cars_data.year, COUNT(*) FROM cars_data AS N1_143_cars_data GROUP BY N1_143_cars_data.year
-SELECT DISTINCT N1_144_cars_data.year FROM cars_data AS N1_144_cars_data GROUP BY N1_144_cars_data.year HAVING (COUNT(*) > 27 AND COUNT(*) < 30)
+SELECT DISTINCT N1_144_cars_data.year FROM cars_data AS N1_144_cars_data GROUP BY N1_144_cars_data.year HAVING COUNT(*) <= 30
 SELECT DISTINCT N1_145_cars_data.year, COUNT(*) FROM cars_data AS N1_145_cars_data GROUP BY N1_145_cars_data.year
-SELECT DISTINCT N1_146_cars_data.year FROM cars_data AS N1_146_cars_data WHERE (N1_146_cars_data.weight >= 2228 AND N1_146_cars_data.weight < 3360) GROUP BY N1_146_cars_data.year HAVING (COUNT(*) >= 12 AND COUNT(*) <= 16)
-SELECT DISTINCT N1_147_cars_data.year, COUNT(*) FROM cars_data AS N1_147_cars_data WHERE (N1_147_cars_data.weight >= 2228 AND N1_147_cars_data.weight < 3360) GROUP BY N1_147_cars_data.year
-SELECT DISTINCT N1_148_cars_data.year FROM cars_data AS N1_148_cars_data WHERE (N1_148_cars_data.year >= 1974 OR N1_148_cars_data.accelerate > 18.5) GROUP BY N1_148_cars_data.year HAVING COUNT(*) <= 27
-SELECT DISTINCT N1_149_cars_data.year, COUNT(*) FROM cars_data AS N1_149_cars_data WHERE (N1_149_cars_data.year >= 1974 OR N1_149_cars_data.accelerate > 18.5) GROUP BY N1_149_cars_data.year
-SELECT DISTINCT COUNT(*) FROM car_makers AS N1_150_car_makers JOIN countries AS N1_150_countries ON N1_150_countries.countryid=N1_150_car_makers.country JOIN continents AS N1_150_continents ON N1_150_continents.contid=N1_150_countries.continent WHERE (N1_150_car_makers.fullname NOT LIKE '%pan%' OR (N1_150_car_makers.fullname = 'Ford Motor Company' OR N1_150_continents.continent LIKE '%ica'))
-SELECT DISTINCT * FROM car_makers AS N1_151_car_makers JOIN countries AS N1_151_countries ON N1_151_countries.countryid=N1_151_car_makers.country JOIN continents AS N1_151_continents ON N1_151_continents.contid=N1_151_countries.continent WHERE (N1_151_continents.continent = 'europe' OR (N1_151_continents.continent LIKE '%ica' OR N1_151_car_makers.maker = 'nissan'))
-SELECT DISTINCT N1_152_car_makers.maker FROM car_makers AS N1_152_car_makers JOIN countries AS N1_152_countries ON N1_152_countries.countryid=N1_152_car_makers.country JOIN continents AS N1_152_continents ON N1_152_continents.contid=N1_152_countries.continent WHERE (N1_152_car_makers.maker IN ('chrysler','honda') OR N1_152_continents.continent = 'america')
-SELECT DISTINCT N1_153_cars_data.edispl FROM cars_data AS N1_153_cars_data WHERE N1_153_cars_data.mpg < 32.1 GROUP BY N1_153_cars_data.edispl HAVING COUNT(*) >= 3
-SELECT DISTINCT N1_154_cars_data.edispl, COUNT(*) FROM cars_data AS N1_154_cars_data WHERE N1_154_cars_data.mpg < 32.1 GROUP BY N1_154_cars_data.edispl
-SELECT DISTINCT N1_155_countries.continent FROM car_makers AS N1_155_car_makers JOIN countries AS N1_155_countries ON N1_155_countries.countryid=N1_155_car_makers.country WHERE (N1_155_car_makers.maker NOT LIKE 'for%' OR (N1_155_countries.countryname = 'usa' OR N1_155_countries.countryname = 'brazil'))
-SELECT DISTINCT N1_156_cars_data.year FROM cars_data AS N1_156_cars_data GROUP BY N1_156_cars_data.year HAVING (COUNT(*) > 28 AND COUNT(*) < 40)
-SELECT DISTINCT N1_157_cars_data.year, COUNT(*) FROM cars_data AS N1_157_cars_data GROUP BY N1_157_cars_data.year
-SELECT DISTINCT N1_158_cars_data.year FROM cars_data AS N1_158_cars_data WHERE N1_158_cars_data.year > 1970 GROUP BY N1_158_cars_data.year HAVING (COUNT(*) >= 31 AND COUNT(*) <= 40)
-SELECT DISTINCT N1_159_cars_data.year, COUNT(*) FROM cars_data AS N1_159_cars_data WHERE N1_159_cars_data.year > 1970 GROUP BY N1_159_cars_data.year
-SELECT DISTINCT N1_160_cars_data.year FROM cars_data AS N1_160_cars_data GROUP BY N1_160_cars_data.year HAVING (COUNT(*) > 29 AND COUNT(*) < 40)
+SELECT DISTINCT N1_146_cars_data.year FROM cars_data AS N1_146_cars_data WHERE N1_146_cars_data.mpg <= 25.0 GROUP BY N1_146_cars_data.year HAVING COUNT(*) <= 16
+SELECT DISTINCT N1_147_cars_data.year, COUNT(*) FROM cars_data AS N1_147_cars_data WHERE N1_147_cars_data.mpg <= 25.0 GROUP BY N1_147_cars_data.year
+SELECT DISTINCT N1_148_cars_data.year FROM cars_data AS N1_148_cars_data GROUP BY N1_148_cars_data.year HAVING COUNT(*) <= 28
+SELECT DISTINCT N1_149_cars_data.year, COUNT(*) FROM cars_data AS N1_149_cars_data GROUP BY N1_149_cars_data.year
+SELECT DISTINCT N1_150_cars_data.year FROM cars_data AS N1_150_cars_data WHERE (N1_150_cars_data.edispl >= 122.0 AND N1_150_cars_data.year <= 1978) GROUP BY N1_150_cars_data.year HAVING COUNT(*) <= 24
+SELECT DISTINCT N1_151_cars_data.year, COUNT(*) FROM cars_data AS N1_151_cars_data WHERE (N1_151_cars_data.edispl >= 122.0 AND N1_151_cars_data.year <= 1978) GROUP BY N1_151_cars_data.year
+SELECT DISTINCT N1_152_cars_data.year FROM cars_data AS N1_152_cars_data WHERE (N1_152_cars_data.edispl != 88.0 AND (N1_152_cars_data.cylinders = 4 AND N1_152_cars_data.year > 1977)) GROUP BY N1_152_cars_data.year HAVING COUNT(*) <= 17
+SELECT DISTINCT N1_153_cars_data.year, COUNT(*) FROM cars_data AS N1_153_cars_data WHERE (N1_153_cars_data.edispl != 88.0 AND (N1_153_cars_data.cylinders = 4 AND N1_153_cars_data.year > 1977)) GROUP BY N1_153_cars_data.year
+SELECT DISTINCT N1_154_cars_data.year FROM cars_data AS N1_154_cars_data WHERE N1_154_cars_data.accelerate <= 18.5 GROUP BY N1_154_cars_data.year HAVING COUNT(*) > 30
+SELECT DISTINCT N1_155_cars_data.year, COUNT(*) FROM cars_data AS N1_155_cars_data WHERE N1_155_cars_data.accelerate <= 18.5 GROUP BY N1_155_cars_data.year
+SELECT DISTINCT N1_156_cars_data.year FROM cars_data AS N1_156_cars_data WHERE N1_156_cars_data.weight < 2228 GROUP BY N1_156_cars_data.year HAVING (COUNT(*) > 9 AND COUNT(*) < 12) ORDER BY N1_156_cars_data.year LIMIT 2
+SELECT DISTINCT N1_157_cars_data.year, COUNT(*) FROM cars_data AS N1_157_cars_data WHERE N1_157_cars_data.weight < 2228 GROUP BY N1_157_cars_data.year
+SELECT DISTINCT N1_158_cars_data.year FROM cars_data AS N1_158_cars_data WHERE N1_158_cars_data.weight < 2228 GROUP BY N1_158_cars_data.year HAVING COUNT(*) >= 5
+SELECT DISTINCT N1_159_cars_data.year, COUNT(*) FROM cars_data AS N1_159_cars_data WHERE N1_159_cars_data.weight < 2228 GROUP BY N1_159_cars_data.year
+SELECT DISTINCT N1_160_cars_data.year FROM cars_data AS N1_160_cars_data GROUP BY N1_160_cars_data.year HAVING (COUNT(*) >= 29 AND COUNT(*) <= 40)
 SELECT DISTINCT N1_161_cars_data.year, COUNT(*) FROM cars_data AS N1_161_cars_data GROUP BY N1_161_cars_data.year
-SELECT DISTINCT N1_162_cars_data.year FROM cars_data AS N1_162_cars_data GROUP BY N1_162_cars_data.year HAVING (COUNT(*) >= 27 AND COUNT(*) <= 31)
+SELECT DISTINCT N1_162_cars_data.year FROM cars_data AS N1_162_cars_data GROUP BY N1_162_cars_data.year HAVING COUNT(*) >= 31
 SELECT DISTINCT N1_163_cars_data.year, COUNT(*) FROM cars_data AS N1_163_cars_data GROUP BY N1_163_cars_data.year
-SELECT DISTINCT N1_164_cars_data.year FROM cars_data AS N1_164_cars_data GROUP BY N1_164_cars_data.year HAVING COUNT(*) > 28
-SELECT DISTINCT N1_165_cars_data.year, COUNT(*) FROM cars_data AS N1_165_cars_data GROUP BY N1_165_cars_data.year
-SELECT DISTINCT N1_166_cars_data.edispl FROM cars_data AS N1_166_cars_data WHERE (N1_166_cars_data.edispl <= 383.0 AND N1_166_cars_data.mpg >= 19.0) GROUP BY N1_166_cars_data.edispl HAVING COUNT(*) > 7
-SELECT DISTINCT N1_167_cars_data.edispl, COUNT(*) FROM cars_data AS N1_167_cars_data WHERE (N1_167_cars_data.edispl <= 383.0 AND N1_167_cars_data.mpg >= 19.0) GROUP BY N1_167_cars_data.edispl
-SELECT DISTINCT N1_168_cars_data.year FROM cars_data AS N1_168_cars_data WHERE N1_168_cars_data.accelerate = 14.0 GROUP BY N1_168_cars_data.year HAVING COUNT(*) > 3
-SELECT DISTINCT N1_169_cars_data.year, COUNT(*) FROM cars_data AS N1_169_cars_data WHERE N1_169_cars_data.accelerate = 14.0 GROUP BY N1_169_cars_data.year
-SELECT DISTINCT * FROM cars_data AS N1_170_cars_data WHERE (N1_170_cars_data.horsepower > 15 OR (N1_170_cars_data.mpg != 14.0 OR N1_170_cars_data.edispl <= 351.0))
-SELECT DISTINCT N1_171_cars_data.id FROM cars_data AS N1_171_cars_data WHERE ((N1_171_cars_data.edispl != 113.0 OR N1_171_cars_data.horsepower > 24) OR N1_171_cars_data.accelerate <= 15.0)
-SELECT DISTINCT N1_172_car_names.make FROM car_names AS N1_172_car_names WHERE N1_172_car_names.make != 'toyota corolla' GROUP BY N1_172_car_names.make HAVING COUNT(*) > 2
-SELECT DISTINCT N1_173_car_names.make, COUNT(*) FROM car_names AS N1_173_car_names WHERE N1_173_car_names.make != 'toyota corolla' GROUP BY N1_173_car_names.make
-SELECT DISTINCT N1_174_cars_data.edispl FROM cars_data AS N1_174_cars_data WHERE (N1_174_cars_data.mpg <= 19.0 OR (N1_174_cars_data.mpg >= 32.0 OR N1_174_cars_data.weight < 2035)) ORDER BY N1_174_cars_data.edispl LIMIT 5
-SELECT DISTINCT N1_175_cars_data.year FROM cars_data AS N1_175_cars_data GROUP BY N1_175_cars_data.year HAVING COUNT(*) >= 30
-SELECT DISTINCT N1_176_cars_data.year, COUNT(*) FROM cars_data AS N1_176_cars_data GROUP BY N1_176_cars_data.year
-SELECT DISTINCT N1_177_cars_data.year FROM cars_data AS N1_177_cars_data GROUP BY N1_177_cars_data.year HAVING (COUNT(*) >= 30 AND COUNT(*) < 40) ORDER BY N1_177_cars_data.year LIMIT 3
+SELECT DISTINCT * FROM cars_data AS N1_164_cars_data WHERE (N1_164_cars_data.horsepower != 18 OR N1_164_cars_data.edispl < 171.0)
+SELECT DISTINCT N1_165_cars_data.year FROM cars_data AS N1_165_cars_data GROUP BY N1_165_cars_data.year HAVING (COUNT(*) >= 27 AND COUNT(*) < 34)
+SELECT DISTINCT N1_166_cars_data.year, COUNT(*) FROM cars_data AS N1_166_cars_data GROUP BY N1_166_cars_data.year
+SELECT DISTINCT N1_167_cars_data.year FROM cars_data AS N1_167_cars_data GROUP BY N1_167_cars_data.year HAVING (COUNT(*) >= 35 AND COUNT(*) < 40)
+SELECT DISTINCT N1_168_cars_data.year, COUNT(*) FROM cars_data AS N1_168_cars_data GROUP BY N1_168_cars_data.year
+SELECT DISTINCT N1_169_cars_data.year FROM cars_data AS N1_169_cars_data WHERE (N1_169_cars_data.year < 1973 AND N1_169_cars_data.cylinders != 8) GROUP BY N1_169_cars_data.year HAVING COUNT(*) < 15
+SELECT DISTINCT N1_170_cars_data.year, COUNT(*) FROM cars_data AS N1_170_cars_data WHERE (N1_170_cars_data.year < 1973 AND N1_170_cars_data.cylinders != 8) GROUP BY N1_170_cars_data.year
+SELECT DISTINCT N1_171_cars_data.year FROM cars_data AS N1_171_cars_data GROUP BY N1_171_cars_data.year HAVING COUNT(*) > 34
+SELECT DISTINCT N1_172_cars_data.year, COUNT(*) FROM cars_data AS N1_172_cars_data GROUP BY N1_172_cars_data.year
+SELECT DISTINCT N1_173_cars_data.year FROM cars_data AS N1_173_cars_data WHERE (N1_173_cars_data.edispl >= 122.0 AND N1_173_cars_data.year < 1978) GROUP BY N1_173_cars_data.year HAVING COUNT(*) > 16
+SELECT DISTINCT N1_174_cars_data.year, COUNT(*) FROM cars_data AS N1_174_cars_data WHERE (N1_174_cars_data.edispl >= 122.0 AND N1_174_cars_data.year < 1978) GROUP BY N1_174_cars_data.year
+SELECT DISTINCT N1_175_cars_data.year FROM cars_data AS N1_175_cars_data WHERE N1_175_cars_data.cylinders < 8 GROUP BY N1_175_cars_data.year HAVING (COUNT(*) > 19 AND COUNT(*) <= 31)
+SELECT DISTINCT N1_176_cars_data.year, COUNT(*) FROM cars_data AS N1_176_cars_data WHERE N1_176_cars_data.cylinders < 8 GROUP BY N1_176_cars_data.year
+SELECT DISTINCT N1_177_cars_data.year FROM cars_data AS N1_177_cars_data GROUP BY N1_177_cars_data.year HAVING COUNT(*) < 31
 SELECT DISTINCT N1_178_cars_data.year, COUNT(*) FROM cars_data AS N1_178_cars_data GROUP BY N1_178_cars_data.year
-SELECT DISTINCT N1_179_car_makers.country FROM car_makers AS N1_179_car_makers WHERE (N1_179_car_makers.maker = 'ford' OR N1_179_car_makers.maker = 'gm')
-SELECT DISTINCT COUNT(*) FROM cars_data AS N1_180_cars_data WHERE ((N1_180_cars_data.accelerate >= 14.5 AND N1_180_cars_data.accelerate <= 16.8) OR (N1_180_cars_data.horsepower >= 19 AND N1_180_cars_data.weight < 2310))
-SELECT DISTINCT SUM(N1_181_cars_data.cylinders) FROM cars_data AS N1_181_cars_data WHERE (N1_181_cars_data.year = 1971 OR N1_181_cars_data.cylinders = 4)
-SELECT DISTINCT N1_182_countries.countryname FROM model_list AS N1_182_model_list JOIN car_makers AS N1_182_car_makers ON N1_182_car_makers.id=N1_182_model_list.maker JOIN countries AS N1_182_countries ON N1_182_countries.countryid=N1_182_car_makers.country JOIN car_names AS N1_182_car_names ON N1_182_model_list.model=N1_182_car_names.model JOIN cars_data AS N1_182_cars_data ON N1_182_car_names.makeid=N1_182_cars_data.id WHERE N1_182_cars_data.accelerate <= 18.5 GROUP BY N1_182_countries.countryname HAVING COUNT(*) >= 26
-SELECT DISTINCT N1_183_countries.countryname, COUNT(*) FROM model_list AS N1_183_model_list JOIN car_makers AS N1_183_car_makers ON N1_183_car_makers.id=N1_183_model_list.maker JOIN countries AS N1_183_countries ON N1_183_countries.countryid=N1_183_car_makers.country JOIN car_names AS N1_183_car_names ON N1_183_model_list.model=N1_183_car_names.model JOIN cars_data AS N1_183_cars_data ON N1_183_car_names.makeid=N1_183_cars_data.id WHERE N1_183_cars_data.accelerate <= 18.5 GROUP BY N1_183_countries.countryname
-SELECT DISTINCT N1_184_cars_data.year FROM cars_data AS N1_184_cars_data GROUP BY N1_184_cars_data.year HAVING COUNT(*) >= 36
-SELECT DISTINCT N1_185_cars_data.year, COUNT(*) FROM cars_data AS N1_185_cars_data GROUP BY N1_185_cars_data.year
-SELECT DISTINCT COUNT(*) FROM cars_data AS N1_186_cars_data WHERE (N1_186_cars_data.cylinders = 4 OR (N1_186_cars_data.edispl > 225.0 OR (N1_186_cars_data.weight >= 2833 AND N1_186_cars_data.weight <= 3155)))
-SELECT DISTINCT N1_187_cars_data.year FROM cars_data AS N1_187_cars_data GROUP BY N1_187_cars_data.year HAVING COUNT(*) > 29
-SELECT DISTINCT N1_188_cars_data.year, COUNT(*) FROM cars_data AS N1_188_cars_data GROUP BY N1_188_cars_data.year
-SELECT DISTINCT N1_189_car_names.make FROM car_names AS N1_189_car_names WHERE N1_189_car_names.make LIKE 'toy%' GROUP BY N1_189_car_names.make HAVING (COUNT(*) >= 2 AND COUNT(*) < 5)
-SELECT DISTINCT N1_190_car_names.make, COUNT(*) FROM car_names AS N1_190_car_names WHERE N1_190_car_names.make LIKE 'toy%' GROUP BY N1_190_car_names.make
-SELECT DISTINCT N1_191_cars_data.year FROM cars_data AS N1_191_cars_data GROUP BY N1_191_cars_data.year HAVING COUNT(*) <= 36 ORDER BY N1_191_cars_data.year LIMIT 2
-SELECT DISTINCT N1_192_cars_data.year, COUNT(*) FROM cars_data AS N1_192_cars_data GROUP BY N1_192_cars_data.year
-SELECT DISTINCT N1_193_cars_data.accelerate FROM cars_data AS N1_193_cars_data WHERE ((N1_193_cars_data.horsepower <= 19 OR N1_193_cars_data.weight <= 1985) OR N1_193_cars_data.weight >= 3015)
-SELECT DISTINCT N1_194_car_names.make FROM car_names AS N1_194_car_names WHERE N1_194_car_names.make LIKE '%for%' GROUP BY N1_194_car_names.make HAVING (COUNT(*) > 1 AND COUNT(*) < 6)
-SELECT DISTINCT N1_195_car_names.make, COUNT(*) FROM car_names AS N1_195_car_names WHERE N1_195_car_names.make LIKE '%for%' GROUP BY N1_195_car_names.make
-SELECT DISTINCT * FROM cars_data AS N1_196_cars_data WHERE ((N1_196_cars_data.horsepower >= 14 AND N1_196_cars_data.horsepower < 19) OR N1_196_cars_data.weight != 1867)
-SELECT DISTINCT N1_197_countries.countryid FROM countries AS N1_197_countries WHERE (N1_197_countries.countryname IN ('italy','usa','germany') OR N1_197_countries.countryname LIKE 'jap%')
-SELECT DISTINCT N1_198_car_names.model FROM cars_data AS N1_198_cars_data JOIN car_names AS N1_198_car_names ON N1_198_car_names.makeid=N1_198_cars_data.id WHERE ((N1_198_cars_data.cylinders > 6 OR N1_198_cars_data.edispl > 112.0) OR N1_198_cars_data.weight != 2130)
-SELECT DISTINCT N1_199_cars_data.year FROM cars_data AS N1_199_cars_data WHERE N1_199_cars_data.weight > 2065 GROUP BY N1_199_cars_data.year HAVING (COUNT(*) > 21 AND COUNT(*) < 28) ORDER BY N1_199_cars_data.year LIMIT 3
-SELECT DISTINCT N1_200_cars_data.year, COUNT(*) FROM cars_data AS N1_200_cars_data WHERE N1_200_cars_data.weight > 2065 GROUP BY N1_200_cars_data.year
-SELECT DISTINCT N1_201_cars_data.year FROM cars_data AS N1_201_cars_data WHERE (N1_201_cars_data.accelerate >= 14.0 OR (N1_201_cars_data.year != 1972 OR N1_201_cars_data.weight != 4129)) GROUP BY N1_201_cars_data.year HAVING (COUNT(*) >= 29 AND COUNT(*) <= 31)
-SELECT DISTINCT N1_202_cars_data.year, COUNT(*) FROM cars_data AS N1_202_cars_data WHERE (N1_202_cars_data.accelerate >= 14.0 OR (N1_202_cars_data.year != 1972 OR N1_202_cars_data.weight != 4129)) GROUP BY N1_202_cars_data.year
-SELECT DISTINCT N1_203_cars_data.year FROM cars_data AS N1_203_cars_data GROUP BY N1_203_cars_data.year HAVING COUNT(*) > 34
-SELECT DISTINCT N1_204_cars_data.year, COUNT(*) FROM cars_data AS N1_204_cars_data GROUP BY N1_204_cars_data.year
-SELECT DISTINCT N1_205_cars_data.year FROM cars_data AS N1_205_cars_data GROUP BY N1_205_cars_data.year HAVING COUNT(*) <= 29
-SELECT DISTINCT N1_206_cars_data.year, COUNT(*) FROM cars_data AS N1_206_cars_data GROUP BY N1_206_cars_data.year
-SELECT DISTINCT N1_207_cars_data.year FROM cars_data AS N1_207_cars_data GROUP BY N1_207_cars_data.year HAVING COUNT(*) <= 34
-SELECT DISTINCT N1_208_cars_data.year, COUNT(*) FROM cars_data AS N1_208_cars_data GROUP BY N1_208_cars_data.year
-SELECT DISTINCT N1_209_cars_data.cylinders FROM cars_data AS N1_209_cars_data WHERE N1_209_cars_data.horsepower > 25 GROUP BY N1_209_cars_data.cylinders HAVING COUNT(*) > 6
-SELECT DISTINCT N1_210_cars_data.cylinders, COUNT(*) FROM cars_data AS N1_210_cars_data WHERE N1_210_cars_data.horsepower > 25 GROUP BY N1_210_cars_data.cylinders
-SELECT DISTINCT N1_211_car_names.make FROM cars_data AS N1_211_cars_data JOIN car_names AS N1_211_car_names ON N1_211_car_names.makeid=N1_211_cars_data.id WHERE ((N1_211_cars_data.cylinders >= 4 AND N1_211_cars_data.cylinders < 6) OR N1_211_car_names.make = 'plymouth duster')
-SELECT DISTINCT * FROM car_makers AS N1_212_car_makers JOIN countries AS N1_212_countries ON N1_212_countries.countryid=N1_212_car_makers.country JOIN continents AS N1_212_continents ON N1_212_continents.contid=N1_212_countries.continent WHERE (N1_212_car_makers.maker LIKE '%for%' OR N1_212_continents.continent NOT IN ('america','europe','asia'))
-SELECT DISTINCT N1_213_model_list.model FROM model_list AS N1_213_model_list JOIN car_names AS N1_213_car_names ON N1_213_model_list.model=N1_213_car_names.model JOIN cars_data AS N1_213_cars_data ON N1_213_car_names.makeid=N1_213_cars_data.id WHERE (N1_213_cars_data.mpg < 15.0 OR N1_213_cars_data.mpg > 22.4)
-SELECT DISTINCT N1_214_cars_data.year FROM cars_data AS N1_214_cars_data GROUP BY N1_214_cars_data.year HAVING COUNT(*) > 30
-SELECT DISTINCT N1_215_cars_data.year, COUNT(*) FROM cars_data AS N1_215_cars_data GROUP BY N1_215_cars_data.year
-SELECT DISTINCT N1_216_car_names.make FROM car_names AS N1_216_car_names GROUP BY N1_216_car_names.make HAVING COUNT(*) <= 2
-SELECT DISTINCT N1_217_car_names.make, COUNT(*) FROM car_names AS N1_217_car_names GROUP BY N1_217_car_names.make
-SELECT DISTINCT N1_218_countries.countryid FROM car_makers AS N1_218_car_makers JOIN countries AS N1_218_countries ON N1_218_countries.countryid=N1_218_car_makers.country WHERE (N1_218_car_makers.maker LIKE '%iat' OR N1_218_countries.countryname IN ('usa','sweden','japan'))
-SELECT DISTINCT N1_219_cars_data.year FROM cars_data AS N1_219_cars_data WHERE N1_219_cars_data.cylinders < 8 GROUP BY N1_219_cars_data.year HAVING COUNT(*) > 29 ORDER BY N1_219_cars_data.year LIMIT 5
-SELECT DISTINCT N1_220_cars_data.year, COUNT(*) FROM cars_data AS N1_220_cars_data WHERE N1_220_cars_data.cylinders < 8 GROUP BY N1_220_cars_data.year
-SELECT DISTINCT N1_221_cars_data.year FROM cars_data AS N1_221_cars_data GROUP BY N1_221_cars_data.year HAVING COUNT(*) > 29
+SELECT DISTINCT N1_179_cars_data.year FROM cars_data AS N1_179_cars_data GROUP BY N1_179_cars_data.year HAVING COUNT(*) <= 29
+SELECT DISTINCT N1_180_cars_data.year, COUNT(*) FROM cars_data AS N1_180_cars_data GROUP BY N1_180_cars_data.year
+SELECT DISTINCT N1_181_cars_data.year FROM cars_data AS N1_181_cars_data GROUP BY N1_181_cars_data.year HAVING (COUNT(*) > 30 AND COUNT(*) <= 36)
+SELECT DISTINCT N1_182_cars_data.year, COUNT(*) FROM cars_data AS N1_182_cars_data GROUP BY N1_182_cars_data.year
+SELECT DISTINCT N1_183_cars_data.year FROM cars_data AS N1_183_cars_data WHERE (N1_183_cars_data.cylinders >= 4 AND N1_183_cars_data.edispl != 121.0) GROUP BY N1_183_cars_data.year HAVING (COUNT(*) >= 34 AND COUNT(*) < 37)
+SELECT DISTINCT N1_184_cars_data.year, COUNT(*) FROM cars_data AS N1_184_cars_data WHERE (N1_184_cars_data.cylinders >= 4 AND N1_184_cars_data.edispl != 121.0) GROUP BY N1_184_cars_data.year
+SELECT DISTINCT N1_185_cars_data.year FROM cars_data AS N1_185_cars_data GROUP BY N1_185_cars_data.year HAVING (COUNT(*) >= 27 AND COUNT(*) <= 35)
+SELECT DISTINCT N1_186_cars_data.year, COUNT(*) FROM cars_data AS N1_186_cars_data GROUP BY N1_186_cars_data.year
+SELECT DISTINCT * FROM cars_data AS N1_187_cars_data WHERE ((N1_187_cars_data.edispl >= 122.0 AND N1_187_cars_data.edispl < 302.0) OR N1_187_cars_data.year <= 1976)
+SELECT DISTINCT N1_188_cars_data.year FROM cars_data AS N1_188_cars_data GROUP BY N1_188_cars_data.year HAVING COUNT(*) <= 28
+SELECT DISTINCT N1_189_cars_data.year, COUNT(*) FROM cars_data AS N1_189_cars_data GROUP BY N1_189_cars_data.year
+SELECT DISTINCT N1_190_cars_data.year FROM cars_data AS N1_190_cars_data WHERE N1_190_cars_data.horsepower = 15 GROUP BY N1_190_cars_data.year HAVING COUNT(*) > 2
+SELECT DISTINCT N1_191_cars_data.year, COUNT(*) FROM cars_data AS N1_191_cars_data WHERE N1_191_cars_data.horsepower = 15 GROUP BY N1_191_cars_data.year
+SELECT DISTINCT N1_192_cars_data.year FROM cars_data AS N1_192_cars_data GROUP BY N1_192_cars_data.year HAVING (COUNT(*) >= 29 AND COUNT(*) <= 30)
+SELECT DISTINCT N1_193_cars_data.year, COUNT(*) FROM cars_data AS N1_193_cars_data GROUP BY N1_193_cars_data.year
+SELECT DISTINCT N1_194_cars_data.year FROM cars_data AS N1_194_cars_data JOIN car_names AS N1_194_car_names ON N1_194_car_names.makeid=N1_194_cars_data.id WHERE N1_194_car_names.make NOT IN ('fiat 124b','audi 5000s (diesel)','chevrolet concours') GROUP BY N1_194_cars_data.year HAVING (COUNT(*) > 28 AND COUNT(*) <= 31)
+SELECT DISTINCT N1_195_cars_data.year, COUNT(*) FROM cars_data AS N1_195_cars_data JOIN car_names AS N1_195_car_names ON N1_195_car_names.makeid=N1_195_cars_data.id WHERE N1_195_car_names.make NOT IN ('fiat 124b','audi 5000s (diesel)','chevrolet concours') GROUP BY N1_195_cars_data.year
+SELECT DISTINCT N1_196_cars_data.year FROM cars_data AS N1_196_cars_data GROUP BY N1_196_cars_data.year HAVING COUNT(*) > 36 ORDER BY N1_196_cars_data.year LIMIT 4
+SELECT DISTINCT N1_197_cars_data.year, COUNT(*) FROM cars_data AS N1_197_cars_data GROUP BY N1_197_cars_data.year
+SELECT DISTINCT COUNT(N1_198_countries.countryid) FROM car_makers AS N1_198_car_makers JOIN countries AS N1_198_countries ON N1_198_countries.countryid=N1_198_car_makers.country WHERE (N1_198_car_makers.fullname IN ('American Motor Company','Chrysler') OR (N1_198_car_makers.maker LIKE '%gm%' OR N1_198_car_makers.maker = 'saab'))
+SELECT DISTINCT N1_199_cars_data.year FROM cars_data AS N1_199_cars_data WHERE N1_199_cars_data.year <= 1976 GROUP BY N1_199_cars_data.year HAVING COUNT(*) <= 30
+SELECT DISTINCT N1_200_cars_data.year, COUNT(*) FROM cars_data AS N1_200_cars_data WHERE N1_200_cars_data.year <= 1976 GROUP BY N1_200_cars_data.year
+SELECT DISTINCT N1_201_cars_data.year FROM cars_data AS N1_201_cars_data GROUP BY N1_201_cars_data.year HAVING (COUNT(*) >= 27 AND COUNT(*) <= 29)
+SELECT DISTINCT N1_202_cars_data.year, COUNT(*) FROM cars_data AS N1_202_cars_data GROUP BY N1_202_cars_data.year
+SELECT DISTINCT N1_203_cars_data.year FROM cars_data AS N1_203_cars_data WHERE ((N1_203_cars_data.accelerate > 13.2 AND N1_203_cars_data.accelerate <= 14.5) OR ((N1_203_cars_data.horsepower >= 19 AND N1_203_cars_data.horsepower < 41) OR N1_203_cars_data.year > 1974)) GROUP BY N1_203_cars_data.year HAVING COUNT(*) <= 30
+SELECT DISTINCT N1_204_cars_data.year, COUNT(*) FROM cars_data AS N1_204_cars_data WHERE ((N1_204_cars_data.accelerate > 13.2 AND N1_204_cars_data.accelerate <= 14.5) OR ((N1_204_cars_data.horsepower >= 19 AND N1_204_cars_data.horsepower < 41) OR N1_204_cars_data.year > 1974)) GROUP BY N1_204_cars_data.year
+SELECT DISTINCT N1_205_countries.countryname FROM car_makers AS N1_205_car_makers JOIN countries AS N1_205_countries ON N1_205_countries.countryid=N1_205_car_makers.country WHERE (N1_205_car_makers.maker LIKE '%ord' OR N1_205_countries.countryname = 'usa')
+SELECT DISTINCT N1_206_cars_data.year FROM cars_data AS N1_206_cars_data GROUP BY N1_206_cars_data.year HAVING COUNT(*) >= 28
+SELECT DISTINCT N1_207_cars_data.year, COUNT(*) FROM cars_data AS N1_207_cars_data GROUP BY N1_207_cars_data.year
+SELECT DISTINCT N1_208_cars_data.year FROM cars_data AS N1_208_cars_data GROUP BY N1_208_cars_data.year HAVING COUNT(*) >= 35 ORDER BY N1_208_cars_data.year LIMIT 2
+SELECT DISTINCT N1_209_cars_data.year, COUNT(*) FROM cars_data AS N1_209_cars_data GROUP BY N1_209_cars_data.year
+SELECT DISTINCT N1_210_cars_data.year FROM cars_data AS N1_210_cars_data WHERE (N1_210_cars_data.edispl <= 122.0 AND N1_210_cars_data.year >= 1971) GROUP BY N1_210_cars_data.year HAVING (COUNT(*) >= 12 AND COUNT(*) < 20)
+SELECT DISTINCT N1_211_cars_data.year, COUNT(*) FROM cars_data AS N1_211_cars_data WHERE (N1_211_cars_data.edispl <= 122.0 AND N1_211_cars_data.year >= 1971) GROUP BY N1_211_cars_data.year
+SELECT DISTINCT N1_212_cars_data.year FROM cars_data AS N1_212_cars_data GROUP BY N1_212_cars_data.year HAVING COUNT(*) >= 28
+SELECT DISTINCT N1_213_cars_data.year, COUNT(*) FROM cars_data AS N1_213_cars_data GROUP BY N1_213_cars_data.year
+SELECT DISTINCT N1_214_cars_data.year FROM cars_data AS N1_214_cars_data WHERE N1_214_cars_data.year >= 1971 GROUP BY N1_214_cars_data.year HAVING (COUNT(*) > 28 AND COUNT(*) < 31) ORDER BY N1_214_cars_data.year LIMIT 2
+SELECT DISTINCT N1_215_cars_data.year, COUNT(*) FROM cars_data AS N1_215_cars_data WHERE N1_215_cars_data.year >= 1971 GROUP BY N1_215_cars_data.year
+SELECT DISTINCT * FROM cars_data AS N1_216_cars_data WHERE (N1_216_cars_data.mpg < 19.0 OR N1_216_cars_data.edispl = 96.0)
+SELECT DISTINCT N1_217_cars_data.year FROM cars_data AS N1_217_cars_data WHERE (N1_217_cars_data.cylinders > 4 OR N1_217_cars_data.accelerate <= 18.5) GROUP BY N1_217_cars_data.year HAVING COUNT(*) <= 31
+SELECT DISTINCT N1_218_cars_data.year, COUNT(*) FROM cars_data AS N1_218_cars_data WHERE (N1_218_cars_data.cylinders > 4 OR N1_218_cars_data.accelerate <= 18.5) GROUP BY N1_218_cars_data.year
+SELECT DISTINCT N1_219_cars_data.year FROM cars_data AS N1_219_cars_data GROUP BY N1_219_cars_data.year HAVING COUNT(*) <= 30 ORDER BY N1_219_cars_data.year LIMIT 4
+SELECT DISTINCT N1_220_cars_data.year, COUNT(*) FROM cars_data AS N1_220_cars_data GROUP BY N1_220_cars_data.year
+SELECT DISTINCT N1_221_cars_data.year FROM cars_data AS N1_221_cars_data GROUP BY N1_221_cars_data.year HAVING COUNT(*) > 30
 SELECT DISTINCT N1_222_cars_data.year, COUNT(*) FROM cars_data AS N1_222_cars_data GROUP BY N1_222_cars_data.year
-SELECT DISTINCT N1_223_cars_data.year FROM cars_data AS N1_223_cars_data GROUP BY N1_223_cars_data.year HAVING (COUNT(*) >= 28 AND COUNT(*) <= 29)
+SELECT DISTINCT N1_223_cars_data.year FROM cars_data AS N1_223_cars_data GROUP BY N1_223_cars_data.year HAVING (COUNT(*) > 27 AND COUNT(*) < 40)
 SELECT DISTINCT N1_224_cars_data.year, COUNT(*) FROM cars_data AS N1_224_cars_data GROUP BY N1_224_cars_data.year
-SELECT DISTINCT N1_225_cars_data.horsepower FROM cars_data AS N1_225_cars_data WHERE (N1_225_cars_data.horsepower >= 17 AND N1_225_cars_data.horsepower <= 19) GROUP BY N1_225_cars_data.horsepower HAVING (COUNT(*) >= 1 AND COUNT(*) < 12)
-SELECT DISTINCT N1_226_cars_data.horsepower, COUNT(*) FROM cars_data AS N1_226_cars_data WHERE (N1_226_cars_data.horsepower >= 17 AND N1_226_cars_data.horsepower <= 19) GROUP BY N1_226_cars_data.horsepower
-SELECT DISTINCT N1_227_cars_data.cylinders FROM cars_data AS N1_227_cars_data WHERE ((N1_227_cars_data.cylinders <= 4 OR (N1_227_cars_data.horsepower > 18 AND N1_227_cars_data.horsepower < 22)) OR N1_227_cars_data.horsepower >= 22)
-SELECT DISTINCT N1_228_car_makers.id FROM car_makers AS N1_228_car_makers WHERE (N1_228_car_makers.maker = 'fiat' OR N1_228_car_makers.maker = 'toyota')
-SELECT DISTINCT COUNT(*) FROM cars_data AS N1_229_cars_data JOIN car_names AS N1_229_car_names ON N1_229_car_names.makeid=N1_229_cars_data.id WHERE (N1_229_cars_data.edispl != 122.0 OR N1_229_car_names.make = 'ford pinto')
-SELECT DISTINCT N1_230_car_names.make FROM car_names AS N1_230_car_names GROUP BY N1_230_car_names.make HAVING COUNT(*) <= 2
-SELECT DISTINCT N1_231_car_names.make, COUNT(*) FROM car_names AS N1_231_car_names GROUP BY N1_231_car_names.make
-SELECT DISTINCT N1_232_cars_data.year FROM cars_data AS N1_232_cars_data WHERE N1_232_cars_data.accelerate > 18.5 GROUP BY N1_232_cars_data.year HAVING (COUNT(*) >= 4 AND COUNT(*) < 8) ORDER BY N1_232_cars_data.year LIMIT 5
-SELECT DISTINCT N1_233_cars_data.year, COUNT(*) FROM cars_data AS N1_233_cars_data WHERE N1_233_cars_data.accelerate > 18.5 GROUP BY N1_233_cars_data.year
-SELECT DISTINCT * FROM cars_data AS N1_234_cars_data JOIN car_names AS N1_234_car_names ON N1_234_car_names.makeid=N1_234_cars_data.id WHERE (N1_234_car_names.make NOT LIKE '%nto' OR N1_234_cars_data.mpg = 19.0)
-SELECT DISTINCT N1_235_car_names.make FROM car_names AS N1_235_car_names WHERE N1_235_car_names.make NOT LIKE '%pin%' GROUP BY N1_235_car_names.make HAVING (COUNT(*) >= 1 AND COUNT(*) < 5)
-SELECT DISTINCT N1_236_car_names.make, COUNT(*) FROM car_names AS N1_236_car_names WHERE N1_236_car_names.make NOT LIKE '%pin%' GROUP BY N1_236_car_names.make
-SELECT DISTINCT N1_237_model_list.model FROM model_list AS N1_237_model_list JOIN car_names AS N1_237_car_names ON N1_237_model_list.model=N1_237_car_names.model JOIN cars_data AS N1_237_cars_data ON N1_237_car_names.makeid=N1_237_cars_data.id WHERE (N1_237_cars_data.horsepower > 19 OR N1_237_cars_data.cylinders >= 8) ORDER BY N1_237_model_list.model LIMIT 1
-SELECT DISTINCT N1_238_cars_data.year FROM cars_data AS N1_238_cars_data GROUP BY N1_238_cars_data.year HAVING COUNT(*) < 31
-SELECT DISTINCT N1_239_cars_data.year, COUNT(*) FROM cars_data AS N1_239_cars_data GROUP BY N1_239_cars_data.year
-SELECT DISTINCT N1_240_cars_data.year FROM cars_data AS N1_240_cars_data GROUP BY N1_240_cars_data.year HAVING COUNT(*) <= 29
+SELECT DISTINCT N1_225_cars_data.year FROM cars_data AS N1_225_cars_data WHERE ((N1_225_cars_data.edispl >= 383.0 AND N1_225_cars_data.mpg >= 16.0) OR N1_225_cars_data.edispl = 225.0) GROUP BY N1_225_cars_data.year HAVING COUNT(*) <= 2
+SELECT DISTINCT N1_226_cars_data.year, COUNT(*) FROM cars_data AS N1_226_cars_data WHERE ((N1_226_cars_data.edispl >= 383.0 AND N1_226_cars_data.mpg >= 16.0) OR N1_226_cars_data.edispl = 225.0) GROUP BY N1_226_cars_data.year
+SELECT DISTINCT N1_227_cars_data.year FROM cars_data AS N1_227_cars_data GROUP BY N1_227_cars_data.year HAVING COUNT(*) < 29 ORDER BY N1_227_cars_data.year LIMIT 1
+SELECT DISTINCT N1_228_cars_data.year, COUNT(*) FROM cars_data AS N1_228_cars_data GROUP BY N1_228_cars_data.year
+SELECT DISTINCT * FROM cars_data AS N1_229_cars_data WHERE (N1_229_cars_data.mpg != 30.0 OR (N1_229_cars_data.accelerate <= 11.0 OR N1_229_cars_data.year <= 1978))
+SELECT DISTINCT N1_230_cars_data.year FROM cars_data AS N1_230_cars_data GROUP BY N1_230_cars_data.year HAVING COUNT(*) > 28
+SELECT DISTINCT N1_231_cars_data.year, COUNT(*) FROM cars_data AS N1_231_cars_data GROUP BY N1_231_cars_data.year
+SELECT DISTINCT N1_232_cars_data.year FROM cars_data AS N1_232_cars_data WHERE N1_232_cars_data.weight != 2774 GROUP BY N1_232_cars_data.year HAVING COUNT(*) < 30
+SELECT DISTINCT N1_233_cars_data.year, COUNT(*) FROM cars_data AS N1_233_cars_data WHERE N1_233_cars_data.weight != 2774 GROUP BY N1_233_cars_data.year
+SELECT DISTINCT N1_234_cars_data.year FROM cars_data AS N1_234_cars_data GROUP BY N1_234_cars_data.year HAVING COUNT(*) <= 29
+SELECT DISTINCT N1_235_cars_data.year, COUNT(*) FROM cars_data AS N1_235_cars_data GROUP BY N1_235_cars_data.year
+SELECT DISTINCT N1_236_cars_data.year FROM cars_data AS N1_236_cars_data WHERE N1_236_cars_data.horsepower = 15 GROUP BY N1_236_cars_data.year HAVING (COUNT(*) >= 1 AND COUNT(*) < 4) ORDER BY N1_236_cars_data.year LIMIT 2
+SELECT DISTINCT N1_237_cars_data.year, COUNT(*) FROM cars_data AS N1_237_cars_data WHERE N1_237_cars_data.horsepower = 15 GROUP BY N1_237_cars_data.year
+SELECT DISTINCT N1_238_cars_data.year FROM cars_data AS N1_238_cars_data JOIN car_names AS N1_238_car_names ON N1_238_car_names.makeid=N1_238_cars_data.id WHERE ((N1_238_cars_data.year <= 1973 AND N1_238_car_names.make = 'ford mustang') OR N1_238_cars_data.weight != 3609) GROUP BY N1_238_cars_data.year HAVING COUNT(*) > 28
+SELECT DISTINCT N1_239_cars_data.year, COUNT(*) FROM cars_data AS N1_239_cars_data JOIN car_names AS N1_239_car_names ON N1_239_car_names.makeid=N1_239_cars_data.id WHERE ((N1_239_cars_data.year <= 1973 AND N1_239_car_names.make = 'ford mustang') OR N1_239_cars_data.weight != 3609) GROUP BY N1_239_cars_data.year
+SELECT DISTINCT N1_240_cars_data.year FROM cars_data AS N1_240_cars_data GROUP BY N1_240_cars_data.year HAVING (COUNT(*) >= 27 AND COUNT(*) < 40)
 SELECT DISTINCT N1_241_cars_data.year, COUNT(*) FROM cars_data AS N1_241_cars_data GROUP BY N1_241_cars_data.year
-SELECT DISTINCT N1_242_cars_data.edispl FROM cars_data AS N1_242_cars_data WHERE N1_242_cars_data.weight != 2310 GROUP BY N1_242_cars_data.edispl HAVING (COUNT(*) >= 1 AND COUNT(*) <= 5)
-SELECT DISTINCT N1_243_cars_data.edispl, COUNT(*) FROM cars_data AS N1_243_cars_data WHERE N1_243_cars_data.weight != 2310 GROUP BY N1_243_cars_data.edispl
-SELECT DISTINCT N1_244_cars_data.year FROM cars_data AS N1_244_cars_data GROUP BY N1_244_cars_data.year HAVING COUNT(*) < 29
-SELECT DISTINCT N1_245_cars_data.year, COUNT(*) FROM cars_data AS N1_245_cars_data GROUP BY N1_245_cars_data.year
-SELECT DISTINCT N1_246_cars_data.year FROM cars_data AS N1_246_cars_data GROUP BY N1_246_cars_data.year HAVING COUNT(*) > 29
-SELECT DISTINCT N1_247_cars_data.year, COUNT(*) FROM cars_data AS N1_247_cars_data GROUP BY N1_247_cars_data.year
-SELECT DISTINCT * FROM cars_data AS N1_248_cars_data WHERE (N1_248_cars_data.accelerate >= 15.5 OR N1_248_cars_data.year <= 1971)
-SELECT DISTINCT N1_249_cars_data.year FROM cars_data AS N1_249_cars_data WHERE ((N1_249_cars_data.edispl > 122.0 OR N1_249_cars_data.edispl < 98.0) OR N1_249_cars_data.horsepower >= 31) GROUP BY N1_249_cars_data.year HAVING COUNT(*) > 29
-SELECT DISTINCT N1_250_cars_data.year, COUNT(*) FROM cars_data AS N1_250_cars_data WHERE ((N1_250_cars_data.edispl > 122.0 OR N1_250_cars_data.edispl < 98.0) OR N1_250_cars_data.horsepower >= 31) GROUP BY N1_250_cars_data.year
-SELECT DISTINCT N1_251_cars_data.year FROM model_list AS N1_251_model_list JOIN car_makers AS N1_251_car_makers ON N1_251_car_makers.id=N1_251_model_list.maker JOIN car_names AS N1_251_car_names ON N1_251_model_list.model=N1_251_car_names.model JOIN cars_data AS N1_251_cars_data ON N1_251_car_names.makeid=N1_251_cars_data.id WHERE (N1_251_cars_data.accelerate > 15.5 OR N1_251_car_makers.fullname != 'Chrysler') GROUP BY N1_251_cars_data.year HAVING COUNT(*) < 29
-SELECT DISTINCT N1_252_cars_data.year, COUNT(*) FROM model_list AS N1_252_model_list JOIN car_makers AS N1_252_car_makers ON N1_252_car_makers.id=N1_252_model_list.maker JOIN car_names AS N1_252_car_names ON N1_252_model_list.model=N1_252_car_names.model JOIN cars_data AS N1_252_cars_data ON N1_252_car_names.makeid=N1_252_cars_data.id WHERE (N1_252_cars_data.accelerate > 15.5 OR N1_252_car_makers.fullname != 'Chrysler') GROUP BY N1_252_cars_data.year
-SELECT DISTINCT N1_253_cars_data.horsepower FROM cars_data AS N1_253_cars_data WHERE N1_253_cars_data.horsepower < 19 GROUP BY N1_253_cars_data.horsepower HAVING COUNT(*) < 19
-SELECT DISTINCT N1_254_cars_data.horsepower, COUNT(*) FROM cars_data AS N1_254_cars_data WHERE N1_254_cars_data.horsepower < 19 GROUP BY N1_254_cars_data.horsepower
-SELECT DISTINCT N1_255_cars_data.year FROM cars_data AS N1_255_cars_data WHERE (N1_255_cars_data.year != 1970 OR (N1_255_cars_data.horsepower > 9 AND N1_255_cars_data.horsepower < 22)) GROUP BY N1_255_cars_data.year HAVING COUNT(*) <= 29
-SELECT DISTINCT N1_256_cars_data.year, COUNT(*) FROM cars_data AS N1_256_cars_data WHERE (N1_256_cars_data.year != 1970 OR (N1_256_cars_data.horsepower > 9 AND N1_256_cars_data.horsepower < 22)) GROUP BY N1_256_cars_data.year
-SELECT DISTINCT * FROM cars_data AS N1_257_cars_data WHERE ((N1_257_cars_data.accelerate > 14.0 OR N1_257_cars_data.accelerate <= 13.0) OR N1_257_cars_data.year = 1972)
-SELECT DISTINCT N1_258_cars_data.mpg FROM cars_data AS N1_258_cars_data WHERE (N1_258_cars_data.mpg >= 14.0 AND N1_258_cars_data.mpg < 28.0) GROUP BY N1_258_cars_data.mpg HAVING COUNT(*) > 3
-SELECT DISTINCT N1_259_cars_data.mpg, COUNT(*) FROM cars_data AS N1_259_cars_data WHERE (N1_259_cars_data.mpg >= 14.0 AND N1_259_cars_data.mpg < 28.0) GROUP BY N1_259_cars_data.mpg
-SELECT DISTINCT COUNT(N1_260_countries.countryid) FROM car_makers AS N1_260_car_makers JOIN countries AS N1_260_countries ON N1_260_countries.countryid=N1_260_car_makers.country WHERE (N1_260_car_makers.fullname = 'Ford Motor Company' OR N1_260_car_makers.maker != 'volkswagen')
-SELECT DISTINCT N1_261_cars_data.year FROM cars_data AS N1_261_cars_data GROUP BY N1_261_cars_data.year HAVING (COUNT(*) >= 27 AND COUNT(*) <= 36)
-SELECT DISTINCT N1_262_cars_data.year, COUNT(*) FROM cars_data AS N1_262_cars_data GROUP BY N1_262_cars_data.year
-SELECT DISTINCT N1_263_car_makers.maker FROM model_list AS N1_263_model_list JOIN car_makers AS N1_263_car_makers ON N1_263_car_makers.id=N1_263_model_list.maker JOIN car_names AS N1_263_car_names ON N1_263_model_list.model=N1_263_car_names.model WHERE (N1_263_car_makers.maker = 'chrysler' OR (N1_263_car_names.make LIKE '%int%' OR N1_263_car_makers.maker IN ('gm','toyota','ford'))) GROUP BY N1_263_car_makers.maker HAVING (COUNT(*) > 26 AND COUNT(*) <= 66)
-SELECT DISTINCT N1_264_car_makers.maker, COUNT(*) FROM model_list AS N1_264_model_list JOIN car_makers AS N1_264_car_makers ON N1_264_car_makers.id=N1_264_model_list.maker JOIN car_names AS N1_264_car_names ON N1_264_model_list.model=N1_264_car_names.model WHERE (N1_264_car_makers.maker = 'chrysler' OR (N1_264_car_names.make LIKE '%int%' OR N1_264_car_makers.maker IN ('gm','toyota','ford'))) GROUP BY N1_264_car_makers.maker
-SELECT DISTINCT N1_265_cars_data.accelerate FROM cars_data AS N1_265_cars_data WHERE (N1_265_cars_data.weight >= 3563 AND N1_265_cars_data.weight < 3725) GROUP BY N1_265_cars_data.accelerate HAVING (COUNT(*) >= 1 AND COUNT(*) <= 2)
-SELECT DISTINCT N1_266_cars_data.accelerate, COUNT(*) FROM cars_data AS N1_266_cars_data WHERE (N1_266_cars_data.weight >= 3563 AND N1_266_cars_data.weight < 3725) GROUP BY N1_266_cars_data.accelerate
-SELECT DISTINCT N1_267_cars_data.id FROM model_list AS N1_267_model_list JOIN car_makers AS N1_267_car_makers ON N1_267_car_makers.id=N1_267_model_list.maker JOIN car_names AS N1_267_car_names ON N1_267_model_list.model=N1_267_car_names.model JOIN cars_data AS N1_267_cars_data ON N1_267_car_names.makeid=N1_267_cars_data.id WHERE (N1_267_car_makers.fullname = 'Toyota' OR N1_267_car_makers.fullname NOT IN ('Chrysler','General Motors')) ORDER BY N1_267_cars_data.id LIMIT 1
-SELECT DISTINCT N1_268_cars_data.year FROM cars_data AS N1_268_cars_data GROUP BY N1_268_cars_data.year HAVING COUNT(*) < 29
-SELECT DISTINCT N1_269_cars_data.year, COUNT(*) FROM cars_data AS N1_269_cars_data GROUP BY N1_269_cars_data.year
-SELECT DISTINCT N1_270_car_makers.country FROM model_list AS N1_270_model_list JOIN car_makers AS N1_270_car_makers ON N1_270_car_makers.id=N1_270_model_list.maker JOIN car_names AS N1_270_car_names ON N1_270_model_list.model=N1_270_car_names.model JOIN cars_data AS N1_270_cars_data ON N1_270_car_names.makeid=N1_270_cars_data.id WHERE (((N1_270_cars_data.weight > 2245 AND N1_270_cars_data.weight < 4257) OR N1_270_cars_data.weight < 2035) OR N1_270_car_makers.maker IN ('gm','honda','fiat')) ORDER BY N1_270_car_makers.country LIMIT 4
-SELECT DISTINCT N1_271_cars_data.year FROM cars_data AS N1_271_cars_data GROUP BY N1_271_cars_data.year HAVING COUNT(*) <= 29
-SELECT DISTINCT N1_272_cars_data.year, COUNT(*) FROM cars_data AS N1_272_cars_data GROUP BY N1_272_cars_data.year
-SELECT DISTINCT * FROM cars_data AS N1_273_cars_data WHERE (N1_273_cars_data.year > 1973 OR N1_273_cars_data.horsepower <= 19)
-SELECT DISTINCT * FROM car_makers AS N1_274_car_makers WHERE (N1_274_car_makers.fullname IN ('American Motor Company','Toyota','Ford Motor Company') OR N1_274_car_makers.fullname = 'Chrysler')
-SELECT DISTINCT * FROM car_makers AS N1_275_car_makers JOIN countries AS N1_275_countries ON N1_275_countries.countryid=N1_275_car_makers.country WHERE (N1_275_countries.countryname = 'italy' OR N1_275_car_makers.fullname NOT LIKE 'Ope%')
-SELECT DISTINCT * FROM car_makers AS N1_276_car_makers JOIN countries AS N1_276_countries ON N1_276_countries.countryid=N1_276_car_makers.country JOIN continents AS N1_276_continents ON N1_276_continents.contid=N1_276_countries.continent WHERE (N1_276_car_makers.fullname NOT LIKE '%ota' OR N1_276_continents.continent LIKE '%sia')
-SELECT DISTINCT N1_277_car_names.make FROM car_names AS N1_277_car_names WHERE N1_277_car_names.make LIKE '%for%' GROUP BY N1_277_car_names.make HAVING (COUNT(*) >= 1 AND COUNT(*) < 3)
-SELECT DISTINCT N1_278_car_names.make, COUNT(*) FROM car_names AS N1_278_car_names WHERE N1_278_car_names.make LIKE '%for%' GROUP BY N1_278_car_names.make
-SELECT DISTINCT N1_279_cars_data.year FROM cars_data AS N1_279_cars_data GROUP BY N1_279_cars_data.year HAVING COUNT(*) >= 29
-SELECT DISTINCT N1_280_cars_data.year, COUNT(*) FROM cars_data AS N1_280_cars_data GROUP BY N1_280_cars_data.year
-SELECT DISTINCT N1_281_car_names.make FROM car_names AS N1_281_car_names GROUP BY N1_281_car_names.make HAVING COUNT(*) > 2
-SELECT DISTINCT N1_282_car_names.make, COUNT(*) FROM car_names AS N1_282_car_names GROUP BY N1_282_car_names.make
-SELECT DISTINCT N1_283_car_makers.id FROM car_makers AS N1_283_car_makers JOIN countries AS N1_283_countries ON N1_283_countries.countryid=N1_283_car_makers.country WHERE (N1_283_car_makers.maker NOT LIKE '%ord' OR N1_283_countries.countryname != 'usa')
-SELECT DISTINCT * FROM cars_data AS N1_284_cars_data WHERE (N1_284_cars_data.mpg >= 18.0 OR N1_284_cars_data.cylinders != 6)
-SELECT DISTINCT COUNT(*) FROM car_makers AS N1_285_car_makers WHERE (N1_285_car_makers.fullname = 'Fiat' OR N1_285_car_makers.maker = 'toyota')
-SELECT DISTINCT N1_286_cars_data.year FROM cars_data AS N1_286_cars_data GROUP BY N1_286_cars_data.year HAVING COUNT(*) >= 31
+SELECT DISTINCT N1_242_cars_data.year FROM model_list AS N1_242_model_list JOIN car_names AS N1_242_car_names ON N1_242_model_list.model=N1_242_car_names.model JOIN car_makers AS N1_242_car_makers ON N1_242_car_makers.id=N1_242_model_list.maker JOIN cars_data AS N1_242_cars_data ON N1_242_car_names.makeid=N1_242_cars_data.id WHERE (N1_242_cars_data.year >= 1971 AND N1_242_car_makers.fullname = 'General Motors') GROUP BY N1_242_cars_data.year HAVING COUNT(*) < 8
+SELECT DISTINCT N1_243_cars_data.year, COUNT(*) FROM model_list AS N1_243_model_list JOIN car_names AS N1_243_car_names ON N1_243_model_list.model=N1_243_car_names.model JOIN car_makers AS N1_243_car_makers ON N1_243_car_makers.id=N1_243_model_list.maker JOIN cars_data AS N1_243_cars_data ON N1_243_car_names.makeid=N1_243_cars_data.id WHERE (N1_243_cars_data.year >= 1971 AND N1_243_car_makers.fullname = 'General Motors') GROUP BY N1_243_cars_data.year
+SELECT DISTINCT N1_244_cars_data.year FROM cars_data AS N1_244_cars_data WHERE N1_244_cars_data.year != 1973 GROUP BY N1_244_cars_data.year HAVING COUNT(*) < 29
+SELECT DISTINCT N1_245_cars_data.year, COUNT(*) FROM cars_data AS N1_245_cars_data WHERE N1_245_cars_data.year != 1973 GROUP BY N1_245_cars_data.year
+SELECT DISTINCT N1_246_cars_data.year FROM cars_data AS N1_246_cars_data WHERE N1_246_cars_data.accelerate <= 18.5 GROUP BY N1_246_cars_data.year HAVING COUNT(*) <= 25
+SELECT DISTINCT N1_247_cars_data.year, COUNT(*) FROM cars_data AS N1_247_cars_data WHERE N1_247_cars_data.accelerate <= 18.5 GROUP BY N1_247_cars_data.year
+SELECT DISTINCT N1_248_cars_data.year FROM cars_data AS N1_248_cars_data GROUP BY N1_248_cars_data.year HAVING (COUNT(*) > 29 AND COUNT(*) < 34)
+SELECT DISTINCT N1_249_cars_data.year, COUNT(*) FROM cars_data AS N1_249_cars_data GROUP BY N1_249_cars_data.year
+SELECT DISTINCT N1_250_cars_data.year FROM cars_data AS N1_250_cars_data GROUP BY N1_250_cars_data.year HAVING (COUNT(*) >= 27 AND COUNT(*) < 36) ORDER BY N1_250_cars_data.year LIMIT 4
+SELECT DISTINCT N1_251_cars_data.year, COUNT(*) FROM cars_data AS N1_251_cars_data GROUP BY N1_251_cars_data.year
+SELECT DISTINCT N1_252_cars_data.year FROM cars_data AS N1_252_cars_data GROUP BY N1_252_cars_data.year HAVING COUNT(*) <= 31
+SELECT DISTINCT N1_253_cars_data.year, COUNT(*) FROM cars_data AS N1_253_cars_data GROUP BY N1_253_cars_data.year
+SELECT DISTINCT N1_254_cars_data.year FROM cars_data AS N1_254_cars_data GROUP BY N1_254_cars_data.year HAVING COUNT(*) < 28
+SELECT DISTINCT N1_255_cars_data.year, COUNT(*) FROM cars_data AS N1_255_cars_data GROUP BY N1_255_cars_data.year
+SELECT DISTINCT N1_256_cars_data.year FROM cars_data AS N1_256_cars_data GROUP BY N1_256_cars_data.year HAVING COUNT(*) > 31
+SELECT DISTINCT N1_257_cars_data.year, COUNT(*) FROM cars_data AS N1_257_cars_data GROUP BY N1_257_cars_data.year
+SELECT DISTINCT N1_258_cars_data.year FROM cars_data AS N1_258_cars_data GROUP BY N1_258_cars_data.year HAVING COUNT(*) <= 29
+SELECT DISTINCT N1_259_cars_data.year, COUNT(*) FROM cars_data AS N1_259_cars_data GROUP BY N1_259_cars_data.year
+SELECT DISTINCT N1_260_cars_data.year FROM cars_data AS N1_260_cars_data GROUP BY N1_260_cars_data.year HAVING (COUNT(*) >= 29 AND COUNT(*) <= 34)
+SELECT DISTINCT N1_261_cars_data.year, COUNT(*) FROM cars_data AS N1_261_cars_data GROUP BY N1_261_cars_data.year
+SELECT DISTINCT N1_262_cars_data.year FROM cars_data AS N1_262_cars_data WHERE N1_262_cars_data.year > 1971 GROUP BY N1_262_cars_data.year HAVING COUNT(*) >= 28
+SELECT DISTINCT N1_263_cars_data.year, COUNT(*) FROM cars_data AS N1_263_cars_data WHERE N1_263_cars_data.year > 1971 GROUP BY N1_263_cars_data.year
+SELECT DISTINCT N1_264_cars_data.year FROM cars_data AS N1_264_cars_data GROUP BY N1_264_cars_data.year HAVING (COUNT(*) > 35 AND COUNT(*) < 40) ORDER BY N1_264_cars_data.year LIMIT 4
+SELECT DISTINCT N1_265_cars_data.year, COUNT(*) FROM cars_data AS N1_265_cars_data GROUP BY N1_265_cars_data.year
+SELECT DISTINCT N1_266_cars_data.year FROM cars_data AS N1_266_cars_data GROUP BY N1_266_cars_data.year HAVING COUNT(*) < 28
+SELECT DISTINCT N1_267_cars_data.year, COUNT(*) FROM cars_data AS N1_267_cars_data GROUP BY N1_267_cars_data.year
+SELECT DISTINCT N1_268_cars_data.year FROM cars_data AS N1_268_cars_data WHERE (N1_268_cars_data.horsepower < 19 AND N1_268_cars_data.year >= 1973) GROUP BY N1_268_cars_data.year HAVING COUNT(*) < 13
+SELECT DISTINCT N1_269_cars_data.year, COUNT(*) FROM cars_data AS N1_269_cars_data WHERE (N1_269_cars_data.horsepower < 19 AND N1_269_cars_data.year >= 1973) GROUP BY N1_269_cars_data.year
+SELECT DISTINCT N1_270_car_makers.id FROM car_makers AS N1_270_car_makers JOIN countries AS N1_270_countries ON N1_270_countries.countryid=N1_270_car_makers.country JOIN continents AS N1_270_continents ON N1_270_continents.contid=N1_270_countries.continent WHERE ((N1_270_car_makers.fullname NOT LIKE '%hry%' AND N1_270_continents.continent LIKE '%ica') OR N1_270_continents.continent NOT LIKE '%ame%')
+SELECT DISTINCT N1_271_cars_data.year FROM cars_data AS N1_271_cars_data WHERE N1_271_cars_data.weight > 2228 GROUP BY N1_271_cars_data.year HAVING (COUNT(*) >= 33 AND COUNT(*) < 36)
+SELECT DISTINCT N1_272_cars_data.year, COUNT(*) FROM cars_data AS N1_272_cars_data WHERE N1_272_cars_data.weight > 2228 GROUP BY N1_272_cars_data.year
+SELECT DISTINCT N1_273_cars_data.year FROM cars_data AS N1_273_cars_data WHERE (N1_273_cars_data.weight != 2228 AND N1_273_cars_data.cylinders >= 4) GROUP BY N1_273_cars_data.year HAVING COUNT(*) < 36 ORDER BY N1_273_cars_data.year LIMIT 2
+SELECT DISTINCT N1_274_cars_data.year, COUNT(*) FROM cars_data AS N1_274_cars_data WHERE (N1_274_cars_data.weight != 2228 AND N1_274_cars_data.cylinders >= 4) GROUP BY N1_274_cars_data.year
+SELECT DISTINCT N1_275_cars_data.year FROM cars_data AS N1_275_cars_data GROUP BY N1_275_cars_data.year HAVING COUNT(*) < 34
+SELECT DISTINCT N1_276_cars_data.year, COUNT(*) FROM cars_data AS N1_276_cars_data GROUP BY N1_276_cars_data.year
+SELECT DISTINCT N1_277_cars_data.year FROM cars_data AS N1_277_cars_data WHERE N1_277_cars_data.cylinders = 4 GROUP BY N1_277_cars_data.year HAVING COUNT(*) >= 14 ORDER BY N1_277_cars_data.year LIMIT 4
+SELECT DISTINCT N1_278_cars_data.year, COUNT(*) FROM cars_data AS N1_278_cars_data WHERE N1_278_cars_data.cylinders = 4 GROUP BY N1_278_cars_data.year
+SELECT DISTINCT * FROM model_list AS N1_279_model_list JOIN car_names AS N1_279_car_names ON N1_279_model_list.model=N1_279_car_names.model JOIN car_makers AS N1_279_car_makers ON N1_279_car_makers.id=N1_279_model_list.maker WHERE (N1_279_car_makers.maker NOT LIKE '%ord' OR N1_279_car_names.make = 'ford pinto')
+SELECT DISTINCT N1_280_continents.continent FROM car_makers AS N1_280_car_makers JOIN countries AS N1_280_countries ON N1_280_countries.countryid=N1_280_car_makers.country JOIN continents AS N1_280_continents ON N1_280_continents.contid=N1_280_countries.continent WHERE ((N1_280_car_makers.fullname = 'Ford Motor Company' OR N1_280_car_makers.fullname != 'General Motors') OR N1_280_continents.continent != 'america') GROUP BY N1_280_continents.continent HAVING COUNT(*) < 7
+SELECT DISTINCT N1_281_continents.continent, COUNT(*) FROM car_makers AS N1_281_car_makers JOIN countries AS N1_281_countries ON N1_281_countries.countryid=N1_281_car_makers.country JOIN continents AS N1_281_continents ON N1_281_continents.contid=N1_281_countries.continent WHERE ((N1_281_car_makers.fullname = 'Ford Motor Company' OR N1_281_car_makers.fullname != 'General Motors') OR N1_281_continents.continent != 'america') GROUP BY N1_281_continents.continent
+SELECT DISTINCT N1_282_cars_data.year FROM cars_data AS N1_282_cars_data WHERE N1_282_cars_data.weight <= 2990 GROUP BY N1_282_cars_data.year HAVING COUNT(*) > 16 ORDER BY N1_282_cars_data.year LIMIT 4
+SELECT DISTINCT N1_283_cars_data.year, COUNT(*) FROM cars_data AS N1_283_cars_data WHERE N1_283_cars_data.weight <= 2990 GROUP BY N1_283_cars_data.year
+SELECT DISTINCT N1_284_cars_data.year FROM cars_data AS N1_284_cars_data WHERE (N1_284_cars_data.accelerate != 10.0 AND N1_284_cars_data.horsepower >= 18) GROUP BY N1_284_cars_data.year HAVING COUNT(*) <= 19
+SELECT DISTINCT N1_285_cars_data.year, COUNT(*) FROM cars_data AS N1_285_cars_data WHERE (N1_285_cars_data.accelerate != 10.0 AND N1_285_cars_data.horsepower >= 18) GROUP BY N1_285_cars_data.year
+SELECT DISTINCT N1_286_cars_data.year FROM cars_data AS N1_286_cars_data GROUP BY N1_286_cars_data.year HAVING (COUNT(*) >= 29 AND COUNT(*) <= 34) ORDER BY N1_286_cars_data.year LIMIT 5
 SELECT DISTINCT N1_287_cars_data.year, COUNT(*) FROM cars_data AS N1_287_cars_data GROUP BY N1_287_cars_data.year
-SELECT DISTINCT N1_288_car_names.model FROM cars_data AS N1_288_cars_data JOIN car_names AS N1_288_car_names ON N1_288_car_names.makeid=N1_288_cars_data.id WHERE (N1_288_cars_data.mpg > 18.0 OR N1_288_car_names.make LIKE 'amc%')
-SELECT DISTINCT N1_289_cars_data.year FROM cars_data AS N1_289_cars_data WHERE (N1_289_cars_data.cylinders < 8 OR N1_289_cars_data.year > 1972)
-SELECT DISTINCT N1_290_cars_data.year FROM cars_data AS N1_290_cars_data WHERE (N1_290_cars_data.year < 1971 OR (N1_290_cars_data.weight = 2310 OR N1_290_cars_data.weight < 1937)) GROUP BY N1_290_cars_data.year HAVING (COUNT(*) >= 1 AND COUNT(*) < 3) ORDER BY N1_290_cars_data.year LIMIT 4
-SELECT DISTINCT N1_291_cars_data.year, COUNT(*) FROM cars_data AS N1_291_cars_data WHERE (N1_291_cars_data.year < 1971 OR (N1_291_cars_data.weight = 2310 OR N1_291_cars_data.weight < 1937)) GROUP BY N1_291_cars_data.year
-SELECT DISTINCT N1_292_cars_data.year FROM cars_data AS N1_292_cars_data GROUP BY N1_292_cars_data.year HAVING (COUNT(*) >= 29 AND COUNT(*) < 34)
+SELECT DISTINCT N1_288_cars_data.year FROM model_list AS N1_288_model_list JOIN car_names AS N1_288_car_names ON N1_288_model_list.model=N1_288_car_names.model JOIN car_makers AS N1_288_car_makers ON N1_288_car_makers.id=N1_288_model_list.maker JOIN cars_data AS N1_288_cars_data ON N1_288_car_names.makeid=N1_288_cars_data.id WHERE (N1_288_cars_data.year > 1980 OR N1_288_car_makers.maker != 'ford') GROUP BY N1_288_cars_data.year HAVING COUNT(*) >= 30
+SELECT DISTINCT N1_289_cars_data.year, COUNT(*) FROM model_list AS N1_289_model_list JOIN car_names AS N1_289_car_names ON N1_289_model_list.model=N1_289_car_names.model JOIN car_makers AS N1_289_car_makers ON N1_289_car_makers.id=N1_289_model_list.maker JOIN cars_data AS N1_289_cars_data ON N1_289_car_names.makeid=N1_289_cars_data.id WHERE (N1_289_cars_data.year > 1980 OR N1_289_car_makers.maker != 'ford') GROUP BY N1_289_cars_data.year
+SELECT DISTINCT N1_290_cars_data.year FROM cars_data AS N1_290_cars_data GROUP BY N1_290_cars_data.year HAVING COUNT(*) <= 35
+SELECT DISTINCT N1_291_cars_data.year, COUNT(*) FROM cars_data AS N1_291_cars_data GROUP BY N1_291_cars_data.year
+SELECT DISTINCT N1_292_cars_data.year FROM cars_data AS N1_292_cars_data GROUP BY N1_292_cars_data.year HAVING COUNT(*) <= 36
 SELECT DISTINCT N1_293_cars_data.year, COUNT(*) FROM cars_data AS N1_293_cars_data GROUP BY N1_293_cars_data.year
-SELECT DISTINCT N1_294_cars_data.year FROM cars_data AS N1_294_cars_data WHERE N1_294_cars_data.year != 1971 GROUP BY N1_294_cars_data.year HAVING COUNT(*) >= 29
-SELECT DISTINCT N1_295_cars_data.year, COUNT(*) FROM cars_data AS N1_295_cars_data WHERE N1_295_cars_data.year != 1971 GROUP BY N1_295_cars_data.year
-SELECT DISTINCT N1_296_cars_data.edispl FROM cars_data AS N1_296_cars_data WHERE (N1_296_cars_data.edispl > 122.0 AND N1_296_cars_data.edispl <= 400.0) GROUP BY N1_296_cars_data.edispl HAVING COUNT(*) >= 4
-SELECT DISTINCT N1_297_cars_data.edispl, COUNT(*) FROM cars_data AS N1_297_cars_data WHERE (N1_297_cars_data.edispl > 122.0 AND N1_297_cars_data.edispl <= 400.0) GROUP BY N1_297_cars_data.edispl
-SELECT DISTINCT N1_298_cars_data.year FROM cars_data AS N1_298_cars_data GROUP BY N1_298_cars_data.year HAVING COUNT(*) > 30
+SELECT DISTINCT N1_294_cars_data.year FROM cars_data AS N1_294_cars_data GROUP BY N1_294_cars_data.year HAVING COUNT(*) > 29 ORDER BY N1_294_cars_data.year LIMIT 5
+SELECT DISTINCT N1_295_cars_data.year, COUNT(*) FROM cars_data AS N1_295_cars_data GROUP BY N1_295_cars_data.year
+SELECT DISTINCT N1_296_cars_data.year FROM cars_data AS N1_296_cars_data WHERE (N1_296_cars_data.accelerate >= 16.9 AND N1_296_cars_data.accelerate <= 18.5) GROUP BY N1_296_cars_data.year HAVING (COUNT(*) > 4 AND COUNT(*) <= 7)
+SELECT DISTINCT N1_297_cars_data.year, COUNT(*) FROM cars_data AS N1_297_cars_data WHERE (N1_297_cars_data.accelerate >= 16.9 AND N1_297_cars_data.accelerate <= 18.5) GROUP BY N1_297_cars_data.year
+SELECT DISTINCT N1_298_cars_data.year FROM cars_data AS N1_298_cars_data GROUP BY N1_298_cars_data.year HAVING COUNT(*) < 35
 SELECT DISTINCT N1_299_cars_data.year, COUNT(*) FROM cars_data AS N1_299_cars_data GROUP BY N1_299_cars_data.year
