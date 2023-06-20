@@ -15,8 +15,7 @@ from src.query_tree.query_tree import Node, QueryBlock, QueryTree
 from src.sql_generator.sql_gen_utils.sql_genetion_utils import get_prefix
 from src.sql_generator.sql_gen_utils.utils import load_graphs, load_objs
 from src.sql_generator.tools.storage.db import PostgreSQLDatabase
-from src.table_excerpt.table_excerpt_generator import \
-    update_query_tree_with_table_excerpt
+from src.table_excerpt.table_excerpt_generator import update_query_tree_with_table_excerpt
 from src.task import Task, TaskTypes, TaskWithSubTasks
 from src.utils.pg_connector import PostgresConnector
 from src.utils.rewrite_sentence_gpt import *
@@ -143,7 +142,7 @@ class Task_Generator:
         return query_type
 
     def get_task_type(self, query_objs, query_id):
-        return "NONE"
+        return 0
 
     def query_to_task(
         self,
@@ -157,7 +156,7 @@ class Task_Generator:
         # Select a query type to generate
         # TODO: Fix self.get_query_type (correlation_predicates_origin is not defined within this function)
         # query_type = self.get_query_type(query_objs, query_id)
-        query_type = "None"
+        query_type = TaskTypes.Validation
         task_type = self.get_task_type(query_objs, query_id)
 
         # Generate SQL
@@ -298,15 +297,19 @@ if __name__ == "__main__":
     for key, query_tree in tqdm.tqdm(query_trees[72:]):
         # TODO: Need to ask why this condition is needed
         if not query_objs[key]["is_having_child"]:  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
-            query_tree_with_te = update_query_tree_with_table_excerpt(
-                args.db, args.schema_name, data_manager, dtype_dict, query_graphs, query_objs, query_tree, key
-            )
-            evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
-            new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key)
-            new_task.save("./data")
-            tmp = task_generator.convert_tasks_into_json_string(new_task)
-            # print(task_generator.convert_tasks_into_json_string(new_tasks))
-            cnt += 1
+            try:
+                query_tree_with_te = update_query_tree_with_table_excerpt(
+                    args.db, args.schema_name, data_manager, dtype_dict, query_graphs, query_objs, query_tree, key
+                )
+                evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
+                new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key)
+                new_task.save("./data")
+                tmp = task_generator.convert_tasks_into_json_string(new_task)
+                # print(task_generator.convert_tasks_into_json_string(new_tasks))
+                cnt += 1
+            except:
+                bad_cnt += 1
+                continue
         else:
             skip_cnt += 1
 

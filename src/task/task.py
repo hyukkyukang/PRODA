@@ -35,7 +35,7 @@ class Task:
     @abc.abstractclassmethod
     def load_json(json_obj: Dict) -> "Task":
         pass
-    
+
     @abc.abstractclassmethod
     def save(self, dir_path: str) -> int:
         pass
@@ -53,8 +53,7 @@ class Task:
             "resultTable": self.result_table.dump_json() if self.result_table else None,
         }
 
-
-    #Helper methods to save the task data
+    # Helper methods to save the task data
     def _get_unique_file_name(self, dir_path: str) -> str:
         """Get unique file name for saving the task data.
 
@@ -74,7 +73,7 @@ class Task:
         return os.path.join(dir_path, "evqa", file_name)
 
     def _get_table_excerpt_file_path(self, dir_path: str, file_name: str) -> str:
-        return os.path.join(dir_path, "table_excerpt",file_name)
+        return os.path.join(dir_path, "table_excerpt", file_name)
 
     def _get_result_table_file_path(self, dir_path: str, file_name: str) -> str:
         return os.path.join(dir_path, "result_table", file_name)
@@ -114,16 +113,9 @@ class TaskWithSubTasks(Task):
             query_type=json_obj["queryType"],
             task_type=json_obj["taskType"],
             db_name=json_obj["dbName"],
-            table_excerpt=TableExcerpt.load_json(json_obj["tableExcerpt"])
-            if json_obj["tableExcerpt"]
-            else None,
-            result_table=TableExcerpt.load_json(json_obj["resultTable"])
-            if json_obj["resultTable"]
-            else None,
-            sub_tasks=[
-                TaskWithSubTasks.load_json(sub_task_obj)
-                for sub_task_obj in json_obj["subTasks"]
-            ],
+            table_excerpt=TableExcerpt.load_json(json_obj["tableExcerpt"]) if json_obj["tableExcerpt"] else None,
+            result_table=TableExcerpt.load_json(json_obj["resultTable"]) if json_obj["resultTable"] else None,
+            sub_tasks=[TaskWithSubTasks.load_json(sub_task_obj) for sub_task_obj in json_obj["subTasks"]],
         )
 
     def dump_json(self) -> Dict:
@@ -138,19 +130,15 @@ class TaskWithSubTasks(Task):
         self._save_attributes(dir_path, unique_file_name)
 
         # Save recursively
-        sub_task_ids = [sub_task.save() for sub_task in self.sub_tasks]
+        sub_task_ids = [sub_task.save(dir_path) for sub_task in self.sub_tasks]
 
         return save_task_in_db(
             nl=self.nl,
             sql=self.sql,
             query_type=self.query_type,
             evqa_path=self._get_evqa_file_path(dir_path, unique_file_name),
-            table_excerpt_path=self._get_table_excerpt_file_path(
-                dir_path, unique_file_name
-            ),
-            result_table_path=self._get_result_table_file_path(
-                dir_path, unique_file_name
-            ),
+            table_excerpt_path=self._get_table_excerpt_file_path(dir_path, unique_file_name),
+            result_table_path=self._get_result_table_file_path(dir_path, unique_file_name),
             nl_mapping_path=self._get_nl_mapping_file_path(dir_path, unique_file_name),
             db_name=self.db_name,
             task_type=self.task_type,
@@ -172,12 +160,8 @@ class TaskWithSubTaskIDs(Task):
             query_type=json_obj["queryType"],
             task_type=json_obj["taskType"],
             db_name=json_obj["dbName"],
-            table_excerpt=TableExcerpt.load_json(json_obj["tableExcerpt"])
-            if json_obj["tableExcerpt"]
-            else None,
-            result_table=TableExcerpt.load_json(json_obj["resultTable"])
-            if json_obj["resultTable"]
-            else None,
+            table_excerpt=TableExcerpt.load_json(json_obj["tableExcerpt"]) if json_obj["tableExcerpt"] else None,
+            result_table=TableExcerpt.load_json(json_obj["resultTable"]) if json_obj["resultTable"] else None,
             sub_task_ids=json_obj["historyTaskIDs"],
         )
 
@@ -196,12 +180,8 @@ class TaskWithSubTaskIDs(Task):
             sql=self.sql,
             query_type=self.query_type,
             evqa_path=self._get_evqa_file_path(dir_path, unique_file_name),
-            table_excerpt_path=self._get_table_excerpt_file_path(
-                dir_path, unique_file_name
-            ),
-            result_table_path=self._get_result_table_file_path(
-                dir_path, unique_file_name
-            ),
+            table_excerpt_path=self._get_table_excerpt_file_path(dir_path, unique_file_name),
+            result_table_path=self._get_result_table_file_path(dir_path, unique_file_name),
             nl_mapping_path=self._get_nl_mapping_file_path(dir_path, unique_file_name),
             db_name=self.db_name,
             task_type=self.task_type,
