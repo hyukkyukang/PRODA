@@ -13,7 +13,7 @@ services:
         volumes:
             - ./:/root/proda/
     proda-postgres:
-        image: postgres:latest
+        image: postgres:15.1
         container_name: proda-postgres
         stdin_open: true
         tty: true

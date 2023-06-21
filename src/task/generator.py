@@ -302,9 +302,7 @@ if __name__ == "__main__":
                 )
                 evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
                 new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key)
-                new_task.save_as_task_set("./data")
-                tmp = task_generator.convert_tasks_into_json_string(new_task)
-                # print(task_generator.convert_tasks_into_json_string(new_tasks))
+                new_task.save_as_task_set("/root/proda/data")
                 cnt += 1
             except:
                 bad_cnt += 1
@@ -313,3 +311,6 @@ if __name__ == "__main__":
             skip_cnt += 1
 
     print("Done!")
+    print(cnt)
+    print(bad_cnt)
+    print(skip_cnt)
