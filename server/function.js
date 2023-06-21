@@ -132,6 +132,7 @@ async function getTaskSet(taskSetID = null, isSkip = false) {
     } else {
         sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id = ${taskSetID};`;
     }
+    console.log(`sql_query: ${sql_query}`);
     let results = await queryDB(collectionDBName, collectionDBUserID, collectionDBUserPW, sql_query);
     let result = getOneQueryResult(results);
     if (result == null) {

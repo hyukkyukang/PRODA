@@ -18,7 +18,6 @@ from src.sql_generator.tools.storage.db import PostgreSQLDatabase
 from src.table_excerpt.table_excerpt_generator import update_query_tree_with_table_excerpt
 from src.task import Task, TaskTypes, TaskWithSubTasks
 from src.utils.pg_connector import PostgresConnector
-from src.utils.rewrite_sentence_gpt import *
 from src.VQA.EVQA import EVQATree
 from src.VQA.query_tree_to_EVQA import convert_queryTree_to_EVQATree
 
@@ -303,7 +302,7 @@ if __name__ == "__main__":
                 )
                 evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
                 new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key)
-                new_task.save("./data")
+                new_task.save_as_task_set("./data")
                 tmp = task_generator.convert_tasks_into_json_string(new_task)
                 # print(task_generator.convert_tasks_into_json_string(new_tasks))
                 cnt += 1

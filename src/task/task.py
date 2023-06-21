@@ -10,17 +10,29 @@ import hkkang_utils.file as file_utils
 import hkkang_utils.string as string_utils
 
 from src.table_excerpt.table_excerpt import TableExcerpt
-from src.utils.data_manager import save_json, save_task_in_db
+from src.utils.data_manager import save_json, save_task_in_db, save_task_set_in_db
 from src.VQA.EVQA import EVQATree
 
 
 class TaskTypes(IntEnum):
+    """Task types.
+
+    :param IntEnum: enum class
+    :type IntEnum: IntEnum
+    """
+
     Simplification = 1
     Validation = 2
 
 
 @dataclasses.dataclass
 class Task:
+    """Task data class.
+
+    :return: task object
+    :rtype: Task
+    """
+
     nl: str
     nl_mapping: Dict[str, any]
     sql: str
@@ -34,13 +46,42 @@ class Task:
     @staticmethod
     @abc.abstractclassmethod
     def load_json(json_obj: Dict) -> "Task":
-        pass
+        """Load task from json object.
+
+        :param json_obj: json object
+        :type json_obj: Dict
+        :return: task object
+        :rtype: Task
+        """
 
     @abc.abstractclassmethod
-    def save(self, dir_path: str) -> int:
-        pass
+    def save(cls, dir_path: str) -> List[int]:
+        """Save task data to the database.
+
+        :param dir_path: directory path to save the task data
+        :type dir_path: str
+        :return: task id
+        :rtype: int
+        """
+
+    def save_as_task_set(self, dir_path: str) -> int:
+        """Save task data as a task set to the database.
+
+        :param dir_path: directory path to save the task data
+        :type dir_path: str
+        :return: task id
+        :rtype: int
+        """
+        # Save task data
+        task_ids = self.save(dir_path)
+        return save_task_set_in_db(task_ids)
 
     def dump_json(self) -> Dict:
+        """Dump task data to json object.
+
+        :return: json object
+        :rtype: Dict
+        """
         return {
             "nl": self.nl,
             "nl_mapping": self.nl_mapping,
@@ -101,6 +142,8 @@ class Task:
 
 @dataclasses.dataclass
 class TaskWithSubTasks(Task):
+    """Task with sub tasks."""
+
     sub_tasks: List["TaskWithSubTasks"] = dataclasses.field(default_factory=list)
 
     @staticmethod
@@ -124,15 +167,19 @@ class TaskWithSubTasks(Task):
         json_obj["subTasks"] = list(map(lambda t: t.dump_json(), self.sub_tasks))
         return json_obj
 
-    def save(self, dir_path: str) -> int:
+    def save(self, dir_path: str) -> List[int]:
         # Save attributes
         unique_file_name = self._get_unique_file_name(dir_path)
         self._save_attributes(dir_path, unique_file_name)
 
         # Save recursively
-        sub_task_ids = [sub_task.save(dir_path) for sub_task in self.sub_tasks]
+        sub_task_ids = functools.reduce(
+            lambda sub_task_ids, sub_task: sub_task_ids + sub_task.save(dir_path),
+            self.sub_tasks,
+            [],
+        )
 
-        return save_task_in_db(
+        current_task_id = save_task_in_db(
             nl=self.nl,
             sql=self.sql,
             query_type=self.query_type,
@@ -144,10 +191,13 @@ class TaskWithSubTasks(Task):
             task_type=self.task_type,
             sub_task_ids=sub_task_ids,
         )
+        return [current_task_id] + sub_task_ids
 
 
 @dataclasses.dataclass
 class TaskWithSubTaskIDs(Task):
+    """Task with sub task IDs."""
+
     sub_task_ids: List[int] = dataclasses.field(default_factory=list)
 
     @staticmethod
@@ -170,12 +220,19 @@ class TaskWithSubTaskIDs(Task):
         json_obj["subTaskIDs"] = self.sub_task_ids
         return json_obj
 
-    def save(self, dir_path: str) -> int:
+    def save(self, dir_path: str) -> List[int]:
         # Save attributes
         unique_file_name = self._get_unique_file_name(dir_path)
         self._save_attributes(dir_path, unique_file_name)
 
-        return save_task_in_db(
+        # Save recursively
+        sub_task_ids = functools.reduce(
+            lambda sub_task_ids, sub_task: sub_task_ids + sub_task.save(dir_path),
+            self.sub_tasks,
+            [],
+        )
+
+        current_task_id = save_task_in_db(
             nl=self.nl,
             sql=self.sql,
             query_type=self.query_type,
@@ -187,3 +244,5 @@ class TaskWithSubTaskIDs(Task):
             task_type=self.task_type,
             sub_task_ids=self.sub_task_ids,
         )
+
+        return [current_task_id] + sub_task_ids

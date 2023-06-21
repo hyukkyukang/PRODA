@@ -10,9 +10,7 @@ from src.task.task import Task
 from src.utils.data_manager import save_task_set_in_db
 from src.utils.example_queries import CorrelatedNestedQuery
 from src.utils.example_tasks import create_nl_and_mapping
-from src.utils.user_study_queries import (MovieQuery1, MovieQuery2,
-                                          MovieQuery3, MovieQuery5,
-                                          MovieQuery6)
+from src.utils.user_study_queries import MovieQuery1, MovieQuery2, MovieQuery3, MovieQuery5, MovieQuery6
 from src.VQA.EVQA import EVQATree
 
 
