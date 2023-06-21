@@ -115,7 +115,7 @@ Please check the environment variables in the `.env` file and change them if nec
 
 ## Run the server
 ```bash
-cd client
+cd ./client
 yarn install
 yarn build
 yarn start
@@ -124,9 +124,9 @@ yarn start
 # API Server (Back-end)
 
 The code for the Front-end server are in the `server` directory.
-Please change the working directory `cd ./client` and follow the below instructions.
 
 ```bash
+cd ./server
 npm install
 node app.js
 ```
@@ -136,6 +136,6 @@ node app.js
 Below script will create a new HIT and its address will be printed on the console.
 
 ```
-cd src/task/
+cd ./src/task/
 python hit_generator.py
 ```
