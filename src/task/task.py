@@ -73,6 +73,7 @@ class Task:
         :rtype: int
         """
         # Save task data
+        assert dir_path.startswith("/"), f"Absolute path should be given, but found: {dir_path}"
         task_ids = self.save(dir_path)
         return save_task_set_in_db(task_ids)
 
@@ -168,6 +169,7 @@ class TaskWithSubTasks(Task):
         return json_obj
 
     def save(self, dir_path: str) -> List[int]:
+        assert dir_path.startswith("/"), f"Absolute path should be given, but found: {dir_path}"
         # Save attributes
         unique_file_name = self._get_unique_file_name(dir_path)
         self._save_attributes(dir_path, unique_file_name)
@@ -221,6 +223,7 @@ class TaskWithSubTaskIDs(Task):
         return json_obj
 
     def save(self, dir_path: str) -> List[int]:
+        assert dir_path.startswith("/"), f"Absolute path should be given, but found: {dir_path}"
         # Save attributes
         unique_file_name = self._get_unique_file_name(dir_path)
         self._save_attributes(dir_path, unique_file_name)
