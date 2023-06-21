@@ -24,8 +24,8 @@ from src.VQA.query_tree_to_EVQA import convert_queryTree_to_EVQATree
 project_path = config.ProjectPath
 
 
-class Task_Generator:
-    def __init__(self, admin_db_config, data_db_config, db_name):
+class TaskGenerator:
+    def __init__(self, admin_db_config: Dict, data_db_config: Dict, db_name: str):
         self.admin_db_config = admin_db_config
         self.data_db_config = data_db_config
         self.admin_db_connector = PostgresConnector(
@@ -52,7 +52,6 @@ class Task_Generator:
         query_objs: Dict[str, Dict],
         query_id: str,
     ) -> Task:
-        # TODO: handle table_excerpt, result table, and history
         return self.query_to_task(evqa, query_tree.root, query_graphs, query_objs, query_id)
 
     @property
@@ -100,7 +99,7 @@ class Task_Generator:
 
         return selected_type
 
-    def get_query_type(self, query_objs, query_id):
+    def get_query_type(self, query_objs, query_id) -> str:
         ### [nesting_type]__[#tables]__[where]__[groupby]__[having]__[orderby]__[limit]
         query_type = ""
         obj = query_objs[query_id]
@@ -140,7 +139,7 @@ class Task_Generator:
 
         return query_type
 
-    def get_task_type(self, query_objs, query_id):
+    def get_task_type(self, query_objs, query_id) -> int:
         return 0
 
     def query_to_task(
@@ -153,9 +152,7 @@ class Task_Generator:
         is_recursive_call=False,
     ) -> TaskWithSubTasks:
         # Select a query type to generate
-        # TODO: Fix self.get_query_type (correlation_predicates_origin is not defined within this function)
-        # query_type = self.get_query_type(query_objs, query_id)
-        query_type = TaskTypes.Validation
+        query_type = self.get_query_type(query_objs, query_id)
         task_type = self.get_task_type(query_objs, query_id)
 
         # Generate SQL
@@ -206,7 +203,7 @@ class Task_Generator:
         return json.dumps(task.dump_json())
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--infile", type=str, default="src/sql_generator/configs/test_experiments_nested.json")
     parser.add_argument(
@@ -254,7 +251,7 @@ if __name__ == "__main__":
         "db_name": args.dbname,
     }
 
-    COL_INFO = json.load(open(f"database/{args.db}/dtype_dict.json"))
+    COL_INFO = json.load(open(f"data/database/{args.db}/dtype_dict.json"))
     column_info = COL_INFO[args.db]
     dtype_dict = CaseInsensitiveDict(column_info["dtype_dict"])
 
@@ -266,7 +263,6 @@ if __name__ == "__main__":
     query_objs: Dict[str, Dict] = {}
     query_graphs: Dict[str, Query_graph] = {}
     query_trees: List[QueryTree] = []
-    keys = []
     for query_path in args.query_paths:
         with open(query_path, "r") as fp:
             q_count = len(fp.readlines())
@@ -278,7 +274,7 @@ if __name__ == "__main__":
             query_graphs[block_name] = loaded_graph[1]
             query_trees.append((block_name, loaded_graph[0]))
 
-    task_generator = Task_Generator(
+    task_generator = TaskGenerator(
         admin_db_config,
         data_db_config,
         args.db,
@@ -293,7 +289,7 @@ if __name__ == "__main__":
     skip_cnt = 0
     bad_cnt = 0
     cnt = 0
-    for key, query_tree in tqdm.tqdm(query_trees):
+    for idx, (key, query_tree) in enumerate(tqdm.tqdm(query_trees)):
         # TODO: Need to ask why this condition is needed
         if not query_objs[key]["is_having_child"]:  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
             try:
@@ -314,3 +310,7 @@ if __name__ == "__main__":
     print(cnt)
     print(bad_cnt)
     print(skip_cnt)
+
+
+if __name__ == "__main__":
+    main()

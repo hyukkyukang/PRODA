@@ -12,6 +12,12 @@
     "python.formatting.blackArgs": [
         "--line-length=120"
     ],
+    "python.linting.pylintArgs": [
+        "--disable=C0111",
+        "--disable=C0114",
+        "--disable=C0115",
+        "--disable=C"
+    ],
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.insertSpaces": true,

@@ -80,7 +80,7 @@ class Cell:
 
     @staticmethod
     def to_dtype(value: Any) -> DType:
-        if value == None or value == "":
+        if value is None or value == "":
             return None
         """Convert value into DType"""
         if type(value) in [int, float]:
