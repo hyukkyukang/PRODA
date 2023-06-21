@@ -1,14 +1,12 @@
 import os
 import sqlite3
-import os
 import sys
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
-import hkkang_utils.file as file_utils
 
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
+
+from src.config import config
 from src.table_excerpt.table_excerpt import TableExcerpt
 
-config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
-config = file_utils.read_yaml_file(config_file_path)
 database_dir_path = os.path.join(config["ProjectPath"], config["DBPath"])
 
 def get_table_names(cur):

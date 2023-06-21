@@ -1,7 +1,8 @@
+import functools
 import os
+
 import attrs
 import boto3
-from hkkang_utils.misc import property_with_cache
 
 IS_USE_SANDBOX = False
 
@@ -64,7 +65,7 @@ class MTurkClient:
             }
         ]
 
-    @property_with_cache
+    @functools.cached_property
     def question(self):
         # The question we ask the workers is contained in this file.
         return open(self.question_schema_path, "r").read()

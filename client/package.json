@@ -5,8 +5,7 @@
     "scripts": {
         "dev": "node next-server.js dev",
         "build": "next build",
-        "start": "next start",
-        "start-https": "node next-server.js start",
+        "start": "node next-server.js start",
         "lint": "next lint"
     },
     "dependencies": {
@@ -32,7 +31,8 @@
         "react-dom": "^18.2.0",
         "react-icons": "^4.4.0",
         "react-query": "^3.39.3",
-        "react-spreadsheet-custom": "^0.7.54"
+        "react-spreadsheet-custom": "^0.7.54",
+        "sharp": "^0.32.1"
     },
     "devDependencies": {
         "@types/node": "^18.7.6",

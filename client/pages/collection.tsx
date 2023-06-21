@@ -32,8 +32,8 @@ export const Collection = (props: any) => {
     const [hitId, setHitId] = useState("");
     const [assignmentId, setAssignmentId] = useState("");
     const [turkSubmitTo, setTurkSubmitTo] = useState("");
-    const [workerID, setWorkerID] = useState("");
-    const [taskSetID, setTaskSetID] = useState<number | null>(null);
+    const [workerID, setWorkerID] = useState("a");
+    const [taskSetID, setTaskSetID] = useState<number | null>(1);
     // Variables to change state step-by-step to call API once
     const [isInitalized, setIsInitalized] = useState(false);
     const [isURLParsed, setIsURLParsed] = useState(false);
@@ -97,9 +97,9 @@ export const Collection = (props: any) => {
         const hitId = queryParams.get("hitId") ? queryParams.get("hitId") : "";
         const assignmentId = queryParams.get("assignmentId") ? queryParams.get("assignmentId") : "";
         const turkSubmitTo = queryParams.get("turkSubmitTo") ? queryParams.get("turkSubmitTo") : "";
-        const workerID = queryParams.get("workerId") ? queryParams.get("workerId") : "";
+        const workerID = queryParams.get("workerId") ? queryParams.get("workerId") : "a";
         const taskID = queryParams.get("taskID") ? queryParams.get("taskID") : "";
-        const taskSetID = queryParams.get("taskSetID") ? queryParams.get("taskSetID") : "";
+        const taskSetID = queryParams.get("taskSetID") ? queryParams.get("taskSetID") : "1";
 
         // Set AMT information
         setHitId(hitId === null ? "" : hitId);

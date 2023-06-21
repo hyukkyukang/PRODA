@@ -18,7 +18,7 @@ from src.pylogos.query_graph.koutrika_query_graph import (
 from functools import cached_property
 import src.query_tree.operator as qt_operator
 from src.query_tree.operator import Aggregation, Clause, Condition, Foreach, Projection, Selection
-from src.query_tree.query_tree import Attach, BaseTable, QueryBlock, QueryTree, Refer, get_global_index
+from src.query_tree.query_tree import BaseTable, QueryBlock, QueryTree, get_global_index
 from src.table_excerpt.table_excerpt import TableExcerpt
 from src.utils.user_study_table_excerpt import MovieDB, AdvisingDB
 from src.VQA.EVQA import Aggregator, Clause, EVQANode, EVQATree, Grouping, Header, Operator, Ordering, Selecting
@@ -480,7 +480,7 @@ class MovieQuery5(TestQuery):
         # Create B1
         node_b1_tables = [table_movie, table_rating]
         node_b1 = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), node_b1_tables)),
+            child_tables=list(node_b1_tables),
             join_conditions=[
                 Selection(
                     l_operand=get_global_index(node_b1_tables, 0, "id"),
@@ -511,7 +511,7 @@ class MovieQuery5(TestQuery):
         # Create B2
         node_b2_tables = [table_movie, table_direction, table_director]
         node_b2 = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), node_b2_tables)),
+            child_tables=list(node_b2_tables),
             join_conditions=[
                 Selection(
                     l_operand=get_global_index(node_b2_tables, 0, "id"),
@@ -547,7 +547,7 @@ class MovieQuery5(TestQuery):
         # Create B3
         node_b3_tables = [table_movie, table_rating, node_b1, node_b2]
         node_b3 = QueryBlock(
-            child_tables=list(map(lambda t: Attach(t), node_b3_tables)),
+            child_tables=list(node_b3_tables),
             join_conditions=[
                 Selection(
                     l_operand=get_global_index(node_b3_tables, 0, "id"),
@@ -597,7 +597,7 @@ class MovieQuery5(TestQuery):
         # Create B4
         node_b4_tables = [node_b3]
         node_b4 = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), node_b4_tables)),
+            child_tables=list(node_b4_tables),
             operations=[
                 Selection(
                     l_operand=get_global_index(node_b4_tables, 0, "avg_stars"),

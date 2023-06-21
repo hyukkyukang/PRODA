@@ -10,7 +10,6 @@ export interface Task {
     tableExcerpt: { key: string }[];
     resultTable: { key: string }[];
     history: Task[];
-    blockID: string;
     taskID: number;
 }
 

@@ -1,13 +1,13 @@
 import json
 import os
+
+from src.config import config
+from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 from src.pylogos.translate import translate
 from src.query_tree.query_tree import QueryTree
 from src.task.task import Task
 from src.utils.example_queries import MultipleSublinksQuery2
 from src.VQA.EVQA import EVQATree
-import hkkang_utils.file as file_utils
-
-from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 
 
 def create_nl_and_mapping(query_graph: Query_graph, evqa: EVQATree):
@@ -23,7 +23,6 @@ def create_nl_and_mapping(query_graph: Query_graph, evqa: EVQATree):
 
 def example_task_in_the_paper():
     config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
-    config = file_utils.read_yaml_file(config_file_path)
     task_save_dir_path = os.path.join(config["ProjectPath"], config["TaskSaveDirPath"])
 
     query_object = MultipleSublinksQuery2()
@@ -52,7 +51,7 @@ def example_task_in_the_paper():
         db_name="IMDB",
         table_excerpt=evqa1.node.table_excerpt,
         result_table=evqa1.node.table_excerpt,
-        history_task_ids=[],
+        sub_task_ids=[],
     )
     task1_id = Task.save(sub_task1, task_save_dir_path)
 
@@ -67,7 +66,7 @@ def example_task_in_the_paper():
         db_name="IMDB",
         table_excerpt=evqa2.node.table_excerpt,
         result_table=evqa2.node.table_excerpt,
-        history_task_ids=[],
+        sub_task_ids=[],
     )
     task2_id = Task.save(sub_task2, task_save_dir_path)
 
@@ -82,7 +81,7 @@ def example_task_in_the_paper():
         db_name="IMDB",
         table_excerpt=evqa3.node.table_excerpt,
         result_table=evqa3.node.table_excerpt,
-        history_task_ids=[task2_id, task1_id],
+        sub_task_ids=[task2_id, task1_id],
     )
     task3_id = Task.save(sub_task3, task_save_dir_path)
 
@@ -97,7 +96,7 @@ def example_task_in_the_paper():
         db_name="IMDB",
         table_excerpt=evqa4.node.table_excerpt,
         result_table=evqa4.node.table_excerpt,
-        history_task_ids=[task3_id, task2_id, task1_id],
+        sub_task_ids=[task3_id, task2_id, task1_id],
     )
     task4_id = Task.save(sub_task4, task_save_dir_path)
 

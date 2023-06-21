@@ -17,7 +17,7 @@ from src.pylogos.query_graph.koutrika_query_graph import (
 from functools import cached_property
 import src.query_tree.operator as qt_operator
 from src.query_tree.operator import Aggregation, Clause, Condition, Foreach, Projection, Selection
-from src.query_tree.query_tree import Attach, BaseTable, QueryBlock, QueryTree, Refer, get_global_index
+from src.query_tree.query_tree import BaseTable, QueryBlock, QueryTree, get_global_index
 from src.table_excerpt.table_excerpt import TableExcerpt
 from src.utils.example_table_excerpt import car_table, movie_table, director_table, direction_table, rating_table
 from src.VQA.EVQA import Aggregator, Clause, EVQANode, EVQATree, Grouping, Header, Operator, Ordering, Selecting
@@ -72,7 +72,7 @@ class ProjectionQuery(TestQuery):
         # Create node
         tables = [baseTable]
         node = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), tables)),
+            child_tables=list(tables),
             operations=[Projection(get_global_index(tables, 0, "id"))],
             sql=self.sql,
         )
@@ -100,7 +100,7 @@ class MinMaxQuery(TestQuery):
         base_tables = [BaseTable(car_table.headers, car_table.rows)]
         # Create node
         node = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), base_tables)),
+            child_tables=list(base_tables),
             operations=[
                 Projection(get_global_index(base_tables, 0, "horsepower")),
                 Projection(get_global_index(base_tables, 0, "max_speed")),
@@ -133,7 +133,7 @@ class CountAvgSumQuery(TestQuery):
         base_tables = [BaseTable(car_table.headers, car_table.rows)]
         # Create node
         node = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), base_tables)),
+            child_tables=list(base_tables),
             operations=[
                 Projection(get_global_index(base_tables, 0, "id")),
                 Projection(get_global_index(base_tables, 0, "max_speed")),
@@ -169,7 +169,7 @@ class SelectionQuery(TestQuery):
         base_tables = [BaseTable(car_table.headers, car_table.rows)]
         # Create node
         node = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), base_tables)),
+            child_tables=list(base_tables),
             operations=[
                 Projection(get_global_index(base_tables, 0, "id")),
                 Selection(
@@ -223,7 +223,7 @@ class AndOrQuery(TestQuery):
         base_tables = [BaseTable(car_table.headers, car_table.rows)]
         # Create node
         node = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), base_tables)),
+            child_tables=list(base_tables),
             operations=[
                 Projection(get_global_index(base_tables, 0, "id")),
                 Projection(get_global_index(base_tables, 0, "price")),
@@ -296,7 +296,7 @@ class SelectionQueryWithOr(TestQuery):
         base_tables = [BaseTable(car_table.headers, car_table.rows)]
         # Create node
         node = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), base_tables)),
+            child_tables=list(base_tables),
             operations=[
                 Projection(get_global_index(base_tables, 0, "id")),
                 Selection(
@@ -347,7 +347,7 @@ class SelectionQueryWithAnd(TestQuery):
         # Create node
         base_tables = [BaseTable(car_table.headers, car_table.rows)]
         node = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), base_tables)),
+            child_tables=list(base_tables),
             operations=[
                 Projection(get_global_index(base_tables, 0, "id")),
                 Selection(
@@ -394,7 +394,7 @@ class OrderByQuery(TestQuery):
         base_tables = [BaseTable(car_table.headers, car_table.rows)]
         # Create node
         node = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), base_tables)),
+            child_tables=list(base_tables),
             operations=[
                 Projection(get_global_index(base_tables, 0, "id")),
                 Selection(
@@ -429,7 +429,7 @@ class GroupByQuery(TestQuery):
         base_tables = [BaseTable(car_table.headers, car_table.rows)]
         # Create node
         node = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), base_tables)),
+            child_tables=list(base_tables),
             operations=[
                 Projection(get_global_index(base_tables, 0, "*")),
                 Projection(get_global_index(base_tables, 0, "model")),
@@ -498,7 +498,7 @@ class HavingQuery(TestQuery):
         base_tables = [BaseTable(car_table.headers, car_table.rows)]
         # Create node1
         node1 = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), base_tables)),
+            child_tables=list(base_tables),
             operations=[
                 Projection(get_global_index(base_tables, 0, "model")),
                 Projection(get_global_index(base_tables, 0, "max_speed"), "max_speed"),
@@ -509,7 +509,7 @@ class HavingQuery(TestQuery):
         # Create node2
         node2_tables = [node1]
         node2 = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), node2_tables)),
+            child_tables=list(node2_tables),
             operations=[
                 Projection(get_global_index(node2_tables, 0, "model")),
                 Selection(
@@ -561,7 +561,7 @@ class NestedQuery(TestQuery):
 
         # Create node
         node1 = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), base_tables)),
+            child_tables=list(base_tables),
             operations=[
                 Projection(get_global_index(base_tables, 0, "max_speed"), "avg_max_speed"),
                 Aggregation(get_global_index(base_tables, 0, "max_speed"), "avg"),
@@ -574,7 +574,7 @@ class NestedQuery(TestQuery):
         # Get base table
         node2_tables = base_tables + [node1]
         node2 = QueryBlock(
-            child_tables=list(map(lambda t: Attach(t), node2_tables)),
+            child_tables=list(node2_tables),
             operations=[
                 Projection(get_global_index(node2_tables, 0, "id")),
                 Selection(
@@ -677,7 +677,7 @@ class CorrelatedNestedQuery(TestQuery):
         # Get node 1
         base_tables = [base_table1, base_table2]
         node1 = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), base_tables)),
+            child_tables=list(base_tables),
             join_conditions=[
                 Selection(
                     clauses=[
@@ -703,7 +703,7 @@ class CorrelatedNestedQuery(TestQuery):
         # Get node2
         node2_tables = [base_table1, node1]
         node2 = QueryBlock(
-            child_tables=list(map(lambda t: Attach(t), node2_tables)),
+            child_tables=list(node2_tables),
             operations=[
                 Projection(get_global_index(node2_tables, 0, "id")),
                 Selection(
@@ -1044,7 +1044,7 @@ class MultipleSublinksQuery2(TestQuery):
         # Create B1
         node_b1_tables = [table_movie, table_rating]
         node_b1 = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), node_b1_tables)),
+            child_tables=list(node_b1_tables),
             join_conditions=[
                 Selection(
                     l_operand=get_global_index(node_b1_tables, 0, "id"),
@@ -1075,7 +1075,7 @@ class MultipleSublinksQuery2(TestQuery):
         # Create B2
         node_b2_tables = [table_movie, table_direction, table_director]
         node_b2 = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), node_b2_tables)),
+            child_tables=list(node_b2_tables),
             join_conditions=[
                 Selection(
                     l_operand=get_global_index(node_b2_tables, 0, "id"),
@@ -1111,7 +1111,7 @@ class MultipleSublinksQuery2(TestQuery):
         # Create B3
         node_b3_tables = [table_movie, table_rating, node_b1, node_b2]
         node_b3 = QueryBlock(
-            child_tables=list(map(lambda t: Attach(t), node_b3_tables)),
+            child_tables=list(node_b3_tables),
             join_conditions=[
                 Selection(
                     l_operand=get_global_index(node_b3_tables, 0, "id"),
@@ -1161,7 +1161,7 @@ class MultipleSublinksQuery2(TestQuery):
         # Create B4
         node_b4_tables = [node_b3]
         node_b4 = QueryBlock(
-            child_tables=list(map(lambda t: Refer(t), node_b4_tables)),
+            child_tables=list(node_b4_tables),
             operations=[
                 Selection(
                     l_operand=get_global_index(node_b4_tables, 0, "avg_stars"),

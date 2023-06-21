@@ -13,3 +13,6 @@ pylogos
 attrs
 psycopg
 boto3
+openai
+pandas
+pandasql

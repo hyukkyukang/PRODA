@@ -356,7 +356,7 @@ class MRP:
                                     reference_point, associated_relation, att, out_edge_from_att, dst.label, dst_parent
                                 )
                             else:
-                                nested_string_builder = self._call(associated_relation, None, None, graph)
+                                nested_string_builder = self._call_2(associated_relation, None, None, graph)
                                 value_str = nested_string_builder.construct_sentence_dnf()
                                 string_builder.add_selection(
                                     reference_point, relation, att, out_edge_from_att, value_str, None
@@ -384,7 +384,7 @@ class MRP:
                                     reference_point, associated_relation, att, out_edge_from_att, dst_label, dst_parent
                                 )
                             else:
-                                nested_string_builder = self._call(associated_relation, None, None, graph)
+                                nested_string_builder = self._call_2(associated_relation, None, None, graph)
                                 value_str = nested_string_builder.construct_sentence_dnf()
                                 string_builder.add_selection(
                                     reference_point, associated_relation, att, out_edge_from_att, value_str, None

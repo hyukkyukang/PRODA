@@ -2,17 +2,14 @@ import argparse
 import json
 import os
 import pickle
-from typing import Any, List, Dict, Union
-import os
 import sys
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
+from typing import Any, Dict, List, Union
+
 import hkkang_utils.file as file_utils
 
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
+from src.config import config
 from src.utils.pg_connector import PostgresConnector
-
-# Must be given an absolute path
-config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
-config = file_utils.read_yaml_file(config_file_path)
 
 IP = config["DB"]["IP"]
 port = config["DB"]["Port"]
@@ -69,15 +66,6 @@ def save_task_set_in_db(
     return pg.fetchone()[0]
 
 
-def save_task_set_in_db(
-    task_ids: List[int],
-):
-    pg = PostgresConnector(DBUserID, DBUserPW, IP, port, DBName)
-    task_ids_str = "{" + ",".join(map(lambda k: f'"{str(k)}"', task_ids)) + "}"
-    pg.execute(f"INSERT INTO {DBTaskSetTableName} (task_ids) VALUES ('{task_ids_str}') RETURNING id")
-    return pg.fetchone()[0]
-
-
 def save_task_in_db(
     nl: str,
     sql: str,
@@ -88,14 +76,14 @@ def save_task_in_db(
     nl_mapping_path: str,
     db_name: str,
     task_type: int,
-    history_task_ids: List[int],
-) -> None:
+    sub_task_ids: List[int],
+) -> int:
     pg = PostgresConnector(DBUserID, DBUserPW, IP, port, DBName)
-    history_task_ids_str = "{" + ",".join(map(lambda k: f'"{str(k)}"', history_task_ids)) + "}"
+    sub_task_ids_str = "{" + ",".join(map(lambda k: f'"{str(k)}"', sub_task_ids)) + "}"
     nl = nl.replace("'", "\\'")
     sql = sql.replace("'", "\\'")
     pg.execute(
-        f"INSERT INTO {DBTaskTableName} (nl, sql, query_type, evqa_path, table_excerpt_path, result_table_path, nl_mapping_path, db_name, task_type, history_task_ids) VALUES (E'{nl}', E'{sql}', '{query_type}', '{evqa_path}', '{table_excerpt_path}', '{result_table_path}', '{nl_mapping_path}', '{db_name}', {task_type}, '{history_task_ids_str}') RETURNING id"
+        f"INSERT INTO {DBTaskTableName} (nl, sql, query_type, evqa_path, table_excerpt_path, result_table_path, nl_mapping_path, db_name, task_type, sub_task_ids) VALUES (E'{nl}', E'{sql}', '{query_type}', '{evqa_path}', '{table_excerpt_path}', '{result_table_path}', '{nl_mapping_path}', '{db_name}', {task_type}, '{sub_task_ids_str}') RETURNING id"
     )
     return pg.fetchone()[0]
 

@@ -506,13 +506,19 @@ class StringBuilder:
                             att_flag = True
                         # To string
                         cur_word = SStrWord(list(filter(lambda k: k, [agg, att])))
+                        order_flag = False
                         if self.ordering and att_flag:
                             for rp_o, rel_o, att_o in self.ordering:
                                 if rel_o == target_relation and att_o == att:
-                                    cur_word.add_suffix(" (in ascending order)")
+                                    if not order_flag:
+                                        order_flag = True
+                                        cur_word.add_suffix(" (in ascending order)")
+                                    else:
+                                        pass
                                 else:
                                     tmp_o.append((rp_o, rel_o, att_o))
                             self.ordering = copy.deepcopy(tmp_o)
+
                         texts += cur_word
                     else:
                         tmp.append((rel, att, agg))
@@ -873,7 +879,11 @@ class StringBuilder:
     def add(self, string_builder) -> None:
         self.projection.extend(string_builder.projection)
         self.selection.extend(string_builder.selection)
-        self.selection_dnf.extend(string_builder.selection_dnf)
+        for dnf_idx, dnf_clauses in enumerate(string_builder.selection_dnf):
+            if len(dnf_clauses) > 0:
+                if dnf_idx >= len(self.selection_dnf):
+                    self.selection_dnf.extend([[] for _ in range(dnf_idx - len(self.selection_dnf) + 1)])
+                self.selection_dnf[dnf_idx].extend(dnf_clauses)
         self.join_conditions.extend(string_builder.join_conditions)
         self.grouping.extend(string_builder.grouping)
         self.having.extend(string_builder.having)

@@ -1,6 +1,7 @@
 from typing import Any, List, Optional, Union
 from hkkang_utils import string as string_utils
 
+
 def perform_join(table1, table2, key1_idx, key2_idx, join_type, empty_row1, empty_row2):
     df = []
     joined_row1 = set()
@@ -20,6 +21,7 @@ def perform_join(table1, table2, key1_idx, key2_idx, join_type, empty_row1, empt
             if idx not in joined_row2:
                 df.append(Row(empty_row1.cells + row2.cells))
     return df
+
 
 class DType:
     def __str__(self):
@@ -78,7 +80,7 @@ class Cell:
 
     @staticmethod
     def to_dtype(value: Any) -> DType:
-        if value == None or value == '':
+        if value == None or value == "":
             return None
         """Convert value into DType"""
         if type(value) in [int, float]:
@@ -97,7 +99,7 @@ class Cell:
 
     @property
     def is_null(self):
-        return self.value == None or self.value == ''
+        return self.value == None or self.value == ""
 
     def dump_json(self):
         return {"value": self.value}
@@ -135,14 +137,14 @@ class TableExcerpt:
     def fake_join(new_table_name: str, tables: List[Any], prefixes=None, join_atts=None):
         if prefixes is not None:
             assert len(prefixes) == len(tables)
-            headers=[]
+            headers = []
             for table, prefix in zip(tables, prefixes):
                 for header in table.headers:
                     headers.append(prefix + header)
         else:
             headers = [header for item in tables for header in item.headers]
         col_types = [col_type for item in tables for col_type in item.col_types]
-        
+
         if join_atts is None:
             # Fake join
             # Find the smallest number of rows
@@ -156,56 +158,62 @@ class TableExcerpt:
                 new_rows.append(Row(row))
         else:
             # Real join - left deep join
-            joined_tables=[]
-            df=[]
+            joined_tables = []
+            df = []
             for join_att in join_atts:
-                t1_idx=join_att[0]
-                t2_idx=join_att[1]
-                c1_idx=tables[t1_idx].headers.index(join_att[2])
-                c2_idx=tables[t2_idx].headers.index(join_att[3])
-                join_type=join_att[4]
-                
-                cells_df=[]
+                t1_idx = join_att[0]
+                t2_idx = join_att[1]
+                c1_idx = tables[t1_idx].headers.index(join_att[2])
+                c2_idx = tables[t2_idx].headers.index(join_att[3])
+                join_type = join_att[4]
+
+                cells_df = []
                 for table in joined_tables:
                     for col_type in tables[table].col_types:
                         cells_df.append(Cell(None, dtype=col_type))
-                empty_row_df=Row(cells_df)
+                empty_row_df = Row(cells_df)
 
-                cells_t1=[]
+                cells_t1 = []
                 for col_type in tables[t1_idx].col_types:
                     cells_t1.append(Cell(None, dtype=col_type))
-                empty_row_t1=Row(cells_t1)
-                
-                cells_t2=[]
+                empty_row_t1 = Row(cells_t1)
+
+                cells_t2 = []
                 for col_type in tables[t2_idx].col_types:
                     cells_t2.append(Cell(None, dtype=col_type))
-                empty_row_t2=Row(cells_t2)
+                empty_row_t2 = Row(cells_t2)
 
                 if t1_idx in joined_tables and t2_idx not in joined_tables:
-                    offset=0
+                    offset = 0
                     for i in range(joined_tables.index(t1_idx)):
-                        offset+=len(tables[joined_tables[i]].headers)
-                    df=perform_join(df, tables[t2_idx].rows, offset+c1_idx, c2_idx, join_type, empty_row_df, empty_row_t2)
+                        offset += len(tables[joined_tables[i]].headers)
+                    df = perform_join(
+                        df, tables[t2_idx].rows, offset + c1_idx, c2_idx, join_type, empty_row_df, empty_row_t2
+                    )
                     joined_tables.append(t2_idx)
                 elif t2_idx in joined_tables and t1_idx not in joined_tables:
-                    offset=0
+                    offset = 0
                     for i in range(joined_tables.index(t2_idx)):
-                        offset+=len(tables[joined_tables[i]].headers)
+                        offset += len(tables[joined_tables[i]].headers)
                     if join_type == "left_outer":
                         join_type = "right_outer"
                     elif join_type == "right_outer":
                         join_type = "left_outer"
-                    df=perform_join(df, tables[t1_idx].rows, offset+c2_idx, c1_idx, join_type, empty_row_df, empty_row_t1)
+                    df = perform_join(
+                        df, tables[t1_idx].rows, offset + c2_idx, c1_idx, join_type, empty_row_df, empty_row_t1
+                    )
                     joined_tables.append(t1_idx)
                 elif len(joined_tables) == 0:
-                    df=perform_join(tables[t1_idx].rows, tables[t2_idx].rows, c1_idx, c2_idx, join_type, empty_row_t1, empty_row_t2)
+                    df = perform_join(
+                        tables[t1_idx].rows, tables[t2_idx].rows, c1_idx, c2_idx, join_type, empty_row_t1, empty_row_t2
+                    )
                     joined_tables.append(t1_idx)
                     joined_tables.append(t2_idx)
                 else:
                     assert False
             new_rows = df
-            headers=[]
-            col_types=[]
+            headers = []
+            col_types = []
             for tid in joined_tables:
                 for col_type in tables[tid].col_types:
                     col_types.append(col_type)
@@ -301,8 +309,8 @@ class TableExcerpt:
         self.rows.append(row)
         return self.rows
 
-    def add_rows(self, rows):
-        return [self.add_row(row) for row in rows]
+    def add_rows(self, rows: List[List[Any]]):
+        return [self.add_row(row) for row in rows if row]
 
     def dump_json(self):
         return {
@@ -339,4 +347,4 @@ def type_detection(value: Any) -> str:
 
 
 if __name__ == "__main__":
-    stop = 1
+    pass

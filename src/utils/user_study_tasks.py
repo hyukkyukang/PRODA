@@ -1,17 +1,17 @@
 import os
 
 from rewrite_sentence_gpt import *
-from src.pylogos.translate import translate
+
+from src.config import config
 from src.pylogos.query_graph.koutrika_query_graph import Query_graph
+from src.pylogos.translate import translate
 from src.query_tree.query_tree import QueryTree
 from src.task.task import Task
+from src.utils.data_manager import save_task_set_in_db
+from src.utils.example_queries import CorrelatedNestedQuery
+from src.utils.example_tasks import create_nl_and_mapping
 from src.utils.user_study_queries import MovieQuery1, MovieQuery2, MovieQuery3, MovieQuery5, MovieQuery6
 from src.VQA.EVQA import EVQATree
-import hkkang_utils.file as file_utils
-from src.utils.example_tasks import create_nl_and_mapping
-from src.utils.data_manager import save_task_set_in_db
-
-from src.utils.example_queries import CorrelatedNestedQuery
 
 
 def templatize(history, current):
@@ -31,8 +31,6 @@ def templatize(history, current):
 
 
 def MovieTask1(query_object):
-    config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
-    config = file_utils.read_yaml_file(config_file_path)
     task_save_dir_path = os.path.join(config["ProjectPath"], config["TaskSaveDirPath"])
 
     evqa_object = query_object.evqa
@@ -55,7 +53,7 @@ def MovieTask1(query_object):
         db_name="Movie",
         table_excerpt=evqa1.node.table_excerpt,
         result_table=result,
-        history_task_ids=[],
+        sub_task_ids=[],
     )
     task1_id = Task.save(sub_task1, task_save_dir_path)
     print(task1_id)
@@ -64,8 +62,6 @@ def MovieTask1(query_object):
 
 
 def MovieTask2(query_object):
-    config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
-    config = file_utils.read_yaml_file(config_file_path)
     task_save_dir_path = os.path.join(config["ProjectPath"], config["TaskSaveDirPath"])
 
     evqa_object = query_object.evqa
@@ -107,7 +103,7 @@ def MovieTask2(query_object):
         db_name="IMDB",
         table_excerpt=evqa1.node.table_excerpt,
         result_table=result_tables[0],
-        history_task_ids=[],
+        sub_task_ids=[],
     )
     task1_id = Task.save(sub_task1, task_save_dir_path)
     print(task1_id)
@@ -123,7 +119,7 @@ def MovieTask2(query_object):
         db_name="IMDB",
         table_excerpt=evqa2.node.table_excerpt,
         result_table=result_tables[1],
-        history_task_ids=[],
+        sub_task_ids=[],
     )
     task2_id = Task.save(sub_task2, task_save_dir_path)
     print(task2_id)
@@ -139,7 +135,7 @@ def MovieTask2(query_object):
         db_name="IMDB",
         table_excerpt=evqa3.node.table_excerpt,
         result_table=result_tables[2],
-        history_task_ids=[task2_id, task1_id],
+        sub_task_ids=[task2_id, task1_id],
     )
     task3_id = Task.save(sub_task3, task_save_dir_path)
     print(task3_id)
@@ -156,7 +152,7 @@ def MovieTask2(query_object):
         db_name="IMDB",
         table_excerpt=evqa4.node.table_excerpt,
         result_table=result_tables[3],
-        history_task_ids=[task3_id, task2_id, task1_id],
+        sub_task_ids=[task3_id, task2_id, task1_id],
     )
     task4_id = Task.save(sub_task4, task_save_dir_path)
     print(task4_id)
@@ -165,8 +161,6 @@ def MovieTask2(query_object):
 
 
 def MovieTask3(query_object):
-    config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../config.yml")
-    config = file_utils.read_yaml_file(config_file_path)
     task_save_dir_path = os.path.join(config["ProjectPath"], config["TaskSaveDirPath"])
 
     evqa_object = query_object.evqa
@@ -193,7 +187,7 @@ def MovieTask3(query_object):
         db_name="IMDB",
         table_excerpt=evqa1.node.table_excerpt,
         result_table=result_tables[0],
-        history_task_ids=[],
+        sub_task_ids=[],
     )
     task1_id = Task.save(sub_task1, task_save_dir_path)
     print(task1_id)
@@ -209,7 +203,7 @@ def MovieTask3(query_object):
         db_name="IMDB",
         table_excerpt=evqa2.node.table_excerpt,
         result_table=result_tables[1],
-        history_task_ids=[task1_id],
+        sub_task_ids=[task1_id],
     )
     task2_id = Task.save(sub_task2, task_save_dir_path)
     print(task2_id)
