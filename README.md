@@ -108,28 +108,28 @@ for key, query_tree in query_trees:
 # Web Server (Front-end)
 
 The code for the Front-end server are in the `client` directory.
-Please change the working directory `cd ./client` and follow the below instructions.
 
 ## Setup configs
 
 Please check the environment variables in the `.env` file and change them if necessary.
 
 ## Run the server
-
-1. yarn install
-2. yarn start
-
-## Development
-
-Please use `yarn dev` or `yarn dev-https`, according to the protocol you desire.
+```bash
+cd client
+yarn install
+yarn build
+yarn start
+```
 
 # API Server (Back-end)
 
 The code for the Front-end server are in the `server` directory.
 Please change the working directory `cd ./client` and follow the below instructions.
 
-1. npm install
-2. node app.js
+```bash
+npm install
+node app.js
+```
 
 # Creating Human Intelligence Tasks (HITs) with Amazon Mechanical Turk (AMT)
 
