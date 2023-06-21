@@ -18,9 +18,10 @@ services:
         stdin_open: true
         tty: true
         ports:
-            - "5432:5432"
+            - "5434:5432"
         environment:
             POSTGRES_USER: "postgres"
             POSTGRES_PASSWORD: "postgres"
         volumes:
             - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+            - ./data/postgresql:/var/lib/postgresql/data

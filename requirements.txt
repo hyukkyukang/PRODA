@@ -16,3 +16,4 @@ boto3
 openai
 pandas
 pandasql
+tqdm

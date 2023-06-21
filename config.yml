@@ -1,11 +1,11 @@
 visibleToClient:
     frontend:
-        IP: localhost
-        Port: 3000
+        IP: proda.postech.ac.kr # Visible IP addr
+        Port: 3000 # Actual port within this server
         Protocol: http # Either https or http
     backend:
-        IP: localhost
-        Port: 4001
+        IP: proda.postech.ac.kr # Visible IP addr
+        Port: 4001 # Visible port
         Protocol: http # Either https or http
     isAMTCollectionMode: false
 backend:
@@ -14,7 +14,7 @@ backend:
     Protocol: http # Either https or http
 DB:
     IP: localhost
-    Port: 5432
+    Port: 5434
     config:
         DBName: proda_config
         UserID: config_user
