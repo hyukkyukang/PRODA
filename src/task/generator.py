@@ -164,6 +164,7 @@ class TaskGenerator:
         # Generate NL
         # TODO: Need to generate NL with use_gpt=True
         full_nl, generated_nl = translate_progressive(query_tree, query_id, query_objs, query_graphs, use_gpt=False)
+        generated_nl = full_nl #### FOR debugging
 
         # Add Alignment annotation
         nl_mapping = []
@@ -207,15 +208,6 @@ class TaskGenerator:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--infile", type=str, default="src/sql_generator/configs/test_experiments_nested.json")
-    parser.add_argument(
-        "--query_paths",
-        nargs="+",
-        default=[
-            os.path.join(project_path, "non-nested/result.out"),
-            os.path.join(project_path, "non-nested/result2.out"),
-            os.path.join(project_path, "non-nested/result3.out"),
-        ],
-    )
     parser.add_argument("--dbname", default="car_1")
     parser.add_argument("--use_cols", default="car_1")
     parser.add_argument("--output_path", type=str, default=os.path.join(project_path, "result_with_te.out"))

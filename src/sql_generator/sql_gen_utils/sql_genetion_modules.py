@@ -2472,18 +2472,19 @@ def create_inner_joined_view(
         inner_join_query_string += f""" WHERE {inner_join_query_predicate_string} """
         # tighter_inner_join_query_string += f""" WHERE {inner_join_query_tighter_predicate_string} """
         n_inner_join_query_string += f""" WHERE {inner_join_query_negative_predicate_string} LIMIT 20"""
+        
+    if where_view_predicate_string is not None:
+        data_manager.create_view(
+            args.logger, inner_join_view_name, inner_join_query_string, type="materialized", drop_if_exists=True
+        )
 
-    data_manager.create_view(
-        args.logger, inner_join_view_name, inner_join_query_string, type="materialized", drop_if_exists=True
-    )
-
-    data_manager.create_view(
-        args.logger,
-        inner_join_view_name + "__negative_examples",
-        n_inner_join_query_string,
-        type="materialized",
-        drop_if_exists=True,
-    )
+        data_manager.create_view(
+            args.logger,
+            inner_join_view_name + "__negative_examples",
+            n_inner_join_query_string,
+            type="materialized",
+            drop_if_exists=True,
+        )
 
     # data_manager.create_view(
     #    args.logger,

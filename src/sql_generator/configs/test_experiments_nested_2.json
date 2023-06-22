@@ -2,7 +2,7 @@
     "global_idx": 500,
     "db": "car_1",
     "schema_name": "car_1",
-    "num_queries": 10,
+    "num_queries": 50,
     "output": "non-nested/result3.out",
     "sep": "#",
     "seed": 1234,
@@ -45,7 +45,7 @@
     {
         "__type_info__": "non-nested or nested",
         "type": "nested",
-        "inner_query_paths": ["non-nested/result2.out"]
+        "inner_query_paths": ["non-nested/result.out", "non-nested/result2.out"]
     },
     "constraints":
     {

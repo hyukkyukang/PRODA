@@ -2,7 +2,7 @@
     "global_idx": 0,
     "db": "car_1",
     "schema_name": "car_1",
-    "num_queries": 100,
+    "num_queries": 200,
     "output": "non-nested/result2.out",
     "sep": "#",
     "seed": 1240,
@@ -49,7 +49,7 @@
     },
     "constraints":
     {
-        "used_as_inner_query": false,
+        "used_as_inner_query": true,
         "join_key_pred": false,
         "set_clause_by_clause": false,
         "has_where": false,
