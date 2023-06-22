@@ -34,7 +34,7 @@ def convert_node(query_tree_node: QueryTree.Node) -> EVQA.EVQATree:
         ]
     )
     is_nested = True if QueryTree.BaseTable in [type(child_table) for child_table in query_tree_node.child_tables] else False
-    all_dtypes = list_utils.do_flatten_list([ [f"list.{dtype}" if col not in query_tree_node.get_join_keys() else dtype for col, dtype in zip(child_table.get_headers_with_table_name(), child_table.get_dtypes())] if type(child_table) == QueryTree.QueryBlock and is_nested else child_table.get_dtypes() for child_table in query_tree_node.child_tables ])
+    all_dtypes = list_utils.do_flatten_list([ [f"list.{dtype}" if QueryTreeOperator.Foreach not in [type(op) for op in child_table.operations] else dtype for dtype in child_table.get_dtypes()] if type(child_table) == QueryTree.QueryBlock and is_nested else child_table.get_dtypes() for child_table in query_tree_node.child_tables ])
     table_excerpt = TableExcerpt.TableExcerpt(
         name=query_tree_node.name,
         headers=all_headers,
@@ -94,7 +94,7 @@ def create_projection_headers(query_tree_node: QueryTree.QueryBlock) -> List[EVQ
         agg_list = list(filter(lambda agg: agg.column_id == column_id, aggregations))
         agg_type = None
         if agg_list:
-            assert len(agg_list) == 1
+            # assert len(agg_list) == 1 ###### [TODO] SHOULD BE REMOVED
             agg_type = EVQA.Aggregator.from_str(agg_list[0].func_type)
         # Append header
         headers.append(EVQA.Header(column_id + 1, agg_type))

@@ -298,9 +298,9 @@ def main():
                 args.db, args.schema_name, data_manager, dtype_dict, query_graphs, query_objs, query_tree, key
             )
             evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
-            new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key)
-            new_task.save_as_task_set("/root/proda/data")
-            cnt += 1
+            # new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key)
+            # new_task.save_as_task_set("/root/proda/data")
+            # cnt += 1
             #except:
             #    bad_cnt += 1
             #    continue

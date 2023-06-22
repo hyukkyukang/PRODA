@@ -186,11 +186,14 @@ class QueryBlock(Node):
         new_headers = []
         projections = [op for op in self.operations if isinstance(op, Projection) or isinstance(op, Foreach)]
         # If star projection and add all headers
-        if any([proj.alias == "*" for proj in projections]):
-            return list_utils.do_flatten_list([child_table.get_headers() for child_table in self.child_tables if type(child_table) == BaseTable ])
+        
+        # if any([proj.alias == "*" for proj in projections]):
+        #     return list_utils.do_flatten_list([child_table.get_headers() for child_table in self.child_tables if type(child_table) == BaseTable ])
         # Get projecting headers
         for proj in projections:
-            if proj.alias:
+            if proj.alias == "*":
+                new_headers += list_utils.do_flatten_list([child_table.get_headers() for child_table in self.child_tables if type(child_table) == BaseTable ])
+            elif proj.alias:
                 new_headers.append(proj.alias)
             else:
                 accumulated_len = 0
@@ -211,12 +214,14 @@ class QueryBlock(Node):
         new_headers = []
         projections = [op for op in self.operations if isinstance(op, Projection) or isinstance(op, Foreach)]
         # If star projection and add all headers
-        if any([proj.alias == "*" for proj in projections]):
-            return list_utils.do_flatten_list([
-                child_table.get_headers_with_table_name() for child_table in self.child_tables if type(child_table) == BaseTable ])
+        #if any([proj.alias == "*" for proj in projections]):
+        #    return list_utils.do_flatten_list([
+        #        child_table.get_headers_with_table_name() for child_table in self.child_tables if type(child_table) == BaseTable ])
         # Get projecting headers
         for proj in projections:
-            if proj.alias:
+            if proj.alias == "*":
+                new_headers += list_utils.do_flatten_list([child_table.get_headers_with_table_name() for child_table in self.child_tables if type(child_table) == BaseTable ])
+            elif proj.alias:
                 new_headers.append(proj.alias)
             else:
                 accumulated_len = 0
@@ -232,18 +237,32 @@ class QueryBlock(Node):
         # Get dtypes for headers
         new_dtypes = []
         projections = [op for op in self.operations if isinstance(op, Projection) or isinstance(op, Foreach)]
-        if any([proj.alias == "*" for proj in projections]):
-            return list_utils.do_flatten_list([
-                child_table.get_dtypes() for child_table in self.child_tables if type(child_table) == BaseTable])
+        has_foreach = True if Foreach in [type(op) for op in self.operations] else False
+        
+        #if any([proj.alias == "*" for proj in projections]):
+        #    return list_utils.do_flatten_list([
+        #        child_table.get_dtypes() for child_table in self.child_tables if type(child_table) == BaseTable])
         for proj in projections:
-            if proj.dtype:
-                new_dtypes.append(proj.dtype)
+            if proj.alias == "*":
+                if has_foreach and not isinstance(proj, Foreach):
+                    cur_dtypes = list_utils.do_flatten_list([child_table.get_dtypes() for child_table in self.child_tables if type(child_table) == BaseTable ])
+                    new_dtypes += [f"list.{dtype}" for dtype in cur_dtypes]
+                else:
+                    new_dtypes += list_utils.do_flatten_list([child_table.get_dtypes() for child_table in self.child_tables if type(child_table) == BaseTable ])
+            elif proj.dtype:
+                if has_foreach and not isinstance(proj, Foreach):
+                    new_dtypes.append(f"list.{proj.dtype}")
+                else:
+                    new_dtypes.append(proj.dtype)
             else:
                 accumulated_len = 0
                 for child_table in self.child_tables:
                     child_dtypes = child_table.get_dtypes()
                     if accumulated_len + len(child_dtypes) > proj.column_id:
-                        new_dtypes.append(child_dtypes[proj.column_id - accumulated_len])
+                        if has_foreach and not isinstance(proj, Foreach):
+                            new_dtypes.append(f"list.{child_dtypes[proj.column_id - accumulated_len]}")
+                        else:
+                            new_dtypes.append(child_dtypes[proj.column_id - accumulated_len])
                         break
                     accumulated_len += len(child_dtypes)
         return new_dtypes

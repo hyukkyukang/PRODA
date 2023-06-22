@@ -2,9 +2,11 @@ from src.sql_generator.tools.storage.db import PostgreSQLDatabase
 import src.table_excerpt.table_excerpt
 from src.sql_generator.sql_gen_utils.sql_genetion_utils import (
     preorder_traverse_to_replace_alias,
+    preorder_traverse_to_get_graph,
     get_view_name,
     get_prefix,
-    get_table_join_key_from_join_clause
+    get_table_join_key_from_join_clause,
+    get_operations_with_updated_global_idx
 )
 import src.query_tree.query_tree as QueryTree
 import src.query_tree.operator as QueryTreeOperator
@@ -15,7 +17,7 @@ SAMPLE_GROUPS = 6
 SAMPLE_TUPLES = 24
 
 
-def get_used_table_cols(obj, prefix):
+def get_used_table_cols(obj, prefix, correlation_column):
     used_table_cols = {}
     for table in obj["tables"]:
         used_table_cols[table] = set()
@@ -64,6 +66,17 @@ def get_used_table_cols(obj, prefix):
                 c = order_org.split(".")[1]
                 used_table_cols[t].add(c)
     
+    if obj["correlation_predicates_origin"] is not None and len(obj["correlation_predicates_origin"]) > 0:
+        for cor_pred in obj["correlation_predicates_origin"]:
+            inner_cor = cor_pred[1]
+            inner_cor_tab = inner_cor.split(".")[0]
+            inner_cor_col = inner_cor.split(".")[1]
+            used_table_cols[inner_cor_tab].add(inner_cor_col)
+            
+    if correlation_column is not None:
+        cor_tab = correlation_column.split(".")[0]
+        cor_col = correlation_column.split(".")[1]
+        used_table_cols[cor_tab].add(cor_col)
 
     return used_table_cols
 
@@ -166,8 +179,8 @@ def get_view_ctids(
         outer_where_clause = ""
         having_projection_str = ""
         outer_where_strings = []
+        additional_projections = set()
         if obj["type"]["having"]:
-            additional_projections = set()
             for h in obj["having_predicates_origin"]:
                 h_agg = h[1]
                 h_col = h[2].replace(".", "__")
@@ -179,6 +192,15 @@ def get_view_ctids(
             if having_negated:
                 outer_where_string = f"NOT {outer_where_string} "
             outer_where_strings.append(outer_where_string)
+        if obj["use_agg_sel"]:
+            additional_projections_agg_sel = set()
+            for agg_col in obj["agg_cols"]:
+                s_agg = agg_col[0]
+                s_col = agg_col[1].replace(".", "__")
+                s_col_alias = f""" {s_agg}({s_col}) AS {s_agg}_{s_col.replace("*", "all")}_ """
+                if s_agg != "NONE" and s_col_alias not in additional_projections:
+                    additional_projections_agg_sel.add(s_col_alias)
+            having_projection_str += ", " + ", ".join(list(additional_projections_agg_sel))
         if having_condition:
             outer_where_string_2 = having_condition
             # outer_where_string_2 = (
@@ -213,11 +235,16 @@ def get_view_ctids(
                 [group_col_view + f" AS G{g_idx}" for g_idx, group_col_view in enumerate(group_col_views)]
             )
             group_col_alias = ", ".join([f"T.G{g_idx}" for g_idx in range(len(group_columns))])
-            view_inner_sql_select = f""" unnest(array_agg({correlation_col_ref})) AS Cc, {group_col_view_string}, array_agg(CTID) AS C2 {additional_inner_sql_select} {having_projection_str} """
+            view_inner_sql_select = f"""{correlation_col_ref} AS Cc, {group_col_view_string}, array_agg(CTID) AS C2 {additional_inner_sql_select} {having_projection_str} """
         else:
-            view_inner_sql_select = (
-                f""" {correlation_col_ref} AS Cc, CTID AS C1 {additional_inner_sql_select} {having_projection_str}"""
-            )
+            if additional_condition is not None and "GROUP BY" in additional_condition:
+                view_inner_sql_select = (
+                    f""" {correlation_col_ref} AS Cc, unnest(array_agg(CTID)) AS C1 {additional_inner_sql_select} {having_projection_str}"""
+                )
+            else:
+                view_inner_sql_select = (
+                    f""" {correlation_col_ref} AS Cc, CTID AS C1 {additional_inner_sql_select} {having_projection_str}"""
+                )
 
         view_inner_sql = f"SELECT {view_inner_sql_select} FROM {inner_join_view_name}"
 
@@ -241,7 +268,7 @@ def get_view_ctids(
             if limited:
                 Cidx_ref = f"({Cidx_ref})[1:{limit_num}]"
 
-            view_sql = f"""SELECT T.Cc, {Cidx_ref} FROM ( {view_inner_sql}) AS T GROUP BY T.Cc """
+            view_sql = f"""SELECT T.Cc, {Cidx_ref} FROM ( {view_inner_sql}) AS T {outer_where_clause} GROUP BY T.Cc """
     else:
         assert not ordered
         if grouped:
@@ -339,7 +366,7 @@ def update_query_node_with_table_excerpt(
                 conditions = []
                 conditions_correaled = []
                 for val in vals:
-                    if correlation_column is not None and idx == 1:
+                    if correlation_column is not None and idx >= 1:
                         val_arr = val
                         conds_for_one_correal_val = []
                         conds_correal_for_one_correal_val = []
@@ -354,7 +381,7 @@ def update_query_node_with_table_excerpt(
                                 val_ref = f"""({val_ref})"""
                             conds_for_one_correal_val.append(f"""{col_ref} {op} {val_ref}""")
                             conds_correal_for_one_correal_val.append(f"""{col_ref_correaled} {op} {val_ref}""")
-                        if op in ("IN"):
+                        if op in ("IN", "="):
                             conc = " OR "
                         else:
                             conc = " AND "
@@ -402,11 +429,16 @@ def update_query_node_with_table_excerpt(
                     positive_having_condition += condition_string
 
             if all_correlation_values is not None and len(all_correlation_values) > 0:
+                if len(all_correlation_values) == 1:
+                    all_correlation_values_string = str(all_correlation_values)[:-2]+")"
+                else:
+                    all_correlation_values_string = str(all_correlation_values)
                 if positive_where_condition is not None:
-                    positive_where_condition += f""" OR {correlation_column.replace(".", "__").replace(prefix, view_name+".")} NOT IN {str(all_correlation_values)} """
+                    correlation_column_in_view = correlation_column.replace(".", "__").replace(prefix, view_name+".")
+                    positive_where_condition += f""" OR ( {correlation_column_in_view} IS NOT NULL AND {correlation_column_in_view} NOT IN {all_correlation_values_string} ) """
 
                 if positive_having_condition_correal is not None:
-                    positive_having_condition_correal += f""" OR T.Cc NOT IN {str(all_correlation_values)} """
+                    positive_having_condition_correal += f""" OR ( T.Cc IS NOT NULL AND T.Cc NOT IN {all_correlation_values_string} ) """
 
     else:
         condition_type = None
@@ -446,9 +478,10 @@ def update_query_node_with_table_excerpt(
         limit_num = -1
 
     dnf_clauses = obj["where"]
-
+    is_grouped = True if obj["type"]["group"] or ( correlation_column is not None and obj["use_agg_sel"] ) else False
+    
     positive_ctids_raws = []
-    if len(obj["clauses_view_predicates_origin"]) > 1:
+    if len(obj["clauses_view_predicates_origin"]) > 1 and not obj["type"]["having"]:
         for dnf_idx, view_predicates in enumerate(obj["clauses_view_predicates_origin"]):
             if positive_where_condition is not None:
                 current_positive_where_condition = positive_where_condition + " AND "
@@ -468,7 +501,7 @@ def update_query_node_with_table_excerpt(
                 where_condition=current_positive_where_condition,
                 having_condition=positive_having_condition,
                 ignored=ignored,
-                use_agg_sel=False,
+                use_agg_sel=obj["use_agg_sel"],
                 additional_group_col=correlation_column,
             )
             positive_ctids_raw_dnf = get_view_ctids(
@@ -497,7 +530,7 @@ def update_query_node_with_table_excerpt(
             where_condition=positive_where_condition,
             having_condition=positive_having_condition,
             ignored=ignored,
-            use_agg_sel=False,
+            use_agg_sel=obj["use_agg_sel"],
             additional_group_col=correlation_column,
         )
         positive_ctids_raws = [
@@ -506,7 +539,7 @@ def update_query_node_with_table_excerpt(
                 view_name,
                 obj,
                 prefix,
-                grouped=obj["type"]["group"],
+                grouped=is_grouped,
                 group_columns=obj["group"],
                 additional_condition=positive_additional_conditions,
                 having_condition=positive_having_condition_correal,
@@ -524,7 +557,7 @@ def update_query_node_with_table_excerpt(
         ignored = ["order", "limit"]
     negative_ctids_2_raws = []
     if obj["type"]["having"] or obj["type"]["limit"]:
-        if len(obj["clauses_view_predicates_origin"]) > 1:
+        if len(obj["clauses_view_predicates_origin"]) > 1 and not obj["type"]["having"]:
             for dnf_idx, view_predicates in enumerate(obj["clauses_view_predicates_origin"]):
                 if positive_where_condition is not None:
                     current_positive_where_condition = positive_where_condition + " AND "
@@ -547,7 +580,7 @@ def update_query_node_with_table_excerpt(
                     having_condition=positive_having_condition,
                     negated=["having"],
                     ignored=ignored,
-                    use_agg_sel=False,
+                    use_agg_sel=obj["use_agg_sel"],
                     additional_group_col=correlation_column,
                 )
                 if "having" in ignored:
@@ -582,7 +615,7 @@ def update_query_node_with_table_excerpt(
                 having_condition=positive_having_condition,
                 negated=["having"],
                 ignored=ignored,
-                use_agg_sel=False,
+                use_agg_sel=obj["use_agg_sel"],
                 additional_group_col=correlation_column,
             )
             if "having" in ignored:
@@ -674,7 +707,7 @@ def update_query_node_with_table_excerpt(
                         pass
                     sample_correl_ids.append(cor_idx)
 
-                    ctid_array = [cval[0][0] for cval in ctids_for_each_correlation_val[-1]]
+                    ctid_array = [cval[0][-1] for cval in ctids_for_each_correlation_val[-1]]
                     if sampling_ratio:
                         rand_size = int(len(ctid_array) * sampling_ratio)
                     else:
@@ -728,6 +761,7 @@ def update_query_node_with_table_excerpt(
 
     ## >> Sample rows
     sample_positive_ctids = []
+    sample_positive_ctids_per_dnf_idx = []
     sample_positive_group_ids = []
     sample_positive_correal_ids = []
     for positive_ctids_raw in positive_ctids_raws:
@@ -742,6 +776,7 @@ def update_query_node_with_table_excerpt(
             all_correlation_values=all_correlation_values,
         )
         sample_positive_ctids += [ctid for ctid in sample_positive_ctid if ctid not in sample_positive_ctids]
+        sample_positive_ctids_per_dnf_idx.append(sample_positive_ctid)
         sample_positive_group_ids.append(sample_positive_group_id)
         sample_positive_correal_ids.append(sample_positive_correal_id)
     assert len(sample_positive_ctids) > 0
@@ -793,7 +828,7 @@ def update_query_node_with_table_excerpt(
                     ctids_for_each_correlation_val = positive_ctids_raw[corval_idx]
                     for group_id in sample_positive_group_ids[dnf_idx][idx]:
                         group_d = ctids_for_each_correlation_val[1]
-                        val = [ctids_for_each_correlation_val[0]] + group_d[group_id][0][0 : len(obj["group"])]
+                        val = tuple([ctids_for_each_correlation_val[0]]) + group_d[group_id][0][0 : len(obj["group"])]
                         if val not in positive_sample_groupids:
                             positive_sample_groupids.append(val)
 
@@ -802,12 +837,17 @@ def update_query_node_with_table_excerpt(
                     ctids_for_each_correlation_val = negative_ctids_2_raw[corval_idx]
                     for group_id in sample_negative_group_ids_2[dnf_idx][idx]:
                         group_d = ctids_for_each_correlation_val[1]
-                        val = [ctids_for_each_correlation_val[0]] + group_d[group_id][0][0 : len(obj["group"])]
+                        val = tuple([ctids_for_each_correlation_val[0]]) + group_d[group_id][0][0 : len(obj["group"])]
                         if val not in negative_sample_groupids_2:
                             negative_sample_groupids_2.append(val)
 
             all_sample_groupids = positive_sample_groupids + negative_sample_groupids_2
-
+    else:
+        positive_sample_groupids = []
+        if correlated:
+            for dnf_idx, positive_ctids_raw in enumerate(positive_ctids_raws):
+                for idx, corval_idx in enumerate(sample_positive_correal_ids[dnf_idx]):
+                    positive_sample_groupids.append(tuple([positive_ctids_raw[corval_idx][0]]))
     if obj["type"]["having"] or obj["type"]["aggregated_order"]:
         # Update current node and then just call the child node
         assert len(obj["childs"]) == 1
@@ -1069,7 +1109,7 @@ def update_query_node_with_table_excerpt(
     else:
         # >>>> Base table projection ----> NEED TO BE MOVED TO SQL GENERATOR
         ##### ALL GLOBAL INDEX USED IN THE QUERY TREE SHOULD BE UPDATED AS WELL
-        used_table_cols = get_used_table_cols(obj, prefix)
+        used_table_cols = get_used_table_cols(obj, prefix, correlation_column)
         updated_query_tree_node = copy.deepcopy(query_tree_node)
         for idx, edge_to_child in enumerate(updated_query_tree_node.child_tables):
             if type(edge_to_child) == QueryTree.BaseTable:
@@ -1080,52 +1120,7 @@ def update_query_node_with_table_excerpt(
                 updated_query_tree_node.child_tables[idx] = new_child_table
         
         
-        def get_operations_with_updated_global_idx(operations, query_tree_node, updated_query_tree_node):
-            def get_new_global_idx(query_tree_node, updated_query_tree_node, cur_global_idx):
-                col_name = query_tree_node.global_idx_to_column(cur_global_idx)
-                accumulated_len = 0
-                table_idx = 0
-                for idx, child_table in enumerate(query_tree_node.child_tables):
-                    len_child_table_headers = len(child_table)
-                    if accumulated_len + len_child_table_headers > cur_global_idx:
-                        table_idx = idx
-                        break
-                    accumulated_len += len_child_table_headers
-                updated_global_idx = QueryTree.get_global_index_header_with_table_name(updated_query_tree_node.child_tables, table_idx, col_name)
-                return updated_global_idx
-                
-            new_operations = []
-            for operation in operations:
-                new_operation = operation
-                if type(operation) == QueryTree.Projection:
-                    new_operation.column_id = get_new_global_idx(query_tree_node, updated_query_tree_node, operation.column_id)
-                    pass
-                elif type(operation) == QueryTreeOperator.Selection:
-                    for clause_idx, clause in enumerate(operation.clauses):
-                        for condition_idx, condition in enumerate(clause.conditions):
-                            new_operation.clauses[clause_idx].conditions[condition_idx].l_operand=get_new_global_idx(query_tree_node, updated_query_tree_node, condition.l_operand)
-                            if condition.r_operand is not None and type(condition.r_operand) == int:
-                                new_operation.clauses[clause_idx].conditions[condition_idx].r_operand=get_new_global_idx(query_tree_node, updated_query_tree_node, condition.r_operand)
-                    pass
-                elif type(operation) == QueryTreeOperator.Grouping:
-                    new_operation.column_id = get_new_global_idx(query_tree_node, updated_query_tree_node, operation.column_id)
-                    pass
-                elif type(operation) == QueryTreeOperator.Ordering:
-                    new_operation.column_id = get_new_global_idx(query_tree_node, updated_query_tree_node, operation.column_id)
-                    pass
-                elif type(operation) == QueryTreeOperator.Foreach:
-                    new_operation.column_id = get_new_global_idx(query_tree_node, updated_query_tree_node, operation.column_id)
-                    pass
-                elif type(operation) == QueryTreeOperator.Aggregation:
-                    new_operation.column_id = get_new_global_idx(query_tree_node, updated_query_tree_node, operation.column_id)
-                    pass
-                elif type(operation) == QueryTreeOperator.Limit:
-                    pass
-                else:
-                    assert False, f"Not implemented type of operation {type(operation)}"
-                new_operations.append(new_operation)
-            return new_operations
-        ### Modifying operations by updated global idx
+                ### Modifying operations by updated global idx
         ## query_tree_node.global_idx_to_column(g_idx)
         updated_query_tree_node.operations = get_operations_with_updated_global_idx(query_tree_node.operations, query_tree_node, updated_query_tree_node)
         updated_query_tree_node.join_conditions = get_operations_with_updated_global_idx(query_tree_node.join_conditions, query_tree_node, updated_query_tree_node)
@@ -1328,7 +1323,7 @@ def update_query_node_with_table_excerpt(
                             val_ref = int(val_ref)
                         else:
                             val_ref = float(val_ref)
-                    unpacked_values[i].append(vals[i])
+                        unpacked_values[i].append(vals[i])
                 row_stored = [correlation_value] + unpacked_values
                 result_tables.append(list(row_stored))
         if obj["use_agg_sel"]:
@@ -1365,7 +1360,7 @@ def update_query_node_with_table_excerpt(
                                 val_ref = int(val_ref)
                             else:
                                 val_ref = float(val_ref)
-                        unpacked_values[i].append(vals[i])
+                            unpacked_values[i].append(vals[i])
                     row_stored = [correlation_value] + unpacked_values
                     result_tables_to_attach.append(list(row_stored))
         else:
@@ -1379,14 +1374,24 @@ def update_query_node_with_table_excerpt(
                 child_block_name = child_prefix[:-1]
                 child_condition = None
                 inner_predicate = None
-                for predicate in obj["predicates_origin"]:
+                inner_predicate_2 = None
+                inner_predicate_dnf_idx = None
+                # sample_positive_ctids_per_dnf_idx
+                inner_predicates_dnf_idx, _ = preorder_traverse_to_get_graph(obj["tree_predicates_origin"], 0)
+                for operation_idx, dnf_idx in inner_predicates_dnf_idx:
+                    predicate = obj["predicates_origin"][operation_idx]
                     if len(predicate) == 5:  # nested predicate
                         inner_obj = predicate[4]
                         inner_query_global_idx = (inner_obj["nesting_level"], inner_obj["unique_alias"])
                         inner_table_prefix = get_prefix(inner_query_global_idx[0], inner_query_global_idx[1])
                         if inner_table_prefix == child_prefix:
-                            inner_predicate = predicate
-                            break
+                            if inner_predicate is not None: # range query
+                                assert inner_predicate_2 is None and inner_predicate_dnf_idx == dnf_idx
+                                inner_predicate_2 = predicate
+                            else:
+                                inner_predicate_dnf_idx = dnf_idx
+                                inner_predicate = predicate
+                            
                 assert inner_predicate is not None
 
                 inner_correlation_column = None
@@ -1414,11 +1419,13 @@ def update_query_node_with_table_excerpt(
                     col_ref = col.replace(".", "__")
                     if inner_correlation_column is not None:
                         inner_correlation_column_ref = inner_correlation_column.replace(".", "__")
-                        if True:
+                        if inner_op in ("=", "IN"):
                             all_sample_ctids_ref = [f"'{ctid}'" for ctid in all_sample_ctids]
                             ctid_set_str = f"""( {", ".join(all_sample_ctids_ref)} )"""
                         else:
-                            sample_positive_ctids_ref = [f"'{ctid}'" for ctid in sample_positive_ctids]
+                            assert len(sample_positive_ctids_per_dnf_idx[inner_predicate_dnf_idx]) > 0
+                            
+                            sample_positive_ctids_ref = [f"'{ctid}'" for ctid in sample_positive_ctids_per_dnf_idx[inner_predicate_dnf_idx]]
                             ctid_set_str = f"""( {", ".join(sample_positive_ctids_ref)} )"""
                         where_condition_1 = f"""CTID in {ctid_set_str} AND {col_ref} IS NOT NULL and {inner_correlation_column_ref} IS NOT NULL """
                         sql = f"SELECT {inner_correlation_column_ref}, array_agg({col_ref}) FROM {view_name} WHERE {where_condition_1} GROUP BY {inner_correlation_column_ref}"
@@ -1426,11 +1433,12 @@ def update_query_node_with_table_excerpt(
                         op = ["=", inner_op]
 
                     else:
-                        if True:
+                        if inner_op in ("=", "IN"):
                             all_sample_ctids_ref = [f"'{ctid}'" for ctid in all_sample_ctids]
                             ctid_set_str = f"""( {", ".join(all_sample_ctids_ref)} )"""
                         else:
-                            sample_positive_ctids_ref = [f"'{ctid}'" for ctid in sample_positive_ctids]
+                            assert len(sample_positive_ctids_per_dnf_idx[inner_predicate_dnf_idx]) > 0
+                            sample_positive_ctids_ref = [f"'{ctid}'" for ctid in sample_positive_ctids_per_dnf_idx[inner_predicate_dnf_idx]]
                             ctid_set_str = f"""( {", ".join(sample_positive_ctids_ref)} )"""
                         where_condition_1 = f"""CTID in {ctid_set_str} AND {col_ref} IS NOT NULL"""
                         sql = f"SELECT {col_ref} FROM {view_name} WHERE {where_condition_1}"
@@ -1447,11 +1455,12 @@ def update_query_node_with_table_excerpt(
 
                 elif inner_predicate[1] is not None:  # ( inner query ) > value:
                     inner_correlation_column_ref = inner_correlation_column.replace(".", "__")
-                    if True:
+                    if inner_op in ("=", "IN"):
                         all_sample_ctids_ref = [f"'{ctid}'" for ctid in all_sample_ctids]
                         ctid_set_str = f"""( {", ".join(all_sample_ctids_ref)} )"""
                     else:
-                        sample_positive_ctids_ref = [f"'{ctid}'" for ctid in sample_positive_ctids]
+                        assert len(sample_positive_ctids_per_dnf_idx[inner_predicate_dnf_idx]) > 0
+                        sample_positive_ctids_ref = [f"'{ctid}'" for ctid in sample_positive_ctids_per_dnf_idx[inner_predicate_dnf_idx]]
                         ctid_set_str = f"""( {", ".join(sample_positive_ctids_ref)} )"""
                     where_condition_1 = f"""CTID in {ctid_set_str} AND {inner_correlation_column_ref} IS NOT NULL"""
                     sql = f"SELECT DISTINCT {inner_correlation_column_ref} FROM {view_name} WHERE {where_condition_1}"
@@ -1462,16 +1471,31 @@ def update_query_node_with_table_excerpt(
                     inner_op = inner_predicate[2]
                     inner_val = inner_predicate[3]
                     inner_agg_col = inner_obj["agg_cols"][0]
-                    vals = [
-                        (
-                            val[0],
-                            [inner_val],
-                        )
-                        for val in vals
-                    ]
-                    agg_col = [("NONE", inner_correlation_column), (inner_agg_col[0], inner_agg_col[1])]
-                    op = ["=", inner_op]
-                    child_condition = (agg_col, op, vals)
+                    if inner_predicate_2 is not None:
+                        inner_op_2 = inner_predicate_2[2]
+                        inner_val_2 = inner_predicate_2[3]
+                        agg_col = [("NONE", inner_correlation_column), (inner_agg_col[0], inner_agg_col[1]), (inner_agg_col[0], inner_agg_col[1])]
+                        op = ["=", inner_op, inner_op_2]
+                        vals = [
+                            (
+                                val[0],
+                                [inner_val],
+                                [inner_val_2],
+                            )
+                            for val in vals
+                        ]
+                        child_condition = (agg_col, op, vals)
+                    else: 
+                        vals = [
+                            (
+                                val[0],
+                                [inner_val],
+                            )
+                            for val in vals
+                        ]
+                        agg_col = [("NONE", inner_correlation_column), (inner_agg_col[0], inner_agg_col[1])]
+                        op = ["=", inner_op]
+                        child_condition = (agg_col, op, vals)
 
                 elif inner_correlation_column is not None:
                     inner_correlation_column_ref = inner_correlation_column.replace(".", "__")
@@ -1548,7 +1572,6 @@ def update_query_node_with_table_excerpt(
                         rows[row_idx] = new_row
                         len_joined_child_row = len(joined_child_row)
                     global_col_idx += len_joined_child_row
-                    # [TODO] IF AGGREGATED, VALUE SHOULD BE UPDATED FOR ALL DATA!!!!!!!!
                 else:
                     transposed_child_result_table = transpose(child_result_table)
 

@@ -1,6 +1,6 @@
 from typing import Any, List, Optional, Union
 from hkkang_utils import string as string_utils
-
+from decimal import Decimal
 
 def perform_join(table1, table2, key1_idx, key2_idx, join_type, empty_row1, empty_row2):
     df = []
@@ -83,7 +83,7 @@ class Cell:
         if value is None or value == "":
             return None
         """Convert value into DType"""
-        if type(value) in [int, float]:
+        if type(value) in [int, float, Decimal]:
             return DNumber()
         elif type(value) == str:
             return DString()

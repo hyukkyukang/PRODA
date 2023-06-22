@@ -359,6 +359,7 @@ def non_nested_predicate_generator(args, rng, table_columns, data_manager, view_
                     )
                 ):
                     op = "="
+                    v = val
                 else:
                     if op in [">", ">="]:
                         op = (op, op2)
@@ -579,7 +580,6 @@ def having_generator(
         assert agg_col_ref in having_original_view_column_names
         agg_col_idx = having_original_view_column_names.index(agg_col_ref)
 
-        # [TODO] get sample
         sample_rows, sample_schema = data_manager.sample_rows(current_view_name, 100)
         col_idx = agg_col_idx
         row_idx = 0
@@ -614,6 +614,8 @@ def having_generator(
                 args.logger.error("This is impossible")
                 assert False
             new_dtype = dtype_dict[col]
+        elif agg in ["AVG"]:
+            new_dtype = "float"
         else:
             new_dtype = "int"
 
@@ -659,6 +661,8 @@ def having_generator(
                         )
                     ):
                         is_range = False
+                        op = "="
+                        v = val
                     else:
                         if op in [">", ">="]:
                             op = (op, op2)
@@ -679,6 +683,11 @@ def having_generator(
                     val_stored = (int(v[0]), int(v[1]))
                 else:
                     val_stored = int(v)
+            elif new_dtype == "float":
+                if isinstance(op, tuple):
+                    val_stored = (float(v[0]), float(v[1]))
+                else:
+                    val_stored = float(v)
             else:
                 val_stored = v
 
@@ -889,6 +898,7 @@ def where_generator(
     clauses_view_predicates = []
     clauses_view_predicates_origin = []
     subset_clauses = []
+    clauses_not_null_conditions = []
 
     view_names = []
 
@@ -913,7 +923,8 @@ def where_generator(
                 )  # dnf idx
                 if dnf_idx != 0:
                     view_sql_where = clauses_view_predicates[-1][-1]
-                    EXCEPT_STATEMENT = f"""SELECT DISTINCT * FROM {previous_clause_view_name} EXCEPT SELECT DISTINCT * FROM {previous_view_name} WHERE {view_sql_where}"""
+                    not_null_conditions = " AND ".join(clauses_not_null_conditions[-1])
+                    EXCEPT_STATEMENT = f"""SELECT DISTINCT * FROM {previous_clause_view_name} WHERE {not_null_conditions} EXCEPT SELECT DISTINCT * FROM {previous_view_name} WHERE {view_sql_where}"""
                     # where_clauses = ["( " + " AND ".join(predicates) + " )" for predicates in clauses_view_predicates]
                     # view_sql_where = "NOT (" + " OR ".join(where_clauses) + ")"
                     # view_sql = f"""SELECT * FROM {original_view_name} WHERE {view_sql_where}"""
@@ -952,6 +963,7 @@ def where_generator(
                 clauses_op_val.append([])
                 clauses_view_predicates.append([])
                 clauses_view_predicates_origin.append([])
+                clauses_not_null_conditions.append([])
                 subset_clauses = [idx for idx in range(len(clauses_op_val[:-1]))]
             else:
                 if dnf_idx < 0:
@@ -962,7 +974,7 @@ def where_generator(
                 )  # dnf idx
                 view_sql_where = clauses_view_predicates[-1][-1]
                 view_sql = f"""SELECT DISTINCT * FROM {previous_view_name} WHERE {view_sql_where}"""
-
+                
                 data_manager.create_view(
                     args.logger, current_view_name, view_sql, type="materialized", drop_if_exists=True
                 )
@@ -1010,6 +1022,7 @@ def where_generator(
             visited_columns.append(col)
             used_tables.add(col.split(".")[0])
             clauses_op_val[-1].append((col, op, val))
+            clauses_not_null_conditions[-1].append(f"{col_view} IS NOT NULL")
             clauses_view_predicates[-1].append(query_predicate)
             clauses_view_predicates_origin[-1].append(query_predicate)  # SAME FOR NON NESTED QUERIES
 
@@ -1116,6 +1129,7 @@ def where_generator(
                 nested_col_view = nested_predicate_origin[1].replace(".", "__")
                 query_predicate += f" AND {nested_col_view} IS NOT NULL"
                 query_predicate_origin += f" AND {nested_col_view} IS NOT NULL"
+                clauses_not_null_conditions[-1].append(f"{nested_col_view} IS NOT NULL")
             
             #### nested_predicate_origin
 
@@ -1124,6 +1138,8 @@ def where_generator(
 
             if correlation_predicate_origin:
                 correlation_predicates_origin.append(correlation_predicate_origin)
+                correlation_col_view = correlation_predicate_origin[1].replace(".", "__")
+                clauses_not_null_conditions[-1].append(f"{correlation_col_view} IS NOT NULL")
                 
             if isinstance(nested_predicate_origin[2], tuple):
                 assert nesting_position == 3
@@ -1148,7 +1164,7 @@ def where_generator(
                 predicates_origin.append(predicate_tuple_origin2)
                 predicates.append(predicate_str2)
                 nested_predicate_origin = (nested_prefix, nested_inner_query, nested_op[0], str(nested_val[0]), nested_inner_obj_stored)
-                nested_predicate = nested_predicate[0] ########### [TODO] : range query;;;;
+                nested_predicate = nested_predicate[0]
 
             used_tables = used_tables.union(used_tables_nested)
             inner_prefix = get_prefix(obj["nesting_level"], obj["unique_alias"])
@@ -1298,6 +1314,8 @@ def nested_predicate_generator(
             for table_column in table_columns
             if table_column.split(".")[0] in inner_query_tables
             and table_column != select_column
+            and f"{select_column}={table_column}" not in join_clause_list
+            and f"{table_column}={select_column}" not in join_clause_list
             and (is_correlatable_column(args, table_column))
         ]
 
@@ -1321,7 +1339,7 @@ def nested_predicate_generator(
             )
 
             cor_col_in_view = correlation_column.replace(".", "__")
-            cor_dvs = data_manager.fetch_distinct_values(view_name, cor_col_in_view)
+            cor_dvs = set( data_manager.fetch_distinct_values(view_name, cor_col_in_view) )
             if dvs is None:
                 dvs = cor_dvs
 
@@ -1333,7 +1351,9 @@ def nested_predicate_generator(
             selective_groups = []
             empty_groups = []
             data_vals = set()
+            distinct_groups = set()
             for group, data in inner_query_result:
+                distinct_groups.add(group)
                 if len(data) < 1:
                     empty_groups.append(group)
                 else:
@@ -1346,13 +1366,21 @@ def nested_predicate_generator(
                             assert False
                     if nesting_position == 3:
                         data_vals.add(data[0])
-            if nesting_position == 2 and len(empty_groups) == 0:  # ALWAYS EXISTS
-                inner_query_columns.remove(correlation_column)
-                continue
+            
             if nesting_position == 2 and len(not_empty_groups) == 0:  # ALWAYS NOT EXISTS
                 inner_query_columns.remove(correlation_column)
                 continue
-
+            
+            if nesting_position == 2:  # ALWAYS EXISTS
+                not_exists_possible = False
+                for cor_val in cor_dvs:
+                    if cor_val not in distinct_groups:
+                        not_exists_possible = True
+                        break
+                if not not_exists_possible:
+                    inner_query_columns.remove(correlation_column)
+                    continue
+            
             if nesting_position == 1 and len(selective_groups) == 0:  # We need a selective group
                 inner_query_columns.remove(correlation_column)
                 continue
@@ -1604,18 +1632,18 @@ def nested_predicate_generator(
 
             cor_col_view = correlation_column.replace(".", "__")
             not_null_query_predicate = f" {cor_col_view} IS NOT NULL"
-            original_row_count = data_manager.get_distinct_value_counts(
-                view_name, cor_col_view, f" WHERE {not_null_query_predicate} "
+            original_row_count = data_manager.get_row_counts(
+                view_name, f" WHERE {not_null_query_predicate} "
             )
 
             where_clause = f"WHERE {query_predicate} AND {not_null_query_predicate}"
-            updated_row_count = data_manager.get_distinct_value_counts(
-                view_name, cor_col_view, f" WHERE {not_null_query_predicate}"
+            updated_row_count = data_manager.get_row_counts(
+                view_name, where_clause
             )
 
             if original_row_count == updated_row_count or updated_row_count == 0:
-                continue_cnt += 1
-                continue
+                args.logger.warning("We cannot generate a predicate [EXISTS/NOT EXISTS] ( SELECT .. ) ")
+                return False, None, None, None, None, None, None, None, None
             
             dtype_inner = None
 
@@ -1631,6 +1659,8 @@ def nested_predicate_generator(
             if nesting_type in ["type-a", "type-ja"]:
                 if inner_query_obj["agg_cols"][0][0] == "COUNT":
                     new_dtype = "int"
+                elif inner_query_obj["agg_cols"][0][0] == "AVG":
+                    new_dtype = "float"
                 else:
                     if col == "*":
                         args.logger.error("This is impossible")
@@ -1705,6 +1735,7 @@ def nested_predicate_generator(
                             )
                         ):
                             op = "="
+                            v = val
                         else:
                             if op in [">", ">="]:
                                 op = (op, op2)
@@ -1725,6 +1756,11 @@ def nested_predicate_generator(
                         val = (int(v[0]), int(v[1]))
                     else:
                         val = int(v)
+                elif new_dtype == "float":
+                    if isinstance(v, tuple):
+                        val = (float(v[0]), float(v[1]))
+                    else:
+                        val = float(v)
                 else:
                     val = v
 
@@ -1936,7 +1972,7 @@ def inner_query_obj_to_inner_query(
     assert row_counts > 0
 
     correlation_col_view = ""
-    if correlation_column is not None:  # (TODO) nned to identify whether it's generating outer query or inner query
+    if correlation_column is not None:
         correlation_col_view = correlation_column.replace(".", "__")
 
     # (FIX #12): Make correlation predicate as the top level predicate
@@ -1979,7 +2015,7 @@ def inner_query_obj_to_inner_query(
     if sql_type_dict["limit"]:
         inner_view_sql_additional_conditions += f""" LIMIT {limit_num} """
 
-    if correlation_column is not None:  # (TODO) nned to identify whether it's generating outer query or inner query
+    if correlation_column is not None: 
         correlation_predicate = prefix + correlation_column + " = " + prefix_inner + correlation_column
         correlation_predicate_origin = tuple(
             [prefix_inner, correlation_column, "=", correlation_column, "correal", prefix]
@@ -1995,7 +2031,6 @@ def inner_query_obj_to_inner_query(
             sql_type_dict["where"] = True
 
         if use_agg_sel:
-            # [TODO] IF use aggregation, we need to convert full outer joined view to inner joined view
             select_col_view = (
                 agg_cols[0][0] + "(" + inner_join_view_name + "." + agg_cols[0][1].replace(".", "__") + ")"
             )
@@ -2073,7 +2108,6 @@ def inner_query_obj_to_inner_query(
             select_col_view = (
                 agg_cols[0][0] + "(" + inner_join_view_name + "." + agg_cols[0][1].replace(".", "__") + ")"
             )
-            # [TODO] When we aggregate the data, we need to project full_outer_joined_view to inner_joined_view --> HOW TO DO THIS
         else:
             if agg_cols[0][1] == "*":
                 args.logger.error("This cannot be happend")
@@ -2574,7 +2608,6 @@ def non_nested_query_generator(
     # NOTE ::::: WE DO NOT PERFORM GROUP BY
     current_view_name = inner_join_view_name
 
-    # [TODO] DROP WHERE VIEW!!!!!
     for view_name in view_names:
         data_manager.drop_view(args.logger, view_name)
 
@@ -2585,7 +2618,7 @@ def non_nested_query_generator(
             sql_type_dict,
             dtype_dict,
             prefix,
-            table_columns_projection,  # [WARING] NEED TO BE MODIFIED!!!!!!
+            table_columns_projection, 
             joins,
             tables,
             used_tables,
@@ -2864,7 +2897,6 @@ def nested_query_generator(
 
     current_view_name = inner_join_view_name
 
-    # [TODO] DROP WHERE VIEW!!!!!
     for view_name in view_names:
         data_manager.drop_view(args.logger, view_name)
 

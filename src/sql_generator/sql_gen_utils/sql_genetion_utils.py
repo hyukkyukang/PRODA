@@ -9,7 +9,8 @@ from src.pylogos.query_graph.koutrika_query_graph import (
     operatorNameToType,
     aggregationNameToType,
 )
-from src.query_tree.query_tree import QueryTree, QueryBlock, BaseTable, get_global_index
+from src.query_tree.query_tree import QueryTree, QueryBlock, BaseTable, get_global_index, get_global_index_header_with_table_name
+import src.query_tree.operator as QueryTreeOperator
 from src.query_tree.operator import (
     Aggregation,
     Clause,
@@ -54,6 +55,54 @@ DATE_AGGS = ["COUNT", "MIN", "MAX"]
 KEY_AGGS = ["COUNT"]
 LOGICAL_OPERATORS = ["AND", "OR"]
 
+
+def get_operations_with_updated_global_idx(operations, query_tree_node, updated_query_tree_node):
+    def get_new_global_idx(query_tree_node, updated_query_tree_node, cur_global_idx):
+        col_name = query_tree_node.global_idx_to_column(cur_global_idx)
+        accumulated_len = 0
+        table_idx = 0
+        for idx, child_table in enumerate(query_tree_node.child_tables):
+            len_child_table_headers = len(child_table)
+            if accumulated_len + len_child_table_headers > cur_global_idx:
+                table_idx = idx
+                break
+            accumulated_len += len_child_table_headers
+        updated_global_idx = get_global_index_header_with_table_name(updated_query_tree_node.child_tables, table_idx, col_name)
+        return updated_global_idx
+        
+    new_operations = []
+    for operation in operations:
+        new_operation = copy.deepcopy(operation)
+        if type(operation) == QueryTreeOperator.Projection:
+            new_operation.column_id = get_new_global_idx(query_tree_node, updated_query_tree_node, operation.column_id)
+            pass
+        elif type(operation) == QueryTreeOperator.Selection:
+            for clause_idx, clause in enumerate(operation.clauses):
+                new_operation.clauses = copy.deepcopy(operation.clauses)
+                for condition_idx, condition in enumerate(clause.conditions):
+                    new_operation.clauses[clause_idx].conditions[condition_idx] = copy.deepcopy(condition)
+                    new_operation.clauses[clause_idx].conditions[condition_idx].l_operand=get_new_global_idx(query_tree_node, updated_query_tree_node, condition.l_operand)
+                    if condition.r_operand is not None and type(condition.r_operand) == int:
+                        new_operation.clauses[clause_idx].conditions[condition_idx].r_operand=get_new_global_idx(query_tree_node, updated_query_tree_node, condition.r_operand)
+            pass
+        elif type(operation) == QueryTreeOperator.Grouping:
+            new_operation.column_id = get_new_global_idx(query_tree_node, updated_query_tree_node, operation.column_id)
+            pass
+        elif type(operation) == QueryTreeOperator.Ordering:
+            new_operation.column_id = get_new_global_idx(query_tree_node, updated_query_tree_node, operation.column_id)
+            pass
+        elif type(operation) == QueryTreeOperator.Foreach:
+            new_operation.column_id = get_new_global_idx(query_tree_node, updated_query_tree_node, operation.column_id)
+            pass
+        elif type(operation) == QueryTreeOperator.Aggregation:
+            new_operation.column_id = get_new_global_idx(query_tree_node, updated_query_tree_node, operation.column_id)
+            pass
+        elif type(operation) == QueryTreeOperator.Limit:
+            pass
+        else:
+            assert False, f"Not implemented type of operation {type(operation)}"
+        new_operations.append(new_operation)
+    return new_operations
 
 def get_view_name(type, args):
     if type == "main":
@@ -810,6 +859,8 @@ def tree_and_graph_formation(
 
             if agg == "COUNT":
                 new_col_dtype = "int"
+            elif agg == "AVG":
+                new_col_dtype = "float"
             else:
                 if col == "*":
                     args.logger.error("This cannot be happend")
@@ -956,7 +1007,7 @@ def tree_and_graph_formation(
                 child_prefix = get_prefix(child[0], child[1])
                 child_table_name = child_prefix[:-1]
                 child_tree = child_query_graphs[child_prefix][0]
-                base_tables.append(child_tree.root)
+                base_tables.append(copy.deepcopy(child_tree.root))
                 table_name_to_idx[child_table_name] = i + num_base_tables
 
         # Get primary relations
@@ -1041,7 +1092,8 @@ def tree_and_graph_formation(
                 # ADD ForEach to child node
 
                 operations = []
-                query_block = base_tables[table_name_to_idx[inner_table_block_name]]
+                original_query_block = base_tables[table_name_to_idx[inner_table_block_name]]
+                query_block = copy.deepcopy(original_query_block)
                 headers = query_block.get_headers()
                 found_global_idx = -1
                 for idx, header in enumerate(headers):
@@ -1060,7 +1112,7 @@ def tree_and_graph_formation(
                         if len(child_table_names) != 1:
                             args.logger.error("This is impossible")
                             assert False
-                        grandchild_query_block = child_tables[0]
+                        grandchild_query_block = copy.deepcopy(child_tables[0])
                         great_grandchild_tables = grandchild_query_block.get_child_tables()
                         gg_table_names = [gg_table.get_name() for gg_table in great_grandchild_tables]
                         if inner_tab_name not in gg_table_names:
@@ -1088,11 +1140,13 @@ def tree_and_graph_formation(
                         #)
                         #grandchild_operations.append(grandchild_projection)
                         grandchild_query_block.add_operations_fronted(grandchild_operations)
+                        ### Grandchild table에 ForEach 하나 붙이는 순간 global index 다 밀림 --> 여러 질의가 같은 object에 접근하고 있는 것 같음 ; 업데이트는 항상 deepcopy로 되도록 
                         query_block.update_child_table(0, grandchild_query_block)
+                        query_block.operations = get_operations_with_updated_global_idx(original_query_block.operations, original_query_block, query_block)
 
                         child_tables = query_block.get_child_tables()
                         inner_table_idx = 0
-                        test = query_block.get_headers()
+                        # test = query_block.get_headers()
 
                         for_each = Foreach(get_global_index(child_tables, inner_table_idx, grandinner_col_name_tree), alias=inner_col_name_tree, dtype=inner_col_dtype)
                         operations.append(for_each)
@@ -1181,6 +1235,8 @@ def tree_and_graph_formation(
 
             if agg == "COUNT":
                 new_col_dtype = "int"
+            elif agg == "AVG":
+                new_col_dtype = "float"
             elif col != "*":
                 new_col_dtype = dtype_dict[col]
             else:
@@ -2026,12 +2082,13 @@ def view_predicate_generator(prefix, col, op, val, dtype, is_nested=False, inner
                             + " "
                             + str(val[1])
                         )
-                else:
+                else:                    
                     if op not in ("IN", "NOT IN") and dtype == "str" and not val.startswith("'"):
                         val = f"""'{val}'"""
                     elif dtype == "date":
                         val = f"""'{val}'::date"""
                     query_predicate = "(" + inner_view_query + ")" + " " + op + " " + str(val)
+                    
     else:
         col_ref = col.replace(".", "__")
         if isinstance(op, tuple):
