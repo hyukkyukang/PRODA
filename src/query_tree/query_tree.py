@@ -115,7 +115,10 @@ class QueryBlock(Node):
         self.result_tuples: List[List[Any]] = []
 
     def __len__(self):
-        return sum(len(op) for op in self.operations if type(op) in [Projection, Foreach])
+        return len(self.get_headers())
+        ##### return sum(len(op) for op in self.operations if type(op) in [Projection, Foreach])
+        ##### Foreach operator always comes with projection operator
+        ##### return sum(len(op) for op in self.operations if type(op) in [Projection])
 
     @property
     def height(self):
@@ -130,7 +133,36 @@ class QueryBlock(Node):
 
     def add_join_conditions(self, join_conditions: List[Clause]):
         self.join_conditions += join_conditions
-
+    
+    def global_idx_to_column(self, global_idx):
+        if global_idx == -1:
+            return "*"
+        
+        col = None
+        accumulated_len = 0
+        for child_table in self.child_tables:
+            child_headers = child_table.get_headers_with_table_name()
+            if accumulated_len + len(child_headers) > global_idx:
+                col = child_headers[global_idx - accumulated_len]
+                break
+            accumulated_len += len(child_headers)
+        assert col is not None
+        return col
+    
+    def get_join_keys(self):
+        join_keys = []
+        for join_condition in self.join_conditions:
+            l_idx = join_condition.clauses[0].conditions[0].l_operand
+            r_idx = join_condition.clauses[0].conditions[0].r_operand
+            l_col = self.global_idx_to_column(l_idx)
+            r_col = self.global_idx_to_column(r_idx)
+            join_keys.append(l_col)
+            join_keys.append(r_col)
+        return join_keys
+    
+    def add_operations_fronted(self, operations: List[Operation]):
+        self.operations = operations + self.operations
+        
     def add_operations(self, operations: List[Operation]):
         self.operations += operations
 
@@ -152,10 +184,10 @@ class QueryBlock(Node):
         :rtype: List[str]
         """
         new_headers = []
-        projections = [op for op in self.operations if isinstance(op, Projection)]
+        projections = [op for op in self.operations if isinstance(op, Projection) or isinstance(op, Foreach)]
         # If star projection and add all headers
         if any([proj.alias == "*" for proj in projections]):
-            return list_utils.do_flatten_list([child_table.get_headers() for child_table in self.child_tables])
+            return list_utils.do_flatten_list([child_table.get_headers() for child_table in self.child_tables if type(child_table) == BaseTable ])
         # Get projecting headers
         for proj in projections:
             if proj.alias:
@@ -177,15 +209,16 @@ class QueryBlock(Node):
         :rtype: List[str]
         """
         new_headers = []
-        projections = [op for op in self.operations if isinstance(op, Projection)]
+        projections = [op for op in self.operations if isinstance(op, Projection) or isinstance(op, Foreach)]
         # If star projection and add all headers
         if any([proj.alias == "*" for proj in projections]):
-            return list_utils.do_flatten_list([child_table.get_headers() for child_table in self.child_tables])
+            return list_utils.do_flatten_list([
+                child_table.get_headers_with_table_name() for child_table in self.child_tables if type(child_table) == BaseTable ])
         # Get projecting headers
         for proj in projections:
             if proj.alias:
                 new_headers.append(proj.alias)
-            else:  # SELECT *
+            else:
                 accumulated_len = 0
                 for child_table in self.child_tables:
                     child_headers = child_table.get_headers_with_table_name()
@@ -198,7 +231,10 @@ class QueryBlock(Node):
     def get_dtypes(self) -> List[str]:
         # Get dtypes for headers
         new_dtypes = []
-        projections = [op for op in self.operations if isinstance(op, Projection)]
+        projections = [op for op in self.operations if isinstance(op, Projection) or isinstance(op, Foreach)]
+        if any([proj.alias == "*" for proj in projections]):
+            return list_utils.do_flatten_list([
+                child_table.get_dtypes() for child_table in self.child_tables if type(child_table) == BaseTable])
         for proj in projections:
             if proj.dtype:
                 new_dtypes.append(proj.dtype)
@@ -250,3 +286,10 @@ def get_global_index(tables: List[Node], table_id: int, column_name: str) -> int
     if column_name == "*":
         return -1
     return sum(len(t) for t in tables[:table_id]) + tables[table_id].get_headers().index(column_name)
+
+
+# Helper functions
+def get_global_index_header_with_table_name(tables: List[Node], table_id: int, column_name: str) -> int:
+    if column_name == "*":
+        return -1
+    return sum(len(t) for t in tables[:table_id]) + tables[table_id].get_headers_with_table_name().index(column_name)

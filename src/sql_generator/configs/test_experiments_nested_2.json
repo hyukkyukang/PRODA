@@ -6,7 +6,7 @@
     "output": "non-nested/result3.out",
     "sep": "#",
     "seed": 1234,
-    "data_dir": "data/",
+    "data_dir": "data/database/",
     "log_path": "query_generator_nested2.log",
     "hyperparams":
     {

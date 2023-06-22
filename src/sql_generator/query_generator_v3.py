@@ -266,7 +266,7 @@ if __name__ == "__main__":
     filename = "src/sql_generator/configs/mubi_svod_platform_experiments.json"
     # argument
     parser = argparse.ArgumentParser()
-    parser.add_argument("--infile", type=str, default="src/sql_generator/configs/test_experiments_not_inner.json")
+    parser.add_argument("--infile", type=str, default="src/sql_generator/configs/test_experiments_nested.json")
     args = parser.parse_args()
     if args.infile:
         with open(args.infile, "rt") as f:
@@ -289,7 +289,7 @@ if __name__ == "__main__":
     args.logger.addHandler(consol_handler)
     args.logger.addHandler(file_handler)
 
-    SCHEMA = json.load(open(f"{args.data_dir}/{args.db}_schema.json"))
+    SCHEMA = json.load(open(f"{args.data_dir}/{args.db}/schema.json"))
     schema = CaseInsensitiveDict(lower_case_schema_data(SCHEMA[args.schema_name]))
 
     IP = config["DB"]["IP"]
@@ -300,7 +300,7 @@ if __name__ == "__main__":
     args.table_info = CaseInsensitiveDict(table_info)
     args.fo_view_name = fo_view_name
 
-    COL_INFO = json.load(open(f"{args.data_dir}/{args.db}_dtype_dict.json"))
+    COL_INFO = json.load(open(f"{args.data_dir}/{args.db}/dtype_dict.json"))
     column_info = COL_INFO[schema["dataset"]]
 
     run_generator(data_manager, schema, column_info, args)

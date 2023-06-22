@@ -35,7 +35,7 @@ from numpy import inf
 import math
 
 
-DEBUG_ERROR = False  # [NOTE] This should be disabled
+DEBUG_ERROR = False # [NOTE] This should be disabled
 
 TEXTUAL_OPERATORS_PROBABILITY = [0.4, 0.1, 0.15, 0.1, 0.15, 0.1]
 TEXTUAL_OPERATORS = ["=", "!=", "LIKE", "NOT LIKE", "IN", "NOT IN"]
@@ -865,7 +865,7 @@ def tree_and_graph_formation(
                 where_condition = Condition(
                     l_operand=get_global_index(base_tables, table_idx, col_name_tree),
                     operator=op,
-                    r_operand=val,
+                    r_operand=str(val),
                 )
                 conditions[dnf_idx].append(where_condition)
 
@@ -1038,7 +1038,7 @@ def tree_and_graph_formation(
                 inner_table_block_name = prefix_inner[:-1]
                 inner_col_name_tree = get_tree_header(prefix_inner, inner_tab_name, inner_col_name, "NONE")
 
-                # [TODO] add projection and ForEach to child node
+                # ADD ForEach to child node
 
                 operations = []
                 query_block = base_tables[table_name_to_idx[inner_table_block_name]]
@@ -1049,7 +1049,7 @@ def tree_and_graph_formation(
                         found_global_idx = idx
 
                 if found_global_idx != -1:
-                    for_each = Foreach(column_id=found_global_idx)
+                    for_each = Foreach(column_id=found_global_idx, alias=inner_col_name_tree, dtype=inner_col_dtype)
                     operations.append(for_each)
                 else:
                     child_tables = query_block.get_child_tables()
@@ -1077,47 +1077,47 @@ def tree_and_graph_formation(
                         grandchild_operations = []
                         # add for_each to grand_child
                         grandchild_for_each = Foreach(
-                            get_global_index(great_grandchild_tables, gg_inner_table_idx, inner_col_name)
+                            get_global_index(great_grandchild_tables, gg_inner_table_idx, inner_col_name), alias=grandinner_col_name_tree, dtype=inner_col_dtype
                         )
                         grandchild_operations.append(grandchild_for_each)
 
-                        grandchild_projection = Projection(
-                            column_id=get_global_index(great_grandchild_tables, gg_inner_table_idx, inner_col_name),
-                            alias=grandinner_col_name_tree,
-                            dtype=inner_col_dtype,
-                        )
-                        grandchild_operations.append(grandchild_projection)
-                        grandchild_query_block.add_operations(grandchild_operations)
+                        # grandchild_projection = Projection(
+                        #    column_id=get_global_index(great_grandchild_tables, gg_inner_table_idx, inner_col_name),
+                        #    alias=grandinner_col_name_tree,
+                        #    dtype=inner_col_dtype,
+                        #)
+                        #grandchild_operations.append(grandchild_projection)
+                        grandchild_query_block.add_operations_fronted(grandchild_operations)
                         query_block.update_child_table(0, grandchild_query_block)
 
                         child_tables = query_block.get_child_tables()
                         inner_table_idx = 0
                         test = query_block.get_headers()
 
-                        for_each = Foreach(get_global_index(child_tables, inner_table_idx, grandinner_col_name_tree))
+                        for_each = Foreach(get_global_index(child_tables, inner_table_idx, grandinner_col_name_tree), alias=inner_col_name_tree, dtype=inner_col_dtype)
                         operations.append(for_each)
 
-                        projection = Projection(
-                            column_id=get_global_index(child_tables, inner_table_idx, grandinner_col_name_tree),
-                            alias=inner_col_name_tree,
-                            dtype=inner_col_dtype,
-                        )
-                        operations.append(projection)
+                        # projection = Projection(
+                        #    column_id=get_global_index(child_tables, inner_table_idx, grandinner_col_name_tree),
+                        #    alias=inner_col_name_tree,
+                        #    dtype=inner_col_dtype,
+                        # )
+                        # operations.append(projection)
 
                     else:
                         inner_table_idx = [child_table.get_name() for child_table in child_tables].index(inner_tab_name)
 
-                        for_each = Foreach(get_global_index(child_tables, inner_table_idx, inner_col_name))
+                        for_each = Foreach(get_global_index(child_tables, inner_table_idx, inner_col_name), alias=inner_col_name_tree, dtype=inner_col_dtype)
                         operations.append(for_each)
 
-                        projection = Projection(
-                            column_id=get_global_index(child_tables, inner_table_idx, inner_col_name),
-                            alias=inner_col_name_tree,
-                            dtype=inner_col_dtype,
-                        )
-                        operations.append(projection)
+                        # projection = Projection(
+                        #    column_id=get_global_index(child_tables, inner_table_idx, inner_col_name),
+                        #    alias=inner_col_name_tree,
+                        #    dtype=inner_col_dtype,
+                        # )
+                        # operations.append(projection)
 
-                query_block.add_operations(operations)
+                query_block.add_operations_fronted(operations)
                 base_tables[table_name_to_idx[inner_table_block_name]] = query_block
 
                 join_obj = Selection(
@@ -1320,11 +1320,11 @@ def tree_and_graph_formation(
                                 inner_table_prefix, inner_tab_name, inner_col_name, inner_agg
                             )
                             where_condition = Condition(
-                                l_operand=-1,
-                                operator=op,
-                                r_operand=get_global_index(
+                                l_operand=get_global_index(
                                     base_tables, table_name_to_idx[inner_table_block_name], inner_col_name_tree
                                 ),
+                                operator=op,
+                                r_operand=None,
                             )
                             conditions[dnf_idx].append(where_condition)
 
@@ -1389,7 +1389,7 @@ def tree_and_graph_formation(
                                     base_tables, table_name_to_idx[inner_table_block_name], inner_col_name_tree
                                 ),
                                 operator=op,
-                                r_operand=val,
+                                r_operand=str(val),
                             )
                             conditions[dnf_idx].append(where_condition)
 
@@ -1432,7 +1432,7 @@ def tree_and_graph_formation(
                     where_condition = Condition(
                         l_operand=get_global_index(base_tables, table_name_to_idx[tab_name], col_name),
                         operator=op,
-                        r_operand=val,
+                        r_operand=str(val),
                     )
                     conditions[dnf_idx].append(where_condition)
 
