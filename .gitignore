@@ -49,7 +49,7 @@ Thumbs.db
 *.wmv
 
 # Large folders
-data/
+# data/
 saved_model/
 *third_party*
 .venv

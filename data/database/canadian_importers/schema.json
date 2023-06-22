@@ -1,0 +1,44 @@
+{
+    "canadian_importers_hs6": {
+        "join_tables": [
+        "major_importers_by_hs6_country",
+        "major_importers_by_hs6",
+        "hs6_description",
+        "major_importers_by_city",
+        "major_importers_by_country"
+    ],
+        "join_keys": {
+            "major_importers_by_hs6_country": ["city_ville", "country", "hs6_sh6"],
+            "major_importers_by_hs6": ["hs6_sh6"],
+            "hs6_description": ["hs6_sh6"],
+            "major_importers_by_city": ["city_ville"],
+            "major_importers_by_country": ["country"]
+        },
+        "join_clauses": [
+            "major_importers_by_hs6_country.city_ville=major_importers_by_city.city_ville",
+            "major_importers_by_hs6_country.country=major_importers_by_country.country",
+            "major_importers_by_hs6.hs6_sh6=major_importers_by_hs6_country.hs6_sh6",
+            "hs6_description.hs6_sh6=major_importers_by_hs6.hs6_sh6"
+        ],
+        "dataset": "canadian_importers",
+        "join_root": "major_importers_by_hs6_country",
+        "join_how": "outer",
+        "use_cols": "canadian_importers_hs6"
+    },
+    "canadian_importers_hs10": {
+        "join_tables": [
+            "hs10_description",
+            "major_importers_by_hs10"
+        ],
+            "join_keys": {
+                "major_importers_by_hs10": ["hs10_sh10"]
+            },
+            "join_clauses": [
+                "hs10_description.hs10_sh10=major_importers_by_hs10.hs10_sh10"
+            ],
+            "dataset": "canadian_importers",
+            "join_root": "hs10_description",
+            "join_how": "outer",
+            "use_cols": "canadian_importers_hs10"
+        }
+}
