@@ -3,7 +3,7 @@ const func = require("./function.js");
 const https = require("https");
 var express = require("express");
 var cors = require("cors");
-var path = require('path');
+var path = require("path");
 
 /* Load config */
 console.log("Reading config file...");
@@ -58,7 +58,7 @@ app.post("/fetchTask", async function (req, res) {
         taskSetData = await func.getTaskSet(taskSetID, isSkip);
     } else {
         // Check if worker has already been assigned a task
-        if (workerID in workerTaskMapping) {
+        if (workerID !== "" && workerID in workerTaskMapping) {
             // Return the same task
             const taskSetID = workerTaskMapping[workerID];
             console.log(`workerID:${workerID} has already been assigned to taskSetID:${taskSetID}`);
