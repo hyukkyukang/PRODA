@@ -14,15 +14,15 @@ CREATE TABLE IF NOT EXISTS collection (
     task_id INTEGER NOT NULL,
     user_id VARCHAR(64) NOT NULL,
     is_correct BOOLEAN NULL,
-    nl VARCHAR(1024) DEFAULT NULL,
+    nl VARCHAR(2048) DEFAULT NULL,
     date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Table to collect task data
 CREATE TABLE IF NOT EXISTS task (
     id SERIAL PRIMARY KEY,
-    nl VARCHAR(1024) NOT NULL,
-    sql VARCHAR(1024) NOT NULL,
+    nl VARCHAR(2048) NOT NULL,
+    sql TEXT NOT NULL,
     query_type VARCHAR(64) NOT NULL,
     evqa_path VARCHAR(256) NOT NULL,
     table_excerpt_path VARCHAR(256) DEFAULT NULL,
