@@ -56,7 +56,7 @@ export const Collection = (props: any) => {
     const currentTask = useMemo<Task | null>(() => (taskSet && taskSet.tasks.length > taskSetIdx ? taskSet.tasks[taskSetIdx] : null), [taskSet, taskSetIdx]);
     const isAllTaskComplete = useMemo<boolean>(() => (taskSet?.tasks ? taskSetIdx + 1 >= taskSet?.tasks.length : false), [taskSet, taskSetIdx]);
     const isTaskSetComplete = useMemo<boolean>(() => (taskSet?.tasks ? taskSetIdx >= taskSet?.tasks.length : false), [taskSet, taskSetIdx]);
-    const isAnswerNLValid = useMemo<boolean>(() => (answer?.nl && currentTask?.nl ? answer.nl != currentTask.nl : false), [answer, currentTask]);
+    const isAnswerNLValid = useMemo<boolean>(() => (answer?.nl && currentTask ? answer.nl != currentTask.nl : false), [answer, currentTask]);
     const isNotPreviewMode = useMemo<boolean>(
         () => (currentTask && (!isAMTSubmissionMode || (isAMTSubmissionMode && workerID)) ? true : false),
         [currentTask, workerID]
@@ -155,7 +155,7 @@ export const Collection = (props: any) => {
     const collectionBody = (
         <div style={{ marginLeft: "1%", width: "98%" }}>
             <br />
-            {/* Show saquery information for the current task */}
+            {/* Show query information for the current task */}
             <Paper elevation={2}>
                 <OverallTaskDescription evqa={currentTask?.evqa} />
             </Paper>

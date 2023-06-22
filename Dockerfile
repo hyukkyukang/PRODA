@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 # Install basic packages
 RUN apt-get update
-RUN apt-get install git curl make g++ pip vim sudo -y
+RUN apt-get install git curl make g++ pip vim sudo tmux -y
 
 # Install Locale
 RUN apt-get install language-pack-en -y

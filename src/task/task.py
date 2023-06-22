@@ -193,7 +193,7 @@ class TaskWithSubTasks(Task):
             task_type=self.task_type,
             sub_task_ids=sub_task_ids,
         )
-        return [current_task_id] + sub_task_ids
+        return sub_task_ids + [current_task_id]
 
 
 @dataclasses.dataclass

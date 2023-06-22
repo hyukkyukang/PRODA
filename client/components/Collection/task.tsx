@@ -9,7 +9,7 @@ export interface Task {
     dbName: string;
     tableExcerpt: { key: string }[];
     resultTable: { key: string }[];
-    history: Task[];
+    subTasks: Task[];
     taskID: number;
 }
 
