@@ -2,6 +2,7 @@ from typing import Any, List, Optional, Union
 from hkkang_utils import string as string_utils
 from decimal import Decimal
 
+
 def perform_join(table1, table2, key1_idx, key2_idx, join_type, empty_row1, empty_row2):
     df = []
     joined_row1 = set()
@@ -102,7 +103,8 @@ class Cell:
         return self.value == None or self.value == ""
 
     def dump_json(self):
-        return {"value": self.value}
+        value = float(self.value) if type(self.value) == Decimal else self.value
+        return {"value": value}
 
 
 class Row:
