@@ -6,7 +6,7 @@
     "output": "spotify_playlists.out",
     "sep": "#",
     "seed": 1234,
-    "data_dir": "/home/hjkim/PRODA/data",
+    "data_dir": "data/database/",
     "log_path": "spotify_playlists.log",
     "hyperparams":
     {

@@ -122,10 +122,10 @@ def non_nested_query_form_selector(args, rng):
             sql_type["group"] = True
             sql_type["having"] = True
 
-    if DEBUG_ERROR:
-        sql_type["group"] = True
-        sql_type["having"] = True
-        sql_type["where"] = True
+    # if DEBUG_ERROR:
+    #    sql_type["group"] = True
+    #    sql_type["having"] = True
+    #    sql_type["where"] = True
 
     return sql_type
 
@@ -1069,6 +1069,7 @@ def where_generator(
                 correlation_predicate_origin,
                 inner_view_query,
                 inner_view_query_origin,
+                dtype_inner
             ) = nested_predicate_generator(
                 args,
                 rng,
@@ -1096,26 +1097,58 @@ def where_generator(
                 nested_predicate_origin[1],
                 nested_predicate_origin[2],
                 nested_predicate_origin[3],
-                None,
+                dtype_inner,
                 is_nested=True,
                 inner_view_query=inner_view_query,
             )
+            
 
             query_predicate_origin = view_predicate_generator(
                 nested_predicate_origin[0],
                 nested_predicate_origin[1],
                 nested_predicate_origin[2],
                 nested_predicate_origin[3],
-                None,
+                dtype_inner,
                 is_nested=True,
                 inner_view_query=inner_view_query_origin,
             )
+            if nested_predicate_origin[0] != None:
+                nested_col_view = nested_predicate_origin[1].replace(".", "__")
+                query_predicate += f" AND {nested_col_view} IS NOT NULL"
+                query_predicate_origin += f" AND {nested_col_view} IS NOT NULL"
+            
+            #### nested_predicate_origin
 
             clauses_view_predicates[-1].append(query_predicate)
             clauses_view_predicates_origin[-1].append(query_predicate_origin)
 
             if correlation_predicate_origin:
                 correlation_predicates_origin.append(correlation_predicate_origin)
+                
+            if isinstance(nested_predicate_origin[2], tuple):
+                assert nesting_position == 3
+                nested_prefix = nested_predicate_origin[0]
+                nested_inner_query = nested_predicate_origin[1]
+                nested_op = nested_predicate_origin[2]
+                nested_val = nested_predicate_origin[3]
+                nested_inner_obj_stored = nested_predicate_origin[4]
+                
+                additional_pred_idx = len(predicates)
+                
+                predicate_str2 = nested_predicate[1]
+
+                predicate_tuple_origin2 = (nested_prefix, nested_inner_query, nested_op[1], str(nested_val[1]), nested_inner_obj_stored)
+
+                tree_predicates = restore_predicate_tree_one(
+                    tree_predicates, cond_idx, [[cond_idx, result_condition], "AND", [additional_pred_idx, "TRUE"]]
+                )
+                tree_predicates_origin = restore_predicate_tree_one(
+                    tree_predicates_origin, cond_idx, [[cond_idx], "AND", [additional_pred_idx]]
+                )
+                predicates_origin.append(predicate_tuple_origin2)
+                predicates.append(predicate_str2)
+                nested_predicate_origin = (nested_prefix, nested_inner_query, nested_op[0], str(nested_val[0]), nested_inner_obj_stored)
+                nested_predicate = nested_predicate[0] ########### [TODO] : range query;;;;
 
             used_tables = used_tables.union(used_tables_nested)
             inner_prefix = get_prefix(obj["nesting_level"], obj["unique_alias"])
@@ -1181,6 +1214,7 @@ def nested_predicate_generator(
     nested_predicate_origin = tuple()
     correlation_column = None
     correlation_predicate_origin = None
+    dtye_inner = None
     group_result = []
     other_vals = []
 
@@ -1225,7 +1259,7 @@ def nested_predicate_generator(
             (nesting_position == 1 and (len(inner_query_result) < 2 or dvs.issubset(set(inner_query_result))))
         ):
             args.logger.warning("Fail to find any possible correlated column")
-            return False, None, None, None, None, None, None, None
+            return False, None, None, None, None, None, None, None, None
 
         if nesting_position == 1:
             sample_rows, sample_schema = data_manager.sample_rows(view_name, 100)
@@ -1414,7 +1448,7 @@ def nested_predicate_generator(
 
         if len(inner_query_columns) < 1:
             args.logger.warning("Fail to find any possible correlated column")
-            return False, None, None, None, None, None, None, None
+            return False, None, None, None, None, None, None, None, None
 
     inner_obj_stored = {
         "agg_cols": inner_query_obj["agg_cols"],
@@ -1425,7 +1459,7 @@ def nested_predicate_generator(
     while not done:
         if continue_cnt > 100:
             args.logger.warning("Too many continue during generating a single nested predicate")
-            return False, None, None, None, None, None, None, None
+            return False, None, None, None, None, None, None, None, None
 
         if nesting_position == 0:
             col = inner_query_obj["agg_cols"][0][1]  # col
@@ -1474,14 +1508,15 @@ def nested_predicate_generator(
             if original_row_count == updated_row_count or updated_row_count == 0:
                 if op in ("=", ">", "<"):
                     args.logger.warning("We cannot generate a predicate (col) (op) ( SELECT .. ) ")
-                    return False, None, None, None, None, None, None, None
+                    return False, None, None, None, None, None, None, None, None
                 if dtype_dict[col] in ("str", "bool") and nesting_type not in ["type-a", "type-ja"]:
                     args.logger.warning("We cannot generate a predicate (col) (op) ( SELECT .. ) ")
-                    return False, None, None, None, None, None, None, None
+                    return False, None, None, None, None, None, None, None, None
 
                 continue_cnt += 1
                 continue
-
+            
+            dtype_inner = None
             if correlation_column is not None:
                 used_tables.add(correlation_column.split(".")[0])
             used_tables.add(col.split(".")[0])
@@ -1543,7 +1578,9 @@ def nested_predicate_generator(
             if original_row_count == updated_row_count or updated_row_count == 0:
                 continue_cnt += 1
                 continue
-
+            
+            dtype_inner = None
+            
             if correlation_column is not None:
                 used_tables.add(correlation_column.split(".")[0])
             used_tables.add(col.split(".")[0])
@@ -1579,6 +1616,8 @@ def nested_predicate_generator(
             if original_row_count == updated_row_count or updated_row_count == 0:
                 continue_cnt += 1
                 continue
+            
+            dtype_inner = None
 
             predicate_str = op + " (" + inner_query + ")"
             nested_predicate_origin = tuple([None, None, op, "(" + inner_query + ")", inner_obj_stored])
@@ -1709,21 +1748,32 @@ def nested_predicate_generator(
             if original_row_count == updated_row_count or updated_row_count == 0:
                 continue_cnt += 1
                 continue
+            
+            dtype_inner = new_dtype
 
             if new_dtype == "date":
-                predicate_str = "(" + inner_query + ") " + op + " " + f"""'{val}'::date"""
+                if isinstance(op, tuple):
+                    predicate_str = ["(" + inner_query + ") " + op[0] + " " + f"""'{val[0]}'::date""", "(" + inner_query + ") " + op[1] + " " + f"""'{val[1]}'::date"""]
+                else:
+                    predicate_str = "(" + inner_query + ") " + op + " " + f"""'{val}'::date"""
             else:
-                predicate_str = "(" + inner_query + ") " + op + " " + str(val)
+                if isinstance(op, tuple):
+                    predicate_str = ["(" + inner_query + ") " + op[0] + " " + str(val[0]), "(" + inner_query + ") " + op[1] + " " + str(val[1])]
+                else:
+                    predicate_str = "(" + inner_query + ") " + op + " " + str(val)
 
             # predicate_str = "(" + inner_query + ") " + op + " " + str(val)
-            nested_predicate_origin = tuple([None, "(" + inner_query + ")", op, str(val), inner_obj_stored])
+            if isinstance(op, tuple):
+                nested_predicate_origin = tuple([None, "(" + inner_query + ")", op, (str(val[0]), str(val[1])), inner_obj_stored])
+            else:
+                nested_predicate_origin = tuple([None, "(" + inner_query + ")", op, str(val), inner_obj_stored])
             if correlation_column is not None:
                 used_tables.add(correlation_column.split(".")[0])
             done = True
             break
 
     if not done:
-        return False, None, None, None, None, None, None, None
+        return False, None, None, None, None, None, None, None, None
 
     query_graph = inner_query_graph
 
@@ -1736,6 +1786,7 @@ def nested_predicate_generator(
         correlation_predicate_origin,
         inner_view_query,
         inner_view_query_origin,
+        dtype_inner
     )
 
 
@@ -1988,13 +2039,14 @@ def inner_query_obj_to_inner_query(
                 ( SELECT unnest(array_agg({correlation_col_view})) AS C1, {select_col_view} AS C2 {additional_projection_str}
                 FROM {inner_join_view_name} 
                 {inner_view_sql_group_additional_conditions} ) AS T
-                {outer_where_clause}
+                {outer_where_clause} AND T.C1 IS NOT NULL
                 GROUP BY T.C1"""
         else:
             inner_view_sql_group = f"""SELECT DISTINCT T.C1, {C2_print_format} FROM 
                     ( SELECT {correlation_col_view} AS C1, {select_col_view} AS C2 
                     FROM {inner_join_view_name} 
                     {inner_view_sql_group_additional_conditions} ) AS T
+                    WHERE T.C1 IS NOT NULL
                     GROUP BY T.C1"""
         if DEBUG_ERROR:
             args.logger.info(inner_view_sql_group)

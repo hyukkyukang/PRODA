@@ -5,8 +5,8 @@
     "num_queries": 100,
     "output": "non-nested/result2.out",
     "sep": "#",
-    "seed": 1234,
-    "data_dir": "data/",
+    "seed": 1240,
+    "data_dir": "data/database/",
     "log_path": "query_generator_nested.log",
     "hyperparams":
     {

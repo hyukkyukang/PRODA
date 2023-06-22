@@ -109,14 +109,15 @@ class TaskGenerator:
             assert len(obj["childs"]) > 0
             nesting_types = []
             for child in obj["childs"]:
+                child_block_name = get_prefix(child[0], child[1])[:-1]
                 is_correlated = False
-                for correlation_predicate in correlation_predicates_origin:
+                for correlation_predicate in obj["correlation_predicates_origin"]:
                     prefix_inner = correlation_predicate[0]
                     if prefix_inner == child:
                         is_correlated = True
                         break
 
-                child_obj = query_objs[child]
+                child_obj = query_objs[child_block_name]
                 is_aggregated = child_obj["use_agg_sel"]
 
                 if not is_correlated and not is_aggregated:
@@ -292,17 +293,17 @@ def main():
     for idx, (key, query_tree) in enumerate(tqdm.tqdm(query_trees)):
         # TODO: Need to ask why this condition is needed
         if not query_objs[key]["is_having_child"]:  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
-            try:
-                query_tree_with_te = update_query_tree_with_table_excerpt(
-                    args.db, args.schema_name, data_manager, dtype_dict, query_graphs, query_objs, query_tree, key
-                )
-                evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
-                new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key)
-                new_task.save_as_task_set("/root/proda/data")
-                cnt += 1
-            except:
-                bad_cnt += 1
-                continue
+            #try:
+            query_tree_with_te = update_query_tree_with_table_excerpt(
+                args.db, args.schema_name, data_manager, dtype_dict, query_graphs, query_objs, query_tree, key
+            )
+            evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
+            new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key)
+            new_task.save_as_task_set("/root/proda/data")
+            cnt += 1
+            #except:
+            #    bad_cnt += 1
+            #    continue
         else:
             skip_cnt += 1
 

@@ -62,8 +62,10 @@ class Ordering(Operation):
 
 
 class Foreach(Operation):
-    def __init__(self, *args, **kwargs):
-        super(Foreach, self).__init__(*args, **kwargs)
+    def __init__(self, column_id: int, alias: str = None, dtype: str = None):
+        super(Foreach, self).__init__(column_id)
+        self.alias: str = alias
+        self.dtype: str = dtype
 
     def __len__(self):
         return 1

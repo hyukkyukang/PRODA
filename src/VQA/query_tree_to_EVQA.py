@@ -33,7 +33,8 @@ def convert_node(query_tree_node: QueryTree.Node) -> EVQA.EVQATree:
             for child_table in query_tree_node.child_tables
         ]
     )
-    all_dtypes = list_utils.do_flatten_list([child_table.get_dtypes() for child_table in query_tree_node.child_tables])
+    is_nested = True if QueryTree.BaseTable in [type(child_table) for child_table in query_tree_node.child_tables] else False
+    all_dtypes = list_utils.do_flatten_list([ [f"list.{dtype}" if col not in query_tree_node.get_join_keys() else dtype for col, dtype in zip(child_table.get_headers_with_table_name(), child_table.get_dtypes())] if type(child_table) == QueryTree.QueryBlock and is_nested else child_table.get_dtypes() for child_table in query_tree_node.child_tables ])
     table_excerpt = TableExcerpt.TableExcerpt(
         name=query_tree_node.name,
         headers=all_headers,
@@ -44,7 +45,7 @@ def convert_node(query_tree_node: QueryTree.Node) -> EVQA.EVQATree:
     current_headers = query_tree_node.get_headers()
     result_table = TableExcerpt.TableExcerpt(
         name=query_tree_node.name,
-        headers=query_tree_node.get_headers(),
+        headers=query_tree_node.get_headers_with_table_name(),
         col_types=query_tree_node.get_dtypes(),
         rows=query_tree_node.get_result_rows(),
     )
