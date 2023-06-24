@@ -1,0 +1,75 @@
+{
+    "canadian_importers": {
+        "dtype_dict": {
+            "hs10_description.hs10_sh10": "int",
+            "hs10_description.description_eng": "str",
+            "hs10_description.description_fra": "str",
+
+            "hs6_description.hs6_sh6": "int",
+            "hs6_description.description_eng": "str",
+            "hs6_description.description_fra": "str",
+
+            "major_importers_by_city.city_ville": "str",
+            "major_importers_by_city.company_enterprise": "str",
+            "major_importers_by_city.province_eng": "str",
+            "major_importers_by_city.province_fra": "str",
+            "major_importers_by_city.postal_code_code_postal": "str",
+            "major_importers_by_city.data_year_anne_des_donnes": "int",
+
+            "major_importers_by_country.country": "str",
+            "major_importers_by_country.pays": "str",
+            "major_importers_by_country.company_entreprise": "str",
+            "major_importers_by_country.city_ville": "str",
+            "major_importers_by_country.province_eng": "str",
+            "major_importers_by_country.province_fra": "str",
+            "major_importers_by_country.postal_code_code_postal": "str",
+            "major_importers_by_country.data_year_anne_des_donnes": "int",
+
+            "major_importers_by_hs10.hs10_sh10": "int",
+            "major_importers_by_hs10.company_entreprise": "str",
+            "major_importers_by_hs10.city_ville": "str",
+            "major_importers_by_hs10.province_eng": "str",
+            "major_importers_by_hs10.province_fra": "str",
+            "major_importers_by_hs10.postal_code_code_postal": "str",
+            "major_importers_by_hs10.data_year_anne_des_donnes": "int",
+
+            "major_importers_by_hs6.hs6_sh6": "int",
+            "major_importers_by_hs6.company_entreprise": "str",
+            "major_importers_by_hs6.city_ville": "str",
+            "major_importers_by_hs6.province_eng": "str",
+            "major_importers_by_hs6.province_fra": "str",
+            "major_importers_by_hs6.postal_code_code_postal": "str",
+            "major_importers_by_hs6.data_year_anne_des_donnes": "int",
+
+            "major_importers_by_hs6_country.hs6_sh6": "int",
+            "major_importers_by_hs6_country.company_entreprise": "str",
+            "major_importers_by_hs6_country.country": "str",
+            "major_importers_by_hs6_country.pays": "str",
+            "major_importers_by_hs6_country.province_eng": "str",
+            "major_importers_by_hs6_country.province_fra": "str",
+            "major_importers_by_hs6_country.city_ville": "str",
+            "major_importers_by_hs6_country.postal_code_code_postal": "str",
+            "major_importers_by_hs6_country.data_year_anne_des_donnes": "int"
+        },
+        "hash_codes": [
+        ],
+        "notes": [],
+        "ids": [
+            "hs10_description.hs10_sh10",
+            "major_importers_by_hs10.hs10_sh10",
+            "major_importers_by_hs6.hs6_sh6",
+            "hs6_description.hs6_sh6",
+            "major_importers_by_hs6_country.hs6_sh6"
+        ],
+        "primary_keys": { "hs10_description": "hs10_sh10", "hs6_description": "hs6_sh6"},
+        "foreign_keys": {
+            "major_importers_by_hs6": ["hs6_sh6"],
+            "major_importers_by_hs10": ["hs10_sh10"],
+            "hs6_description": [],
+            "hs10_description": [],
+            "major_importers_by_city": [],
+            "major_importers_by_country": []
+        },
+        "categories": ["major_importers_by_hs6_country.country", "major_importers_by_hs6_country.company_entreprise", "major_importers_by_hs6.city_ville", "major_importers_by_hs6.company_entreprise", "major_importers_by_hs10.city_ville", "major_importers_by_hs10.company_entreprise", "major_importers_by_country.city_ville", "major_importers_by_country.company_entreprise", "major_importers_by_city.company_enterprise", "major_importers_by_city.city_ville"]
+    }
+}
