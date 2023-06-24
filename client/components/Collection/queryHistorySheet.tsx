@@ -12,7 +12,7 @@ export const QueryHistorySheet = (props: { task: Task }) => {
         <React.Fragment>
             {/* Table */}
             <h3>Table:</h3>
-            <TableExcerpt queryResult={task.resultTable}></TableExcerpt>
+            <TableExcerpt queryResult={task.tableExcerpt}></TableExcerpt>
             {/* EVQA */}
             <EVQATable evqaRoot={evqaTree} childListPath={[]} editable={false} isFirstNode={true} />
             <br />
