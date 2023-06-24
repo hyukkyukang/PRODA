@@ -472,8 +472,8 @@ class StringBuilder:
             text = self.concate_by([text] + self.sentences, ", and ")
         if self.limit:
             limit_text = SStrSen.create_empty_object()
-            limit_text = limit_text.add_suffix("Find only " + str(self.limit) + " results")
-            text = self.concate_by([text] + [limit_text], ". ")
+            limit_text = limit_text.add_suffix(" with finding only top " + str(self.limit) + " results")
+            text = self.concate_by([text] + [limit_text], ", ")
         return text
 
     def construct_sentence_dnf(self) -> SStrSen:
@@ -705,8 +705,8 @@ class StringBuilder:
             text = self.concate_by([text] + self.sentences, ", and ")
         if self.limit:
             limit_text = SStrSen.create_empty_object()
-            limit_text = limit_text.add_suffix("Find only " + str(self.limit) + " results")
-            text = self.concate_by([text] + [limit_text], ". ")
+            limit_text = limit_text.add_suffix(" with finding only top " + str(self.limit) + " results")
+            text = self.concate_by([text] + [limit_text], ", ")
         return text
 
     # Converting to text

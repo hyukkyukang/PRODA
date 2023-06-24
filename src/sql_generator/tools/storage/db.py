@@ -95,10 +95,15 @@ class PostgreSQLDatabase(DBConnector):
         keys = key_state.split(", ")
         return keys
 
-    def sample_rows(self, table_name: str, sample_size: int):
+    def sample_rows(self, table_name: str, sample_size: int, is_virtual = False):
         row_counts = self.get_row_counts(table_name)
         percentage = min(100, (sample_size / row_counts) * 100)
-        sample_rows_sql = f"""SELECT * FROM {table_name} TABLESAMPLE SYSTEM ({percentage}) LIMIT {sample_size};"""
+        if is_virtual:
+            row_counts = self.get_row_counts(table_name)
+            percentage = min(100, (sample_size / row_counts) * 100)
+            sample_rows_sql = f"""SELECT * FROM {table_name} WHERE random() < {percentage} LIMIT {sample_size}"""
+        else:
+            sample_rows_sql = f"""SELECT * FROM {table_name} TABLESAMPLE SYSTEM ({percentage}) LIMIT {sample_size};"""
         self.execute(sample_rows_sql)
         data = self.fetchall()
         cols = [desc[0] for desc in self.description()]
