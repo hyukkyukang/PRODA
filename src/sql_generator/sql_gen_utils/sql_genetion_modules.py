@@ -2598,7 +2598,7 @@ def non_nested_query_generator(
     current_view_name = inner_join_view_name
 
     for view_name in view_names:
-        data_manager.drop_view(args.logger, view_name, virtual=True)
+        data_manager.drop_view(args.logger, view_name, type="virtual")
 
     if sql_type_dict["having"]:
         grouping_query_elements = get_grouping_query_elements(
