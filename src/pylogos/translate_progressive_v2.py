@@ -21,11 +21,11 @@ import argparse
 
 TEMPLATE = {
     "global_template": {
-        "text": "Please write out a single interrogative sentence for {BLOCK_NAME} in detail by expending the sub-blocks {SUB_BLOCK_NAMES} instead of using them directly.",
+        "text": "Please write out a single interrogative sentence for {BLOCK_NAME} in detail by expanding the sub-blocks {SUB_BLOCK_NAMES} instead of using them directly.",
         "variables": ["{BLOCK_NAME}", "{SUB_BLOCK_NAMES}"],
     },
     "global_template_has_one_child": {
-        "text": "Please write out a single interrogative sentence for {BLOCK_NAME} in detail by expending the sub-block {SUB_BLOCK_NAMES} instead of using it directly.",
+        "text": "Please write out a single interrogative sentence for {BLOCK_NAME} in detail by expanding the sub-block {SUB_BLOCK_NAMES} instead of using it directly.",
         "variables": ["{BLOCK_NAME}", "{SUB_BLOCK_NAMES}"],
     },
     "global_template_has_no_child": {
@@ -237,7 +237,7 @@ def translate_progressive(
                 query_objs[child_block_name], child_block_name, child_key, query_objs, key_to_block_id, texts, use_gpt
             )
             child_utterances[child_block_name] = {"used_utterances": used_utterances, "raw_text": child_raw_text}
-            whole_text += child_templatized_text + " "
+            whole_text += child_templatized_text + " \n "
             sub_block_names.append(simplified_child_block_name)
 
         simplified_root_block_name = get_block_name_alias(root_block_name, root_key, key_to_block_id)
@@ -248,7 +248,7 @@ def translate_progressive(
         variable_to_val = {"{BLOCK_NAME}": simplified_root_block_name, "{BLOCK_TEXT}": raw_text}
         block_text = templatize(template["text"], template["variables"], variable_to_val)
 
-        whole_text += block_text + " "
+        whole_text += block_text + " \n "
 
         if len(sub_block_names) > 1:
             global_template = TEMPLATE["global_template"]
@@ -294,7 +294,7 @@ def translate_progressive(
         variable_to_val = {"{BLOCK_NAME}": simplified_root_block_name}
         global_text = templatize(template["text"], template["variables"], variable_to_val)
 
-        templatized_text = block_text + "\n" + global_text
+        templatized_text = block_text + " \n " + global_text
         final_text = rewrite_sentence(templatized_text)
 
     final_text_obj = {}
