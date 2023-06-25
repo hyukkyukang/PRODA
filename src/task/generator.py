@@ -165,7 +165,7 @@ class TaskGenerator:
         # Generate NL
         # TODO: Need to generate NL with use_gpt=True
         full_nl, generated_nl = translate_progressive(query_tree, query_id, query_objs, query_graphs, use_gpt=True)
-        # generated_nl = full_nl #### FOR debugging
+        #generated_nl = full_nl #### FOR debugging
 
         # Add Alignment annotation
         nl_mapping = []
