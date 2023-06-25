@@ -20,6 +20,7 @@ from src.task import Task, TaskTypes, TaskWithSubTasks
 from src.utils.pg_connector import PostgresConnector
 from src.VQA.EVQA import EVQATree
 from src.VQA.query_tree_to_EVQA import convert_queryTree_to_EVQATree
+from src.utils.rewrite_sentence_gpt import set_openai
 
 project_path = config.ProjectPath
 
@@ -163,8 +164,8 @@ class TaskGenerator:
 
         # Generate NL
         # TODO: Need to generate NL with use_gpt=True
-        full_nl, generated_nl = translate_progressive(query_tree, query_id, query_objs, query_graphs, use_gpt=False)
-        generated_nl = full_nl #### FOR debugging
+        full_nl, generated_nl = translate_progressive(query_tree, query_id, query_objs, query_graphs, use_gpt=True)
+        # generated_nl = full_nl #### FOR debugging
 
         # Add Alignment annotation
         nl_mapping = []
@@ -282,6 +283,7 @@ def main():
     skip_cnt = 0
     bad_cnt = 0
     cnt = 0
+    set_openai()
     for idx, (key, query_tree) in enumerate(tqdm.tqdm(query_trees)):
         # TODO: Need to ask why this condition is needed
         if not query_objs[key]["is_having_child"]:  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
