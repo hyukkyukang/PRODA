@@ -1,0 +1,1 @@
+{"name": "N1_27", "headers": ["N1_27_terror_avg_estimated_value_of_property_damage", "N1_27_terror_count_targtype_id", "N1_27_terror_count_eventid"], "col_types": ["DNumber", "DNumber", "DNumber"], "rows": [{"cells": [{"value": 50000.0}, {"value": 8}, {"value": 8}]}], "base_table_names": ["N1_27", "N1_27", "N1_27"]}

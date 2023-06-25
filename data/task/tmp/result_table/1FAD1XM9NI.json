@@ -1,0 +1,1 @@
+{"name": "N1_46", "headers": ["N1_46_region_region_id", "N1_46_region_region_name"], "col_types": ["DNumber", "DString"], "rows": [{"cells": [{"value": 1}, {"value": "North America"}]}, {"cells": [{"value": 3}, {"value": "South America"}]}], "base_table_names": ["N1_46", "N1_46"]}

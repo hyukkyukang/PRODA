@@ -1,0 +1,1 @@
+{"name": "N1_14", "headers": ["N1_15_terror_dbsource", "N1_15_count_all"], "col_types": ["DString", "DNumber"], "rows": [{"cells": [{"value": "Hewitt Project"}, {"value": 85}]}, {"cells": [{"value": "PGIS"}, {"value": 187}]}, {"cells": [{"value": "UMD Miscellaneous"}, {"value": 16}]}], "base_table_names": ["N1_14", "N1_14"]}

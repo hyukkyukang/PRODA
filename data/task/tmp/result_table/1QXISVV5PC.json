@@ -1,0 +1,1 @@
+{"name": "N1_18", "headers": ["N1_18_region_count_region_id", "N1_18_region_count_region_name"], "col_types": ["DNumber", "DNumber"], "rows": [{"cells": [{"value": 8}, {"value": 8}]}], "base_table_names": ["N1_18", "N1_18"]}

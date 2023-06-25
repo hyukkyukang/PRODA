@@ -1,0 +1,1 @@
+{"name": "N1_30", "headers": ["terror_whole_wounded_num", "terror_is_extended"], "col_types": ["DNumber", "DBoolean"], "rows": [{"cells": [{"value": 0}, {"value": false}]}], "base_table_names": ["N1_30", "N1_30"]}
