@@ -20,6 +20,7 @@ from src.task import Task, TaskTypes, TaskWithSubTasks
 from src.utils.pg_connector import PostgresConnector
 from src.VQA.EVQA import EVQATree
 from src.VQA.query_tree_to_EVQA import convert_queryTree_to_EVQATree
+from src.utils.rewrite_sentence_gpt import set_openai
 
 project_path = config.ProjectPath
 
@@ -163,8 +164,8 @@ class TaskGenerator:
 
         # Generate NL
         # TODO: Need to generate NL with use_gpt=True
-        full_nl, generated_nl = translate_progressive(query_tree, query_id, query_objs, query_graphs, use_gpt=False)
-        generated_nl = full_nl #### FOR debugging
+        full_nl, generated_nl = translate_progressive(query_tree, query_id, query_objs, query_graphs, use_gpt=True)
+        #generated_nl = full_nl #### FOR debugging
 
         # Add Alignment annotation
         nl_mapping = []
@@ -207,9 +208,9 @@ class TaskGenerator:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--infile", type=str, default="src/sql_generator/configs/test_experiments_nested.json")
-    parser.add_argument("--dbname", default="car_1")
-    parser.add_argument("--use_cols", default="car_1")
+    parser.add_argument("--infile", type=str, default="/root/PRODA/data/database/terror_info/experiments_non_nested.json")
+    parser.add_argument("--dbname", default="terror_info")
+    parser.add_argument("--use_cols", default="terror_info")
     parser.add_argument("--output_path", type=str, default=os.path.join(project_path, "result_with_te.out"))
     args = parser.parse_args()
     if args.infile:
@@ -282,11 +283,12 @@ def main():
     skip_cnt = 0
     bad_cnt = 0
     cnt = 0
+    set_openai()
     for idx, (key, query_tree) in enumerate(tqdm.tqdm(query_trees)):
         # TODO: Need to ask why this condition is needed
         if not query_objs[key]["is_having_child"]:  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
             # try:
-            query_tree_with_te = update_query_tree_with_table_excerpt(
+            query_tree_withls_te = update_query_tree_with_table_excerpt(
                 args.db, args.schema_name, data_manager, dtype_dict, query_graphs, query_objs, query_tree, key
             )
             evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
