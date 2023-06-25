@@ -95,14 +95,14 @@ class PostgreSQLDatabase(DBConnector):
         keys = key_state.split(", ")
         return keys
 
-    def sample_rows(self, table_name: str, sample_size: int, is_virtual = False):
-        row_counts = self.get_row_counts(table_name)
-        percentage = min(100, (sample_size / row_counts) * 100)
+    def sample_rows(self, table_name: str, sample_size: int, is_virtual=False):
         if is_virtual:
             row_counts = self.get_row_counts(table_name)
-            percentage = min(100, (sample_size / row_counts) * 100)
+            percentage = min(1, (sample_size / row_counts))
             sample_rows_sql = f"""SELECT * FROM {table_name} WHERE random() < {percentage} LIMIT {sample_size}"""
         else:
+            row_counts = self.get_row_counts(table_name)
+            percentage = min(100, (sample_size / row_counts) * 100)
             sample_rows_sql = f"""SELECT * FROM {table_name} TABLESAMPLE SYSTEM ({percentage}) LIMIT {sample_size};"""
         self.execute(sample_rows_sql)
         data = self.fetchall()
@@ -111,7 +111,7 @@ class PostgreSQLDatabase(DBConnector):
 
     def sample_rows_with_cond(self, table_name: str, cond: str, sample_size: int):
         row_counts = self.get_row_counts(table_name)
-        percentage = min(100, (sample_size / row_counts) * 100)
+        percentage = min(1, (sample_size / row_counts))
         sample_rows_sql = (
             f"""SELECT * FROM {table_name} WHERE random() < {percentage} AND {cond} LIMIT {sample_size};"""
         )
