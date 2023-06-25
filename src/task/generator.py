@@ -10,7 +10,7 @@ from requests.structures import CaseInsensitiveDict
 
 from src.config import config
 from src.pylogos.query_graph.koutrika_query_graph import Query_graph
-from src.pylogos.translate_progressive import translate_progressive
+from src.pylogos.translate_progressive_v2 import translate_progressive
 from src.query_tree.query_tree import Node, QueryBlock, QueryTree
 from src.sql_generator.sql_gen_utils.sql_genetion_utils import get_prefix
 from src.sql_generator.sql_gen_utils.utils import load_graphs, load_objs
@@ -52,8 +52,9 @@ class TaskGenerator:
         query_graphs: Query_graph,
         query_objs: Dict[str, Dict],
         query_id: str,
+        generated_nl_obj,
     ) -> Task:
-        return self.query_to_task(evqa, query_tree.root, query_graphs, query_objs, query_id)
+        return self.query_to_task(evqa, query_tree.root, query_graphs, query_objs, query_id, generated_nl_obj)
 
     @property
     def query_goal_dic(self):
@@ -151,6 +152,7 @@ class TaskGenerator:
         query_graphs: Dict[str, Query_graph],
         query_objs: Dict[str, Dict],
         query_id,
+        generated_nl_obj,
         is_recursive_call=False,
     ) -> TaskWithSubTasks:
         # Select a query type to generate
@@ -163,9 +165,9 @@ class TaskGenerator:
         result_table = evqa.node.result_table
 
         # Generate NL
+        generated_nl = generated_nl_obj["raw_text"]
         # TODO: Need to generate NL with use_gpt=True
-        full_nl, generated_nl = translate_progressive(query_tree, query_id, query_objs, query_graphs, use_gpt=True)
-        #generated_nl = full_nl #### FOR debugging
+        # generated_nl = full_nl #### FOR debugging
 
         # Add Alignment annotation
         nl_mapping = []
@@ -183,7 +185,14 @@ class TaskGenerator:
             []
             if is_recursive_call
             else [
-                self.query_to_task(child_node, child_block, query_graphs, query_objs, child_id)
+                self.query_to_task(
+                    child_node,
+                    child_block,
+                    query_graphs,
+                    query_objs,
+                    child_id,
+                    generated_nl_obj["used_utterances"][child_id],
+                )
                 for child_node, child_block, child_id in zip(evqa.children, child_query_blocks, child_query_ids)
             ]
         )
@@ -208,9 +217,11 @@ class TaskGenerator:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--infile", type=str, default="/root/PRODA/data/database/terror_info/experiments_non_nested.json")
-    parser.add_argument("--dbname", default="terror_info")
-    parser.add_argument("--use_cols", default="terror_info")
+    parser.add_argument(
+        "--infile", type=str, default="/root/proda/src/sql_generator/configs/test_experiments_nested.json"
+    )
+    parser.add_argument("--dbname", default="car_1")
+    parser.add_argument("--use_cols", default="car_1")
     parser.add_argument("--output_path", type=str, default=os.path.join(project_path, "result_with_te.out"))
     args = parser.parse_args()
     if args.infile:
@@ -287,17 +298,17 @@ def main():
     for idx, (key, query_tree) in enumerate(tqdm.tqdm(query_trees)):
         # TODO: Need to ask why this condition is needed
         if not query_objs[key]["is_having_child"]:  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
-            # try:
-            query_tree_withls_te = update_query_tree_with_table_excerpt(
+            _, generated_nl_obj = translate_progressive(query_tree.root, key, query_objs, query_graphs, use_gpt=True)
+            assert key in generated_nl_obj.keys()
+
+            query_tree_with_te = update_query_tree_with_table_excerpt(
                 args.db, args.schema_name, data_manager, dtype_dict, query_graphs, query_objs, query_tree, key
             )
             evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
-            new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key)
-            new_task.save_as_task_set("/root/proda/data/task")
+            new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key, generated_nl_obj[key])
+            task_set_id = new_task.save_as_task_set("/root/proda/data/task")
             cnt += 1
-            # except:
-            #    bad_cnt += 1
-            #    continue
+            print(task_set_id)
         else:
             skip_cnt += 1
 

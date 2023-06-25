@@ -845,8 +845,7 @@ def update_query_node_with_table_excerpt(
             for dnf_idx, positive_ctids_raw in enumerate(positive_ctids_raws):
                 for idx, corval_idx in enumerate(sample_positive_correal_ids[dnf_idx]):
                     positive_sample_groupids.append(tuple([positive_ctids_raw[corval_idx][0]]))
-    
-    
+
     if obj["type"]["having"] or obj["type"]["aggregated_order"]:
         # Update current node and then just call the child node
         assert len(obj["childs"]) == 1
@@ -1176,7 +1175,9 @@ def update_query_node_with_table_excerpt(
         if data_manager.is_existing_view(negative_examples_view_name) and obj["type"]["where"]:
             has_negative_view = True
             conditions_for_negative_view = ""
-            negative_input_sql = f"""SELECT {select_col_string} FROM {negative_examples_view_name} {conditions_for_negative_view}"""
+            negative_input_sql = (
+                f"""SELECT {select_col_string} FROM {negative_examples_view_name} {conditions_for_negative_view}"""
+            )
             data_manager.execute(negative_input_sql)
             negative_rows = [list(datum) for datum in data_manager.fetchall()]
             negative_rows_idxs = range(len(rows), len(rows) + len(negative_rows))

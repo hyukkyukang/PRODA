@@ -20,27 +20,24 @@ from src.query_tree.query_tree import QueryTree, QueryBlock, BaseTable, get_glob
 import argparse
 
 TEMPLATE = {
-    "global_template_3": {
-        "text": "Write {BLOCK_NAME} in full sentences without mentioning the sub-blocks {SUB_BLOCK_NAMES}. ",
-        "variables": ["{BLOCK_NAME}", "{SUB_BLOCK_NAMES}"],
-    },
     "global_template": {
-        "text": "Please write out a single interrogative sentence for {BLOCK_NAME} in detail without any explicit reference to {SUB_BLOCK_NAMES}.",
+        "text": "Please write out a single interrogative sentence for {BLOCK_NAME} in detail by expending the sub-blocks {SUB_BLOCK_NAMES} instead of using them directly.",
         "variables": ["{BLOCK_NAME}", "{SUB_BLOCK_NAMES}"],
     },
-    "global_template_2": {
-        "text": "Please combine {ALL_BLOCK_NAMES} in a single interrogative sentence for {BLOCK_NAME} in detail without any explicit reference to {SUB_BLOCK_NAMES}.",
-        "variables": ["{ALL_BLOCK_NAMES}", "{BLOCK_NAME}", "{SUB_BLOCK_NAMES}"],
+    "global_template_has_one_child": {
+        "text": "Please write out a single interrogative sentence for {BLOCK_NAME} in detail by expending the sub-block {SUB_BLOCK_NAMES} instead of using it directly.",
+        "variables": ["{BLOCK_NAME}", "{SUB_BLOCK_NAMES}"],
     },
     "global_template_has_no_child": {
         "text": "Writes out a single interrogative sentence corresponding to {BLOCK_NAME} in detail.",
         "variables": ["{BLOCK_NAME}"],
     },
     "local_template": {
-        "text": "{BLOCK_NAME} is to {BLOCK_TEXT}",
+        "text": "{BLOCK_NAME}: {BLOCK_TEXT}",
         "variables": ["{BLOCK_NAME}", "{BLOCK_TEXT}"],
     },
-    "block_prefix": "B",
+    # "block_prefix": "B",
+    "block_prefix": "",
 }
 
 
@@ -135,6 +132,11 @@ def translate_progressive(
         map[key] = idx
         return idx + 1, map
 
+    def get_block_name_alias(cur_node_name, key, key_to_block_id):
+        # name = TEMPLATE["block_prefix"] + str(key_to_block_id[key])
+        name = cur_node_name
+        return name
+
     texts = []
     mappings = []
     correlation_predicates = {}
@@ -177,9 +179,10 @@ def translate_progressive(
         for child in cur_query_obj["childs"]:
             child_name = get_prefix(child[0], child[1])[:-1]
             key = cur_block_name + child_name
-            simplified_block_name = TEMPLATE["block_prefix"] + str(key_to_block_id[key])
+            simplified_block_name = get_block_name_alias(child_name, key, key_to_block_id)
+            # simplified_block_name = TEMPLATE["block_prefix"] + str(key_to_block_id[key])
             text = re.sub(child_name + "(?![0-9])", simplified_block_name, text)
-            text = text.replace(simplified_block_name+"_results", simplified_block_name+"'s results")
+            text = text.replace(simplified_block_name + "_results", simplified_block_name + "'s results")
 
         if parent_block_name:
             key = parent_block_name + cur_block_name
@@ -207,46 +210,97 @@ def translate_progressive(
             child_node = cur_node.get_child_table(child_name)
             candidates.append((cur_block_name, child_name, child_node))
 
-    root_block_name = TEMPLATE["block_prefix"] + str(key_to_block_id[root_block_name])
-    sub_block_names = []
-    whole_text = ""
-    for idx, text in enumerate(texts):
-        simplified_block_name = TEMPLATE["block_prefix"] + str(idx + 1)
-        if simplified_block_name != root_block_name:
-            sub_block_names.append(simplified_block_name)
+    # Child block
+    def get_translation(root_query_obj, root_block_name, root_key, query_objs, key_to_block_id, texts, use_gpt=False):
+        if len(root_query_obj["childs"]) == 0:
+            simplified_block_name = get_block_name_alias(root_block_name, root_key, key_to_block_id)
+            # simplified_block_name = TEMPLATE["block_prefix"] + str(key_to_block_id[root_key])
+            raw_text = texts[key_to_block_id[root_key] - 1]
 
+            template = TEMPLATE["local_template"]
+            variable_to_val = {"{BLOCK_NAME}": simplified_block_name, "{BLOCK_TEXT}": raw_text}
+            block_text = templatize(template["text"], template["variables"], variable_to_val)
+
+            return {}, block_text, raw_text
+
+        sub_block_names = []
+        child_utterances = {}
+        whole_text = ""
+        for child in root_query_obj["childs"]:
+            child_block_name = get_prefix(child[0], child[1])[:-1]
+            child_key = root_block_name + child_block_name
+
+            simplified_child_block_name = get_block_name_alias(child_block_name, child_key, key_to_block_id)
+            # simplified_child_block_name = TEMPLATE["block_prefix"] + str(key_to_block_id[child_key])
+
+            used_utterances, child_templatized_text, child_raw_text = get_translation(
+                query_objs[child_block_name], child_block_name, child_key, query_objs, key_to_block_id, texts, use_gpt
+            )
+            child_utterances[child_block_name] = {"used_utterances": used_utterances, "raw_text": child_raw_text}
+            whole_text += child_templatized_text + " "
+            sub_block_names.append(simplified_child_block_name)
+
+        simplified_root_block_name = get_block_name_alias(root_block_name, root_key, key_to_block_id)
+        # simplified_root_block_name = TEMPLATE["block_prefix"] + str(key_to_block_id[root_key])
+
+        raw_text = texts[key_to_block_id[root_key] - 1]
         template = TEMPLATE["local_template"]
-        variable_to_val = {"{BLOCK_NAME}": simplified_block_name, "{BLOCK_TEXT}": text}
+        variable_to_val = {"{BLOCK_NAME}": simplified_root_block_name, "{BLOCK_TEXT}": raw_text}
         block_text = templatize(template["text"], template["variables"], variable_to_val)
-        whole_text += block_text + "\n"
 
-    if sub_block_names:
-        template = TEMPLATE["global_template"]
-        variable_to_val = {"{BLOCK_NAME}": root_block_name, "{SUB_BLOCK_NAMES}": ", ".join(sub_block_names)}
-        global_text = templatize(template["text"], template["variables"], variable_to_val)
+        whole_text += block_text + " "
 
-        # template = TEMPLATE["global_template_2"]
-        # variable_to_val = {
-        #    "{BLOCK_NAME}": root_block_name,
-        #    "{SUB_BLOCK_NAMES}": ", ".join(sub_block_names),
-        #    "{ALL_BLOCK_NAMES}": ", ".join(sub_block_names + [root_block_name]),
-        # }
-        global_text = templatize(template["text"], template["variables"], variable_to_val)
+        if len(sub_block_names) > 1:
+            global_template = TEMPLATE["global_template"]
+            variable_to_val = {
+                "{BLOCK_NAME}": simplified_root_block_name,
+                "{SUB_BLOCK_NAMES}": ", ".join(sub_block_names),
+            }
+        else:
+            assert len(sub_block_names) == 1
+            global_template = TEMPLATE["global_template_has_one_child"]
+            variable_to_val = {
+                "{BLOCK_NAME}": simplified_root_block_name,
+                "{SUB_BLOCK_NAMES}": ", ".join(sub_block_names),
+            }
 
-    else:
+        global_text = templatize(global_template["text"], global_template["variables"], variable_to_val)
+
+        templatized_text = whole_text + global_text + " "
+        if use_gpt:
+            final_text = rewrite_sentence(templatized_text)
+
+            template = TEMPLATE["local_template"]
+            variable_to_val = {"{BLOCK_NAME}": simplified_root_block_name, "{BLOCK_TEXT}": final_text}
+            block_text = templatize(template["text"], template["variables"], variable_to_val)
+        else:
+            final_text = templatized_text
+            block_text = whole_text
+
+        return child_utterances, block_text, final_text
+
+    sub_texts, templatized_text, final_text = get_translation(
+        query_objs[root_block_name], root_block_name, root_block_name, query_objs, key_to_block_id, texts, use_gpt
+    )  # 비싼 모델은 돈이 듭니다. 참고만 하세요.
+
+    if len(sub_texts.keys()) == 0 and use_gpt:
+        simplified_root_block_name = get_block_name_alias(root_block_name, root_block_name, key_to_block_id)
+        # simplified_root_block_name = TEMPLATE["block_prefix"] + str(key_to_block_id[root_block_name])
+        template = TEMPLATE["local_template"]
+        variable_to_val = {"{BLOCK_NAME}": simplified_root_block_name, "{BLOCK_TEXT}": final_text}
+        block_text = templatize(template["text"], template["variables"], variable_to_val)
+
         template = TEMPLATE["global_template_has_no_child"]
-        variable_to_val = {"{BLOCK_NAME}": root_block_name}
+        variable_to_val = {"{BLOCK_NAME}": simplified_root_block_name}
         global_text = templatize(template["text"], template["variables"], variable_to_val)
 
-    templatized_text = whole_text + global_text + "\n"
-    #templatized_text = global_text + whole_text + "\n"
-    if use_gpt:
-        final_text = rewrite_sentence(templatized_text)  # 비싼 모델은 돈이 듭니다. 참고만 하세요.
-    else:
-        templatized_text = templatized_text.replace("\n", " ")
-        final_text = ""
+        templatized_text = block_text + "\n" + global_text
+        final_text = rewrite_sentence(templatized_text)
 
-    return templatized_text, final_text
+    final_text_obj = {}
+    final_text_obj[root_block_name] = {"used_utterances": sub_texts, "raw_text": final_text}
+
+    return templatized_text, final_text_obj
 
 
 if __name__ == "__main__":
@@ -281,10 +335,11 @@ if __name__ == "__main__":
     set_openai()
     with open(args.output_path, "w") as wf:
         for key, query_tree in query_trees:
-            if key.startswith("N2"):
-                input_text, gpt_text = translate_progressive(
-                    query_tree.root, key, query_objs, query_graphs, use_gpt=False
+            if key.startswith("N2_2"):
+                input_text, final_text_obj = translate_progressive(
+                    query_tree.root, key, query_objs, query_graphs, use_gpt=True
                 )
                 wf.write(f"{input_text}\n")
                 print("GPT INPUT: {}".format(input_text))
-                print("GPT OUTPUT: {}".format(gpt_text))
+                print("GPT OUTPUT: {}".format(final_text_obj))
+                print("==================")
