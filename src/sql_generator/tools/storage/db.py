@@ -60,6 +60,30 @@ class PostgreSQLDatabase(DBConnector):
         self.execute(sql)
         return [data[0] for data in self.fetchall()]
 
+    def check_row_exists(self, table_name: str, additional_clauses: str = None):
+        sql = f"""
+            SELECT COUNT(*)
+            FROM
+                {table_name}
+            """
+        if additional_clauses is not None:
+            sql += f""" {additional_clauses}"""
+        sql += "LIMIT 2;"
+        self.execute(sql)
+        return (self.fetchall())[0][0]
+
+    def check_distinct_value_exists(self, table_name: str, column_name: str, additional_clauses: str = None):
+        sql = f"""
+            SELECT COUNT(DISTINCT {column_name})
+            FROM
+                {table_name}
+            """
+        if additional_clauses is not None:
+            sql += f""" {additional_clauses}"""
+        sql += "LIMIT 2;"
+        self.execute(sql)
+        return (self.fetchall())[0][0]
+
     def get_row_counts(self, table_name: str, additional_clauses: str = None):
         sql = f"""
             SELECT COUNT(*)

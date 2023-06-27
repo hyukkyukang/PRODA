@@ -1224,6 +1224,10 @@ def tree_and_graph_formation(
                 else:
                     cur_rel_node_A = rel_nodes[idx]
 
+                col_name_graph_A = "c_" + get_tree_header(prefix, outer_tab_name, inner_col_name, "NONE")
+                col_name_alias_A = get_col_name_alias(outer_tab_name, inner_col_name, "NONE")
+                cur_col_node_A = Attribute(col_name_graph_A, col_name_alias_A)
+
                 rel_name_B = inner_table_block_name
                 rel_name_B_alias = get_tab_name_alias(inner_table_block_name)
                 is_primary = inner_table_block_name in primary_relations
@@ -1233,6 +1237,15 @@ def tree_and_graph_formation(
                     rel_nodes.append(cur_rel_node_B)
                 else:
                     cur_rel_node_B = rel_nodes[idx]
+
+                col_name_graph_B = "c_" + get_tree_header(prefix, inner_table_block_name, inner_col_name, "NONE")
+                col_name_alias_B = get_col_name_alias(inner_table_block_name, inner_col_name, "NONE")
+                cur_col_node_B = Attribute(col_name_graph_B, col_name_alias_B)
+
+                ### correlation #######
+                graph.connect_selection(cur_rel_node_B, cur_col_node_B)
+                graph.connect_predicate(cur_col_node_B, cur_col_node_A)
+                graph.connect_selection(cur_col_node_A, cur_rel_node_A)
 
                 graph.connect_simplified_join(cur_rel_node_A, cur_rel_node_B)
                 ##### GRAPH END   #######
@@ -1470,6 +1483,7 @@ def tree_and_graph_formation(
                             conditions[dnf_idx].append(where_condition)
 
                             ###### GRAPH START ######
+                            inner_tables = obj["tables"]
                             inner_col_name_graph = (
                                 "w_" + str(operation_idx) + "_" + inner_col_name_tree
                             )  # Q: 중복이 있으면 어떡하지? and/or 구분은 어떻게 하지?

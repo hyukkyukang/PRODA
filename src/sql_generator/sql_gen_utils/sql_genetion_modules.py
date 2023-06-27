@@ -197,7 +197,7 @@ def select_generator(
         for col in candidate_cols:
             candidate_cols = []
             col_in_view = col.replace(".", "__")
-            value_counts = data_manager.get_distinct_value_counts(
+            value_counts = data_manager.check_distinct_value_exists(
                 current_view_name, col_in_view, f" WHERE {col_in_view} IS NOT NULL "
             )
             if value_counts == 0:
@@ -246,7 +246,7 @@ def non_nested_predicate_generator(args, rng, table_columns, data_manager, view_
         col = table_columns[tmp_col_idx]
         col_in_view = col.replace(".", "__")
 
-        sample_rows, sample_schema = data_manager.sample_rows(view_name, 100, is_virtual = True)
+        sample_rows, sample_schema = data_manager.sample_rows(view_name, 100, is_virtual=True)
         col_idx = -1
         for idx, col2 in enumerate(sample_schema):
             if col2 == col_in_view:
@@ -512,12 +512,10 @@ def having_generator(
                 else:
                     view_sql = f"""SELECT DISTINCT * FROM {having_original_view_name}"""
 
-                data_manager.create_view(
-                    args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True
-                )
+                data_manager.create_view(args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True)
                 view_names.append(current_view_name)
 
-                if data_manager.get_row_counts(current_view_name) <= 1:
+                if data_manager.check_row_exists(current_view_name) <= 1:
                     for idx in range(len(view_names)):
                         data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="virtual")
                     args.logger.warning("Previous having conditions cover almost all rows; regenerate query")
@@ -540,9 +538,7 @@ def having_generator(
                 view_sql_where = " AND ".join(clauses_view_predicates[-1])
                 view_sql = f"""SELECT DISTINCT * FROM {previous_view_name} WHERE {view_sql_where}"""
 
-                data_manager.create_view(
-                    args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True
-                )
+                data_manager.create_view(args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True)
                 view_names.append(current_view_name)
 
         updated_cond = False
@@ -580,7 +576,7 @@ def having_generator(
         assert agg_col_ref in having_original_view_column_names
         agg_col_idx = having_original_view_column_names.index(agg_col_ref)
 
-        sample_rows, sample_schema = data_manager.sample_rows(current_view_name, 100, is_virtual = True)
+        sample_rows, sample_schema = data_manager.sample_rows(current_view_name, 100, is_virtual=True)
         col_idx = agg_col_idx
         row_idx = 0
         # value in agg_col must not be null
@@ -933,12 +929,10 @@ def where_generator(
                     view_sql = f"""SELECT DISTINCT * FROM {original_view_name}"""
                 previous_clause_view_name = copy.deepcopy(current_view_name)
 
-                data_manager.create_view(
-                    args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True
-                )
+                data_manager.create_view(args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True)
                 view_names.append(current_view_name)
 
-                count_rows = data_manager.get_row_counts(current_view_name)
+                count_rows = data_manager.check_row_exists(current_view_name)
                 if count_rows <= 1:
                     for idx in range(len(view_names)):
                         data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="virtual")
@@ -974,10 +968,8 @@ def where_generator(
                 )  # dnf idx
                 view_sql_where = clauses_view_predicates[-1][-1]
                 view_sql = f"""SELECT DISTINCT * FROM {previous_view_name} WHERE {view_sql_where}"""
-                
-                data_manager.create_view(
-                    args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True
-                )
+
+                data_manager.create_view(args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True)
                 view_names.append(current_view_name)
 
         updated_cond = False
@@ -1082,7 +1074,7 @@ def where_generator(
                 correlation_predicate_origin,
                 inner_view_query,
                 inner_view_query_origin,
-                dtype_inner
+                dtype_inner,
             ) = nested_predicate_generator(
                 args,
                 rng,
@@ -1114,7 +1106,6 @@ def where_generator(
                 is_nested=True,
                 inner_view_query=inner_view_query,
             )
-            
 
             query_predicate_origin = view_predicate_generator(
                 nested_predicate_origin[0],
@@ -1130,7 +1121,7 @@ def where_generator(
                 query_predicate += f" AND {nested_col_view} IS NOT NULL"
                 query_predicate_origin += f" AND {nested_col_view} IS NOT NULL"
                 clauses_not_null_conditions[-1].append(f"{nested_col_view} IS NOT NULL")
-            
+
             #### nested_predicate_origin
 
             clauses_view_predicates[-1].append(query_predicate)
@@ -1140,7 +1131,7 @@ def where_generator(
                 correlation_predicates_origin.append(correlation_predicate_origin)
                 correlation_col_view = correlation_predicate_origin[1].replace(".", "__")
                 clauses_not_null_conditions[-1].append(f"{correlation_col_view} IS NOT NULL")
-                
+
             if isinstance(nested_predicate_origin[2], tuple):
                 assert nesting_position == 3
                 nested_prefix = nested_predicate_origin[0]
@@ -1148,12 +1139,18 @@ def where_generator(
                 nested_op = nested_predicate_origin[2]
                 nested_val = nested_predicate_origin[3]
                 nested_inner_obj_stored = nested_predicate_origin[4]
-                
+
                 additional_pred_idx = len(predicates)
-                
+
                 predicate_str2 = nested_predicate[1]
 
-                predicate_tuple_origin2 = (nested_prefix, nested_inner_query, nested_op[1], str(nested_val[1]), nested_inner_obj_stored)
+                predicate_tuple_origin2 = (
+                    nested_prefix,
+                    nested_inner_query,
+                    nested_op[1],
+                    str(nested_val[1]),
+                    nested_inner_obj_stored,
+                )
 
                 tree_predicates = restore_predicate_tree_one(
                     tree_predicates, cond_idx, [[cond_idx, result_condition], "AND", [additional_pred_idx, "TRUE"]]
@@ -1163,7 +1160,13 @@ def where_generator(
                 )
                 predicates_origin.append(predicate_tuple_origin2)
                 predicates.append(predicate_str2)
-                nested_predicate_origin = (nested_prefix, nested_inner_query, nested_op[0], str(nested_val[0]), nested_inner_obj_stored)
+                nested_predicate_origin = (
+                    nested_prefix,
+                    nested_inner_query,
+                    nested_op[0],
+                    str(nested_val[0]),
+                    nested_inner_obj_stored,
+                )
                 nested_predicate = nested_predicate[0]
 
             used_tables = used_tables.union(used_tables_nested)
@@ -1278,7 +1281,7 @@ def nested_predicate_generator(
             return False, None, None, None, None, None, None, None, None
 
         if nesting_position == 1:
-            sample_rows, sample_schema = data_manager.sample_rows(view_name, 100, is_virtual = True)
+            sample_rows, sample_schema = data_manager.sample_rows(view_name, 100, is_virtual=True)
             col_idx = -1
             for idx, col2 in enumerate(sample_schema):
                 if col2 == col_in_view:
@@ -1339,7 +1342,7 @@ def nested_predicate_generator(
             )
 
             cor_col_in_view = correlation_column.replace(".", "__")
-            cor_dvs = set( data_manager.fetch_distinct_values(view_name, cor_col_in_view) )
+            cor_dvs = set(data_manager.fetch_distinct_values(view_name, cor_col_in_view))
             if dvs is None:
                 dvs = cor_dvs
 
@@ -1366,11 +1369,11 @@ def nested_predicate_generator(
                             assert False
                     if nesting_position == 3:
                         data_vals.add(data[0])
-            
+
             if nesting_position == 2 and len(not_empty_groups) == 0:  # ALWAYS NOT EXISTS
                 inner_query_columns.remove(correlation_column)
                 continue
-            
+
             if nesting_position == 2:  # ALWAYS EXISTS
                 not_exists_possible = False
                 for cor_val in cor_dvs:
@@ -1380,7 +1383,7 @@ def nested_predicate_generator(
                 if not not_exists_possible:
                     inner_query_columns.remove(correlation_column)
                     continue
-            
+
             if nesting_position == 1 and len(selective_groups) == 0:  # We need a selective group
                 inner_query_columns.remove(correlation_column)
                 continue
@@ -1484,6 +1487,7 @@ def nested_predicate_generator(
         "unique_alias": inner_query_obj["unique_alias"],
         "tables": inner_query_obj["tables"],
     }
+    org_val = copy.deepcopy(val)
     while not done:
         if continue_cnt > 100:
             args.logger.warning("Too many continue during generating a single nested predicate")
@@ -1543,7 +1547,7 @@ def nested_predicate_generator(
 
                 continue_cnt += 1
                 continue
-            
+
             dtype_inner = None
             if correlation_column is not None:
                 used_tables.add(correlation_column.split(".")[0])
@@ -1605,10 +1609,11 @@ def nested_predicate_generator(
 
             if original_row_count == updated_row_count or updated_row_count == 0:
                 continue_cnt += 1
+                val = org_val
                 continue
-            
+
             dtype_inner = None
-            
+
             if correlation_column is not None:
                 used_tables.add(correlation_column.split(".")[0])
             used_tables.add(col.split(".")[0])
@@ -1632,19 +1637,15 @@ def nested_predicate_generator(
 
             cor_col_view = correlation_column.replace(".", "__")
             not_null_query_predicate = f" {cor_col_view} IS NOT NULL"
-            original_row_count = data_manager.get_row_counts(
-                view_name, f" WHERE {not_null_query_predicate} "
-            )
+            original_row_count = data_manager.get_row_counts(view_name, f" WHERE {not_null_query_predicate} ")
 
             where_clause = f"WHERE {query_predicate} AND {not_null_query_predicate}"
-            updated_row_count = data_manager.get_row_counts(
-                view_name, where_clause
-            )
+            updated_row_count = data_manager.get_row_counts(view_name, where_clause)
 
             if original_row_count == updated_row_count or updated_row_count == 0:
                 args.logger.warning("We cannot generate a predicate [EXISTS/NOT EXISTS] ( SELECT .. ) ")
                 return False, None, None, None, None, None, None, None, None
-            
+
             dtype_inner = None
 
             predicate_str = op + " (" + inner_query + ")"
@@ -1783,24 +1784,33 @@ def nested_predicate_generator(
 
             if original_row_count == updated_row_count or updated_row_count == 0:
                 continue_cnt += 1
+                val = org_val
                 continue
-            
+
             dtype_inner = new_dtype
 
             if new_dtype == "date":
                 if isinstance(op, tuple):
-                    predicate_str = ["(" + inner_query + ") " + op[0] + " " + f"""'{val[0]}'::date""", "(" + inner_query + ") " + op[1] + " " + f"""'{val[1]}'::date"""]
+                    predicate_str = [
+                        "(" + inner_query + ") " + op[0] + " " + f"""'{val[0]}'::date""",
+                        "(" + inner_query + ") " + op[1] + " " + f"""'{val[1]}'::date""",
+                    ]
                 else:
                     predicate_str = "(" + inner_query + ") " + op + " " + f"""'{val}'::date"""
             else:
                 if isinstance(op, tuple):
-                    predicate_str = ["(" + inner_query + ") " + op[0] + " " + str(val[0]), "(" + inner_query + ") " + op[1] + " " + str(val[1])]
+                    predicate_str = [
+                        "(" + inner_query + ") " + op[0] + " " + str(val[0]),
+                        "(" + inner_query + ") " + op[1] + " " + str(val[1]),
+                    ]
                 else:
                     predicate_str = "(" + inner_query + ") " + op + " " + str(val)
 
             # predicate_str = "(" + inner_query + ") " + op + " " + str(val)
             if isinstance(op, tuple):
-                nested_predicate_origin = tuple([None, "(" + inner_query + ")", op, (str(val[0]), str(val[1])), inner_obj_stored])
+                nested_predicate_origin = tuple(
+                    [None, "(" + inner_query + ")", op, (str(val[0]), str(val[1])), inner_obj_stored]
+                )
             else:
                 nested_predicate_origin = tuple([None, "(" + inner_query + ")", op, str(val), inner_obj_stored])
             if correlation_column is not None:
@@ -1822,7 +1832,7 @@ def nested_predicate_generator(
         correlation_predicate_origin,
         inner_view_query,
         inner_view_query_origin,
-        dtype_inner
+        dtype_inner,
     )
 
 
@@ -1846,7 +1856,7 @@ def group_generator(args, rng, cols, used_tables, dtype_dict, data_manager, curr
     candidate_cols = []
     for groupable_col in groupable_cols:
         groupable_col_in_view = groupable_col.replace(".", "__")
-        group_counts = data_manager.get_distinct_value_counts(current_view_name, groupable_col_in_view)
+        group_counts = data_manager.check_distinct_value_exists(current_view_name, groupable_col_in_view)
         if group_counts > 1:
             candidate_cols.append(groupable_col)
 
@@ -1966,7 +1976,7 @@ def inner_query_obj_to_inner_query(
     is_having_child = inner_query_obj["is_having_child"]
     inner_join_view_name = inner_query_obj["inner_join_view_name"]
 
-    row_counts = data_manager.get_row_counts(current_view_name)
+    row_counts = data_manager.check_row_exists(current_view_name)
     if row_counts == 0:
         args.logger.error("This cannot be happend")
     assert row_counts > 0
@@ -2015,7 +2025,7 @@ def inner_query_obj_to_inner_query(
     if sql_type_dict["limit"]:
         inner_view_sql_additional_conditions += f""" LIMIT {limit_num} """
 
-    if correlation_column is not None: 
+    if correlation_column is not None:
         correlation_predicate = prefix + correlation_column + " = " + prefix_inner + correlation_column
         correlation_predicate_origin = tuple(
             [prefix_inner, correlation_column, "=", correlation_column, "correal", prefix]
@@ -2472,11 +2482,11 @@ def create_inner_joined_view(
         inner_join_query_string += f""" WHERE {inner_join_query_predicate_string} """
         # tighter_inner_join_query_string += f""" WHERE {inner_join_query_tighter_predicate_string} """
         n_inner_join_query_string += f""" WHERE {inner_join_query_negative_predicate_string} LIMIT 20"""
-        
+
     data_manager.create_view(
         args.logger, inner_join_view_name, inner_join_query_string, type="materialized", drop_if_exists=True
     )
-    
+
     if where_view_predicate_string is not None:
         data_manager.create_view(
             args.logger,
@@ -2485,6 +2495,7 @@ def create_inner_joined_view(
             type="materialized",
             drop_if_exists=True,
         )
+
 
 def non_nested_query_generator(
     args,
@@ -2607,7 +2618,7 @@ def non_nested_query_generator(
             sql_type_dict,
             dtype_dict,
             prefix,
-            table_columns_projection, 
+            table_columns_projection,
             joins,
             tables,
             used_tables,
