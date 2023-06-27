@@ -197,7 +197,7 @@ def select_generator(
         for col in candidate_cols:
             candidate_cols = []
             col_in_view = col.replace(".", "__")
-            value_counts = data_manager.get_distinct_value_counts(
+            value_counts = data_manager.check_distinct_value_exists(
                 current_view_name, col_in_view, f" WHERE {col_in_view} IS NOT NULL "
             )
             if value_counts == 0:
@@ -515,7 +515,7 @@ def having_generator(
                 data_manager.create_view(args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True)
                 view_names.append(current_view_name)
 
-                if data_manager.get_row_counts(current_view_name) <= 1:
+                if data_manager.check_row_exists(current_view_name) <= 1:
                     for idx in range(len(view_names)):
                         data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="virtual")
                     args.logger.warning("Previous having conditions cover almost all rows; regenerate query")
@@ -932,7 +932,7 @@ def where_generator(
                 data_manager.create_view(args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True)
                 view_names.append(current_view_name)
 
-                count_rows = data_manager.get_row_counts(current_view_name)
+                count_rows = data_manager.check_row_exists(current_view_name)
                 if count_rows <= 1:
                     for idx in range(len(view_names)):
                         data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="virtual")
@@ -1856,7 +1856,7 @@ def group_generator(args, rng, cols, used_tables, dtype_dict, data_manager, curr
     candidate_cols = []
     for groupable_col in groupable_cols:
         groupable_col_in_view = groupable_col.replace(".", "__")
-        group_counts = data_manager.get_distinct_value_counts(current_view_name, groupable_col_in_view)
+        group_counts = data_manager.check_distinct_value_exists(current_view_name, groupable_col_in_view)
         if group_counts > 1:
             candidate_cols.append(groupable_col)
 
@@ -1976,7 +1976,7 @@ def inner_query_obj_to_inner_query(
     is_having_child = inner_query_obj["is_having_child"]
     inner_join_view_name = inner_query_obj["inner_join_view_name"]
 
-    row_counts = data_manager.get_row_counts(current_view_name)
+    row_counts = data_manager.check_row_exists(current_view_name)
     if row_counts == 0:
         args.logger.error("This cannot be happend")
     assert row_counts > 0
