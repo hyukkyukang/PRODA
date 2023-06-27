@@ -105,7 +105,6 @@ export const AnswerSheet = (props: AnswerSheetProps) => {
     const submitButtonHandler = () => {
         const isSubmitted = onSubmitHandler();
         if (isSubmitted) {
-            onSubmitHandler();
             openSnackbar();
             // Clear answer fields
             setYesIsChecked(false);

@@ -1,47 +1,54 @@
-import functools
+import argparse
+import logging
 import os
 
-import attrs
 import boto3
+import hkkang_utils.misc as misc_utils
 
-IS_USE_SANDBOX = False
+# Load environment variables
+misc_utils.load_dotenv(stack_depth=1)
 
-# kanghk2428@postech.ac.kr
-KANGHK2428_AWS_ACCESS_KEY_ID = "AKIAYRRBYHW4EQTXXL75"
-KANGHK2428_AWS_SECRETE_ACCESS_KEY_ID = "NLKYtfjXcdY5f5qwOusUjZCp8COjuDHLEZNdCay/"
-# hkkang@dblab.postech.ac.kr
-# HKKANG_AWS_ACCESS_KEY_ID = "AKIAWSB2ZMJ7TB2KYB6E"
-# HKKANG_AWS_SECRETE_ACCESS_KEY_ID = "eQ1wUL9C9Un0Dx6GI7Whi8GDIYQUgEMjndaz8n2Q"
+# AWS keys
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRETE_ACCESS_KEY_ID = os.getenv("AWS_SECRETE_ACCESS_KEY_ID")
 
-# Select which account to use
-AWS_ACCESS_KEY_ID = KANGHK2428_AWS_ACCESS_KEY_ID
-AWS_SECRETE_ACCESS_KEY_ID = KANGHK2428_AWS_SECRETE_ACCESS_KEY_ID
-
-# AWS_ACCESS_KEY_ID = HKKANG_AWS_ACCESS_KEY_ID
-# AWS_SECRETE_ACCESS_KEY_ID = HKKANG_AWS_SECRETE_ACCESS_KEY_ID
-
+REGION = "us-east-1"
 DEFAULT_ENDPOINT_URL = "https://mturk-requester.us-east-1.amazonaws.com"
 SANDBOX_ENDPOINT_URL = "https://mturk-requester-sandbox.us-east-1.amazonaws.com"
-ENDPOINT_URL = SANDBOX_ENDPOINT_URL if IS_USE_SANDBOX else DEFAULT_ENDPOINT_URL
+
+logger = logging.getLogger("HIT_Generator")
+
+print(AWS_ACCESS_KEY_ID, AWS_SECRETE_ACCESS_KEY_ID)
 
 
-@attrs.define
 class MTurkClient:
-    _client: boto3.client = attrs.field(init=False)
-    # For building client
-    region_name: str = attrs.field(default="us-east-1")
-    aws_access_key_id: str = attrs.field(default=AWS_ACCESS_KEY_ID)
-    aws_secret_access_key: str = attrs.field(default=AWS_SECRETE_ACCESS_KEY_ID)
-    endpoint_url: str = attrs.field(default=ENDPOINT_URL)
-    # For creating HIT
-    _question = attrs.field(init=False)
-    question_schema_path: str = attrs.field(default=os.path.join(os.path.dirname(__file__), "AMT_ExternalQuestion.xml"))
-    reward = attrs.field(default="0.01")
-    max_assignments: int = attrs.field(default=1)
-    lifetime_in_seconds: int = attrs.field(default=60 * 60 * 1)
-    assignment_duration_in_seconds: int = attrs.field(default=60 * 60 * 1)
+    def __init__(
+        self,
+        use_sandbox: bool,
+        endpoint_url: str,
+        region_name: str,
+        aws_access_key_id: str = AWS_ACCESS_KEY_ID,
+        aws_secret_access_key: str = AWS_SECRETE_ACCESS_KEY_ID,
+    ):
+        self._client: boto3.client = None
 
-    def __attrs_post_init__(self):
+        self.use_sandbox = use_sandbox
+        # For building client
+        self.region_name: str = region_name
+        self.aws_access_key_id: str = aws_access_key_id
+        self.aws_secret_access_key: str = aws_secret_access_key
+        self.endpoint_url: str = endpoint_url
+        # For creating HIT
+        self.question_schema_path: str = os.path.join(os.path.dirname(__file__), "AMT_ExternalQuestion.xml")
+        self.reward = "2"  # dollar
+        self.max_assignments: int = 1
+        self.lifetime_in_seconds: int = 60 * 60 * 24 * 7
+        self.assignment_duration_in_seconds: int = 60 * 60 * 24 * 7
+        self.__post_init__()
+
+    def __post_init__(self):
+        # Get question schema
+        self.question = open(self.question_schema_path, "r", encoding="utf-8").read()
         self._client = boto3.client(
             service_name="mturk",
             endpoint_url=self.endpoint_url,
@@ -64,11 +71,6 @@ class MTurkClient:
                 "RequiredToPreview": True,
             }
         ]
-
-    @functools.cached_property
-    def question(self):
-        # The question we ask the workers is contained in this file.
-        return open(self.question_schema_path, "r").read()
 
     def get_account_balanace(self):
         return self._client.get_account_balance()["AvailableBalance"]
@@ -104,10 +106,9 @@ class MTurkClient:
 
     def get_hit_address(self, hit_type_id):
         # You can work the HIT here:
-        if IS_USE_SANDBOX:
+        if self.use_sandbox:
             return f"https://workersandbox.mturk.com/mturk/preview?groupId={hit_type_id}"
-        else:
-            return f"https://worker.mturk.com/mturk/preview?groupId={hit_type_id}"
+        return f"https://worker.mturk.com/mturk/preview?groupId={hit_type_id}"
 
     def get_hit_status(self, hit_id):
         print(self._client.get_hit(HITId=hit_id)["HIT"])
@@ -116,10 +117,33 @@ class MTurkClient:
         self._client.delete_hit(HITId=hit_id)
 
 
-if __name__ == "__main__":
-    client = MTurkClient()
-    # client.create_hit()
-    client.get_hit_status("3VQTAXTYN381RA6COU5B2CME82SBUU")
+def main(use_sandbox: bool):
+    client = MTurkClient(
+        use_sandbox=use_sandbox,
+        region_name=REGION,
+        endpoint_url=SANDBOX_ENDPOINT_URL if use_sandbox else DEFAULT_ENDPOINT_URL,
+    )
+    client.create_hit()
+
+    # client.get_hit_status("3VQTAXTYN381RA6COU5B2CME82SBUU")
     # client.list_reviewable_hits()
     # client.delete_hit("3VQTAXTYN381RA6COU5B2CME82SBUU")
     # print(client.get_assignments_for_hit("3VQTAXTYN381RA6COU5B2CME82SBUU"))
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--use_sandbox", action="store_true", help="Whether to use sandbox (useful for testing)")
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        format="[%(asctime)s %(levelname)s %(name)s] %(message)s",
+        datefmt="%m/%d %H:%M:%S",
+        level=logging.INFO,
+    )
+    args = parse_args()
+
+    main(use_sandbox=args.use_sandbox)
+    logger.info("Done!")

@@ -10,8 +10,8 @@ BEGIN;
 -- Table to collect user response
 CREATE TABLE IF NOT EXISTS collection (
     id SERIAL PRIMARY KEY,
-    task_set_id INTEGER NOT NULL,
-    task_id INTEGER NOT NULL,
+    task_set_id VARCHAR(32) NOT NULL,
+    task_id VARCHAR(32) NOT NULL,
     user_id VARCHAR(64) NOT NULL,
     is_correct BOOLEAN NULL,
     nl TEXT DEFAULT NULL,
@@ -24,19 +24,16 @@ CREATE TABLE IF NOT EXISTS task (
     nl TEXT NOT NULL,
     sql TEXT NOT NULL,
     query_type VARCHAR(64) NOT NULL,
-    evqa_path VARCHAR(256) NOT NULL,
-    table_excerpt_path VARCHAR(256) DEFAULT NULL,
-    result_table_path VARCHAR(256) DEFAULT NULL,
-    nl_mapping_path VARCHAR(256) DEFAULT NULL,
     db_name VARCHAR(128) NOT NULL,
     task_type INTEGER NOT NULL,
-    sub_task_ids INTEGER[] NULL
+    sub_task_ids INTEGER[] NULL,
 );
 
 -- Table to collect task data
 CREATE TABLE IF NOT EXISTS task_set (
-    id SERIAL PRIMARY KEY,
+    id VARCHAR(32) PRIMARY KEY,
     task_ids INTEGER[] NOT NULL,
+    is_solving BOOLEAN DEFAULT FALSE,
     date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 END;

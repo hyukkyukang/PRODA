@@ -34,6 +34,29 @@ demoDBTableName = config.DB.demo.tableName;
 
 const spawnSync = require("child_process").spawnSync;
 
+function logWithTime(msg) {
+    console.log(messageWithTime(msg));
+}
+
+function messageWithTime(msg) {
+    var currentdate = new Date();
+    var datetime =
+        "|" +
+        currentdate.getFullYear() +
+        "/" +
+        (currentdate.getMonth() + 1) +
+        "/" +
+        currentdate.getDate() +
+        "|" +
+        currentdate.getHours() +
+        ":" +
+        currentdate.getMinutes() +
+        ":" +
+        currentdate.getSeconds() +
+        "|";
+    return `${datetime} ${msg}`;
+}
+
 /* Fetch configs */
 function getConfig() {
     // const client = new pg();
@@ -122,13 +145,32 @@ async function getTask(taskID, getHistory = true) {
     };
 }
 
-async function getTaskSet(taskSetID = null, isSkip = false) {
+async function checkTaskSetIDIsCollected(taskSetID) {
+    // Connect to DB and retrieve Task
+    let sql_query = `SELECT * FROM ${collectionDBCollectionTableName} WHERE task_set_id = ${taskSetID};`;
+    let results = await queryDB(collectionDBName, collectionDBUserID, collectionDBUserPW, sql_query);
+    return results.length > 0;
+}
+
+async function getTaskSet(workerID, taskSetID = null, isSkip = false) {
     // Connect to DB and retrieve Task
     console.log(`Fetching task set ${taskSetID}...`);
     if (taskSetID === null) {
-        sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName});`;
+        if (workerID === undefined || workerID === "" || workerID === null) {
+            sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName}) AND is_solving = false;`;
+        } else {
+            sql_query = `UPDATE ${collectionDBTaskSetTableName} SET is_solving = true WHERE id = (SELECT id FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName}) AND is_solving = false ORDER BY id LIMIT 1) RETURNING *;`;
+        }
     } else if (isSkip) {
-        sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName}) AND id > ${taskSetID};`;
+        // Update is_solving to false for the last taskSetID given to the workerID
+        sql_query = `UPDATE ${collectionDBTaskSetTableName} SET is_solving = false WHERE id = ${taskSetID};`;
+        await queryDB(collectionDBName, collectionDBUserID, collectionDBUserPW, sql_query);
+        // Get the next taskSetID
+        if (workerID === undefined || workerID === "" || workerID === null) {
+            sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName}) AND id > ${taskSetID} AND is_solving = false;`;
+        } else {
+            sql_query = `UPDATE ${collectionDBTaskSetTableName} SET is_solving = true WHERE id = (SELECT id FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName}) AND id > ${taskSetID} AND is_solving = false ORDER BY id LIMIT 1) RETURNING *;`;
+        }
     } else {
         sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id = ${taskSetID};`;
     }
@@ -246,8 +288,11 @@ function logWorkerAnswer(logData) {
     const user_id = logData.workerID;
     const is_correct = logData.answer.isCorrect === undefined ? null : logData.answer.isCorrect;
     const nl = logData.answer.nl.replace(/'/g, "\\'");
-    const sql_query = `INSERT INTO ${collectionDBCollectionTableName} VALUES(DEFAULT, ${task_set_id}, ${task_id}, E'${user_id}', ${is_correct}, E'${nl}', DEFAULT);`;
-    queryDB(collectionDBName, collectionDBUserID, collectionDBUserPW, sql_query);
+    const sql_query1 = `INSERT INTO ${collectionDBCollectionTableName} VALUES(DEFAULT, ${task_set_id}, ${task_id}, E'${user_id}', ${is_correct}, E'${nl}', DEFAULT);`;
+    queryDB(collectionDBName, collectionDBUserID, collectionDBUserPW, sql_query1);
+    // Change the is_solving column to false in the table task_set, where the column id is same as the variable task_set_id
+    const sql_query2 = `UPDATE ${collectionDBTaskSetTableName} SET is_solving=false WHERE id=${task_set_id};`;
+    queryDB(collectionDBName, collectionDBUserID, collectionDBUserPW, sql_query2);
 }
 
 /* Utils */
@@ -294,8 +339,11 @@ async function queryDemoDB(sql) {
 }
 
 module.exports = {
+    logWithTime: logWithTime,
+    messageWithTime: messageWithTime,
     readPickleFile: readPickleFile,
     readJsonFile: readJsonFile,
+    checkTaskSetIDIsCollected: checkTaskSetIDIsCollected,
     getConfig: getConfig,
     getEVQA: getEVQA,
     getTask: getTask,

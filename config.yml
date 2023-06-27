@@ -2,16 +2,16 @@ visibleToClient:
     frontend:
         IP: proda.postech.ac.kr # Visible IP addr
         Port: 3000 # Actual port within this server
-        Protocol: http # Either https or http
+        Protocol: https # Either https or http
     backend:
         IP: proda.postech.ac.kr # Visible IP addr
-        Port: 4001 # Visible port
-        Protocol: http # Either https or http
-    isAMTCollectionMode: false
+        Port: 40101 # Visible port
+        Protocol: https # Either https or http
+    isAMTCollectionMode: true
 backend:
     IP: localhost
     Port: 4001
-    Protocol: http # Either https or http
+    Protocol: https # Either https or http
 DB:
     IP: localhost
     Port: 5434
@@ -40,4 +40,4 @@ SSLCertPath: "./certificates/localhost.crt"
 SSLKeyPath: "./certificates/localhost.key"
 SSLCaPath: "./certificates/DigiCertCA.pem"
 TaskSaveDirPath: "database/dataCollection/tasks/"
-DBPath: "/home/hjkim/DATA/"
+# DBPath: "/home/hjkim/DATA/"

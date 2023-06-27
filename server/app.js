@@ -6,7 +6,7 @@ var cors = require("cors");
 var path = require("path");
 
 /* Load config */
-console.log("Reading config file...");
+func.logWithTime("Reading config file...");
 const utils = require("./utils.js");
 const config = utils.loadYamlFile("../config.yml");
 const protocol = config.backend.Protocol;
@@ -16,7 +16,7 @@ const projectPath = config.ProjectPath;
 const SSLCertPath = path.join(projectPath, config.SSLCertPath);
 const SSLKeyPath = path.join(projectPath, config.SSLKeyPath);
 
-console.log("Begin server");
+func.logWithTime(`Begin server`);
 
 var app = express();
 app.use(cors());
@@ -25,108 +25,127 @@ app.use(express.json());
 const workerTaskMapping = {};
 
 app.get("/", function (req, res) {
-    console.log("app.get./");
-    console.log(`query: ${JSON.stringify(req.query)}`);
+    func.logWithTime("app.get./");
+    func.logWithTime(`query: ${JSON.stringify(req.query)}`);
     res.send("Hello World!\nThis is back-end Server responding!");
 });
 
 /* Handling Config Request */
 app.post("/fetchConfig", function (req, res) {
-    console.log("app.post./fetchConfig");
+    func.logWithTime("app.post./fetchConfig");
     const systemConfig = func.getConfig();
     res.send(systemConfig);
 });
 
 /* Handling Request */
 app.post("/fetchEVQL", function (req, res) {
-    console.log(`app.post./fetchEVQL  with queryType: ${JSON.stringify(req.body.queryType)}`);
+    func.logWithTime(`app.post./fetchEVQL  with queryType: ${JSON.stringify(req.body.queryType)}`);
     const queryType = req.body.queryType;
     const evql = func.getEVQL(queryType);
-    console.log(`return evql of type: ${queryType}`);
+    func.logWithTime(`return evql of type: ${queryType}`);
     res.send(evql);
 });
 
 app.post("/fetchTask", async function (req, res) {
-    console.log(`fetchTask: ${JSON.stringify(req.body)}`);
+    func.logWithTime(`fetchTask: ${JSON.stringify(req.body)}`);
     const workerID = req.body.workerID;
     const taskSetID = req.body.taskSetID;
     const isSkip = req.body.isSkip;
-    console.log(`/fetchTask: workerID:${workerID} taskSetID:${taskSetID}) has requested a task`);
+    func.logWithTime(`/fetchTask: workerID:${workerID} taskSetID:${taskSetID}) has requested a task`);
+    func.logWithTime(`workerTaskMapping: ${JSON.stringify(workerTaskMapping)} workerID:${workerID}`);
     var taskSetData = null;
     // If taskSetID is given, return the task
     if (taskSetID !== undefined && taskSetID !== null && taskSetID !== -1) {
-        taskSetData = await func.getTaskSet(taskSetID, isSkip);
+        taskSetData = await func.getTaskSet(workerID, taskSetID, isSkip);
     } else {
         // Check if worker has already been assigned a task
         if (workerID !== "" && workerID in workerTaskMapping) {
+            // TODO: Need to check if the task is still available
             // Return the same task
             const taskSetID = workerTaskMapping[workerID];
-            console.log(`workerID:${workerID} has already been assigned to taskSetID:${taskSetID}`);
-            taskSetData = await func.getTaskSet(taskSetID);
+            const isCollected = await func.checkTaskSetIDIsCollected(taskSetID);
+            func.logWithTime(`isCollected: ${JSON.stringify(isCollected)}`);
+            if (!isCollected) {
+                func.logWithTime(`workerID:${workerID} has already been assigned to taskSetID:${taskSetID}`);
+                taskSetData = await func.getTaskSet(workerID, taskSetID);
+            } else {
+                // TODO: Need to refactor the same code block in the below condition
+                // Allocate a new task
+                func.logWithTime(`Getting a new task for workerID:${workerID}`);
+                taskSetData = await func.getTaskSet(workerID);
+                if (taskSetData) {
+                    const taskSetID = taskSetData.taskSetID;
+                    if (workerID !== undefined && workerID !== "" && workerID !== null) {
+                        workerTaskMapping[workerID] = taskSetID;
+                        func.logWithTime(`workerID:${workerID} has been assigned to taskSetID:${taskSetID}`);
+                    }
+                }
+            }
         } else {
             // Allocate a new task
-            console.log(`Getting a new task for workerID:${workerID}`);
-            taskSetData = await func.getTaskSet();
+            func.logWithTime(`Getting a new task for workerID:${workerID}`);
+            taskSetData = await func.getTaskSet(workerID);
             if (taskSetData) {
                 const taskSetID = taskSetData.taskSetID;
-                if (workerID !== undefined) {
+                if (workerID !== undefined && workerID !== "" && workerID !== null) {
                     workerTaskMapping[workerID] = taskSetID;
-                    console.log(`workerID:${workerID} has been assigned to taskSetID:${taskSetID}`);
+                    func.logWithTime(`workerID:${workerID} has been assigned to taskSetID:${taskSetID}`);
                 }
             }
         }
     }
     if (taskSetData === null) {
-        console.log(`No task is retrieved and sent to workerID:${workerID}\n`);
+        func.logWithTime(`No task is retrieved and sent to workerID:${workerID}\n`);
         res.send({ isTaskReturned: false, taskSet: null });
     } else {
-        console.log(`task ${taskSetData.taskSetID} is retrieved and sent to workerID:${workerID}\n`);
+        func.logWithTime(`task ${taskSetData.taskSetID} is retrieved and sent to workerID:${workerID}\n`);
         res.send({ isTaskReturned: true, taskSet: taskSetData });
     }
 });
 
 // app.post("/fetchLogData", function (req, res) {
-//     console.log("app.post./fetchLogData");
+//     func.logWithTime("app.post./fetchLogData");
 //     const logData = func.getLogData();
-//     console.log(`log data: ${JSON.stringify(logData)}`);
+//     func.logWithTime(`log data: ${JSON.stringify(logData)}`);
 //     res.send(logData);
 // });
 
 app.post("/runEVQL", async function (req, res) {
-    console.log(`app.post./runEVQL`);
+    func.logWithTime(`app.post./runEVQL`);
     const evqlStr = req.body.evql;
     const sql = func.EVQLToSQL(evqlStr);
     const queryResult = await func.queryDemoDB(sql);
-    console.log(`sending back result with SQL: ${sql}`);
+    func.logWithTime(`sending back result with SQL: ${sql}`);
     res.send({ sql: sql, result: queryResult });
 });
 
 app.post("/runSQL", async function (req, res) {
-    console.log(`app.posts.runSQL with query: ${JSON.stringify(req.body.sql)}`);
+    func.logWithTime(`app.posts.runSQL with query: ${JSON.stringify(req.body.sql)}`);
     const sql = req.body.sql;
-    console.log(`sql: ${sql}`);
-    console.log(`This query causes error, need to fix this issue`);
+    func.logWithTime(`sql: ${sql}`);
+    func.logWithTime(`This query causes error, need to fix this issue`);
     var queryResult = {};
     try {
         queryResult = await func.queryDemoDB(sql);
     } catch (err) {
         console.warn(err);
     }
-    console.log(`sending back result for SQL: ${sql}`);
-    console.log(`result: ${queryResult}`);
+    func.logWithTime(`sending back result for SQL: ${sql}`);
+    func.logWithTime(`result: ${queryResult}`);
     res.send(queryResult);
 });
 
 /* Handling Response */
 app.post("/logWorkerAnswer", function (req, res) {
-    console.log(`app.post./logWorkerAnswer`);
+    func.logWithTime(`app.post./logWorkerAnswer`);
     func.logWorkerAnswer(req.body.params);
+    delete workerTaskMapping[req.body.params.workerID];
     res.send({ status: "success" });
 });
 
 app.post("/updateConfig", function (req, res) {
-    console.log(`app.post./updateConfig`);
-    console.log(`Received config: ${JSON.stringify(req.body.params)}`);
+    func.logWithTime(`app.post./updateConfig`);
+    func.logWithTime(`Received config: ${JSON.stringify(req.body.params)}`);
     const formattedConfig = {
         originalBalance: req.body.params.totalBudget,
         pricePerData: req.body.params.pricePerDataPair,
@@ -138,7 +157,7 @@ app.post("/updateConfig", function (req, res) {
 
 // Error handler
 function errorHandler(err, req, res, next) {
-    console.log("Handling error");
+    func.logWithTime("Handling error");
     console.error(err);
     // clear the task mapping
     for (var member in workerTaskMapping) delete workerTaskMapping[member];
@@ -147,7 +166,7 @@ function errorHandler(err, req, res, next) {
 app.use(errorHandler);
 
 if (protocol == "https") {
-    console.log(`Using https protocol`);
+    func.logWithTime(`Using https protocol`);
     https
         .createServer(
             {
@@ -158,8 +177,8 @@ if (protocol == "https") {
         )
         .listen(port);
 } else {
-    console.log(`Using http protocol`);
+    func.logWithTime(`Using http protocol`);
     app.listen(port);
 }
 
-console.log(`Server is running on ${protocol}:${IP}:${port}`);
+func.logWithTime(`Server is running on ${protocol}:${IP}:${port}`);

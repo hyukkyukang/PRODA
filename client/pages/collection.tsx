@@ -16,6 +16,7 @@ import { getConfig } from "../utils";
 
 const config = getConfig();
 const isAMTSubmissionMode = config.isAMTCollectionMode;
+const SUBMISSION_URL = isAMTSubmissionMode ? "https://workersandbox.mturk.com/mturk/externalSubmit" : "https://mturk.com/mturk/externalSubmit";
 
 export const Collection = (props: any) => {
     // Ref
@@ -40,7 +41,7 @@ export const Collection = (props: any) => {
     const [isReadyToSendAMTAnswer, setIsReadyToSendAMTAnswer] = useState(false);
 
     // To handle submission
-    const formRef = useRef<HTMLFormElement>(null);
+    const formRef = useRef<HTMLFormElement | null>(null);
 
     // Fetching Data
     const {
@@ -61,6 +62,7 @@ export const Collection = (props: any) => {
         () => (currentTask && (!isAMTSubmissionMode || (isAMTSubmissionMode && workerID)) ? true : false),
         [currentTask, workerID]
     );
+    const [refVisible, setRefVisible] = useState(false);
 
     const onSubmitHandler = () => {
         // This should be called only when data is not null
@@ -139,18 +141,7 @@ export const Collection = (props: any) => {
         if (isReadyToSendAMTAnswer && isAMTSubmissionMode) {
             formRef.current?.submit();
         }
-    }, [isReadyToSendAMTAnswer]);
-
-    const AMTSubmissionForm = (
-        <React.Fragment>
-            <form action="https://workersandbox.mturk.com/mturk/externalSubmit" ref={formRef}>
-                <input type="hidden" value={assignmentId} name="assignmentId" id="assignmentId" />
-                <input type="hidden" value={JSON.stringify(answer)} name="answer" id="answer" />
-                <input type="hidden" value={taskSet?.taskSetID} name="taskSetID" id="taskSetID" />
-                <input type="hidden" value={workerID} name="workerID" id="workerID" />
-            </form>
-        </React.Fragment>
-    );
+    }, [isReadyToSendAMTAnswer, refVisible]);
 
     const collectionBody = (
         <div style={{ marginLeft: "1%", width: "98%" }}>
@@ -166,7 +157,6 @@ export const Collection = (props: any) => {
             {/* Show query information for the previous tasks (to complete the current task) */}
             <AnswerSheet taskNL={currentTask?.nl} answer={answer} setAnswer={setAnswer} onSubmitHandler={onSubmitHandler} onSkipHandler={onSkipHandler} />
             <br />
-            {AMTSubmissionForm}
         </div>
     );
 
@@ -228,6 +218,14 @@ export const Collection = (props: any) => {
                         <React.Fragment>
                             <Header />
                             {componentBody}
+                            <React.Fragment>
+                                <form action={SUBMISSION_URL} ref={formRef}>
+                                    <input type="hidden" value={assignmentId} name="assignmentId" id="assignmentId" />
+                                    <input type="hidden" value={JSON.stringify(answerSet)} name="answer" id="answer" />
+                                    <input type="hidden" value={taskSet?.taskSetID} name="taskSetID" id="taskSetID" />
+                                    <input type="hidden" value={workerID} name="workerID" id="workerID" />
+                                </form>
+                            </React.Fragment>
                         </React.Fragment>
                     </Grid>
                 </Grid>

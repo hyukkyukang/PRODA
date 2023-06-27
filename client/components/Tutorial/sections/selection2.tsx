@@ -31,7 +31,7 @@ const SyntaxDescription = (
 
         <br />
         <br />
-        <p>EVQA writes uses AND operator to express AND conditions on the same column.</p>
+        <p>EVQA uses AND operator to express AND conditions on the same column.</p>
         <Spreadsheet
             className="syntaxExample"
             data={SelectionAndOnCellSyntaxExample.rows}
@@ -59,13 +59,13 @@ const exampleEQVA: EVQATree = {
                 {
                     conditions: [
                         { header_id: headers.indexOf("model"), func_type: "Selecting", op_type: binaryOperators.indexOf("=") + 1, r_operand: "genesis" },
-                        { header_id: headers.indexOf("year"), func_type: "Selecting", op_type: binaryOperators.indexOf("=") + 1, r_operand: "2011" },
+                        { header_id: headers.indexOf("year"), func_type: "Selecting", op_type: binaryOperators.indexOf("=") + 1, r_operand: "2014" },
                     ],
                 },
                 {
                     conditions: [
                         { header_id: headers.indexOf("model"), func_type: "Selecting", op_type: binaryOperators.indexOf("=") + 1, r_operand: "genesis" },
-                        { header_id: headers.indexOf("year"), func_type: "Selecting", op_type: binaryOperators.indexOf("=") + 1, r_operand: "2012" },
+                        { header_id: headers.indexOf("year"), func_type: "Selecting", op_type: binaryOperators.indexOf("=") + 1, r_operand: "2015" },
                     ],
                 },
             ],
@@ -77,7 +77,10 @@ const headerInfo: PGResultFieldInterface[] = [
     { name: "id", format: "number" },
     { name: "price", format: "string" },
 ];
-const data = [[11, 111000]];
+const data = [
+    [11, 111000],
+    [12, 112000],
+];
 const exampleTable: PGResultInterface = {
     command: "",
     rowCount: 0,
@@ -93,7 +96,7 @@ const exampleDescription: JSX.Element = (
         <TableExcerpt queryResult={demoTable} />
         <p>
             {
-                'The following EVQA applies conditons on the column "model" and "year".\nIt returns records that has model equal to "tesla model x" and year is equal to 2011 or 2012'
+                'The following EVQA applies conditons on the column "model" and "year".\nIt returns records that has model equal to "genesis" and year is equal to 2014 or 2015'
             }
         </p>
         <EVQATables evqaRoot={exampleEQVA} editable={false} />

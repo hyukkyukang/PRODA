@@ -11,7 +11,7 @@ export const Footer = (props: { targetRef: any }) => {
         padding: "10px",
         backgroundColor: "#272a35",
         color: "white",
-        fontSize: "0.9em",
+        fontSize: "1.2em",
         justifyContent: "center",
     };
     const [dimensions, setDimensions] = useState({
@@ -32,6 +32,9 @@ export const Footer = (props: { targetRef: any }) => {
 
     return (
         <Box sx={{ ...style, height: targetRef.current ? dimensions.height - targetRef.current.offsetHeight : "100%" }}>
+            <p>
+                For any issues or questions, please contact <a href="mailto:g_proda@dblab.postech.ac.kr">g_proda@dblab.postech.ac.kr</a>.
+            </p>
             <p>&copy; POSTECH DSLab 2023</p>
         </Box>
     );
