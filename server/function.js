@@ -157,9 +157,9 @@ async function getTaskSet(workerID, taskSetID = null, isSkip = false) {
     console.log(`Fetching task set ${taskSetID}...`);
     if (taskSetID === null) {
         if (workerID === undefined || workerID === "" || workerID === null) {
-            sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName}) AND is_solving = false;`;
+            sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName} GROUP BY task_set_id HAVING count(*) > 1) AND is_solving = false;`;
         } else {
-            sql_query = `UPDATE ${collectionDBTaskSetTableName} SET is_solving = true WHERE id = (SELECT id FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName}) AND is_solving = false ORDER BY id LIMIT 1) RETURNING *;`;
+            sql_query = `UPDATE ${collectionDBTaskSetTableName} SET is_solving = true WHERE id = (SELECT id FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName} GROUP BY task_set_id HAVING count(*) > 1) AND is_solving = false ORDER BY id LIMIT 1) RETURNING *;`;
         }
     } else if (isSkip) {
         // Update is_solving to false for the last taskSetID given to the workerID
@@ -167,9 +167,9 @@ async function getTaskSet(workerID, taskSetID = null, isSkip = false) {
         await queryDB(collectionDBName, collectionDBUserID, collectionDBUserPW, sql_query);
         // Get the next taskSetID
         if (workerID === undefined || workerID === "" || workerID === null) {
-            sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName}) AND id > ${taskSetID} AND is_solving = false;`;
+            sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName} GROUP BY task_set_id HAVING count(*) > 1) AND id > ${taskSetID} AND is_solving = false;`;
         } else {
-            sql_query = `UPDATE ${collectionDBTaskSetTableName} SET is_solving = true WHERE id = (SELECT id FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName}) AND id > ${taskSetID} AND is_solving = false ORDER BY id LIMIT 1) RETURNING *;`;
+            sql_query = `UPDATE ${collectionDBTaskSetTableName} SET is_solving = true WHERE id = (SELECT id FROM ${collectionDBTaskSetTableName} WHERE id NOT IN (SELECT task_set_id FROM ${collectionDBCollectionTableName} GROUP BY task_set_id HAVING count(*) > 1) AND id > ${taskSetID} AND is_solving = false ORDER BY id LIMIT 1) RETURNING *;`;
         }
     } else {
         sql_query = `SELECT * FROM ${collectionDBTaskSetTableName} WHERE id = ${taskSetID};`;
