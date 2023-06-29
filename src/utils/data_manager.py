@@ -70,10 +70,6 @@ def save_task_in_db(
     nl: str,
     sql: str,
     query_type: str,
-    evqa_path: str,
-    table_excerpt_path: str,
-    result_table_path: str,
-    nl_mapping_path: str,
     db_name: str,
     task_type: int,
     sub_task_ids: List[int],
@@ -83,7 +79,7 @@ def save_task_in_db(
     nl = nl.replace("'", "\\'")
     sql = sql.replace("'", "\\'")
     pg.execute(
-        f"INSERT INTO {DBTaskTableName} (nl, sql, query_type, evqa_path, table_excerpt_path, result_table_path, nl_mapping_path, db_name, task_type, sub_task_ids) VALUES (E'{nl}', E'{sql}', '{query_type}', '{evqa_path}', '{table_excerpt_path}', '{result_table_path}', '{nl_mapping_path}', '{db_name}', {task_type}, '{sub_task_ids_str}') RETURNING id"
+        f"INSERT INTO {DBTaskTableName} (nl, sql, query_type, db_name, task_type, sub_task_ids) VALUES (E'{nl}', E'{sql}', '{query_type}', '{db_name}', {task_type}, '{sub_task_ids_str}') RETURNING id"
     )
     return pg.fetchone()[0]
 

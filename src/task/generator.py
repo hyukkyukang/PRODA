@@ -26,23 +26,7 @@ project_path = config.ProjectPath
 
 
 class TaskGenerator:
-    def __init__(self, admin_db_config: Dict, data_db_config: Dict, db_name: str):
-        self.admin_db_config = admin_db_config
-        self.data_db_config = data_db_config
-        self.admin_db_connector = PostgresConnector(
-            admin_db_config["userid"],
-            admin_db_config["passwd"],
-            admin_db_config["host"],
-            admin_db_config["port"],
-            admin_db_config["db_name"],
-        )
-        self.data_db_connector = PostgresConnector(
-            data_db_config["userid"],
-            data_db_config["passwd"],
-            data_db_config["host"],
-            data_db_config["port"],
-            data_db_config["db_name"],
-        )
+    def __init__(self, db_name: str):
         self.db_name = db_name
 
     def __call__(
@@ -56,50 +40,50 @@ class TaskGenerator:
     ) -> Task:
         return self.query_to_task(evqa, query_tree.root, query_graphs, query_objs, query_id, generated_nl_obj)
 
-    @property
-    def query_goal_dic(self):
-        # Read in query goals from database
-        results = self.admin_db_connector.execute(f"SELECT * FROM {self.admin_db_config['table_name']}")
-        return {item[0]: item[1] for item in results}
+    # @property
+    # def query_goal_dic(self):
+    #     # Read in query goals from database
+    #     results = self.admin_db_connector.execute(f"SELECT * FROM {self.admin_db_config['table_name']}")
+    #     return {item[0]: item[1] for item in results}
 
-    @property
-    def collected_data(self):
-        cnt_dic = {key: 0 for key in self.query_goal_dic.keys()}
-        # Read in collected data from database
-        results = self.data_db_connector.execute(f"SELECT * FROM {self.data_db_config['table_name']}")
-        for result in results:
-            query_type = result[4]
-            if query_type in cnt_dic:
-                cnt_dic[query_type] += 1
-            else:
-                cnt_dic[query_type] = 0
-        return cnt_dic
+    # @property
+    # def collected_data(self):
+    #     cnt_dic = {key: 0 for key in self.query_goal_dic.keys()}
+    #     # Read in collected data from database
+    #     results = self.data_db_connector.execute(f"SELECT * FROM {self.data_db_config['table_name']}")
+    #     for result in results:
+    #         query_type = result[4]
+    #         if query_type in cnt_dic:
+    #             cnt_dic[query_type] += 1
+    #         else:
+    #             cnt_dic[query_type] = 0
+    #     return cnt_dic
 
     @functools.cached_property
     def task_type(self):
         """Randomly select a task type to generate"""
         return TaskTypes.Validation
 
-    @functools.cached_property
-    def query_type(self):
-        """Randomly select a query type to generate"""
-        # Read goal number of queries for each query type
-        query_goal_dic = self.query_goal_dic
+    # @functools.cached_property
+    # def query_type(self):
+    #     """Randomly select a query type to generate"""
+    #     # Read goal number of queries for each query type
+    #     query_goal_dic = self.query_goal_dic
 
-        # Get Stat. for collected data
-        collected_data = self.collected_data
+    #     # Get Stat. for collected data
+    #     collected_data = self.collected_data
 
-        # Figure out remaining target query type
-        for key, value in collected_data.items():
-            if key in query_goal_dic.keys():
-                query_goal_dic[key] -= value
+    #     # Figure out remaining target query type
+    #     for key, value in collected_data.items():
+    #         if key in query_goal_dic.keys():
+    #             query_goal_dic[key] -= value
 
-        remaining_types = [key for key, value in query_goal_dic.items() if value > 0]
+    #     remaining_types = [key for key, value in query_goal_dic.items() if value > 0]
 
-        # Randomly select one from the remaining query types
-        selected_type = random.choice(remaining_types)
+    #     # Randomly select one from the remaining query types
+    #     selected_type = random.choice(remaining_types)
 
-        return selected_type
+    #     return selected_type
 
     def get_query_type(self, query_objs, query_id) -> str:
         ### [nesting_type]__[#tables]__[where]__[groupby]__[having]__[orderby]__[limit]
@@ -205,7 +189,7 @@ class TaskGenerator:
             evqa=evqa,
             query_type=query_type,
             task_type=task_type,
-            db_name="db_name",
+            db_name=self.db_name,
             table_excerpt=table_excerpt,
             result_table=result_table,
             sub_tasks=sub_tasks,
@@ -229,24 +213,6 @@ def main():
             t_args = argparse.Namespace()
             t_args.__dict__.update(json.load(f))
             args = parser.parse_args(namespace=t_args)
-
-    admin_db_config = {
-        "host": config.DB.IP,
-        "userid": config.DB.config.UserID,
-        "passwd": config.DB.config.UserPW,
-        "port": config.DB.Port,
-        "db_name": config.DB.config.DBName,
-        "table_name": config.DB.config.QueryGoalNumsTableName,
-    }
-
-    data_db_config = {
-        "host": config.DB.IP,
-        "userid": config.DB.collection.UserID,
-        "passwd": config.DB.collection.UserPW,
-        "port": config.DB.Port,
-        "db_name": config.DB.collection.DBName,
-        "table_name": config.DB.collection.CollectionTableName,
-    }
 
     database_db_config = {
         "host": config.DB.IP,
@@ -280,8 +246,6 @@ def main():
             query_trees.append((block_name, loaded_graph[0]))
 
     task_generator = TaskGenerator(
-        admin_db_config,
-        data_db_config,
         args.db,
     )
     data_manager = PostgreSQLDatabase(
@@ -306,7 +270,7 @@ def main():
             )
             evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
             new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key, generated_nl_obj[key])
-            task_set_id = new_task.save_as_task_set("/root/proda/data/task")
+            task_set_id = new_task.save_as_task_set()
             cnt += 1
             print(task_set_id)
         else:

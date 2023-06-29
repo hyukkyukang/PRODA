@@ -31,6 +31,7 @@ demoDBUserID = config.DB.demo.UserID;
 demoDBUserPW = config.DB.demo.UserPW;
 demoDBName = config.DB.demo.DBName;
 demoDBTableName = config.DB.demo.tableName;
+TaskDir = config.TaskSaveDirPath;
 
 const spawnSync = require("child_process").spawnSync;
 
@@ -114,14 +115,10 @@ async function getTask(taskID, getHistory = true) {
     const table_excerpt_path = result.table_excerpt_path;
     const nl_mapping_path = result.nl_mapping_path;
     // Retrieve data from Python script
-    const evqa_object = readJsonFile(evqa_path);
-    const result_table_object = readJsonFile(result_table_path);
-    const table_excerpt_object = readJsonFile(table_excerpt_path);
-    const nl_mapping_object = readJsonFile(nl_mapping_path);
-    // Replace path with the real data
-    delete result.evqa_path;
-    delete result.result_table_path;
-    delete result.table_excerpt_path;
+    const evqa_object = readJsonFile(`${TaskDir}/evqa/${result.id}.json`);
+    const result_table_object = readJsonFile(`${TaskDir}/result_table/${result.id}.json`);
+    const table_excerpt_object = readJsonFile(`${TaskDir}/table_excerpt/${result.id}.json`);
+    const nl_mapping_object = readJsonFile(`${TaskDir}/nl_mapping/${result.id}.json`);
     // Append history if there are any
     const sub_tasks = [];
     if (getHistory) {

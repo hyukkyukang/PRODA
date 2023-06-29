@@ -12,6 +12,9 @@ import hkkang_utils.string as string_utils
 from src.table_excerpt.table_excerpt import TableExcerpt
 from src.utils.data_manager import save_json, save_task_in_db, save_task_set_in_db
 from src.VQA.EVQA import EVQATree
+from src.config import config
+
+TASK_DATA_SAVE_DIR = config["TaskSaveDirPath"]
 
 
 class TaskTypes(IntEnum):
@@ -64,7 +67,7 @@ class Task:
         :rtype: int
         """
 
-    def save_as_task_set(self, dir_path: str) -> int:
+    def save_as_task_set(self, dir_path: str=TASK_DATA_SAVE_DIR) -> int:
         """Save task data as a task set to the database.
 
         :param dir_path: directory path to save the task data
@@ -170,29 +173,27 @@ class TaskWithSubTasks(Task):
 
     def save(self, dir_path: str) -> List[int]:
         assert dir_path.startswith("/"), f"Absolute path should be given, but found: {dir_path}"
-        # Save attributes
-        unique_file_name = self._get_unique_file_name(dir_path)
-        self._save_attributes(dir_path, unique_file_name)
-
-        # Save recursively
+        
+        # Recursively save sub-task fist
         sub_task_ids = functools.reduce(
             lambda sub_task_ids, sub_task: sub_task_ids + sub_task.save(dir_path),
             self.sub_tasks,
             [],
         )
-
+        
+        # Save current task
         current_task_id = save_task_in_db(
             nl=self.nl,
             sql=self.sql,
             query_type=self.query_type,
-            evqa_path=self._get_evqa_file_path(dir_path, unique_file_name),
-            table_excerpt_path=self._get_table_excerpt_file_path(dir_path, unique_file_name),
-            result_table_path=self._get_result_table_file_path(dir_path, unique_file_name),
-            nl_mapping_path=self._get_nl_mapping_file_path(dir_path, unique_file_name),
             db_name=self.db_name,
             task_type=self.task_type,
             sub_task_ids=sub_task_ids,
         )
+        
+        # Save other task attributes into file system
+        self._save_attributes(dir_path=dir_path, file_name=f"{current_task_id}.json")
+        
         return sub_task_ids + [current_task_id]
 
 
@@ -224,28 +225,18 @@ class TaskWithSubTaskIDs(Task):
 
     def save(self, dir_path: str) -> List[int]:
         assert dir_path.startswith("/"), f"Absolute path should be given, but found: {dir_path}"
-        # Save attributes
-        unique_file_name = self._get_unique_file_name(dir_path)
-        self._save_attributes(dir_path, unique_file_name)
-
-        # Save recursively
-        sub_task_ids = functools.reduce(
-            lambda sub_task_ids, sub_task: sub_task_ids + sub_task.save(dir_path),
-            self.sub_tasks,
-            [],
-        )
-
+        
+        # Save current task
         current_task_id = save_task_in_db(
             nl=self.nl,
             sql=self.sql,
             query_type=self.query_type,
-            evqa_path=self._get_evqa_file_path(dir_path, unique_file_name),
-            table_excerpt_path=self._get_table_excerpt_file_path(dir_path, unique_file_name),
-            result_table_path=self._get_result_table_file_path(dir_path, unique_file_name),
-            nl_mapping_path=self._get_nl_mapping_file_path(dir_path, unique_file_name),
             db_name=self.db_name,
             task_type=self.task_type,
             sub_task_ids=self.sub_task_ids,
         )
+        
+        # Save other task attributes into file system
+        self._save_attributes(dir_path=dir_path, file_name=f"{current_task_id}.json")
 
-        return [current_task_id] + sub_task_ids
+        return self.sub_task_ids + [current_task_id]
