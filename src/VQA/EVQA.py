@@ -172,11 +172,11 @@ class Header:
     
 
     def dump_json(self):
-        return {"id": self.id, "agg_type": self.agg_type}
+        return {"id": self.id, "agg_type": self.agg_type, "limit": self.limit, "limit_num": self.limit_num}
 
     @staticmethod
     def load_json(json_obj):
-        return Header(json_obj["id"], json_obj["agg_type"])
+        return Header(json_obj["id"], json_obj["agg_type"], limit=json_obj["limit"], limit_num=json_obj["limit_num"])
 
 
 class Projection:

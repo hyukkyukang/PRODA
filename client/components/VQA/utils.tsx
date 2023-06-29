@@ -43,7 +43,7 @@ export const EVQANodeToEVQATable = (evqaNode: EVQANode, editable: boolean): IEVQ
         const colId = header.id;
         headers[colId].isToProject = true;
         headers[colId].aggFuncs.push(header.agg_type ? header.agg_type : 0);
-        headers[colId].limitNum = header.limit? header.limitNum: 0;
+        headers[colId].limitNum = header.limit? header.limit_num: 0;
     });
 
     // Create rows if any predicate exists

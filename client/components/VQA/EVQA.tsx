@@ -14,7 +14,7 @@ export interface Header {
     id: number;
     agg_type: number | null;
     limit: boolean;
-    limitNum: number;
+    limit_num: number;
 }
 
 export interface Projection {
