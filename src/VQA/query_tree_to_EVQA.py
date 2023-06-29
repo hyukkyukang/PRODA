@@ -85,19 +85,36 @@ def create_projection_headers(query_tree_node: QueryTree.QueryBlock) -> List[EVQ
     foreaches: List[QueryTreeOperator.Foreach] = list(
         filter(lambda k: type(k) == QueryTreeOperator.Foreach, query_tree_node.operations)
     )
+    
+    limit = list(filter(lambda k: type(k) == QueryTreeOperator.Limit, query_tree_node.operations))
+    
 
     # Create header for all projection attributes
     headers = []
+    visit_count = {}
     for projection in projections:
         column_id = projection.column_id
+        
+        if column_id not in visit_count.keys():
+            visit_count[column_id] = 0
+        else:
+            visit_count[column_id] += 1
+            
         # Get aggregation
         agg_list = list(filter(lambda agg: agg.column_id == column_id, aggregations))
         agg_type = None
+        is_limited = False
+        limit_num = None
+        if limit:
+            assert len(limit) == 1, f"Only one limit operator is allowed per query block, but {len(limit)} were found."
+            is_limited = True
+            limit_num = limit[0].number
         if agg_list:
-            # assert len(agg_list) == 1 ###### [TODO] SHOULD BE REMOVED
-            agg_type = EVQA.Aggregator.from_str(agg_list[0].func_type)
+            assert len(agg_list) > visit_count[column_id] ###### [TODO] SHOULD BE REMOVED
+            agg_type = EVQA.Aggregator.from_str(agg_list[visit_count[column_id]].func_type)
         # Append header
-        headers.append(EVQA.Header(column_id + 1, agg_type))
+        headers.append(EVQA.Header(column_id + 1, agg_type, limit=is_limited, limit_num=limit_num))
+        
     # Add attributes for correlation
     for foreach in foreaches:
         headers.append(EVQA.Header(foreach.column_id + 1))
@@ -159,6 +176,7 @@ def convert_selection(qt_node: QueryTree.QueryBlock) -> List[EVQA.Clause]:
         # Convert all clauses
         for clause in selections[0].clauses:
             evqa_clauses.append(convert_selection_clause(clause))
+            
     return evqa_clauses
 
 

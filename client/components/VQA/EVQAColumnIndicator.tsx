@@ -33,11 +33,14 @@ export const EVQAColumnIndicator: ColumnIndicatorComponent = ({ column, label, s
         unselectedHeaderStyle = { background: "#FFDDA7", color: "black" };
         // Get all aggregation functions applied to this column
         const aggFuncs = evqaTableHeader.aggFuncs.map((aggFuncId) => aggFunctions[aggFuncId]);
+        const limitNum = evqaTableHeader.limitNum
         componentToDisplay = (
             <>
                 <>{evqaTableHeader.name}</>
                 <br />
                 {aggFuncs.join(", ") == "none" ? <></> : <div style={{ fontSize: "14px" }}>{"(" + aggFuncs.join(", ") + ")"}</div>}
+                <br />
+                {limitNum == 0 ? <></> : <div style={{ fontSize: "14px" }}>{"Limit(" + limitNum + ")"}</div>}
             </>
         );
     }

@@ -4,10 +4,10 @@ import json
 import os
 import random
 from typing import Dict, List
-
+import sys
 import tqdm
 from requests.structures import CaseInsensitiveDict
-
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))))
 from src.config import config
 from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 from src.pylogos.translate_progressive_v2 import translate_progressive
@@ -21,7 +21,7 @@ from src.utils.pg_connector import PostgresConnector
 from src.VQA.EVQA import EVQATree
 from src.VQA.query_tree_to_EVQA import convert_queryTree_to_EVQATree
 from src.utils.rewrite_sentence_gpt import set_openai
-
+import time
 project_path = config.ProjectPath
 
 
@@ -202,10 +202,10 @@ class TaskGenerator:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--infile", type=str, default="/root/proda/src/sql_generator/configs/test_experiments_nested.json"
+        "--infile", type=str, default="/root/proda/data/database/terror/non_nested_query_hyperparameter_guide_1.json"
     )
-    parser.add_argument("--dbname", default="car_1")
-    parser.add_argument("--use_cols", default="car_1")
+    parser.add_argument("--dbname", default="terror")
+    parser.add_argument("--use_cols", default="terror")
     parser.add_argument("--output_path", type=str, default=os.path.join(project_path, "result_with_te.out"))
     args = parser.parse_args()
     if args.infile:
@@ -262,19 +262,20 @@ def main():
     for idx, (key, query_tree) in enumerate(tqdm.tqdm(query_trees)):
         # TODO: Need to ask why this condition is needed
         if not query_objs[key]["is_having_child"]:  ### N1 - non-nest, N2 - nesting leve 2, N3 - nesting level 3
-            _, generated_nl_obj = translate_progressive(query_tree.root, key, query_objs, query_graphs, use_gpt=True)
-            assert key in generated_nl_obj.keys()
+            # _, generated_nl_obj = translate_progressive(query_tree.root, key, query_objs, query_graphs, use_gpt=True)
+            # assert key in generated_nl_obj.keys()
 
             query_tree_with_te = update_query_tree_with_table_excerpt(
                 args.db, args.schema_name, data_manager, dtype_dict, query_graphs, query_objs, query_tree, key
             )
             evqa = convert_queryTree_to_EVQATree(query_tree_with_te)
-            new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key, generated_nl_obj[key])
-            task_set_id = new_task.save_as_task_set()
+            # new_task = task_generator(evqa, query_tree_with_te, query_graphs, query_objs, key, generated_nl_obj[key])
+            # task_set_id = new_task.save_as_task_set()
             cnt += 1
-            print(task_set_id)
+            # print(task_set_id)
         else:
             skip_cnt += 1
+        #time.sleep(10)
 
     print(cnt)
     print(bad_cnt)

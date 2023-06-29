@@ -1,1 +1,0 @@
-{"name": "N1_48", "headers": ["N1_48_weaptype_weaptype_name", "N1_48_weaptype_weaptype_id"], "col_types": ["DString", "DNumber"], "rows": [{"cells": [{"value": "Explosives"}, {"value": 6}]}], "base_table_names": ["N1_48", "N1_48"]}

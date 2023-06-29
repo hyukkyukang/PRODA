@@ -16,4 +16,7 @@ export const operatorDescriptions = {
     "NOT EXISTS": "Not EXISTS is a boolean function that is used to test for the non-existence of a row in a subquery.",
     IN: "IN is an boolean operator used to test whether a value is in a list of values.",
     "NOT IN": "NOT IN is an boolean operator used to test whether a value is not in a list of values.",
+    LIKE: "LIKE is an boolean operator used to test whether a value matches a specific pattern. Wildcards '%' represents zero, one, or multiple characters. LIKE 'A%' is to find values starting with 'A', LIKE '%A' is to find values ending with 'A', and LIKE '%A%' is to find values containing 'A'",
+    "NOT LIKE": "NOT LIKE is an boolean operator used to test whether a value does not match a specific pattern. Wildcards '%' represents zero, one, or multiple characters. NOT LIKE 'A%' is to find values not starting with 'A', NOT LIKE '%A' is to find values not ending with 'A', and NOT LIKE '%A%' is to find values not containing 'A'",
+    Limit: "Limit is a function that is used to restrict how many rows returned. Limit(X) - X represents the number of records you want to retrieve."
 };

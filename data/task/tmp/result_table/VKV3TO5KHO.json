@@ -1,1 +1,0 @@
-{"name": "N1_19", "headers": ["N1_19_terror_count_iday", "N1_19_terror_count_is_suicide"], "col_types": ["DNumber", "DNumber"], "rows": [{"cells": [{"value": 8}, {"value": 8}]}], "base_table_names": ["N1_19", "N1_19"]}

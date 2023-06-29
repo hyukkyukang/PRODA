@@ -1286,20 +1286,29 @@ def update_query_node_with_table_excerpt(
             additional_group_col = correlation_column
         else:
             additional_group_col = None
-        _, output_sql_additional_conditions = get_view_query(
-            data_manager,
-            view_name,
-            obj,
-            prefix,
-            ignored=["order", "limit"],
-            use_agg_sel=obj["use_agg_sel"],
-            additional_group_col=additional_group_col,
-        )
+        
         if correlation_column is None:
+            _, output_sql_additional_conditions = get_view_query(
+                data_manager,
+                view_name,
+                obj,
+                prefix,
+                use_agg_sel=obj["use_agg_sel"],
+                additional_group_col=additional_group_col,
+            )
             output_sql = f"""SELECT DISTINCT {output_sql_select_clause} FROM {view_name} WHERE {ctid_condition_string} {output_sql_additional_conditions}"""
             data_manager.execute(output_sql)
             result_tables = data_manager.fetchall()
         else:
+            _, output_sql_additional_conditions = get_view_query(
+                data_manager,
+                view_name,
+                obj,
+                prefix,
+                ignored=["order", "limit"],
+                use_agg_sel=obj["use_agg_sel"],
+                additional_group_col=additional_group_col,
+            )
             output_inner_sql = f"""SELECT {output_sql_select_clause} FROM {view_name} WHERE {ctid_condition_string} {output_sql_additional_conditions}"""
 
             output_sql = (

@@ -155,18 +155,21 @@ class Aggregator(IntEnum):
 
 
 class Header:
-    def __init__(self, id: int, agg_type: int = None, alias: str = None):
+    def __init__(self, id: int, agg_type: int = None, alias: str = None, limit: bool = False, limit_num: int = None):
         self.id: int = id
         self.agg_type: int = agg_type
         self.alias: str = alias
+        self.limit: bool = limit
+        self.limit_num: int = limit_num
 
     def __eq__(self, other):
         assert isinstance(other, Header), f"expected type Header but found: {type(other)}"
-        return self.id == other.id and self.agg_type == other.agg_type
+        return self.id == other.id and self.agg_type == other.agg_type and self.limit_num == other.limit_num
 
     @property
     def is_agg(self):
         return bool(self.agg_type)
+    
 
     def dump_json(self):
         return {"id": self.id, "agg_type": self.agg_type}

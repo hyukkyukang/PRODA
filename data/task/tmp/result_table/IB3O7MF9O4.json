@@ -1,1 +1,0 @@
-{"name": "N1_10", "headers": ["N1_10_terror_is_suicide", "N1_10_terror_property_damage_level"], "col_types": ["DBoolean", "DString"], "rows": [{"cells": [{"value": false}, {"value": "Minor (likely < $1 million)"}]}, {"cells": [{"value": false}, {"value": "Unknown"}]}, {"cells": [{"value": false}, {"value": null}]}], "base_table_names": ["N1_10", "N1_10"]}

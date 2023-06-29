@@ -13,6 +13,8 @@ export const aggFunctions = ["none", "count", "sum", "avg", "min", "max"];
 export interface Header {
     id: number;
     agg_type: number | null;
+    limit: boolean;
+    limitNum: number;
 }
 
 export interface Projection {

@@ -35,6 +35,7 @@ export interface IHoveringDescriptionContext {
 export interface IEVQATableHeader {
     name: string;
     aggFuncs: number[];
+    limitNum: number;
     isToProject: boolean;
 }
 

@@ -35,7 +35,7 @@ export const EVQANodeToEVQATable = (evqaNode: EVQANode, editable: boolean): IEVQ
 
     // Create default headers
     for (let i = 0; i < numOfCols; i++) {
-        headers.push({ name: evqaNode.headers[i], aggFuncs: [], isToProject: false });
+        headers.push({ name: evqaNode.headers[i], aggFuncs: [], limitNum: 0, isToProject: false });
     }
 
     // Add info for projection
@@ -43,6 +43,7 @@ export const EVQANodeToEVQATable = (evqaNode: EVQANode, editable: boolean): IEVQ
         const colId = header.id;
         headers[colId].isToProject = true;
         headers[colId].aggFuncs.push(header.agg_type ? header.agg_type : 0);
+        headers[colId].limitNum = header.limit? header.limitNum: 0;
     });
 
     // Create rows if any predicate exists
@@ -295,6 +296,9 @@ export const getHeaderDescription = (header: IEVQATableHeader): string => {
         const aggFuncStr = aggFunctions[aggFunc];
         descriptions.push(operatorDescriptions[aggFuncStr as keyof typeof operatorDescriptions]);
     });
+    if (header.limitNum > 0) {
+        descriptions.push(operatorDescriptions["Limit"])
+    }
     return descriptions.join("\n");
 };
 
