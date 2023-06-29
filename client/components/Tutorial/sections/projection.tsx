@@ -34,7 +34,7 @@ const exampleEQVA1: EVQATree = {
         table_excerpt: demoTable,
         headers: headers,
         projection: {
-            headers: [{ id: headers.indexOf("id"), agg_type: aggFunctions.indexOf("none") }],
+            headers: [{ id: headers.indexOf("id"), agg_type: aggFunctions.indexOf("none"), limit: false, limit_num: 0 }],
         },
         predicate: {
             clauses: [],
@@ -63,9 +63,9 @@ const exampleEQVA2: EVQATree = {
         headers: headers,
         projection: {
             headers: [
-                { id: headers.indexOf("id"), agg_type: aggFunctions.indexOf("none") },
-                { id: headers.indexOf("model"), agg_type: aggFunctions.indexOf("none") },
-                { id: headers.indexOf("horsepower"), agg_type: aggFunctions.indexOf("none") },
+                { id: headers.indexOf("id"), agg_type: aggFunctions.indexOf("none"), limit: false, limit_num: 0 },
+                { id: headers.indexOf("model"), agg_type: aggFunctions.indexOf("none"), limit: false, limit_num: 0 },
+                { id: headers.indexOf("horsepower"), agg_type: aggFunctions.indexOf("none"), limit: false, limit_num: 0 },
             ],
         },
         predicate: {
@@ -112,7 +112,7 @@ const exampleEQVA3: EVQATree = {
         table_excerpt: demoTable,
         headers: headers,
         projection: {
-            headers: [{ id: headers.indexOf("cars"), agg_type: aggFunctions.indexOf("none") }],
+            headers: [{ id: headers.indexOf("cars"), agg_type: aggFunctions.indexOf("none"), limit: false, limit_num: 0 }],
         },
         predicate: {
             clauses: [],

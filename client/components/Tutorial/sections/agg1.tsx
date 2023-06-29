@@ -35,8 +35,8 @@ const exampleEQVA: EVQATree = {
         headers: headers,
         projection: {
             headers: [
-                { id: headers.indexOf("horsepower"), agg_type: aggFunctions.indexOf("max") },
-                { id: headers.indexOf("max_speed"), agg_type: aggFunctions.indexOf("min") },
+                { id: headers.indexOf("horsepower"), agg_type: aggFunctions.indexOf("max"), limit: false, limit_num: 0 },
+                { id: headers.indexOf("max_speed"), agg_type: aggFunctions.indexOf("min"), limit: false, limit_num: 0 },
             ],
         },
         predicate: {

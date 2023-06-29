@@ -60,7 +60,7 @@ const exampleEQVA: EVQATree = {
         table_excerpt: demoTable,
         headers: headers,
         projection: {
-            headers: [{ id: headers.indexOf("id"), agg_type: aggFunctions.indexOf("none") }],
+            headers: [{ id: headers.indexOf("id"), agg_type: aggFunctions.indexOf("none"), limit: false, limit_num: 0 }],
         },
         predicate: {
             clauses: [
