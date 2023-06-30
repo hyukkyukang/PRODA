@@ -276,17 +276,17 @@ def get_view_ctids(
             view_sql = f"""SELECT {group_col_view_string}, array_agg(CTID) FROM {inner_join_view_name} """
             # IF there is group by, it will return # of groups row
         else:
-            proj_view = [agg_col[1].replace(".", "__") for agg_col in obj["select"] if agg_col[0] == "NONE" and agg_col[1] != "*"]
+            proj_view = [agg_col[1].replace(".", "__") for agg_col in obj["agg_cols"] if agg_col[0] == "NONE" and agg_col[1] != "*"]
             if len(proj_view) == 0:
-                used_table_cols = get_used_table_cols(obj, prefix, None)
                 proj_view = []
-                for table in used_table_cols.keys():
-                    proj_view += [ f"{table}__{col}" for col in used_table_cols[table] ]
+                for table in obj["tables"]:
+                    primary_keys = data_manager.get_primary_keys(table)
+                    proj_view += [ f"{table}__{primary_key}" for primary_key in primary_keys ]
             
             if len(proj_view) > 0:
                 distinct_cond = f"""DISTINCT ON ({", ".join(proj_view)})"""
             else:
-                distinct_cond = ""
+                assert False, f"We assume that there is at least on table having primary key"
                 
             view_sql = f"""SELECT {distinct_cond} CTID FROM {inner_join_view_name} """
             # IF there is no group by, it will return # of inner join view rows
