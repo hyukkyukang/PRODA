@@ -58,7 +58,7 @@ const toAntdDataSource = (flatRows: Cell[][]): any[] => {
         // For a row (i.e. all columns)
         const datum: any = {};
         row.forEach((cell, colIdx) => {
-            datum[colIdx] = cell.value;
+            datum[colIdx] = cell.value + '';
         });
         data.push(datum);
     });
