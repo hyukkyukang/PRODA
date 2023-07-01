@@ -96,7 +96,7 @@ export const QuerySheet = (props: { currentTask: Task | null | undefined }) => {
                                     <TableExcerpt queryResult={currentTask.resultTable} />
                                 </Grid>
                             </Grid>
-                            <h2>Sentence:</h2>
+                            <h2>The corresponding question in English:</h2>
                             <Typography variant="body1" gutterBottom>
                                 {highlightedNL(currentTask?.nl, highlightList)}
                             </Typography>

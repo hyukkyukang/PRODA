@@ -24,18 +24,20 @@ const getQueryTree = (data: RawNodeDatum, treeBreadth: number, level: number) =>
         <div style={{ height: `${level * 130}px` }}>
             {/* <p style={{ textAlign: "center" }}>Query Tree</p> */}
             <h2 style={{ marginTop: "10px", textAlign: "center" }}>Visual Representation of Operation Blocks</h2>
-            <Tree
-                data={data}
-                rootNodeClassName="node__root"
-                branchNodeClassName="node__branch"
-                leafNodeClassName="node__leaf"
-                orientation="vertical"
-                translate={translate}
-                draggable={false}
-                zoomable={false}
-                zoom={0.9}
-                pathFunc="step"
-            />
+            <div style={{ textAlign: "center" }}>
+                <Tree
+                    data={data}
+                    rootNodeClassName="node__root"
+                    branchNodeClassName="node__branch"
+                    leafNodeClassName="node__leaf"
+                    orientation="vertical"
+                    translate={translate}
+                    draggable={false}
+                    zoomable={false}
+                    zoom={0.9}
+                    pathFunc="step"
+                />
+            </div>
         </div>
     );
 };
@@ -65,18 +67,21 @@ export const OverallTaskDescription = (props: { evqa: EVQATree | null | undefine
     return (
         <React.Fragment>
             <Grid container>
-                <Grid item xs={6} sx={{ margin: "10px", marginLeft: "18px" }}>
+                <Grid item xs={6} sx={{ margin: "10px", marginLeft: "18px", minHeight: "600px" }}>
                     <h1>Instruction</h1>
                     {/* <Box sx={{ fontWeight: "regular", m: 1, fontSize: "18px", textAlign: "justify", whiteSpace: "pre-line" }}>{instructionText}</Box> */}
                     <Typography sx={{ textAlign: "justify", whiteSpace: "pre-line" }}>
+                        <b>
+                            You need to refer to the{" "}
+                            <Link href="/tutorial" target="_blank">
+                                tutorial page
+                            </Link>{" "}
+                            first.{" "}
+                        </b>
+                        <br />
                         We have presented one or more EVQA blocks below, along with a visual representation on the right that illustrates the link between
                         individual EVQA blocks (the output of the child block serves as input for the parent block). Please thoroughly review the following
-                        EVQA, and evaluate whether the concluding statement at the bottom of the page provides an accurate summary of the entire process. You
-                        may refer to the{" "}
-                        <Link href="/tutorial" target="_blank">
-                            tutorial page
-                        </Link>{" "}
-                        as needed.
+                        EVQA, and evaluate whether <b>the concluding statement at the bottom of the page</b> provides an accurate summary of the entire process.
                     </Typography>
                 </Grid>
                 <Grid item xs={5}>

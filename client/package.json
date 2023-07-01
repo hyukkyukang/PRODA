@@ -9,8 +9,8 @@
         "lint": "next lint"
     },
     "dependencies": {
-        "@emotion/react": "^11.10.4",
-        "@emotion/styled": "^11.10.4",
+        "@emotion/react": "^11.11.1",
+        "@emotion/styled": "^11.11.0",
         "@mui/icons-material": "^5.10.3",
         "@mui/material": "^5.10.1",
         "@nivo/bar": "^0.79.1",
@@ -21,6 +21,7 @@
         "axios": "^0.27.2",
         "classnames": "^2.3.1",
         "dotenv": "^16.0.3",
+        "framer-motion": "^10.12.18",
         "js-yaml": "^4.1.0",
         "js-yaml-loader": "^1.2.2",
         "next": "^13.2.4",
@@ -32,12 +33,15 @@
         "react-icons": "^4.4.0",
         "react-query": "^3.39.3",
         "react-spreadsheet-custom": "^0.7.54",
-        "sharp": "^0.32.1"
+        "sharp": "^0.32.1",
+        "@types/node": "^18.16.1",
+        "@types/react": "18.2.0",
+        "@types/react-dom": "18.2.1"
     },
     "devDependencies": {
-        "@types/node": "^18.7.6",
-        "@types/react": "18.0.17",
-        "@types/react-dom": "18.0.6",
+        "@types/node": "^18.16.1",
+        "@types/react": "18.2.0",
+        "@types/react-dom": "18.2.1",
         "eslint": "8.22.0",
         "eslint-config-next": "^13.2.4",
         "typescript": "4.7.4"

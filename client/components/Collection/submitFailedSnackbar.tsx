@@ -21,7 +21,7 @@ export const SubmitFailedSnackbar = ({
             anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         >
             <Alert onClose={() => setIsSubmitFailedSnackbarOpen(false)} severity="error" sx={{ width: "100%" }}>
-                Answer submission failed. Please provide an alternative sentence that differs from the provided sentence.
+                Answer submission failed. Please provide an alternative sentence that differs from the provided sentence and has is longer than 3 words.
             </Alert>
         </Snackbar>
     );

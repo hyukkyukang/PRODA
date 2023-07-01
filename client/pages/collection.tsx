@@ -57,7 +57,10 @@ export const Collection = (props: any) => {
     const currentTask = useMemo<Task | null>(() => (taskSet && taskSet.tasks.length > taskSetIdx ? taskSet.tasks[taskSetIdx] : null), [taskSet, taskSetIdx]);
     const isAllTaskComplete = useMemo<boolean>(() => (taskSet?.tasks ? taskSetIdx + 1 >= taskSet?.tasks.length : false), [taskSet, taskSetIdx]);
     const isTaskSetComplete = useMemo<boolean>(() => (taskSet?.tasks ? taskSetIdx >= taskSet?.tasks.length : false), [taskSet, taskSetIdx]);
-    const isAnswerNLValid = useMemo<boolean>(() => (answer?.nl && currentTask ? answer.nl != currentTask.nl : false), [answer, currentTask]);
+    const isAnswerNLValid = useMemo<boolean>(
+        () => (answer?.nl && answer?.nl.split(" ").length > 3 && currentTask ? answer.nl != currentTask.nl : false),
+        [answer, currentTask]
+    );
     const isNotPreviewMode = useMemo<boolean>(
         () => (currentTask && (!isAMTSubmissionMode || (isAMTSubmissionMode && workerID)) ? true : false),
         [currentTask, workerID]

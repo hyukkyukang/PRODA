@@ -20,7 +20,7 @@ const overview: JSX.Element = (
             EVQA block is folded and users need to click to expand it to see the EVQA operation.
         </Typography>
         <br />
-        <Image src={dataCollectionSnapshot} style={{ width: "1000px", height: "500px" }} alt="Data collection snapshot" />
+        <Image src={dataCollectionSnapshot} style={{ width: "1000px", height: "600px" }} alt="Data collection snapshot" />
     </React.Fragment>
 );
 
@@ -32,7 +32,7 @@ const EVQABlockDescription: JSX.Element = (
             and a sentence that describes the EVQA operation. Detailed explanation of how to understand EVQA will be covered in the following tutorial section.
             Note that the goal of each user is to fully understand the EVQA operation and check whether the given sentence accurately describes the EVQA.
         </Typography>
-        <Image src={EVQABlockExample} style={{ width: "1000px", height: "1000px" }} alt="Collection page layout example" />
+        <Image src={EVQABlockExample} style={{ width: "1000px", height: "900px" }} alt="Collection page layout example" />
     </React.Fragment>
 );
 
@@ -51,7 +51,7 @@ const correctNLExample: JSX.Element = (
         <h2>When the sentence is correct</h2>
         <Typography>When the given sentence is correct, the user has to rephrase the given sentence into a more natural sentence.</Typography>
         <Typography>After writing the correct sentence, the user has to click on the "Submit" button.</Typography>
-        <Image src={dataCollectionCorrectExample} style={{ width: "1000px", height: "300px" }} alt="Task done snapshot" />
+        <Image src={dataCollectionCorrectExample} style={{ width: "1000px", height: "400px" }} alt="Task done snapshot" />
     </React.Fragment>
 );
 
@@ -60,7 +60,7 @@ const incorrectNLExample: JSX.Element = (
         <h2>When the sentence is incorrect</h2>
         <Typography>When the given sentence is incorrect, the user has to write a correct sentence that describes the EVQA operation.</Typography>
         <Typography>After writing the correct sentence, the user has to click on the "Submit" button.</Typography>
-        <Image src={dataCollectionIncorrectExample} style={{ width: "1000px", height: "300px" }} alt="Task done snapshot" />
+        <Image src={dataCollectionIncorrectExample} style={{ width: "1000px", height: "430px" }} alt="Task done snapshot" />
     </React.Fragment>
 );
 
