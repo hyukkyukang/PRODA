@@ -479,8 +479,8 @@ class StringBuilder:
 
         # order_text = self.concate_by_comma_and(order_texts)
         if order_texts:
-            order_texts.add_prefix("Sort the results by ")
-            text = self.concate_by([text] + [order_texts], ". ")
+            order_texts.add_prefix("sort the results by ")
+            text = self.concate_by([text] + [order_texts], ", and ")
         if self.limit:
             limit_text = SStrSen.create_empty_object()
             limit_text = limit_text.add_suffix("and finding only top " + str(self.limit) + " results")
@@ -722,8 +722,8 @@ class StringBuilder:
 
         # order_text = self.concate_by_comma_and(order_texts)
         if order_texts:
-            order_texts.add_prefix("Sort the results by ")
-            text = self.concate_by([text] + [order_texts], ". ")
+            order_texts.add_prefix("sort the results by ")
+            text = self.concate_by([text] + [order_texts], ", and ")
         if self.limit:
             limit_text = SStrSen.create_empty_object()
             limit_text = limit_text.add_suffix(" and finding only top " + str(self.limit) + " results")
