@@ -1,0 +1,35 @@
+{
+    "dtype_dict": {
+        "cities.city": "str",
+        "cities.is_weekend": "bool",
+        "cities.total_price": "float",
+        "cities.airbnb_id": "int",
+        "cities.room_type": "str",
+        "cities.is_room_shared": "bool",
+        "cities.is_room_private": "bool",
+        "cities.person_capacity": "int",
+        "cities.is_host_is_superhost": "bool",
+        "cities.multiple_rooms": "int",
+        "cities.business_facilities": "int",
+        "cities.cleanliness_rating": "int",
+        "cities.guest_satisfaction_overall": "int",
+        "cities.bedrooms": "int",
+        "cities.city_centre_dist": "float",
+        "cities.metro_dist": "float",
+        "cities.longitude": "float",
+        "cities.latitude": "float"
+    },
+    "hash_codes": [
+    ],
+    "notes": [],
+    "ids": [
+        "cities.airbnb_id"
+    ],
+    "foreign_keys": {
+        "cities": []
+    },
+    "primary_keys": {"cities":["city", "airbnb_id"]},
+    "categories": ["cities.is_weekend", "cities.city", "cities.room_type", 
+    "cities.person_capacity", "cities.bedrooms", "cities.guest_satisfaction_overall"
+]
+}

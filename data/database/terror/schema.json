@@ -1,0 +1,37 @@
+{
+    "terror": {
+        "join_tables": [
+            "terror_info",
+            "country",
+            "region",
+            "targtype",
+            "targsubtype",
+            "weaptype",
+            "weapsubtype",
+            "related_event"
+    ],
+        "join_keys": {
+            "terror_info": ["event_id","country_id", "region_id", "targtype_id", "targsubtype_id", "weaptype_id", "weapsubtype_id"],
+            "country": ["country_id"],
+            "region": ["region_id"],
+            "targtype": ["targtype_id"],
+            "targsubtype": ["targsubtype_id"],
+            "weaptype": ["weaptype_id"],
+            "weapsubtype": ["weapsubtype_id"],
+            "related_event": ["event_id"]
+        },
+        "join_clauses": [
+            "terror_info.country_id=country.country_id",
+            "terror_info.region_id=region.region_id",
+            "terror_info.targtype_id=targtype.targtype_id",
+            "terror_info.targsubtype_id=targsubtype.targsubtype_id",
+            "terror_info.weaptype_id=weaptype.weaptype_id",
+            "terror_info.weapsubtype_id=weapsubtype.weapsubtype_id",
+            "terror_info.event_id=related_event.event_id"
+        ],
+        "dataset": "terror",
+        "join_root": "terror_info",
+        "join_how": "outer",
+        "use_cols": "terror"
+    }
+}

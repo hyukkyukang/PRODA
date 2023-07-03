@@ -93,7 +93,7 @@ export const SideBar = (props: ISideBar) => {
         // If Projection headers of this colId is less than 4, add a new projection
         const numOfProjectionForSelectedCol = selectedEVQANode?.projection.headers.filter((header) => header.id == selectedCoordinate.colIdx).length;
         if (numOfProjectionForSelectedCol < 5) {
-            selectedEVQANode?.projection.headers.push({ id: selectedCoordinate.colIdx, agg_type: null });
+            selectedEVQANode?.projection.headers.push({ id: selectedCoordinate.colIdx, agg_type: null, limit: false, limit_num: 0 });
             setEVQA(Object.assign({}, evqaRoot));
         }
     };

@@ -1,4 +1,6 @@
-import TaskOverviewSection from "./TaskOverview";
+import TaskOverviewSection from "./taskOverview";
+import TaskExampleSimpleSection from "./taskExampleSimple";
+import TaskExampleAdvancedSection from "./taskExampleAdvanced";
 import ProjectionSection from "./projection";
 import Agg1Section from "./agg1";
 import Agg2Section from "./agg2";
@@ -13,7 +15,9 @@ import EVQAOverviewSection from "./EVQAOverview";
 import { ITutorialSection } from "./abstractSection";
 
 // For easy import from other files
-export { TaskOverviewSection as TaskOverviewSection } from "./TaskOverview";
+export { TaskOverviewSection as TaskOverviewSection } from "./taskOverview";
+export { TaskExampleSimpleSection as TaskExampleSimpleSection } from "./taskExampleSimple";
+export { TaskExampleAdvancedSection as TaskExampleAdvancedSection } from "./taskExampleAdvanced";
 export { ProjectionSection as ProjectionSection } from "./projection";
 export { Agg1Section as Agg1Section } from "./agg1";
 export { Agg2Section as Agg2Section } from "./agg2";
@@ -40,4 +44,6 @@ export const basicTutorialSections: ITutorialSection[] = [
 // export const advanceTutorialSections: ITutorialSection[] = [Selection3Section, ForEachSection, MultipleSublinks];
 export const advanceTutorialSections: ITutorialSection[] = [Selection3Section];
 
-export const allTutorialSections: ITutorialSection[] = [TaskOverviewSection].concat(basicTutorialSections.concat(advanceTutorialSections));
+export const allTutorialSections: ITutorialSection[] = [TaskOverviewSection, TaskExampleSimpleSection, TaskExampleAdvancedSection].concat(
+    basicTutorialSections.concat(advanceTutorialSections)
+);

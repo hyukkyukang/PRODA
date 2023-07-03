@@ -1,0 +1,61 @@
+{"nba": {
+    "join_tables": [
+        "game",
+        "play_by_play",
+        "line_score",
+        "game_info",
+        "inactive_players",
+        "game_summary",
+        "team",
+        "team_details",
+        "team_info_common",
+        "common_player_info",
+        "officials",
+        "team_history",
+        "draft_history",
+        "player",
+        "draft_combine_stats"
+],
+    "join_keys": {
+        "play_by_play":["game_id"],
+        "line_score":["game_id"],
+        "game_info":["game_id"],
+        "team_details":["team_id"],
+        "team_info_common":["team_id"],
+        "common_player_info":["person_id", "team_id"],
+        "inactive_players":["game_id", "team_id"],
+        "player":["id"],
+        "game_summary":["game_id"],
+        "game":["game_id"],
+        "officials":["game_id"],
+        "team_history":["team_id"],
+        "draft_history":["team_id"],
+        "draft_combine_stats":["player_id"],
+        "team":["id"]
+    },
+    "join_clauses": [
+        "game.game_id=game_info.game_id",
+        "game.game_id=line_score.game_id",
+        "game.game_id=play_by_play.game_id",
+        "game.game_id=officials.game_id",
+        "game.game_id=inactive_players.game_id",
+
+        "game.game_id=game_summary.game_id",
+        "team.id=game_summary.home_team_id",
+
+        "team.id=team_history.team_id",
+        "team.id=team_details.team_id",
+        "team.id=team_info_common.team_id",
+        "team.id=draft_history.team_id",
+
+        "team.id=common_player_info.team_id",
+        "player.id=common_player_info.person_id",
+
+        "player.id=draft_combine_stats.player_id"
+    ],
+    "dataset": "nba",
+    "join_root": "game",
+    "join_how": "outer",
+    "use_cols": "nba"
+}
+}

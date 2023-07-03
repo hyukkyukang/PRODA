@@ -1,6 +1,7 @@
 import ContentPasteGoIcon from "@mui/icons-material/ContentPasteGo";
 import SendIcon from "@mui/icons-material/Send";
 import { Button, createTheme, FormGroup, Paper, ThemeProvider, Typography } from "@mui/material";
+import MuiAlert, { AlertProps } from "@mui/material/Alert";
 import Checkbox from "@mui/material/Checkbox";
 import { pink } from "@mui/material/colors";
 import Dialog from "@mui/material/Dialog";
@@ -12,7 +13,6 @@ import Snackbar from "@mui/material/Snackbar";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import React, { useMemo } from "react";
-import MuiAlert, { AlertProps } from "@mui/material/Alert";
 
 export interface UserAnswer {
     nl: string;
@@ -26,7 +26,6 @@ export interface AnswerSheetProps {
     onSubmitHandler: () => boolean;
     onSkipHandler: () => void;
 }
-
 const theme = createTheme({
     components: {
         MuiSwitch: {
@@ -55,12 +54,50 @@ const theme = createTheme({
         },
     },
 });
-
-const enabledSubmitButton = (onSubmitHandler: any) => {
+const enabledSubmitButton = (onSubmitHandler: any, isOpen: boolean, setIsOpen: React.Dispatch<React.SetStateAction<boolean>>) => {
     return (
-        <Button variant="contained" color="success" endIcon={<SendIcon />} onClick={onSubmitHandler}>
-            Submit
-        </Button>
+        <React.Fragment>
+            <Button variant="contained" color="success" endIcon={<SendIcon />} onClick={() => setIsOpen(true)}>
+                Submit
+            </Button>
+            <Dialog
+                open={isOpen}
+                onClose={() => {
+                    setIsOpen(false);
+                }}
+                aria-labelledby="draggable-dialog-title"
+            >
+                <DialogTitle style={{ cursor: "move" }} id="draggable-dialog-title">
+                    Answer Submission
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        <span>
+                            Are you certain that you've <b>correctly MODIFIED the given question</b>? Please note, incorrect modification may lead to
+                            non-payment.
+                        </span>
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        autoFocus
+                        onClick={() => {
+                            setIsOpen(false);
+                        }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            setIsOpen(false);
+                            onSubmitHandler();
+                        }}
+                    >
+                        Submit
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </React.Fragment>
     );
 };
 
@@ -74,10 +111,27 @@ const disabledSubmitButton = (
     </Button>
 );
 
-const firstInstruction =
-    'Does the given sentence correctly summarize all the EVQA blocks above?\nPlease select "is not correct" if the sentence is wrong, ambiguous, or has any missing information.';
-const instructionAskingRephrase = "Please rephrase to a more natural sentence";
-const instructionAskingRevise = "Please write a correct sentence";
+const firstInstruction = (
+    <span>
+        Does the given <b>question in English</b> correctly summarize all the EVQA blocks above?
+        <br />
+        Please select "is not correct" if the given question satisfies <b>ANY</b> of the following conditions:
+        <ol>
+            <li>is wrong</li>
+            <li>is ambiguous</li>
+            <li>has any missing information</li>
+            <li>has any direct reference to preceding EVQA blocks unpacked (e.g., N1_1)</li>
+        </ol>
+    </span>
+);
+const instructionAskingRephrase = <span>Paraphrase the given question into another English question that has the same meaning.</span>;
+const instructionAskingRevise = (
+    <span>
+        Modify the question to form a sentence that carries the correct meaning of EVQA blocks.
+        <br />
+        Please do not list what the errors are, just fix it.
+    </span>
+);
 const skipButtonText = "Not sure, skip this task";
 
 export const AnswerSheet = (props: AnswerSheetProps) => {
@@ -90,6 +144,8 @@ export const AnswerSheet = (props: AnswerSheetProps) => {
 
     const isYesNoButtonClicked = useMemo(() => yesIsChecked || noIsChecked, [yesIsChecked, noIsChecked]);
     const secondInstruction = useMemo(() => (yesIsChecked ? instructionAskingRephrase : instructionAskingRevise), [yesIsChecked]);
+    // For alert before submission
+    const [isBeforeSubmitAlertOpen, setIsBeforeSubmitAlertOpen] = React.useState(false);
 
     const openSnackbar = () => {
         setIsSnackbarOpen(true);
@@ -103,6 +159,7 @@ export const AnswerSheet = (props: AnswerSheetProps) => {
     };
 
     const submitButtonHandler = () => {
+        // First ask with the alert
         const isSubmitted = onSubmitHandler();
         if (isSubmitted) {
             openSnackbar();
@@ -114,8 +171,8 @@ export const AnswerSheet = (props: AnswerSheetProps) => {
     };
 
     const submitButton = useMemo(
-        () => (answer?.nl ? enabledSubmitButton(submitButtonHandler) : disabledSubmitButton),
-        [noIsChecked, yesIsChecked, answer, answer?.nl, onSubmitHandler]
+        () => (answer?.nl ? enabledSubmitButton(submitButtonHandler, isBeforeSubmitAlertOpen, setIsBeforeSubmitAlertOpen) : disabledSubmitButton),
+        [noIsChecked, yesIsChecked, answer, answer?.nl, onSubmitHandler, isBeforeSubmitAlertOpen]
     );
 
     const invertSkipDialogState = () => {
@@ -219,7 +276,6 @@ export const AnswerSheet = (props: AnswerSheetProps) => {
         <React.Fragment>
             <br />
             <Paper elevation={2} style={{ overflowX: "scroll", padding: "18px" }}>
-                <h1>Question</h1>
                 <div>
                     <div style={{ display: "inline-block" }}>
                         <Typography variant="h6" sx={{ paddingTop: "10px", whiteSpace: "pre-line" }}>
@@ -235,7 +291,7 @@ export const AnswerSheet = (props: AnswerSheetProps) => {
                     <React.Fragment>
                         <div>
                             <div style={{ display: "inline-block" }}>
-                                <Typography variant="h6" sx={{ paddingTop: "10px" }}>
+                                <Typography variant="h6" sx={{ paddingTop: "10px", color: "#D62600" }}>
                                     {secondInstruction}
                                 </Typography>
                             </div>

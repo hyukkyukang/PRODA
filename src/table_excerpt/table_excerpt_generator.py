@@ -236,10 +236,12 @@ def get_view_ctids(
             group_col_alias = ", ".join([f"T.G{g_idx}" for g_idx in range(len(group_columns))])
             view_inner_sql_select = f"""{correlation_col_ref} AS Cc, {group_col_view_string}, array_agg(CTID) AS C2 {additional_inner_sql_select} {having_projection_str} """
         else:
+            # [TODO] Check if distinct needed
+            
             if additional_condition is not None and obj["use_agg_sel"]:
-                view_inner_sql_select = f""" {correlation_col_ref} AS Cc, unnest(array_agg(CTID)) AS C1 {additional_inner_sql_select} {having_projection_str}"""
+                view_inner_sql_select = f""" {distinct_cond} {correlation_col_ref} AS Cc, unnest(array_agg(CTID)) AS C1 {additional_inner_sql_select} {having_projection_str}"""
             else:
-                view_inner_sql_select = f""" {correlation_col_ref} AS Cc, CTID AS C1 {additional_inner_sql_select} {having_projection_str}"""
+                view_inner_sql_select = f""" {distinct_cond} {correlation_col_ref} AS Cc, CTID AS C1 {additional_inner_sql_select} {having_projection_str}"""
 
         view_inner_sql = f"SELECT {view_inner_sql_select} FROM {inner_join_view_name}"
 
@@ -274,7 +276,19 @@ def get_view_ctids(
             view_sql = f"""SELECT {group_col_view_string}, array_agg(CTID) FROM {inner_join_view_name} """
             # IF there is group by, it will return # of groups row
         else:
-            view_sql = f"""SELECT CTID FROM {inner_join_view_name} """
+            proj_view = [agg_col[1].replace(".", "__") for agg_col in obj["agg_cols"] if agg_col[0] == "NONE" and agg_col[1] != "*"]
+            if len(proj_view) == 0:
+                proj_view = []
+                for table in obj["tables"]:
+                    primary_keys = data_manager.get_primary_keys(table)
+                    proj_view += [ f"{table}__{primary_key}" for primary_key in primary_keys ]
+            
+            if len(proj_view) > 0:
+                distinct_cond = f"""DISTINCT ON ({", ".join(proj_view)})"""
+            else:
+                assert False, f"We assume that there is at least on table having primary key"
+                
+            view_sql = f"""SELECT {distinct_cond} CTID FROM {inner_join_view_name} """
             # IF there is no group by, it will return # of inner join view rows
 
         if additional_condition is not None:
@@ -688,7 +702,7 @@ def update_query_node_with_table_excerpt(
                         if sampling_ratio:
                             rand_per_group_size = int(len(ctid_array) * sampling_ratio)
                         else:
-                            rand_per_group_size = rng.randint(2, 5)
+                            rand_per_group_size = rng.randint(2, 4)
                         sample_ctids.extend(
                             rng.choice(ctid_array, size=min(rand_per_group_size, len(ctid_array)), replace=False)
                         )
@@ -708,7 +722,7 @@ def update_query_node_with_table_excerpt(
                     if sampling_ratio:
                         rand_size = int(len(ctid_array) * sampling_ratio)
                     else:
-                        rand_size = rng.randint(2, 5)
+                        rand_size = rng.randint(2, 4)
                     sample_ctids.extend(rng.choice(ctid_array, size=min(rand_size, len(ctid_array)), replace=False))
             else:
                 for cor_idx, ctids_for_each_correlation_val in enumerate(all_ctids):
@@ -725,7 +739,7 @@ def update_query_node_with_table_excerpt(
                     if sampling_ratio:
                         rand_size = int(len(ctid_array) * sampling_ratio)
                     else:
-                        rand_size = rng.randint(2, 5)
+                        rand_size = rng.randint(2, 4)
                     sample_ctids.extend(rng.choice(ctid_array, size=min(rand_size, len(ctid_array)), replace=False))
         else:
             if obj["type"]["group"]:
@@ -741,7 +755,7 @@ def update_query_node_with_table_excerpt(
                     if sampling_ratio:
                         rand_per_group_size = int(len(ctid_array) * sampling_ratio)
                     else:
-                        rand_per_group_size = rng.randint(2, 5)
+                        rand_per_group_size = rng.randint(2, 4)
                     sample_ctids.extend(
                         rng.choice(ctid_array, size=min(rand_per_group_size, len(ctid_array)), replace=False)
                     )
@@ -751,7 +765,7 @@ def update_query_node_with_table_excerpt(
                 if sampling_ratio:
                     rand_size = int(len(ctid_array) * sampling_ratio)
                 else:
-                    rand_size = rng.randint(4, 12)
+                    rand_size = rng.randint(3, 7)
                 sample_ctids = list(rng.choice(ctid_array, size=min(rand_size, len(ctid_array)), replace=False))
 
         return sample_ctids, sample_group_ids, sample_correl_ids
@@ -1176,7 +1190,7 @@ def update_query_node_with_table_excerpt(
             has_negative_view = True
             conditions_for_negative_view = ""
             negative_input_sql = (
-                f"""SELECT {select_col_string} FROM {negative_examples_view_name} {conditions_for_negative_view}"""
+                f"""SELECT DISTINCT {select_col_string} FROM {negative_examples_view_name} {conditions_for_negative_view} LIMIT 5"""
             )
             data_manager.execute(negative_input_sql)
             negative_rows = [list(datum) for datum in data_manager.fetchall()]

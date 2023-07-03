@@ -1,0 +1,99 @@
+{
+    "terror": {
+        "dtype_dict": {
+            "country.country_id":"int",
+            "country.country_name":"str",
+
+            "region.region_id":"int",
+            "region.region_name":"str",
+
+            "targtype.targtype_id":"int",
+            "targtype.targtype_name":"str",
+
+            "targsubtype.targsubtype_id":"int",
+            "targsubtype.targsubtype_name":"str",
+
+            "weaptype.weaptype_id":"int",
+            "weaptype.weaptype_name":"str",
+
+            "weapsubtype.weapsubtype_id":"int",
+            "weapsubtype.weapsubtype_name":"str",
+
+            "related_event.event_id":"int",
+            "related_event.related_event_id":"int",
+
+            "terror_info.event_id":"int", 
+            "terror_info.year":"int",
+            "terror_info.month":"int", 
+            "terror_info.day":"int",
+            "terror_info.is_period_extended":"bool",
+            "terror_info.country_id":"int",   
+            "terror_info.region_id":"int",
+            "terror_info.provstate":"str",     
+            "terror_info.city":"str",  
+            "terror_info.latitude":"float",   
+            "terror_info.longitude":"float",  
+            "terror_info.location_detail":"str",    
+            "terror_info.summary":"str",    
+            "terror_info.is_success":"bool",
+            "terror_info.is_suicide":"bool",
+            "terror_info.attacktype":"str",   
+            "terror_info.targtype_id":"int",   
+            "terror_info.targsubtype_id":"int",     
+            "terror_info.target_corporation":"str",    
+            "terror_info.target_name":"str",     
+            "terror_info.target_nationality":"str",  
+            "terror_info.terror_group_name":"str",     
+            "terror_info.motive":"str",     
+            "terror_info.weaptype_id":"int",   
+            "terror_info.weapsubtype_id":"int",     
+            "terror_info.whole_killed_num":"int",  
+            "terror_info.killed_american_num":"int",     
+            "terror_info.killed_terrorist_num":"int",   
+            "terror_info.whole_wounded_num":"int",    
+            "terror_info.wounded_american_num":"int",   
+            "terror_info.wounded_terrorist_num":"int",
+            "terror_info.is_property_damaged":"bool",     
+            "terror_info.property_damage_level":"str",     
+            "terror_info.estimated_value_of_property_damage":"int",    
+            "terror_info.property_description":"str",    
+            "terror_info.is_hostage_kidnap":"bool",  
+            "terror_info.hostage_num":"int",    
+            "terror_info.hostaged_american_num":"int",     
+            "terror_info.kidnap_hours":"int",     
+            "terror_info.kidnap_days":"int",   
+            "terror_info.released_hostage_num":"int"
+        },
+        "hash_codes": [
+        ],
+        "notes": ["terror.summary", "terror.motive"],
+        "ids": [
+            "terror_info.country_id",
+            "country.country_id",
+            "terror_info.region_id",
+            "region.region_id",
+            "terror_info.targtype_id",
+            "targtype.targtype_id",
+            "terror_info.targsubtype_id",
+            "targsubtype.targsubtype_id",
+            "terror_info.weaptype_id",
+            "weaptype.weaptype_id",
+            "terror_info.weapsubtype_id",
+            "weapsubtype.weapsubtype_id",
+            "terror_info.event_id",
+            "related_event.event_id"
+        ],
+        "primary_keys": { "terror_info": "event_id", "country": "country_id", "region":"region_id", "targtype":"targtype_id", "targsubtype":"targsubtype_id", "weaptype":"weaptype_id", "weapsubtype":"weapsubtype_id"},
+        "foreign_keys": {
+            "terror_info": ["country_id", "region_id", "targtype_id", "targsubtype_id", "weaptype_id", "weapsubtype_id"],
+            "country": [],
+            "region": [],
+            "targtype": [],
+            "targsubtype": [],
+            "weaptype": [],
+            "weapsubtype": [],
+            "related_event": ["event_id"]
+        },
+        "categories": ["terror_info.provstate", "terror_info.city", "terror_info.attacktype", "terror_info.target_nationality", "terror_info.property_damage_level"]
+    }
+}

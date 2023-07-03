@@ -1,0 +1,15 @@
+{"airbnb": {
+    "join_tables": [
+        "cities"
+],
+    "join_keys": {
+        "play_by_play":[]
+    },
+    "join_clauses": [
+    ],
+    "dataset": "airbnb",
+    "join_root": "cities",
+    "join_how": "outer",
+    "use_cols": "airbnb"
+}
+}

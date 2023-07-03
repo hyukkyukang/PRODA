@@ -1,0 +1,18 @@
+{
+    "health_nutrition": {
+        "join_tables": [ "country", "statistics", "indicator"],
+        "join_keys": {
+            "statistics": ["country_code", "indicator_code"],
+            "country": ["country_code"],
+            "indicator": ["indicator_code"]
+        },
+        "join_clauses": [
+            "statistics.country_code=country.country_code",
+            "statistics.indicator_code=indicator.indicator_code"
+        ],
+        "dataset": "health_nutrition",
+        "join_root": "country",
+        "join_how": "outer",
+        "use_cols": "health_nutrition"
+    }
+}

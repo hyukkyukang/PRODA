@@ -27,8 +27,8 @@ const exampleEQVA1_1: EVQATree = {
         headers: headers,
         projection: {
             headers: [
-                { id: headers.indexOf("cars"), agg_type: aggFunctions.indexOf("count") },
-                { id: headers.indexOf("model"), agg_type: aggFunctions.indexOf("none") },
+                { id: headers.indexOf("cars"), agg_type: aggFunctions.indexOf("count"), limit: false, limit_num: 0 },
+                { id: headers.indexOf("model"), agg_type: aggFunctions.indexOf("none"), limit: false, limit_num: 0 },
             ],
         },
         predicate: {
@@ -77,8 +77,8 @@ const exampleEQVA1_2: EVQATree = {
         headers: headers1_2,
         projection: {
             headers: [
-                { id: headers1_2.indexOf("count"), agg_type: aggFunctions.indexOf("none") },
-                { id: headers1_2.indexOf("model"), agg_type: aggFunctions.indexOf("none") },
+                { id: headers1_2.indexOf("count"), agg_type: aggFunctions.indexOf("none"), limit: false, limit_num: 0 },
+                { id: headers1_2.indexOf("model"), agg_type: aggFunctions.indexOf("none"), limit: false, limit_num: 0 },
             ],
         },
         predicate: {
@@ -118,8 +118,8 @@ const exampleEQVA2_1: EVQATree = {
         headers: headers,
         projection: {
             headers: [
-                { id: headers.indexOf("model"), agg_type: aggFunctions.indexOf("none") },
-                { id: headers.indexOf("horsepower"), agg_type: aggFunctions.indexOf("avg") },
+                { id: headers.indexOf("model"), agg_type: aggFunctions.indexOf("none"), limit: false, limit_num: 0 },
+                { id: headers.indexOf("horsepower"), agg_type: aggFunctions.indexOf("avg"), limit: false, limit_num: 0 },
             ],
         },
         predicate: {
@@ -311,8 +311,8 @@ const exampleEQVA2_2: EVQATree = {
         headers: headers2_2,
         projection: {
             headers: [
-                { id: headers2_2.indexOf("id"), agg_type: aggFunctions.indexOf("none") },
-                { id: headers2_2.indexOf("model"), agg_type: aggFunctions.indexOf("none") },
+                { id: headers2_2.indexOf("id"), agg_type: aggFunctions.indexOf("none"), limit: false, limit_num: 0 },
+                { id: headers2_2.indexOf("model"), agg_type: aggFunctions.indexOf("none"), limit: false, limit_num: 0 },
             ],
         },
         predicate: {
