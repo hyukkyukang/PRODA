@@ -1,0 +1,33 @@
+{
+    "health_nutrition": {
+        "dtype_dict": {
+
+            "country.country_code": "str",
+            "country.country_Name": "str",
+      
+            "indicator.indicator_code": "str",
+            "indicator.indicator_Name": "str",
+
+            "statistics.country_code": "str",
+            "statistics.indicator_code": "str",
+            "statistics.year":"int",
+            "statistics.rate":"float"
+          },
+        "hash_codes": [
+        ],
+        "notes": [],
+        "ids": [
+            "statistics.country_code",
+            "statistics.indicator_code",
+            "country.country_code",
+            "indicator.indicator_code"
+        ],
+        "foreign_keys": {
+            "statistics": ["country_code", "indicator_code"],
+            "country": [],
+            "indicator": []
+        },
+        "primary_keys": { "country": "country_code", "indicator": "indicator_code", "statistics":["country_code", "indicator_code", "year"]},
+        "categories": ["statistics.year", "statistics.country_code", "statistics.indicator_code"]
+    }
+}

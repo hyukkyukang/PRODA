@@ -1,0 +1,66 @@
+{
+    "global_idx": 0,
+    "db": "nba",
+    "schema_name": "nba",
+    "num_queries": 30,
+    "output": "/root/proda/data/database/nba/result/nba_non_nested_result_1.out",
+    "sep": "#",
+    "seed": 1234,
+    "data_dir": "data/database",
+    "log_path": "query_generator.log",
+    "hyperparams":
+    {
+        "num_in_max": 3,
+        "num_word_in_like_max": 7,
+        "num_select_max": 2,
+        "num_select_min": 0,
+        "num_pred_max": 2,
+        "num_pred_min": 1,
+        "num_group_max": 1,
+        "num_group_min": 1,
+        "num_having_max": 2,
+        "num_having_min": 1,
+        "num_order_max": 1,
+        "num_order_min": 1,
+        "num_nested_pred_max": 1,
+        "num_nested_pred_min": 1,
+        "num_join_max": 3,
+        "num_join_min": 0,
+        "num_column_max": 6,
+        "num_column_min": 1,
+        "__num_column_info__": "range of the number of columns used in the query except for join keys",
+        "limit_max": 5,
+        "limit_min": 1,
+        "prob_join": 0.5,
+        "prob_where": 0.8,
+        "prob_group": 0.25,
+        "prob_having": 0.2,
+        "prob_or": 0.2,
+        "prob_order": 0.25,
+        "prob_limit": 0.5,
+        "__prob_having_info__": "Ratio of having over group by queries",
+        "__prob_limit_info__": "Ratio of limit over order by queries"
+    },
+    "sql_info":
+    {
+        "__type_info__": "non-nested or nested",
+        "type": "non-nested",
+        "inner_query_paths": []
+    },
+    "constraints":
+    {
+        "used_as_inner_query": false,
+        "join_key_pred": false,
+        "set_clause_by_clause": false,
+        "has_where": false,
+        "has_group": false,
+        "has_having": false,
+        "has_order": false,
+        "has_limit": false,
+        "set_nested_query_type": false,
+        "has_type_n": false,
+        "has_type_a": false,
+        "has_type_j": false,
+        "has_type_ja": false
+    }
+}
