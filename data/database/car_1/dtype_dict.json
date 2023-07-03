@@ -26,7 +26,7 @@
         "cars_data.MPG": "float",
         "cars_data.Cylinders": "int",
         "cars_data.Edispl": "float",
-        "cars_data.Horsepower": "int",
+        "cars_data.Horsepower": "float",
         "cars_data.Weight": "int",
         "cars_data.Accelerate": "float",
         "cars_data.Year": "int"
