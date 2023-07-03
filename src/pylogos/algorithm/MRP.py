@@ -352,6 +352,9 @@ class MRP:
                                 dst_parent = (
                                     reference_point if reference_point.label == associated_relation.label else relation
                                 )
+                                if dst.node_name.startswith("c_"):  # [TODO] modifying it
+                                    assert out_edge_from_att.label == "is" or out_edge_from_att.label == "is same as"
+                                    out_edge_from_att.label = "is same as"
                                 string_builder.add_selection(
                                     reference_point, associated_relation, att, out_edge_from_att, dst.label, dst_parent
                                 )

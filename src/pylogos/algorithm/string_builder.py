@@ -291,6 +291,7 @@ class StringBuilder:
         text = SStrSen.create_empty_object()
         # we do not make
         target_relation = None
+        order_texts = SStrSen.create_empty_object()
         while self.projection or self.selection:
             # Get target relation
             if self.projection:
@@ -318,7 +319,13 @@ class StringBuilder:
                         if self.ordering and att_flag:
                             for rp_o, rel_o, att_o in self.ordering:
                                 if rel_o == target_relation and att_o == att:
-                                    cur_word.add_suffix(" (in ascending order)")
+                                    order_cur_sen = SStrSen([SStrWord(list(filter(lambda k: k, [agg, att])))])
+                                    order_att_desc = self.description_of_rel(
+                                        target_relation, order_cur_sen, not att_flag
+                                    )
+                                    order_att_desc.add_suffix(" in ascending order")
+                                    order_texts = self.concate_by([order_texts, order_att_desc], ",")
+
                                 else:
                                     tmp_o.append((rp_o, rel_o, att_o))
                             self.ordering = copy.deepcopy(tmp_o)
@@ -331,7 +338,6 @@ class StringBuilder:
                 if ttmp:
                     # Consider case where the label of the attribute is empty string
                     att_desc = self.description_of_rel(target_relation, ttmp, not att_flag)
-
                     text = self.concate_by([text, att_desc], ",")
                 self.projection = tmp
 
@@ -470,10 +476,16 @@ class StringBuilder:
                 self.selection = tmp
         if self.sentences:
             text = self.concate_by([text] + self.sentences, ", and ")
+
+        # order_text = self.concate_by_comma_and(order_texts)
+        if order_texts:
+            order_texts.add_prefix("Sort the results by ")
+            text = self.concate_by([text] + [order_texts], ". ")
         if self.limit:
             limit_text = SStrSen.create_empty_object()
-            limit_text = limit_text.add_suffix(" with finding only top " + str(self.limit) + " results")
+            limit_text = limit_text.add_suffix("and finding only top " + str(self.limit) + " results")
             text = self.concate_by([text] + [limit_text], ", ")
+
         return text
 
     def construct_sentence_dnf(self) -> SStrSen:
@@ -481,6 +493,7 @@ class StringBuilder:
         text = SStrSen.create_empty_object()
         # we do not make
         target_relation = None
+        order_texts = SStrSen.create_empty_object()
         while self.projection or self.selection:
             # Get target relation
             if self.projection:
@@ -506,15 +519,18 @@ class StringBuilder:
                             att_flag = True
                         # To string
                         cur_word = SStrWord(list(filter(lambda k: k, [agg, att])))
-                        order_flag = False
+
                         if self.ordering and att_flag:
                             for rp_o, rel_o, att_o in self.ordering:
                                 if rel_o == target_relation and att_o == att:
-                                    if not order_flag:
-                                        order_flag = True
-                                        cur_word.add_suffix(" (in ascending order)")
-                                    else:
-                                        pass
+                                    order_cur_sen = SStrSen.create_empty_object()
+                                    order_cur_sen = SStrSen([SStrWord(list(filter(lambda k: k, [agg, att])))])
+                                    order_att_desc = self.description_of_rel(
+                                        target_relation, order_cur_sen, not att_flag
+                                    )
+                                    order_att_desc.add_suffix(" in ascending order")
+                                    # order_texts += order_att_desc
+                                    order_texts = self.concate_by([order_texts, order_att_desc], ",")
                                 else:
                                     tmp_o.append((rp_o, rel_o, att_o))
                             self.ordering = copy.deepcopy(tmp_o)
@@ -703,10 +719,16 @@ class StringBuilder:
 
         if self.sentences:
             text = self.concate_by([text] + self.sentences, ", and ")
+
+        # order_text = self.concate_by_comma_and(order_texts)
+        if order_texts:
+            order_texts.add_prefix("Sort the results by ")
+            text = self.concate_by([text] + [order_texts], ". ")
         if self.limit:
             limit_text = SStrSen.create_empty_object()
-            limit_text = limit_text.add_suffix(" with finding only top " + str(self.limit) + " results")
+            limit_text = limit_text.add_suffix(" and finding only top " + str(self.limit) + " results")
             text = self.concate_by([text] + [limit_text], ", ")
+
         return text
 
     # Converting to text

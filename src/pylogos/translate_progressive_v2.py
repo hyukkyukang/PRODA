@@ -217,11 +217,25 @@ def translate_progressive(
             # simplified_block_name = TEMPLATE["block_prefix"] + str(key_to_block_id[root_key])
             raw_text = texts[key_to_block_id[root_key] - 1]
 
+            if use_gpt:
+                template = TEMPLATE["local_template"]
+                variable_to_val = {"{BLOCK_NAME}": simplified_block_name, "{BLOCK_TEXT}": raw_text}
+                block_text = templatize(template["text"], template["variables"], variable_to_val)
+
+                template = TEMPLATE["global_template_has_no_child"]
+                variable_to_val = {"{BLOCK_NAME}": simplified_block_name}
+                global_text = templatize(template["text"], template["variables"], variable_to_val)
+
+                templatized_text = block_text + " \n " + global_text
+                final_text = rewrite_sentence(templatized_text)
+            else:
+                final_text = raw_text
+
             template = TEMPLATE["local_template"]
-            variable_to_val = {"{BLOCK_NAME}": simplified_block_name, "{BLOCK_TEXT}": raw_text}
+            variable_to_val = {"{BLOCK_NAME}": simplified_block_name, "{BLOCK_TEXT}": final_text}
             block_text = templatize(template["text"], template["variables"], variable_to_val)
 
-            return {}, block_text, raw_text
+            return {}, block_text, final_text
 
         sub_block_names = []
         child_utterances = {}
@@ -274,28 +288,14 @@ def translate_progressive(
             variable_to_val = {"{BLOCK_NAME}": simplified_root_block_name, "{BLOCK_TEXT}": final_text}
             block_text = templatize(template["text"], template["variables"], variable_to_val)
         else:
-            final_text = templatized_text
-            block_text = whole_text
+            final_text = templatized_text.replace("\n", "")
+            block_text = whole_text.replace("\n", "")
 
         return child_utterances, block_text, final_text
 
     sub_texts, templatized_text, final_text = get_translation(
         query_objs[root_block_name], root_block_name, root_block_name, query_objs, key_to_block_id, texts, use_gpt
     )  # 비싼 모델은 돈이 듭니다. 참고만 하세요.
-
-    if len(sub_texts.keys()) == 0 and use_gpt:
-        simplified_root_block_name = get_block_name_alias(root_block_name, root_block_name, key_to_block_id)
-        # simplified_root_block_name = TEMPLATE["block_prefix"] + str(key_to_block_id[root_block_name])
-        template = TEMPLATE["local_template"]
-        variable_to_val = {"{BLOCK_NAME}": simplified_root_block_name, "{BLOCK_TEXT}": final_text}
-        block_text = templatize(template["text"], template["variables"], variable_to_val)
-
-        template = TEMPLATE["global_template_has_no_child"]
-        variable_to_val = {"{BLOCK_NAME}": simplified_root_block_name}
-        global_text = templatize(template["text"], template["variables"], variable_to_val)
-
-        templatized_text = block_text + " \n " + global_text
-        final_text = rewrite_sentence(templatized_text)
 
     final_text_obj = {}
     final_text_obj[root_block_name] = {"used_utterances": sub_texts, "raw_text": final_text}
@@ -309,12 +309,12 @@ if __name__ == "__main__":
         "--query_paths",
         nargs="+",
         default=[
-            "/root/proda/non-nested/result2.out",
-            "/root/proda/non-nested/result.out",
-            # "/root/proda/non-nested/result2.out",
+            "/root/proda/movie/result2-inner.out",
+            "/root/proda/movie/result.out",
+            "/root/proda/movie/result3.out",
         ],
     )
-    parser.add_argument("--output_path", type=str, default="/root/proda/translation-nested-result-fullsentence")
+    parser.add_argument("--output_path", type=str, default="/root/proda/test")
     args = parser.parse_args()
 
     query_objs = {}
@@ -335,11 +335,11 @@ if __name__ == "__main__":
     set_openai()
     with open(args.output_path, "w") as wf:
         for key, query_tree in query_trees:
-            if key.startswith("N2_2"):
+            if key.startswith("N1_26"):
                 input_text, final_text_obj = translate_progressive(
                     query_tree.root, key, query_objs, query_graphs, use_gpt=True
                 )
-                wf.write(f"{input_text}\n")
+                wf.write(f"""{final_text_obj[key]["raw_text"]}\n""")
                 print("GPT INPUT: {}".format(input_text))
                 print("GPT OUTPUT: {}".format(final_text_obj))
                 print("==================")
