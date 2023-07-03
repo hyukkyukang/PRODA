@@ -1,9 +1,9 @@
 {
     "global_idx": 0,
-    "db": "health_nutrition",
-    "schema_name": "health_nutrition",
+    "db": "postgres",
+    "schema_name": "nba",
     "num_queries": 30,
-    "output": "/root/proda/data/database/health_nutrition/result/health_nutrition_non_nested_result_1.out",
+    "output": "/root/proda/data/database/nba/result/nba_result_1.out",
     "sep": "#",
     "seed": 1234,
     "data_dir": "data/database",

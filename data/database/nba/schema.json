@@ -53,7 +53,7 @@
 
         "player.id=draft_combine_stats.player_id"
     ],
-    "dataset": "nba",
+    "dataset": "postgres",
     "join_root": "game",
     "join_how": "outer",
     "use_cols": "nba"
