@@ -345,7 +345,23 @@
         "draft_combine_stats.player_id",
         "team.id"
     ],
-    "primary_keys": ["game.game_id", "team.id", "player.id"],
+    "primary_keys": {
+        "game": ["game_id"],
+        "team": ["id"],
+        "player": ["id"],
+        "game_info": [],
+        "line_score": [],
+        "play_by_play": [],
+        "officials": [],
+        "inactive_players": [],
+        "game_summary": [],
+        "team_history": [],
+        "team_details": [],
+        "team_info_common": [],
+        "draft_history": [],
+        "common_player_info": [],
+        "draft_combine_stats": []
+    },
     "foreign_keys": {
         "game": [],
         "team": [],
