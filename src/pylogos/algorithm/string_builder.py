@@ -325,7 +325,6 @@ class StringBuilder:
                                     )
                                     order_att_desc.add_suffix(" in ascending order")
                                     order_texts = self.concate_by([order_texts, order_att_desc], ",")
-
                                 else:
                                     tmp_o.append((rp_o, rel_o, att_o))
                             self.ordering = copy.deepcopy(tmp_o)
@@ -494,6 +493,7 @@ class StringBuilder:
         # we do not make
         target_relation = None
         order_texts = SStrSen.create_empty_object()
+        group_text = SStrSen.create_empty_object()
         while self.projection or self.selection:
             # Get target relation
             if self.projection:
@@ -521,16 +521,18 @@ class StringBuilder:
                         cur_word = SStrWord(list(filter(lambda k: k, [agg, att])))
 
                         if self.ordering and att_flag:
+                            order_flag = False
                             for rp_o, rel_o, att_o in self.ordering:
-                                if rel_o == target_relation and att_o == att:
+                                if rel_o == target_relation and att_o == att and not order_flag:
+                                    order_flag = True
                                     order_cur_sen = SStrSen.create_empty_object()
                                     order_cur_sen = SStrSen([SStrWord(list(filter(lambda k: k, [agg, att])))])
                                     order_att_desc = self.description_of_rel(
                                         target_relation, order_cur_sen, not att_flag
-                                    )
+                                    ).combine_words()
                                     order_att_desc.add_suffix(" in ascending order")
-                                    # order_texts += order_att_desc
-                                    order_texts = self.concate_by([order_texts, order_att_desc], ",")
+                                    order_texts += order_att_desc
+                                    # order_texts += self.concate_by([order_texts, order_att_desc], ",")
                                 else:
                                     tmp_o.append((rp_o, rel_o, att_o))
                             self.ordering = copy.deepcopy(tmp_o)
@@ -541,7 +543,7 @@ class StringBuilder:
 
                 # Natural concatenate
                 ttmp = self.concate_by_comma_and(texts)
-                if ttmp:
+                if not ttmp.is_empty_string:
                     # Consider case where the label of the attribute is empty string
                     att_desc = self.description_of_rel(target_relation, ttmp, not att_flag)
 
@@ -560,6 +562,7 @@ class StringBuilder:
                         grouping_atts[rel] = grouping_atts.get(rel, []) + [att]
                     else:
                         tmp.append((rp, rel, att))
+
                 if grouping_atts:
                     grouping_flag = True
                     texts = SStrSen.create_empty_object()
@@ -568,7 +571,8 @@ class StringBuilder:
                         atts_str = self.concate_by_comma_and(SStrSen([SStrWord([item]) for item in att_list]))
                         # Append to the string
                         texts += self.description_of_rel(key_rel, atts_str).combine_words()
-                    text += self.concate_by_comma_and(texts).add_prefix("for each ")
+                    # text += self.concate_by_comma_and(texts).add_prefix("for each ")
+                    group_text += self.concate_by_comma_and(texts)
                 self.grouping = tmp
 
             if self.having:
@@ -675,6 +679,10 @@ class StringBuilder:
                 if texts:
                     pass  # where clause not generated this step
                 self.selection = tmp
+        if group_text:
+            group_text = self.concate_by_comma_and(group_text)
+            group_text.add_prefix(" for each ")
+            text = self.concate_by([group_text] + [text], ", ")
 
         dnf_idx = 0
         dnf_cnt_with_texts = 0
@@ -709,7 +717,7 @@ class StringBuilder:
                 if dnf_cnt_with_texts != 0:
                     texts.add_prefix("), or where ( ")
                 else:
-                    texts.add_prefix("where ( ")
+                    texts.add_prefix(" where ( ")
 
                 if dnf_idx == len(self.selection_dnf) - 1:
                     texts.add_suffix(" )")
@@ -720,8 +728,8 @@ class StringBuilder:
         if self.sentences:
             text = self.concate_by([text] + self.sentences, ", and ")
 
-        # order_text = self.concate_by_comma_and(order_texts)
-        if order_texts:
+        order_text = self.concate_by_comma_and(order_texts)
+        if order_text:
             order_texts.add_prefix("sort the results by ")
             text = self.concate_by([text] + [order_texts], ", and ")
         if self.limit:
