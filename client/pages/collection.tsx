@@ -16,7 +16,7 @@ import { getConfig } from "../utils";
 
 const config = getConfig();
 const isAMTSubmissionMode = config.isAMTCollectionMode;
-const SUBMISSION_URL = isAMTSubmissionMode ? "https://workersandbox.mturk.com/mturk/externalSubmit" : "https://mturk.com/mturk/externalSubmit";
+const SUBMISSION_URL = isAMTSubmissionMode ? "https://workersandbox.mturk.com/mturk/externalSubmit" : "https://worker.mturk.com/mturk/externalSubmit";
 
 export const Collection = (props: any) => {
     // Ref
