@@ -2,31 +2,6 @@ DROP DATABASE IF EXISTS fifa_23_complete_player;
 CREATE DATABASE fifa_23_complete_player;
 \c fifa_23_complete_player;
 
--- Table: public.leagues
-
--- DROP TABLE IF EXISTS public.leagues;
-
-CREATE TABLE IF NOT EXISTS public.leagues
-(
-    league_id integer NOT NULL,
-    league_name text COLLATE pg_catalog."default",
-    league_level integer,
-    CONSTRAINT league_pkey PRIMARY KEY (league_id)
-)
-
-TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS public.leagues
-    OWNER to postgres;
--- Index: league_index_1
-
--- DROP INDEX IF EXISTS public.league_index_1;
-
-CREATE INDEX IF NOT EXISTS league_index_1
-    ON public.leagues USING btree
-    (league_name COLLATE pg_catalog."default" ASC NULLS LAST)
-    TABLESPACE pg_default;
-
 -- Table: public.nations
 
 -- DROP TABLE IF EXISTS public.nations;
@@ -34,7 +9,7 @@ CREATE INDEX IF NOT EXISTS league_index_1
 CREATE TABLE IF NOT EXISTS public.nations
 (
     nation_id integer NOT NULL,
-    nation_name text COLLATE pg_catalog."default",
+    nation_name character varying(40) COLLATE pg_catalog."default",
     CONSTRAINT nationality_pkey PRIMARY KEY (nation_id)
 )
 
@@ -42,6 +17,10 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.nations
     OWNER to postgres;
+
+GRANT ALL ON TABLE public.nations TO data_user;
+
+GRANT ALL ON TABLE public.nations TO postgres;
 -- Index: nations_index_1
 
 -- DROP INDEX IF EXISTS public.nations_index_1;
@@ -51,6 +30,35 @@ CREATE INDEX IF NOT EXISTS nations_index_1
     (nation_name COLLATE pg_catalog."default" ASC NULLS LAST)
     TABLESPACE pg_default;
 
+-- Table: public.leagues
+
+-- DROP TABLE IF EXISTS public.leagues;
+
+CREATE TABLE IF NOT EXISTS public.leagues
+(
+    league_id integer NOT NULL,
+    league_name character varying(30) COLLATE pg_catalog."default",
+    league_level integer,
+    CONSTRAINT league_pkey PRIMARY KEY (league_id)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS public.leagues
+    OWNER to postgres;
+
+GRANT ALL ON TABLE public.leagues TO data_user;
+
+GRANT ALL ON TABLE public.leagues TO postgres;
+-- Index: league_index_1
+
+-- DROP INDEX IF EXISTS public.league_index_1;
+
+CREATE INDEX IF NOT EXISTS league_index_1
+    ON public.leagues USING btree
+    (league_name COLLATE pg_catalog."default" ASC NULLS LAST)
+    TABLESPACE pg_default;
+
 -- Table: public.coaches
 
 -- DROP TABLE IF EXISTS public.coaches;
@@ -58,13 +66,13 @@ CREATE INDEX IF NOT EXISTS nations_index_1
 CREATE TABLE IF NOT EXISTS public.coaches
 (
     coach_id integer NOT NULL,
-    coach_url text COLLATE pg_catalog."default",
-    short_name text COLLATE pg_catalog."default",
-    long_name text COLLATE pg_catalog."default",
-    dob date,
+    coach_url character varying(60) COLLATE pg_catalog."default",
+    short_name character varying(40) COLLATE pg_catalog."default",
+    long_name character varying(50) COLLATE pg_catalog."default",
+    date_of_birth date,
     nation_id integer,
-    face_url text COLLATE pg_catalog."default",
-    gender text COLLATE pg_catalog."default",
+    face_url character varying(70) COLLATE pg_catalog."default",
+    gender character varying(10) COLLATE pg_catalog."default",
     CONSTRAINT coaches_pkey PRIMARY KEY (coach_id),
     CONSTRAINT coaches_nation_id_fkey FOREIGN KEY (nation_id)
         REFERENCES public.nations (nation_id) MATCH SIMPLE
@@ -80,13 +88,17 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.coaches
     OWNER to postgres;
+
+GRANT ALL ON TABLE public.coaches TO data_user;
+
+GRANT ALL ON TABLE public.coaches TO postgres;
 -- Index: coaches_index_1
 
 -- DROP INDEX IF EXISTS public.coaches_index_1;
 
 CREATE INDEX IF NOT EXISTS coaches_index_1
     ON public.coaches USING btree
-    (dob ASC NULLS LAST)
+    (date_of_birth ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: coaches_index_2
 
@@ -120,11 +132,11 @@ CREATE INDEX IF NOT EXISTS coaches_index_4
 CREATE TABLE IF NOT EXISTS public.players
 (
     player_id integer NOT NULL,
-    short_name text COLLATE pg_catalog."default",
-    long_name text COLLATE pg_catalog."default",
-    dob date,
+    short_name character varying(30) COLLATE pg_catalog."default",
+    long_name character varying(60) COLLATE pg_catalog."default",
+    date_of_birth date,
     nation_id integer,
-    gender text COLLATE pg_catalog."default",
+    gender character varying(10) COLLATE pg_catalog."default",
     CONSTRAINT players_unique_pkey PRIMARY KEY (player_id),
     CONSTRAINT players_nationality_id_fkey FOREIGN KEY (nation_id)
         REFERENCES public.nations (nation_id) MATCH SIMPLE
@@ -136,6 +148,10 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.players
     OWNER to postgres;
+
+GRANT ALL ON TABLE public.players TO data_user;
+
+GRANT ALL ON TABLE public.players TO postgres;
 -- Index: players_index_1
 
 -- DROP INDEX IF EXISTS public.players_index_1;
@@ -158,7 +174,7 @@ CREATE INDEX IF NOT EXISTS players_index_2
 
 CREATE INDEX IF NOT EXISTS players_index_3
     ON public.players USING btree
-    (dob ASC NULLS LAST)
+    (date_of_birth ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_index_4
 
@@ -168,6 +184,7 @@ CREATE INDEX IF NOT EXISTS players_index_4
     ON public.players USING btree
     (nation_id ASC NULLS LAST)
     TABLESPACE pg_default;
+
 -- Table: public.teams
 
 -- DROP TABLE IF EXISTS public.teams;
@@ -175,11 +192,11 @@ CREATE INDEX IF NOT EXISTS players_index_4
 CREATE TABLE IF NOT EXISTS public.teams
 (
     team_id integer NOT NULL,
-    team_name text COLLATE pg_catalog."default",
+    team_name character varying(40) COLLATE pg_catalog."default",
     league_id integer,
     nation_id integer,
     rival_team_id integer,
-    gender text COLLATE pg_catalog."default",
+    gender character varying(10) COLLATE pg_catalog."default",
     CONSTRAINT teams_pkey PRIMARY KEY (team_id),
     CONSTRAINT teams_league_id_fkey FOREIGN KEY (league_id)
         REFERENCES public.leagues (league_id) MATCH SIMPLE
@@ -199,6 +216,10 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.teams
     OWNER to postgres;
+
+GRANT ALL ON TABLE public.teams TO data_user;
+
+GRANT ALL ON TABLE public.teams TO postgres;
 -- Index: teams_index_1
 
 -- DROP INDEX IF EXISTS public.teams_index_1;
@@ -207,6 +228,7 @@ CREATE INDEX IF NOT EXISTS teams_index_1
     ON public.teams USING btree
     (team_name COLLATE pg_catalog."default" ASC NULLS LAST)
     TABLESPACE pg_default;
+
 -- Table: public.players_update_history
 
 -- DROP TABLE IF EXISTS public.players_update_history;
@@ -214,11 +236,11 @@ CREATE INDEX IF NOT EXISTS teams_index_1
 CREATE TABLE IF NOT EXISTS public.players_update_history
 (
     player_id integer NOT NULL,
-    player_url text COLLATE pg_catalog."default",
+    player_url character varying(60) COLLATE pg_catalog."default",
     fifa_version integer NOT NULL,
     fifa_update integer NOT NULL,
     fifa_update_date date,
-    player_positions text COLLATE pg_catalog."default",
+    player_positions character varying(20) COLLATE pg_catalog."default",
     overall integer,
     potential integer,
     value_eur bigint,
@@ -227,23 +249,23 @@ CREATE TABLE IF NOT EXISTS public.players_update_history
     height_cm integer,
     weight_kg integer,
     club_team_id integer,
-    club_position text COLLATE pg_catalog."default",
+    club_position character varying(5) COLLATE pg_catalog."default",
     club_jersey_number integer,
-    club_loaned_from text COLLATE pg_catalog."default",
+    club_loaned_from character varying(40) COLLATE pg_catalog."default",
     club_joined_date date,
     club_contract_valid_until_year integer,
-    nation_position text COLLATE pg_catalog."default",
+    nation_position character varying(5) COLLATE pg_catalog."default",
     nation_jersey_number integer,
-    preferred_foot text COLLATE pg_catalog."default",
+    preferred_foot character varying(10) COLLATE pg_catalog."default",
     weak_foot integer,
     skill_moves integer,
     international_reputation integer,
-    work_rate text COLLATE pg_catalog."default",
-    body_type text COLLATE pg_catalog."default",
-    real_face text COLLATE pg_catalog."default",
+    work_rate character varying(20) COLLATE pg_catalog."default",
+    body_type character varying(20) COLLATE pg_catalog."default",
+    real_face character varying(10) COLLATE pg_catalog."default",
     release_clause_eur bigint,
-    player_tags text COLLATE pg_catalog."default",
-    player_traits text COLLATE pg_catalog."default",
+    player_tags character varying(150) COLLATE pg_catalog."default",
+    player_traits character varying(300) COLLATE pg_catalog."default",
     pace integer,
     shooting integer,
     passing integer,
@@ -285,33 +307,33 @@ CREATE TABLE IF NOT EXISTS public.players_update_history
     goalkeeping_positioning integer,
     goalkeeping_reflexes integer,
     goalkeeping_speed integer,
-    ls integer,
-    st integer,
-    rs integer,
-    lw integer,
-    lf integer,
-    cf integer,
-    rf integer,
-    rw integer,
-    lam integer,
-    cam integer,
-    ram integer,
-    lm integer,
-    lcm integer,
-    cm integer,
-    rcm integer,
-    rm integer,
-    lwb integer,
-    ldm integer,
-    cdm integer,
-    rdm integer,
-    rwb integer,
-    lb integer,
-    lcb integer,
-    cb integer,
-    rcb integer,
-    rb integer,
-    gk integer,
+    left_striker integer,
+    stricker integer,
+    right_striker integer,
+    left_winger integer,
+    left_forward integer,
+    center_forward integer,
+    right_forward integer,
+    right_winger integer,
+    left_attacking_midfielder integer,
+    center_attacking_midfielder integer,
+    right_attacking_midfielder integer,
+    left_midfielder integer,
+    left_center_midfielder integer,
+    center_midfielder integer,
+    right_center_midfielder integer,
+    right_midfielder integer,
+    left_wing_back integer,
+    left_defensive_midfielder integer,
+    center_defensive_midfielder integer,
+    right_defensive_midfielder integer,
+    right_wing_back integer,
+    left_back integer,
+    left_center_back integer,
+    center_back integer,
+    right_center_back integer,
+    right_back integer,
+    goalkeeper integer,
     CONSTRAINT players_update_id PRIMARY KEY (player_id, fifa_version, fifa_update),
     CONSTRAINT players_update_history_club_team_id_fkey FOREIGN KEY (club_team_id)
         REFERENCES public.teams (team_id) MATCH SIMPLE
@@ -327,6 +349,10 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.players_update_history
     OWNER to postgres;
+
+GRANT ALL ON TABLE public.players_update_history TO data_user;
+
+GRANT ALL ON TABLE public.players_update_history TO postgres;
 -- Index: players_update_history_index_1
 
 -- DROP INDEX IF EXISTS public.players_update_history_index_1;
@@ -797,7 +823,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_61
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_62
     ON public.players_update_history USING btree
-    (ls ASC NULLS LAST)
+    (left_striker ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_63
 
@@ -805,7 +831,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_62
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_63
     ON public.players_update_history USING btree
-    (st ASC NULLS LAST)
+    (stricker ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_64
 
@@ -813,7 +839,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_63
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_64
     ON public.players_update_history USING btree
-    (rs ASC NULLS LAST)
+    (right_striker ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_65
 
@@ -821,7 +847,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_64
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_65
     ON public.players_update_history USING btree
-    (lw ASC NULLS LAST)
+    (left_winger ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_66
 
@@ -829,7 +855,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_65
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_66
     ON public.players_update_history USING btree
-    (lf ASC NULLS LAST)
+    (left_forward ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_67
 
@@ -837,7 +863,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_66
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_67
     ON public.players_update_history USING btree
-    (cf ASC NULLS LAST)
+    (center_forward ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_68
 
@@ -845,7 +871,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_67
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_68
     ON public.players_update_history USING btree
-    (rf ASC NULLS LAST)
+    (right_forward ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_69
 
@@ -853,7 +879,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_68
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_69
     ON public.players_update_history USING btree
-    (rw ASC NULLS LAST)
+    (right_winger ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_7
 
@@ -869,7 +895,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_7
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_70
     ON public.players_update_history USING btree
-    (lam ASC NULLS LAST)
+    (left_attacking_midfielder ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_71
 
@@ -877,7 +903,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_70
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_71
     ON public.players_update_history USING btree
-    (cam ASC NULLS LAST)
+    (center_attacking_midfielder ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_72
 
@@ -885,7 +911,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_71
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_72
     ON public.players_update_history USING btree
-    (ram ASC NULLS LAST)
+    (right_attacking_midfielder ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_73
 
@@ -893,7 +919,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_72
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_73
     ON public.players_update_history USING btree
-    (lm ASC NULLS LAST)
+    (left_midfielder ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_74
 
@@ -901,7 +927,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_73
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_74
     ON public.players_update_history USING btree
-    (lcm ASC NULLS LAST)
+    (left_center_midfielder ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_75
 
@@ -909,7 +935,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_74
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_75
     ON public.players_update_history USING btree
-    (cm ASC NULLS LAST)
+    (center_midfielder ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_76
 
@@ -917,7 +943,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_75
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_76
     ON public.players_update_history USING btree
-    (rcm ASC NULLS LAST)
+    (right_center_midfielder ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_77
 
@@ -925,7 +951,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_76
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_77
     ON public.players_update_history USING btree
-    (rm ASC NULLS LAST)
+    (right_midfielder ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_78
 
@@ -933,7 +959,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_77
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_78
     ON public.players_update_history USING btree
-    (lwb ASC NULLS LAST)
+    (left_wing_back ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_79
 
@@ -941,7 +967,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_78
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_79
     ON public.players_update_history USING btree
-    (ldm ASC NULLS LAST)
+    (left_defensive_midfielder ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_8
 
@@ -957,7 +983,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_8
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_80
     ON public.players_update_history USING btree
-    (cdm ASC NULLS LAST)
+    (center_defensive_midfielder ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_81
 
@@ -965,7 +991,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_80
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_81
     ON public.players_update_history USING btree
-    (rdm ASC NULLS LAST)
+    (right_defensive_midfielder ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_82
 
@@ -973,7 +999,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_81
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_82
     ON public.players_update_history USING btree
-    (rwb ASC NULLS LAST)
+    (right_wing_back ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_83
 
@@ -981,7 +1007,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_82
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_83
     ON public.players_update_history USING btree
-    (lb ASC NULLS LAST)
+    (left_back ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_84
 
@@ -989,7 +1015,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_83
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_84
     ON public.players_update_history USING btree
-    (lcb ASC NULLS LAST)
+    (left_center_back ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_85
 
@@ -997,7 +1023,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_84
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_85
     ON public.players_update_history USING btree
-    (cb ASC NULLS LAST)
+    (center_back ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_86
 
@@ -1005,7 +1031,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_85
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_86
     ON public.players_update_history USING btree
-    (rcb ASC NULLS LAST)
+    (right_center_back ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_87
 
@@ -1013,7 +1039,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_86
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_87
     ON public.players_update_history USING btree
-    (rb ASC NULLS LAST)
+    (right_back ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_88
 
@@ -1021,7 +1047,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_87
 
 CREATE INDEX IF NOT EXISTS players_update_history_index_88
     ON public.players_update_history USING btree
-    (gk ASC NULLS LAST)
+    (goalkeeper ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: players_update_history_index_9
 
@@ -1039,7 +1065,7 @@ CREATE INDEX IF NOT EXISTS players_update_history_index_9
 CREATE TABLE IF NOT EXISTS public.teams_update_history
 (
     team_id integer NOT NULL,
-    team_url text COLLATE pg_catalog."default",
+    team_url character varying(70) COLLATE pg_catalog."default",
     fifa_version integer NOT NULL,
     fifa_update integer NOT NULL,
     fifa_update_date date,
@@ -1048,7 +1074,7 @@ CREATE TABLE IF NOT EXISTS public.teams_update_history
     midfield integer,
     defence integer,
     coach_id integer,
-    home_stadium text COLLATE pg_catalog."default",
+    home_stadium character varying(50) COLLATE pg_catalog."default",
     international_prestige integer,
     domestic_prestige integer,
     transfer_budget_eur integer,
@@ -1063,16 +1089,16 @@ CREATE TABLE IF NOT EXISTS public.teams_update_history
     penalties integer,
     left_corner integer,
     right_corner integer,
-    def_style text COLLATE pg_catalog."default",
+    def_style character varying(30) COLLATE pg_catalog."default",
     def_team_width integer,
     def_team_depth integer,
     def_defence_pressure integer,
     def_defence_aggression integer,
     def_defence_width integer,
-    def_defence_defender_line text COLLATE pg_catalog."default",
-    off_style text COLLATE pg_catalog."default",
-    off_build_up_play text COLLATE pg_catalog."default",
-    off_chance_creation text COLLATE pg_catalog."default",
+    def_defence_defender_line character varying(15) COLLATE pg_catalog."default",
+    off_style character varying(15) COLLATE pg_catalog."default",
+    off_build_up_play character varying(15) COLLATE pg_catalog."default",
+    off_chance_creation character varying(15) COLLATE pg_catalog."default",
     off_team_width integer,
     off_players_in_box integer,
     off_corners integer,
@@ -1080,11 +1106,11 @@ CREATE TABLE IF NOT EXISTS public.teams_update_history
     build_up_play_speed integer,
     build_up_play_dribbling integer,
     build_up_play_passing integer,
-    build_up_play_positioning text COLLATE pg_catalog."default",
+    build_up_play_positioning character varying(10) COLLATE pg_catalog."default",
     chance_creation_passing integer,
     chance_creation_crossing integer,
     chance_creation_shooting integer,
-    chance_creation_positioning text COLLATE pg_catalog."default",
+    chance_creation_positioning character varying(10) COLLATE pg_catalog."default",
     CONSTRAINT teams_update_id PRIMARY KEY (team_id, fifa_version, fifa_update),
     CONSTRAINT teams_update_history_coach_id_fkey FOREIGN KEY (coach_id)
         REFERENCES public.coaches (coach_id) MATCH SIMPLE
@@ -1100,6 +1126,10 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.teams_update_history
     OWNER to postgres;
+
+GRANT ALL ON TABLE public.teams_update_history TO data_user;
+
+GRANT ALL ON TABLE public.teams_update_history TO postgres;
 -- Index: teams_update_history_index_1
 
 -- DROP INDEX IF EXISTS public.teams_update_history_index_1;

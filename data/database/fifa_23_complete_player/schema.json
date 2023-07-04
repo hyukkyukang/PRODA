@@ -1,24 +1,64 @@
 {
-    "fifa_23_complete_player": {
-        "join_tables": ["coaches", "leagues", "teams","players", "nations", "players_update_history", "teams_update_history"],
+    "fifa_23_complete_player_1": {
+        "join_tables": ["coaches", "leagues", "teams","players", "nations"],
         "join_keys": {
-            "coaches": ["coach_id", "nation_id"],
-            "players": ["player_id","nation_id"],
+            "coaches": ["nation_id"],
+            "players": ["nation_id"],
+            "teams": ["league_id","nation_id"],
+            "nation": ["nation_id"],
+            "leagues": ["league_id"]
+        },
+        "join_clauses": [
+            "nations.nation_id=players.nation_id",
+            "nations.nation_id=coaches.nation_id",
+            "nations.nation_id=teams.nation_id",
+            "leagues.league_id=teams.league_id"
+        ],
+        "dataset": "fifa_23_complete_player",
+        "join_root": "",
+        "join_how": "outer",
+        "use_cols": "",
+        "data_dir": ""
+    },
+    "fifa_23_complete_player_2": {
+        "join_tables": ["coaches", "leagues", "teams","players", "nations", "teams_update_history"],
+        "join_keys": {
+            "coaches": ["coach_id"],
+            "players": ["nation_id"],
             "teams": ["team_id","league_id","nation_id"],
             "nation": ["nation_id"],
-            "league": ["league_id"],
-            "players_update_history":["player_id", "club_team_id"],
+            "leagues": ["league_id"],
             "teams_update_history":["team_id", "coach_id"]
         },
         "join_clauses": [
-            "nations.nation_id=teams.nation_id",
             "nations.nation_id=players.nation_id",
-            "nations.nation_id=coaches.nation_id",
+            "nations.nation_id=teams.nation_id",
             "leagues.league_id=teams.league_id",
-            "teams.team_id=players_update_history.club_team_id",
-            "players.player_id=players_update_history.player_id",
             "teams.team_id=teams_update_history.team_id",
             "coaches.coach_id=teams_update_history.coach_id"
+        ],
+        "dataset": "fifa_23_complete_player",
+        "join_root": "",
+        "join_how": "outer",
+        "use_cols": "",
+        "data_dir": ""
+    },
+    "fifa_23_complete_player_3": {
+        "join_tables": ["coaches", "leagues", "teams","players", "nations", "players_update_history"],
+        "join_keys": {
+            "coaches": ["nation_id"],
+            "players": ["player_id","nation_id"],
+            "teams": ["team_id","league_id","nation_id"],
+            "nation": ["nation_id"],
+            "leagues": ["league_id"],
+            "players_update_history":["player_id", "club_team_id"]
+        },
+        "join_clauses": [
+            "nations.nation_id=coaches.nation_id",
+            "nations.nation_id=players.nation_id",
+            "players.player_id=players_update_history.player_id",
+            "teams.team_id=players_update_history.club_team_id",
+            "leagues.league_id=teams.league_id"
         ],
         "dataset": "fifa_23_complete_player",
         "join_root": "",
