@@ -12,9 +12,9 @@ services:
             - "4001:4001"
         volumes:
             - ./:/root/proda/
-    proda_db3:
+    proda-postgres:
         image: postgres:15.1
-        container_name: proda_db3
+        container_name: proda-postgres
         stdin_open: true
         tty: true
         shm_size: '150gb'

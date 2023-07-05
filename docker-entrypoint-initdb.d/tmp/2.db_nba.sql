@@ -15,50 +15,50 @@ CREATE TABLE IF NOT EXISTS public.game
     game_id integer NOT NULL,
     game_date character varying(30) COLLATE pg_catalog."default",
     matchup_home character varying(11) COLLATE pg_catalog."default",
-    win_lose_home character varying(3) COLLATE pg_catalog."default",
+    wl_home character varying(3) COLLATE pg_catalog."default",
     min integer,
-    field_goals_made_at_home double precision,
-    field_goals_attempted_at_home double precision,
-    field_goal_percentage_at_home double precision,
-    three_point_field_goals_made_at_home double precision,
-    three_point_field_goals_attempted_at_home double precision,
-    three_point_field_goals_percentage_at_home double precision,
-    free_throws_made_at_home double precision,
-    free_throws_attempted_at_home double precision,
-    free_throw_percentage_at_home double precision,
-    offensive_rebounds_at_home double precision,
-    defensive_rebounds_at_home double precision,
-    rebound_home double precision,
-    assist_home double precision,
-    steal_home double precision,
-    block_home double precision,
-    turn_over_home double precision,
-    personal_foul_home double precision,
-    points_home integer,
+    fgm_home double precision,
+    fga_home double precision,
+    fg_pct_home double precision,
+    fg3m_home double precision,
+    fg3a_home double precision,
+    fg3_pct_home double precision,
+    ftm_home double precision,
+    fta_home double precision,
+    ft_pct_home double precision,
+    oreb_home double precision,
+    dreb_home double precision,
+    reb_home double precision,
+    ast_home double precision,
+    stl_home double precision,
+    blk_home double precision,
+    tov_home double precision,
+    pf_home double precision,
+    pts_home integer,
     plus_minus_home integer,
     team_id_away integer,
     team_abbreviation_away character varying(3) COLLATE pg_catalog."default",
     team_name_away character varying(33) COLLATE pg_catalog."default",
     matchup_away character varying(9) COLLATE pg_catalog."default",
-    win_lose_away character varying(3) COLLATE pg_catalog."default",
-    field_goals_made_at_away double precision,
-    field_goals_attempted_at_away double precision,
-    field_goal_percentage_at_away double precision,
-    three_point_field_goals_made_at_away double precision,
-    three_point_field_goals_attempted_at_away double precision,
-    three_point_field_goals_percentage_at_away double precision,
-    free_throws_made_at_away double precision,
-    free_throws_attempted_at_away double precision,
-    free_throw_percentage_at_away double precision,
-    offensive_rebounds_at_away double precision,
-    defensive_rebounds_at_away double precision,
-    rebound_away double precision,
-    assist_away double precision,
-    steal_away double precision,
-    block_away double precision,
-    turn_over_away double precision,
-    personal_foul_away double precision,
-    points_away integer,
+    wl_away character varying(3) COLLATE pg_catalog."default",
+    fgm_away double precision,
+    fga_away double precision,
+    fg_pct_away double precision,
+    fg3m_away double precision,
+    fg3a_away double precision,
+    fg3_pct_away double precision,
+    ftm_away double precision,
+    fta_away double precision,
+    ft_pct_away double precision,
+    oreb_away double precision,
+    dreb_away double precision,
+    reb_away double precision,
+    ast_away double precision,
+    stl_away double precision,
+    blk_away double precision,
+    tov_away double precision,
+    pf_away double precision,
+    pts_away integer,
     plus_minus_away integer,
     video_available_away integer,
     video_available_home boolean,
@@ -69,17 +69,13 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.game
     OWNER to postgres;
-
-GRANT ALL ON TABLE public.game TO data_user;
-
-GRANT ALL ON TABLE public.game TO postgres;
 -- Index: idx_game_ast_away
 
 -- DROP INDEX IF EXISTS public.idx_game_ast_away;
 
 CREATE INDEX IF NOT EXISTS idx_game_ast_away
     ON public.game USING btree
-    (assist_away ASC NULLS LAST)
+    (ast_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_ast_home
 
@@ -87,7 +83,7 @@ CREATE INDEX IF NOT EXISTS idx_game_ast_away
 
 CREATE INDEX IF NOT EXISTS idx_game_ast_home
     ON public.game USING btree
-    (assist_home ASC NULLS LAST)
+    (ast_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_blk_away
 
@@ -95,7 +91,7 @@ CREATE INDEX IF NOT EXISTS idx_game_ast_home
 
 CREATE INDEX IF NOT EXISTS idx_game_blk_away
     ON public.game USING btree
-    (block_away ASC NULLS LAST)
+    (blk_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_blk_home
 
@@ -103,7 +99,7 @@ CREATE INDEX IF NOT EXISTS idx_game_blk_away
 
 CREATE INDEX IF NOT EXISTS idx_game_blk_home
     ON public.game USING btree
-    (block_home ASC NULLS LAST)
+    (blk_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_dreb_away
 
@@ -111,7 +107,7 @@ CREATE INDEX IF NOT EXISTS idx_game_blk_home
 
 CREATE INDEX IF NOT EXISTS idx_game_dreb_away
     ON public.game USING btree
-    (defensive_rebounds_at_away ASC NULLS LAST)
+    (dreb_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_dreb_home
 
@@ -119,7 +115,7 @@ CREATE INDEX IF NOT EXISTS idx_game_dreb_away
 
 CREATE INDEX IF NOT EXISTS idx_game_dreb_home
     ON public.game USING btree
-    (defensive_rebounds_at_home ASC NULLS LAST)
+    (dreb_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fg3_pct_away
 
@@ -127,7 +123,7 @@ CREATE INDEX IF NOT EXISTS idx_game_dreb_home
 
 CREATE INDEX IF NOT EXISTS idx_game_fg3_pct_away
     ON public.game USING btree
-    (three_point_field_goals_percentage_at_away ASC NULLS LAST)
+    (fg3_pct_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fg3_pct_home
 
@@ -135,7 +131,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fg3_pct_away
 
 CREATE INDEX IF NOT EXISTS idx_game_fg3_pct_home
     ON public.game USING btree
-    (three_point_field_goals_percentage_at_home ASC NULLS LAST)
+    (fg3_pct_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fg3a_away
 
@@ -143,7 +139,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fg3_pct_home
 
 CREATE INDEX IF NOT EXISTS idx_game_fg3a_away
     ON public.game USING btree
-    (three_point_field_goals_attempted_at_away ASC NULLS LAST)
+    (fg3a_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fg3a_home
 
@@ -151,7 +147,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fg3a_away
 
 CREATE INDEX IF NOT EXISTS idx_game_fg3a_home
     ON public.game USING btree
-    (three_point_field_goals_attempted_at_home ASC NULLS LAST)
+    (fg3a_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fg3m_away
 
@@ -159,7 +155,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fg3a_home
 
 CREATE INDEX IF NOT EXISTS idx_game_fg3m_away
     ON public.game USING btree
-    (three_point_field_goals_made_at_away ASC NULLS LAST)
+    (fg3m_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fg3m_home
 
@@ -167,7 +163,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fg3m_away
 
 CREATE INDEX IF NOT EXISTS idx_game_fg3m_home
     ON public.game USING btree
-    (three_point_field_goals_made_at_home ASC NULLS LAST)
+    (fg3m_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fg_pct_away
 
@@ -175,7 +171,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fg3m_home
 
 CREATE INDEX IF NOT EXISTS idx_game_fg_pct_away
     ON public.game USING btree
-    (field_goal_percentage_at_away ASC NULLS LAST)
+    (fg_pct_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fg_pct_home
 
@@ -183,7 +179,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fg_pct_away
 
 CREATE INDEX IF NOT EXISTS idx_game_fg_pct_home
     ON public.game USING btree
-    (field_goal_percentage_at_home ASC NULLS LAST)
+    (fg_pct_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fga_away
 
@@ -191,7 +187,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fg_pct_home
 
 CREATE INDEX IF NOT EXISTS idx_game_fga_away
     ON public.game USING btree
-    (field_goals_attempted_at_away ASC NULLS LAST)
+    (fga_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fga_home
 
@@ -199,7 +195,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fga_away
 
 CREATE INDEX IF NOT EXISTS idx_game_fga_home
     ON public.game USING btree
-    (field_goals_attempted_at_home ASC NULLS LAST)
+    (fga_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fgm_away
 
@@ -207,7 +203,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fga_home
 
 CREATE INDEX IF NOT EXISTS idx_game_fgm_away
     ON public.game USING btree
-    (field_goals_made_at_away ASC NULLS LAST)
+    (fgm_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fgm_home
 
@@ -215,7 +211,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fgm_away
 
 CREATE INDEX IF NOT EXISTS idx_game_fgm_home
     ON public.game USING btree
-    (field_goals_made_at_home ASC NULLS LAST)
+    (fgm_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_ft_pct_away
 
@@ -223,7 +219,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fgm_home
 
 CREATE INDEX IF NOT EXISTS idx_game_ft_pct_away
     ON public.game USING btree
-    (free_throw_percentage_at_away ASC NULLS LAST)
+    (ft_pct_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_ft_pct_home
 
@@ -231,7 +227,7 @@ CREATE INDEX IF NOT EXISTS idx_game_ft_pct_away
 
 CREATE INDEX IF NOT EXISTS idx_game_ft_pct_home
     ON public.game USING btree
-    (free_throw_percentage_at_home ASC NULLS LAST)
+    (ft_pct_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fta_away
 
@@ -239,7 +235,7 @@ CREATE INDEX IF NOT EXISTS idx_game_ft_pct_home
 
 CREATE INDEX IF NOT EXISTS idx_game_fta_away
     ON public.game USING btree
-    (free_throws_attempted_at_away ASC NULLS LAST)
+    (fta_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_fta_home
 
@@ -247,7 +243,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fta_away
 
 CREATE INDEX IF NOT EXISTS idx_game_fta_home
     ON public.game USING btree
-    (free_throws_attempted_at_home ASC NULLS LAST)
+    (fta_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_ftm_away
 
@@ -255,7 +251,7 @@ CREATE INDEX IF NOT EXISTS idx_game_fta_home
 
 CREATE INDEX IF NOT EXISTS idx_game_ftm_away
     ON public.game USING btree
-    (free_throws_made_at_away ASC NULLS LAST)
+    (ftm_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_ftm_home
 
@@ -263,7 +259,7 @@ CREATE INDEX IF NOT EXISTS idx_game_ftm_away
 
 CREATE INDEX IF NOT EXISTS idx_game_ftm_home
     ON public.game USING btree
-    (free_throws_made_at_home ASC NULLS LAST)
+    (ftm_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_game_date
 
@@ -303,7 +299,7 @@ CREATE INDEX IF NOT EXISTS idx_game_min
 
 CREATE INDEX IF NOT EXISTS idx_game_oreb_away
     ON public.game USING btree
-    (offensive_rebounds_at_away ASC NULLS LAST)
+    (oreb_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_oreb_home
 
@@ -311,7 +307,7 @@ CREATE INDEX IF NOT EXISTS idx_game_oreb_away
 
 CREATE INDEX IF NOT EXISTS idx_game_oreb_home
     ON public.game USING btree
-    (offensive_rebounds_at_home ASC NULLS LAST)
+    (oreb_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_pf_away
 
@@ -319,7 +315,7 @@ CREATE INDEX IF NOT EXISTS idx_game_oreb_home
 
 CREATE INDEX IF NOT EXISTS idx_game_pf_away
     ON public.game USING btree
-    (personal_foul_away ASC NULLS LAST)
+    (pf_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_pf_home
 
@@ -327,7 +323,7 @@ CREATE INDEX IF NOT EXISTS idx_game_pf_away
 
 CREATE INDEX IF NOT EXISTS idx_game_pf_home
     ON public.game USING btree
-    (personal_foul_home ASC NULLS LAST)
+    (pf_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_plus_minus_away
 
@@ -351,7 +347,7 @@ CREATE INDEX IF NOT EXISTS idx_game_plus_minus_home
 
 CREATE INDEX IF NOT EXISTS idx_game_pts_away
     ON public.game USING btree
-    (points_away ASC NULLS LAST)
+    (pts_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_pts_home
 
@@ -359,7 +355,7 @@ CREATE INDEX IF NOT EXISTS idx_game_pts_away
 
 CREATE INDEX IF NOT EXISTS idx_game_pts_home
     ON public.game USING btree
-    (points_home ASC NULLS LAST)
+    (pts_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_reb_away
 
@@ -367,7 +363,7 @@ CREATE INDEX IF NOT EXISTS idx_game_pts_home
 
 CREATE INDEX IF NOT EXISTS idx_game_reb_away
     ON public.game USING btree
-    (rebound_away ASC NULLS LAST)
+    (reb_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_reb_home
 
@@ -375,7 +371,7 @@ CREATE INDEX IF NOT EXISTS idx_game_reb_away
 
 CREATE INDEX IF NOT EXISTS idx_game_reb_home
     ON public.game USING btree
-    (rebound_home ASC NULLS LAST)
+    (reb_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_season_id
 
@@ -391,7 +387,7 @@ CREATE INDEX IF NOT EXISTS idx_game_season_id
 
 CREATE INDEX IF NOT EXISTS idx_game_stl_away
     ON public.game USING btree
-    (steal_away ASC NULLS LAST)
+    (stl_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_stl_home
 
@@ -399,7 +395,7 @@ CREATE INDEX IF NOT EXISTS idx_game_stl_away
 
 CREATE INDEX IF NOT EXISTS idx_game_stl_home
     ON public.game USING btree
-    (steal_home ASC NULLS LAST)
+    (stl_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_team_abbreviation_away
 
@@ -455,7 +451,7 @@ CREATE INDEX IF NOT EXISTS idx_game_team_name_home
 
 CREATE INDEX IF NOT EXISTS idx_game_tov_away
     ON public.game USING btree
-    (turn_over_away ASC NULLS LAST)
+    (tov_away ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_tov_home
 
@@ -463,7 +459,7 @@ CREATE INDEX IF NOT EXISTS idx_game_tov_away
 
 CREATE INDEX IF NOT EXISTS idx_game_tov_home
     ON public.game USING btree
-    (turn_over_home ASC NULLS LAST)
+    (tov_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_video_available_away
 
@@ -487,7 +483,7 @@ CREATE INDEX IF NOT EXISTS idx_game_video_available_home
 
 CREATE INDEX IF NOT EXISTS idx_game_wl_away
     ON public.game USING btree
-    (win_lose_away COLLATE pg_catalog."default" ASC NULLS LAST)
+    (wl_away COLLATE pg_catalog."default" ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_game_wl_home
 
@@ -495,62 +491,7 @@ CREATE INDEX IF NOT EXISTS idx_game_wl_away
 
 CREATE INDEX IF NOT EXISTS idx_game_wl_home
     ON public.game USING btree
-    (win_lose_home COLLATE pg_catalog."default" ASC NULLS LAST)
-    TABLESPACE pg_default;
-
--- Table: public.player
-
--- DROP TABLE IF EXISTS public.player;
-
-CREATE TABLE IF NOT EXISTS public.player
-(
-    id integer NOT NULL,
-    full_name character varying(24) COLLATE pg_catalog."default",
-    first_name character varying(15) COLLATE pg_catalog."default",
-    last_name character varying(18) COLLATE pg_catalog."default",
-    is_active boolean,
-    CONSTRAINT player_pkey PRIMARY KEY (id)
-)
-
-TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS public.player
-    OWNER to postgres;
-
-GRANT ALL ON TABLE public.player TO data_user;
-
-GRANT ALL ON TABLE public.player TO postgres;
--- Index: idx_player_first_name
-
--- DROP INDEX IF EXISTS public.idx_player_first_name;
-
-CREATE INDEX IF NOT EXISTS idx_player_first_name
-    ON public.player USING btree
-    (first_name COLLATE pg_catalog."default" ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_player_full_name
-
--- DROP INDEX IF EXISTS public.idx_player_full_name;
-
-CREATE INDEX IF NOT EXISTS idx_player_full_name
-    ON public.player USING btree
-    (full_name COLLATE pg_catalog."default" ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_player_is_active
-
--- DROP INDEX IF EXISTS public.idx_player_is_active;
-
-CREATE INDEX IF NOT EXISTS idx_player_is_active
-    ON public.player USING btree
-    (is_active ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_player_last_name
-
--- DROP INDEX IF EXISTS public.idx_player_last_name;
-
-CREATE INDEX IF NOT EXISTS idx_player_last_name
-    ON public.player USING btree
-    (last_name COLLATE pg_catalog."default" ASC NULLS LAST)
+    (wl_home COLLATE pg_catalog."default" ASC NULLS LAST)
     TABLESPACE pg_default;
 
 -- Table: public.team
@@ -573,10 +514,6 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.team
     OWNER to postgres;
-
-GRANT ALL ON TABLE public.team TO data_user;
-
-GRANT ALL ON TABLE public.team TO postgres;
 -- Index: idx_team_abbreviation
 
 -- DROP INDEX IF EXISTS public.idx_team_abbreviation;
@@ -626,207 +563,57 @@ CREATE INDEX IF NOT EXISTS idx_team_year_founded
     (year_founded ASC NULLS LAST)
     TABLESPACE pg_default;
 
--- Table: public.game_info
+-- Table: public.player
 
--- DROP TABLE IF EXISTS public.game_info;
+-- DROP TABLE IF EXISTS public.player;
 
-CREATE TABLE IF NOT EXISTS public.game_info
+CREATE TABLE IF NOT EXISTS public.player
 (
-    game_id integer NOT NULL,
-    game_date timestamp without time zone,
-    attendance double precision,
-    game_time interval,
-    CONSTRAINT game_info_pkey PRIMARY KEY (game_id),
-    CONSTRAINT game_info_game_id_fkey FOREIGN KEY (game_id)
-        REFERENCES public.game (game_id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
+    id integer NOT NULL,
+    full_name character varying(24) COLLATE pg_catalog."default",
+    first_name character varying(15) COLLATE pg_catalog."default",
+    last_name character varying(18) COLLATE pg_catalog."default",
+    is_active boolean,
+    CONSTRAINT player_pkey PRIMARY KEY (id)
 )
 
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS public.game_info
+ALTER TABLE IF EXISTS public.player
     OWNER to postgres;
+-- Index: idx_player_first_name
 
-GRANT ALL ON TABLE public.game_info TO data_user;
+-- DROP INDEX IF EXISTS public.idx_player_first_name;
 
-GRANT ALL ON TABLE public.game_info TO postgres;
--- Index: idx_game_info_attendance
-
--- DROP INDEX IF EXISTS public.idx_game_info_attendance;
-
-CREATE INDEX IF NOT EXISTS idx_game_info_attendance
-    ON public.game_info USING btree
-    (attendance ASC NULLS LAST)
+CREATE INDEX IF NOT EXISTS idx_player_first_name
+    ON public.player USING btree
+    (first_name COLLATE pg_catalog."default" ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_game_info_game_date
+-- Index: idx_player_full_name
 
--- DROP INDEX IF EXISTS public.idx_game_info_game_date;
+-- DROP INDEX IF EXISTS public.idx_player_full_name;
 
-CREATE INDEX IF NOT EXISTS idx_game_info_game_date
-    ON public.game_info USING btree
-    (game_date ASC NULLS LAST)
+CREATE INDEX IF NOT EXISTS idx_player_full_name
+    ON public.player USING btree
+    (full_name COLLATE pg_catalog."default" ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_game_info_game_time
+-- Index: idx_player_is_active
 
--- DROP INDEX IF EXISTS public.idx_game_info_game_time;
+-- DROP INDEX IF EXISTS public.idx_player_is_active;
 
-CREATE INDEX IF NOT EXISTS idx_game_info_game_time
-    ON public.game_info USING btree
-    (game_time ASC NULLS LAST)
+CREATE INDEX IF NOT EXISTS idx_player_is_active
+    ON public.player USING btree
+    (is_active ASC NULLS LAST)
     TABLESPACE pg_default;
+-- Index: idx_player_last_name
 
--- Table: public.game_summary
+-- DROP INDEX IF EXISTS public.idx_player_last_name;
 
--- DROP TABLE IF EXISTS public.game_summary;
-
-CREATE TABLE IF NOT EXISTS public.game_summary
-(
-    game_date_est character varying(30) COLLATE pg_catalog."default",
-    game_sequence double precision,
-    game_id integer NOT NULL,
-    game_status_id integer,
-    game_status_text character varying(20) COLLATE pg_catalog."default",
-    gamecode character varying(15) COLLATE pg_catalog."default",
-    home_team_id integer,
-    visitor_team_id integer,
-    season integer,
-    live_period integer,
-    live_pc_time character varying(10) COLLATE pg_catalog."default",
-    natl_tv_broadcaster_abbreviation character varying(9) COLLATE pg_catalog."default",
-    live_period_time_bcast character varying(19) COLLATE pg_catalog."default" NOT NULL,
-    wh_status boolean,
-    CONSTRAINT game_summary_pkey PRIMARY KEY (game_id, live_period_time_bcast),
-    CONSTRAINT game_summary_game_id_fkey FOREIGN KEY (game_id)
-        REFERENCES public.game (game_id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION,
-    CONSTRAINT game_summary_home_team_id_fkey FOREIGN KEY (home_team_id)
-        REFERENCES public.team (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-)
-
-TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS public.game_summary
-    OWNER to postgres;
-
-GRANT ALL ON TABLE public.game_summary TO data_user;
-
-GRANT ALL ON TABLE public.game_summary TO postgres;
--- Index: idx_game_summary_game_date_est
-
--- DROP INDEX IF EXISTS public.idx_game_summary_game_date_est;
-
-CREATE INDEX IF NOT EXISTS idx_game_summary_game_date_est
-    ON public.game_summary USING btree
-    (game_date_est COLLATE pg_catalog."default" ASC NULLS LAST)
+CREATE INDEX IF NOT EXISTS idx_player_last_name
+    ON public.player USING btree
+    (last_name COLLATE pg_catalog."default" ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_game_summary_game_sequence
-
--- DROP INDEX IF EXISTS public.idx_game_summary_game_sequence;
-
-CREATE INDEX IF NOT EXISTS idx_game_summary_game_sequence
-    ON public.game_summary USING btree
-    (game_sequence ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_game_summary_game_status_id
-
--- DROP INDEX IF EXISTS public.idx_game_summary_game_status_id;
-
-CREATE INDEX IF NOT EXISTS idx_game_summary_game_status_id
-    ON public.game_summary USING btree
-    (game_status_id ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_game_summary_game_status_text
-
--- DROP INDEX IF EXISTS public.idx_game_summary_game_status_text;
-
-CREATE INDEX IF NOT EXISTS idx_game_summary_game_status_text
-    ON public.game_summary USING btree
-    (game_status_text COLLATE pg_catalog."default" ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_game_summary_gamecode
-
--- DROP INDEX IF EXISTS public.idx_game_summary_gamecode;
-
-CREATE INDEX IF NOT EXISTS idx_game_summary_gamecode
-    ON public.game_summary USING btree
-    (gamecode COLLATE pg_catalog."default" ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_game_summary_home_team_id
-
--- DROP INDEX IF EXISTS public.idx_game_summary_home_team_id;
-
-CREATE INDEX IF NOT EXISTS idx_game_summary_home_team_id
-    ON public.game_summary USING btree
-    (home_team_id ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_game_summary_live_pc_time
-
--- DROP INDEX IF EXISTS public.idx_game_summary_live_pc_time;
-
-CREATE INDEX IF NOT EXISTS idx_game_summary_live_pc_time
-    ON public.game_summary USING btree
-    (live_pc_time COLLATE pg_catalog."default" ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_game_summary_live_period
-
--- DROP INDEX IF EXISTS public.idx_game_summary_live_period;
-
-CREATE INDEX IF NOT EXISTS idx_game_summary_live_period
-    ON public.game_summary USING btree
-    (live_period ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_game_summary_live_period_time_bcast
-
--- DROP INDEX IF EXISTS public.idx_game_summary_live_period_time_bcast;
-
-CREATE INDEX IF NOT EXISTS idx_game_summary_live_period_time_bcast
-    ON public.game_summary USING btree
-    (live_period_time_bcast COLLATE pg_catalog."default" ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_game_summary_natl_tv_broadcaster_abbreviation
-
--- DROP INDEX IF EXISTS public.idx_game_summary_natl_tv_broadcaster_abbreviation;
-
-CREATE INDEX IF NOT EXISTS idx_game_summary_natl_tv_broadcaster_abbreviation
-    ON public.game_summary USING btree
-    (natl_tv_broadcaster_abbreviation COLLATE pg_catalog."default" ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_game_summary_season
-
--- DROP INDEX IF EXISTS public.idx_game_summary_season;
-
-CREATE INDEX IF NOT EXISTS idx_game_summary_season
-    ON public.game_summary USING btree
-    (season ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_game_summary_visitor_team_id
-
--- DROP INDEX IF EXISTS public.idx_game_summary_visitor_team_id;
-
-CREATE INDEX IF NOT EXISTS idx_game_summary_visitor_team_id
-    ON public.game_summary USING btree
-    (visitor_team_id ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_game_summary_wh_status
-
--- DROP INDEX IF EXISTS public.idx_game_summary_wh_status;
-
-CREATE INDEX IF NOT EXISTS idx_game_summary_wh_status
-    ON public.game_summary USING btree
-    (wh_status ASC NULLS LAST)
-    TABLESPACE pg_default;
--- Index: idx_hash_game_summary_home_team_id
-
--- DROP INDEX IF EXISTS public.idx_hash_game_summary_home_team_id;
-
-CREATE INDEX IF NOT EXISTS idx_hash_game_summary_home_team_id
-    ON public.game_summary USING hash
-    (home_team_id)
-    TABLESPACE pg_default;
+BEGIN;
 
 -- Table: public.common_player_info
 
@@ -880,10 +667,6 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.common_player_info
     OWNER to postgres;
-
-GRANT ALL ON TABLE public.common_player_info TO data_user;
-
-GRANT ALL ON TABLE public.common_player_info TO postgres;
 -- Index: idx_common_player_info_birthdate
 
 -- DROP INDEX IF EXISTS public.idx_common_player_info_birthdate;
@@ -1221,10 +1004,6 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.draft_combine_stats
     OWNER to postgres;
-
-GRANT ALL ON TABLE public.draft_combine_stats TO data_user;
-
-GRANT ALL ON TABLE public.draft_combine_stats TO postgres;
 -- Index: idx_draft_combine_stats_bench_press
 
 -- DROP INDEX IF EXISTS public.idx_draft_combine_stats_bench_press;
@@ -1633,10 +1412,6 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.draft_history
     OWNER to postgres;
-
-GRANT ALL ON TABLE public.draft_history TO data_user;
-
-GRANT ALL ON TABLE public.draft_history TO postgres;
 -- Index: idx_draft_history_draft_type
 
 -- DROP INDEX IF EXISTS public.idx_draft_history_draft_type;
@@ -1750,6 +1525,200 @@ CREATE INDEX IF NOT EXISTS idx_hash_draft_history_team_id
     (team_id)
     TABLESPACE pg_default;
 
+-- Table: public.game_info
+
+-- DROP TABLE IF EXISTS public.game_info;
+
+CREATE TABLE IF NOT EXISTS public.game_info
+(
+    game_id integer NOT NULL,
+    game_date timestamp without time zone,
+    attendance double precision,
+    game_time interval,
+    CONSTRAINT game_info_pkey PRIMARY KEY (game_id),
+    CONSTRAINT game_info_game_id_fkey FOREIGN KEY (game_id)
+        REFERENCES public.game (game_id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS public.game_info
+    OWNER to postgres;
+-- Index: idx_game_info_attendance
+
+-- DROP INDEX IF EXISTS public.idx_game_info_attendance;
+
+CREATE INDEX IF NOT EXISTS idx_game_info_attendance
+    ON public.game_info USING btree
+    (attendance ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_info_game_date
+
+-- DROP INDEX IF EXISTS public.idx_game_info_game_date;
+
+CREATE INDEX IF NOT EXISTS idx_game_info_game_date
+    ON public.game_info USING btree
+    (game_date ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_info_game_time
+
+-- DROP INDEX IF EXISTS public.idx_game_info_game_time;
+
+CREATE INDEX IF NOT EXISTS idx_game_info_game_time
+    ON public.game_info USING btree
+    (game_time ASC NULLS LAST)
+    TABLESPACE pg_default;
+
+-- Table: public.game_summary
+
+-- DROP TABLE IF EXISTS public.game_summary;
+
+CREATE TABLE IF NOT EXISTS public.game_summary
+(
+    game_date_est character varying(30) COLLATE pg_catalog."default",
+    game_sequence double precision,
+    game_id integer NOT NULL,
+    game_status_id integer,
+    game_status_text character varying(20) COLLATE pg_catalog."default",
+    gamecode character varying(15) COLLATE pg_catalog."default",
+    home_team_id integer,
+    visitor_team_id integer,
+    season integer,
+    live_period integer,
+    live_pc_time character varying(10) COLLATE pg_catalog."default",
+    natl_tv_broadcaster_abbreviation character varying(9) COLLATE pg_catalog."default",
+    live_period_time_bcast character varying(19) COLLATE pg_catalog."default" NOT NULL,
+    wh_status boolean,
+    CONSTRAINT game_summary_pkey PRIMARY KEY (game_id, live_period_time_bcast),
+    CONSTRAINT game_summary_game_id_fkey FOREIGN KEY (game_id)
+        REFERENCES public.game (game_id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION,
+    CONSTRAINT game_summary_home_team_id_fkey FOREIGN KEY (home_team_id)
+        REFERENCES public.team (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS public.game_summary
+    OWNER to postgres;
+-- Index: idx_game_summary_game_date_est
+
+-- DROP INDEX IF EXISTS public.idx_game_summary_game_date_est;
+
+CREATE INDEX IF NOT EXISTS idx_game_summary_game_date_est
+    ON public.game_summary USING btree
+    (game_date_est COLLATE pg_catalog."default" ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_summary_game_sequence
+
+-- DROP INDEX IF EXISTS public.idx_game_summary_game_sequence;
+
+CREATE INDEX IF NOT EXISTS idx_game_summary_game_sequence
+    ON public.game_summary USING btree
+    (game_sequence ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_summary_game_status_id
+
+-- DROP INDEX IF EXISTS public.idx_game_summary_game_status_id;
+
+CREATE INDEX IF NOT EXISTS idx_game_summary_game_status_id
+    ON public.game_summary USING btree
+    (game_status_id ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_summary_game_status_text
+
+-- DROP INDEX IF EXISTS public.idx_game_summary_game_status_text;
+
+CREATE INDEX IF NOT EXISTS idx_game_summary_game_status_text
+    ON public.game_summary USING btree
+    (game_status_text COLLATE pg_catalog."default" ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_summary_gamecode
+
+-- DROP INDEX IF EXISTS public.idx_game_summary_gamecode;
+
+CREATE INDEX IF NOT EXISTS idx_game_summary_gamecode
+    ON public.game_summary USING btree
+    (gamecode COLLATE pg_catalog."default" ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_summary_home_team_id
+
+-- DROP INDEX IF EXISTS public.idx_game_summary_home_team_id;
+
+CREATE INDEX IF NOT EXISTS idx_game_summary_home_team_id
+    ON public.game_summary USING btree
+    (home_team_id ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_summary_live_pc_time
+
+-- DROP INDEX IF EXISTS public.idx_game_summary_live_pc_time;
+
+CREATE INDEX IF NOT EXISTS idx_game_summary_live_pc_time
+    ON public.game_summary USING btree
+    (live_pc_time COLLATE pg_catalog."default" ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_summary_live_period
+
+-- DROP INDEX IF EXISTS public.idx_game_summary_live_period;
+
+CREATE INDEX IF NOT EXISTS idx_game_summary_live_period
+    ON public.game_summary USING btree
+    (live_period ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_summary_live_period_time_bcast
+
+-- DROP INDEX IF EXISTS public.idx_game_summary_live_period_time_bcast;
+
+CREATE INDEX IF NOT EXISTS idx_game_summary_live_period_time_bcast
+    ON public.game_summary USING btree
+    (live_period_time_bcast COLLATE pg_catalog."default" ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_summary_natl_tv_broadcaster_abbreviation
+
+-- DROP INDEX IF EXISTS public.idx_game_summary_natl_tv_broadcaster_abbreviation;
+
+CREATE INDEX IF NOT EXISTS idx_game_summary_natl_tv_broadcaster_abbreviation
+    ON public.game_summary USING btree
+    (natl_tv_broadcaster_abbreviation COLLATE pg_catalog."default" ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_summary_season
+
+-- DROP INDEX IF EXISTS public.idx_game_summary_season;
+
+CREATE INDEX IF NOT EXISTS idx_game_summary_season
+    ON public.game_summary USING btree
+    (season ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_summary_visitor_team_id
+
+-- DROP INDEX IF EXISTS public.idx_game_summary_visitor_team_id;
+
+CREATE INDEX IF NOT EXISTS idx_game_summary_visitor_team_id
+    ON public.game_summary USING btree
+    (visitor_team_id ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_game_summary_wh_status
+
+-- DROP INDEX IF EXISTS public.idx_game_summary_wh_status;
+
+CREATE INDEX IF NOT EXISTS idx_game_summary_wh_status
+    ON public.game_summary USING btree
+    (wh_status ASC NULLS LAST)
+    TABLESPACE pg_default;
+-- Index: idx_hash_game_summary_home_team_id
+
+-- DROP INDEX IF EXISTS public.idx_hash_game_summary_home_team_id;
+
+CREATE INDEX IF NOT EXISTS idx_hash_game_summary_home_team_id
+    ON public.game_summary USING hash
+    (home_team_id)
+    TABLESPACE pg_default;
+
 -- Table: public.inactive_players
 
 -- DROP TABLE IF EXISTS public.inactive_players;
@@ -1776,10 +1745,6 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.inactive_players
     OWNER to postgres;
-
-GRANT ALL ON TABLE public.inactive_players TO data_user;
-
-GRANT ALL ON TABLE public.inactive_players TO postgres;
 -- Index: idx_inactive_players_first_name
 
 -- DROP INDEX IF EXISTS public.idx_inactive_players_first_name;
@@ -1859,43 +1824,43 @@ CREATE TABLE IF NOT EXISTS public.line_score
     team_city_name_home character varying(25) COLLATE pg_catalog."default",
     team_nickname_home character varying(13) COLLATE pg_catalog."default",
     team_wins_losses_home character varying(5) COLLATE pg_catalog."default",
-    points_quarter1_home double precision,
-    points_quarter2_home double precision,
-    points_quarter3_home double precision,
-    points_quarter4_home double precision,
-    points_over_time1_home double precision,
-    points_over_time2_home double precision,
-    points_over_time3_home double precision,
-    points_over_time4_home double precision,
-    points_over_time5_home double precision,
-    points_over_time6_home double precision,
-    points_over_time7_home double precision,
-    points_over_time8_home double precision,
-    points_over_time9_home double precision,
-    points_over_time10_home double precision,
-    points_home integer,
+    pts_qtr1_home double precision,
+    pts_qtr2_home double precision,
+    pts_qtr3_home double precision,
+    pts_qtr4_home double precision,
+    pts_ot1_home double precision,
+    pts_ot2_home double precision,
+    pts_ot3_home double precision,
+    pts_ot4_home double precision,
+    pts_ot5_home double precision,
+    pts_ot6_home double precision,
+    pts_ot7_home double precision,
+    pts_ot8_home double precision,
+    pts_ot9_home double precision,
+    pts_ot10_home double precision,
+    pts_home integer,
     team_id_away integer,
     team_abbreviation_away character varying(3) COLLATE pg_catalog."default",
     team_city_name_away character varying(25) COLLATE pg_catalog."default",
     team_nickname_away character varying(13) COLLATE pg_catalog."default",
     team_wins_losses_away character varying(5) COLLATE pg_catalog."default",
-    points_quarter1_away double precision,
-    points_quarter2_away double precision,
-    points_quarter3_away double precision,
-    points_quarter4_away double precision,
-    points_over_time1_away double precision,
-    points_over_time2_away double precision,
-    points_over_time3_away double precision,
-    points_over_time4_away double precision,
-    points_over_time5_away double precision,
-    points_over_time6_away double precision,
-    points_over_time7_away double precision,
-    points_over_time8_away double precision,
-    points_over_time9_away double precision,
-    points_over_time10_away double precision,
-    points_away integer,
-    CONSTRAINT line_score_1_pkey PRIMARY KEY (game_id),
-    CONSTRAINT line_score_1_game_id_fkey FOREIGN KEY (game_id)
+    pts_qtr1_away double precision,
+    pts_qtr2_away double precision,
+    pts_qtr3_away double precision,
+    pts_qtr4_away double precision,
+    pts_ot1_away double precision,
+    pts_ot2_away double precision,
+    pts_ot3_away double precision,
+    pts_ot4_away double precision,
+    pts_ot5_away double precision,
+    pts_ot6_away double precision,
+    pts_ot7_away double precision,
+    pts_ot8_away double precision,
+    pts_ot9_away double precision,
+    pts_ot10_away double precision,
+    pts_away integer,
+    CONSTRAINT line_score_pkey PRIMARY KEY (game_id),
+    CONSTRAINT line_score_game_id_fkey FOREIGN KEY (game_id)
         REFERENCES public.game (game_id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
@@ -1905,10 +1870,6 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.line_score
     OWNER to postgres;
-
-GRANT ALL ON TABLE public.line_score TO data_user;
-
-GRANT ALL ON TABLE public.line_score TO postgres;
 -- Index: idx_line_score_game_date_est
 
 -- DROP INDEX IF EXISTS public.idx_line_score_game_date_est;
@@ -1925,245 +1886,245 @@ CREATE INDEX IF NOT EXISTS idx_line_score_game_sequence
     ON public.line_score USING btree
     (game_sequence ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_away
+-- Index: idx_line_score_pts_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_away
     ON public.line_score USING btree
-    (points_away ASC NULLS LAST)
+    (pts_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_home
+-- Index: idx_line_score_pts_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_home
     ON public.line_score USING btree
-    (points_home ASC NULLS LAST)
+    (pts_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time10_away
+-- Index: idx_line_score_pts_ot10_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time10_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot10_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time10_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot10_away
     ON public.line_score USING btree
-    (points_over_time10_away ASC NULLS LAST)
+    (pts_ot10_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time10_home
+-- Index: idx_line_score_pts_ot10_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time10_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot10_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time10_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot10_home
     ON public.line_score USING btree
-    (points_over_time10_home ASC NULLS LAST)
+    (pts_ot10_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time1_away
+-- Index: idx_line_score_pts_ot1_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time1_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot1_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time1_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot1_away
     ON public.line_score USING btree
-    (points_over_time1_away ASC NULLS LAST)
+    (pts_ot1_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time1_home
+-- Index: idx_line_score_pts_ot1_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time1_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot1_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time1_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot1_home
     ON public.line_score USING btree
-    (points_over_time1_home ASC NULLS LAST)
+    (pts_ot1_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time2_away
+-- Index: idx_line_score_pts_ot2_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time2_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot2_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time2_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot2_away
     ON public.line_score USING btree
-    (points_over_time2_away ASC NULLS LAST)
+    (pts_ot2_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time2_home
+-- Index: idx_line_score_pts_ot2_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time2_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot2_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time2_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot2_home
     ON public.line_score USING btree
-    (points_over_time2_home ASC NULLS LAST)
+    (pts_ot2_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time3_away
+-- Index: idx_line_score_pts_ot3_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time3_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot3_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time3_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot3_away
     ON public.line_score USING btree
-    (points_over_time3_away ASC NULLS LAST)
+    (pts_ot3_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time3_home
+-- Index: idx_line_score_pts_ot3_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time3_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot3_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time3_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot3_home
     ON public.line_score USING btree
-    (points_over_time3_home ASC NULLS LAST)
+    (pts_ot3_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time4_away
+-- Index: idx_line_score_pts_ot4_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time4_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot4_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time4_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot4_away
     ON public.line_score USING btree
-    (points_over_time4_away ASC NULLS LAST)
+    (pts_ot4_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time4_home
+-- Index: idx_line_score_pts_ot4_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time4_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot4_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time4_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot4_home
     ON public.line_score USING btree
-    (points_over_time4_home ASC NULLS LAST)
+    (pts_ot4_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time5_away
+-- Index: idx_line_score_pts_ot5_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time5_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot5_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time5_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot5_away
     ON public.line_score USING btree
-    (points_over_time5_away ASC NULLS LAST)
+    (pts_ot5_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time5_home
+-- Index: idx_line_score_pts_ot5_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time5_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot5_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time5_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot5_home
     ON public.line_score USING btree
-    (points_over_time5_home ASC NULLS LAST)
+    (pts_ot5_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time6_away
+-- Index: idx_line_score_pts_ot6_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time6_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot6_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time6_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot6_away
     ON public.line_score USING btree
-    (points_over_time6_away ASC NULLS LAST)
+    (pts_ot6_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time6_home
+-- Index: idx_line_score_pts_ot6_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time6_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot6_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time6_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot6_home
     ON public.line_score USING btree
-    (points_over_time6_home ASC NULLS LAST)
+    (pts_ot6_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time7_away
+-- Index: idx_line_score_pts_ot7_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time7_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot7_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time7_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot7_away
     ON public.line_score USING btree
-    (points_over_time7_away ASC NULLS LAST)
+    (pts_ot7_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time7_home
+-- Index: idx_line_score_pts_ot7_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time7_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot7_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time7_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot7_home
     ON public.line_score USING btree
-    (points_over_time7_home ASC NULLS LAST)
+    (pts_ot7_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time8_away
+-- Index: idx_line_score_pts_ot8_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time8_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot8_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time8_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot8_away
     ON public.line_score USING btree
-    (points_over_time8_away ASC NULLS LAST)
+    (pts_ot8_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time8_home
+-- Index: idx_line_score_pts_ot8_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time8_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot8_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time8_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot8_home
     ON public.line_score USING btree
-    (points_over_time8_home ASC NULLS LAST)
+    (pts_ot8_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time9_away
+-- Index: idx_line_score_pts_ot9_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time9_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot9_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time9_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot9_away
     ON public.line_score USING btree
-    (points_over_time9_away ASC NULLS LAST)
+    (pts_ot9_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_over_time9_home
+-- Index: idx_line_score_pts_ot9_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_over_time9_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_ot9_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_over_time9_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_ot9_home
     ON public.line_score USING btree
-    (points_over_time9_home ASC NULLS LAST)
+    (pts_ot9_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_quarter1_away
+-- Index: idx_line_score_pts_qtr1_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_quarter1_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_qtr1_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_quarter1_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_qtr1_away
     ON public.line_score USING btree
-    (points_quarter1_away ASC NULLS LAST)
+    (pts_qtr1_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_quarter1_home
+-- Index: idx_line_score_pts_qtr1_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_quarter1_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_qtr1_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_quarter1_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_qtr1_home
     ON public.line_score USING btree
-    (points_quarter1_home ASC NULLS LAST)
+    (pts_qtr1_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_quarter2_away
+-- Index: idx_line_score_pts_qtr2_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_quarter2_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_qtr2_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_quarter2_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_qtr2_away
     ON public.line_score USING btree
-    (points_quarter2_away ASC NULLS LAST)
+    (pts_qtr2_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_quarter2_home
+-- Index: idx_line_score_pts_qtr2_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_quarter2_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_qtr2_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_quarter2_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_qtr2_home
     ON public.line_score USING btree
-    (points_quarter2_home ASC NULLS LAST)
+    (pts_qtr2_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_quarter3_away
+-- Index: idx_line_score_pts_qtr3_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_quarter3_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_qtr3_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_quarter3_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_qtr3_away
     ON public.line_score USING btree
-    (points_quarter3_away ASC NULLS LAST)
+    (pts_qtr3_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_quarter3_home
+-- Index: idx_line_score_pts_qtr3_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_quarter3_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_qtr3_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_quarter3_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_qtr3_home
     ON public.line_score USING btree
-    (points_quarter3_home ASC NULLS LAST)
+    (pts_qtr3_home ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_quarter4_away
+-- Index: idx_line_score_pts_qtr4_away
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_quarter4_away;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_qtr4_away;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_quarter4_away
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_qtr4_away
     ON public.line_score USING btree
-    (points_quarter4_away ASC NULLS LAST)
+    (pts_qtr4_away ASC NULLS LAST)
     TABLESPACE pg_default;
--- Index: idx_line_score_points_quarter4_home
+-- Index: idx_line_score_pts_qtr4_home
 
--- DROP INDEX IF EXISTS public.idx_line_score_points_quarter4_home;
+-- DROP INDEX IF EXISTS public.idx_line_score_pts_qtr4_home;
 
-CREATE INDEX IF NOT EXISTS idx_line_score_points_quarter4_home
+CREATE INDEX IF NOT EXISTS idx_line_score_pts_qtr4_home
     ON public.line_score USING btree
-    (points_quarter4_home ASC NULLS LAST)
+    (pts_qtr4_home ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_line_score_team_abbreviation_away
 
@@ -2268,10 +2229,6 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.officials
     OWNER to postgres;
-
-GRANT ALL ON TABLE public.officials TO data_user;
-
-GRANT ALL ON TABLE public.officials TO postgres;
 -- Index: idx_officials_first_name
 
 -- DROP INDEX IF EXISTS public.idx_officials_first_name;
@@ -2356,10 +2313,6 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.play_by_play
     OWNER to postgres;
-
-GRANT ALL ON TABLE public.play_by_play TO data_user;
-
-GRANT ALL ON TABLE public.play_by_play TO postgres;
 -- Index: idx_play_by_play_eventmsgactiontype
 
 -- DROP INDEX IF EXISTS public.idx_play_by_play_eventmsgactiontype;
@@ -2656,10 +2609,6 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.team_details
     OWNER to postgres;
-
-GRANT ALL ON TABLE public.team_details TO data_user;
-
-GRANT ALL ON TABLE public.team_details TO postgres;
 -- Index: idx_team_details_abbreviation
 
 -- DROP INDEX IF EXISTS public.idx_team_details_abbreviation;
@@ -2787,10 +2736,6 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.team_history
     OWNER to postgres;
-
-GRANT ALL ON TABLE public.team_history TO data_user;
-
-GRANT ALL ON TABLE public.team_history TO postgres;
 -- Index: idx_team_history_city
 
 -- DROP INDEX IF EXISTS public.idx_team_history_city;
@@ -2839,23 +2784,23 @@ CREATE TABLE IF NOT EXISTS public.team_info_common
     team_division character varying(9) COLLATE pg_catalog."default",
     team_code character varying(12) COLLATE pg_catalog."default",
     team_slug character varying(12) COLLATE pg_catalog."default",
-    win integer,
-    lose integer,
-    percentage double precision,
-    conference_rank integer,
-    division_rank integer,
+    w integer,
+    l integer,
+    pct double precision,
+    conf_rank integer,
+    div_rank integer,
     min_year date,
     max_year date,
     league_id integer,
     season_id integer,
-    points_rank integer,
-    points_per_game double precision,
-    rebound_rank integer,
-    rebound_per_game double precision,
-    assist_rank integer,
-    assist_per_game double precision,
-    opponent_points_per_rank integer,
-    opponent_points_per_game double precision,
+    pts_rank integer,
+    pts_pg double precision,
+    reb_rank integer,
+    reb_pg double precision,
+    ast_rank integer,
+    ast_pg double precision,
+    opp_pts_rank integer,
+    opp_pts_pg double precision,
     CONSTRAINT team_info_common_pkey PRIMARY KEY (team_id),
     CONSTRAINT team_info_common_team_id_fkey FOREIGN KEY (team_id)
         REFERENCES public.team (id) MATCH SIMPLE
@@ -2867,17 +2812,13 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.team_info_common
     OWNER to postgres;
-
-GRANT ALL ON TABLE public.team_info_common TO data_user;
-
-GRANT ALL ON TABLE public.team_info_common TO postgres;
 -- Index: idx_team_info_common_ast_pg
 
 -- DROP INDEX IF EXISTS public.idx_team_info_common_ast_pg;
 
 CREATE INDEX IF NOT EXISTS idx_team_info_common_ast_pg
     ON public.team_info_common USING btree
-    (assist_per_game ASC NULLS LAST)
+    (ast_pg ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_team_info_common_ast_rank
 
@@ -2885,7 +2826,7 @@ CREATE INDEX IF NOT EXISTS idx_team_info_common_ast_pg
 
 CREATE INDEX IF NOT EXISTS idx_team_info_common_ast_rank
     ON public.team_info_common USING btree
-    (assist_rank ASC NULLS LAST)
+    (ast_rank ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_team_info_common_conf_rank
 
@@ -2893,7 +2834,7 @@ CREATE INDEX IF NOT EXISTS idx_team_info_common_ast_rank
 
 CREATE INDEX IF NOT EXISTS idx_team_info_common_conf_rank
     ON public.team_info_common USING btree
-    (conference_rank ASC NULLS LAST)
+    (conf_rank ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_team_info_common_div_rank
 
@@ -2901,7 +2842,7 @@ CREATE INDEX IF NOT EXISTS idx_team_info_common_conf_rank
 
 CREATE INDEX IF NOT EXISTS idx_team_info_common_div_rank
     ON public.team_info_common USING btree
-    (division_rank ASC NULLS LAST)
+    (div_rank ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_team_info_common_l
 
@@ -2909,7 +2850,7 @@ CREATE INDEX IF NOT EXISTS idx_team_info_common_div_rank
 
 CREATE INDEX IF NOT EXISTS idx_team_info_common_l
     ON public.team_info_common USING btree
-    (lose ASC NULLS LAST)
+    (l ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_team_info_common_league_id
 
@@ -2941,7 +2882,7 @@ CREATE INDEX IF NOT EXISTS idx_team_info_common_min_year
 
 CREATE INDEX IF NOT EXISTS idx_team_info_common_opp_pts_pg
     ON public.team_info_common USING btree
-    (opponent_points_per_game ASC NULLS LAST)
+    (opp_pts_pg ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_team_info_common_opp_pts_rank
 
@@ -2949,7 +2890,7 @@ CREATE INDEX IF NOT EXISTS idx_team_info_common_opp_pts_pg
 
 CREATE INDEX IF NOT EXISTS idx_team_info_common_opp_pts_rank
     ON public.team_info_common USING btree
-    (opponent_points_per_rank ASC NULLS LAST)
+    (opp_pts_rank ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_team_info_common_pct
 
@@ -2957,7 +2898,7 @@ CREATE INDEX IF NOT EXISTS idx_team_info_common_opp_pts_rank
 
 CREATE INDEX IF NOT EXISTS idx_team_info_common_pct
     ON public.team_info_common USING btree
-    (percentage ASC NULLS LAST)
+    (pct ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_team_info_common_pts_pg
 
@@ -2965,7 +2906,7 @@ CREATE INDEX IF NOT EXISTS idx_team_info_common_pct
 
 CREATE INDEX IF NOT EXISTS idx_team_info_common_pts_pg
     ON public.team_info_common USING btree
-    (points_per_game ASC NULLS LAST)
+    (pts_pg ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_team_info_common_pts_rank
 
@@ -2973,7 +2914,7 @@ CREATE INDEX IF NOT EXISTS idx_team_info_common_pts_pg
 
 CREATE INDEX IF NOT EXISTS idx_team_info_common_pts_rank
     ON public.team_info_common USING btree
-    (points_rank ASC NULLS LAST)
+    (pts_rank ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_team_info_common_reb_pg
 
@@ -2981,7 +2922,7 @@ CREATE INDEX IF NOT EXISTS idx_team_info_common_pts_rank
 
 CREATE INDEX IF NOT EXISTS idx_team_info_common_reb_pg
     ON public.team_info_common USING btree
-    (rebound_per_game ASC NULLS LAST)
+    (reb_pg ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_team_info_common_reb_rank
 
@@ -2989,7 +2930,7 @@ CREATE INDEX IF NOT EXISTS idx_team_info_common_reb_pg
 
 CREATE INDEX IF NOT EXISTS idx_team_info_common_reb_rank
     ON public.team_info_common USING btree
-    (rebound_rank ASC NULLS LAST)
+    (reb_rank ASC NULLS LAST)
     TABLESPACE pg_default;
 -- Index: idx_team_info_common_season_id
 
@@ -3069,28 +3010,30 @@ CREATE INDEX IF NOT EXISTS idx_team_info_common_team_slug
 
 CREATE INDEX IF NOT EXISTS idx_team_info_common_w
     ON public.team_info_common USING btree
-    (win ASC NULLS LAST)
+    (w ASC NULLS LAST)
     TABLESPACE pg_default;
 
+\copy game FROM '/var/lib/postgresql/nba/game.csv' CSV HEADER
+\copy team FROM '/var/lib/postgresql/nba/team.csv' CSV HEADER
+\copy player FROM '/var/lib/postgresql/nba/player.csv' CSV HEADER
 \copy play_by_play FROM '/var/lib/postgresql/nba/play_by_play.csv' CSV HEADER
 \copy line_score FROM '/var/lib/postgresql/nba/line_score.csv' CSV HEADER
 \copy game_info FROM '/var/lib/postgresql/nba/game_info.csv' CSV HEADER
 \copy inactive_players FROM '/var/lib/postgresql/nba/inactive_players.csv' CSV HEADER
 \copy game_summary FROM '/var/lib/postgresql/nba/game_summary.csv' CSV HEADER
-\copy team FROM '/var/lib/postgresql/nba/team.csv' CSV HEADER
 \copy team_details FROM '/var/lib/postgresql/nba/team_details.csv' CSV HEADER
 \copy team_info_common FROM '/var/lib/postgresql/nba/team_info_common.csv' CSV HEADER
 \copy common_player_info FROM '/var/lib/postgresql/nba/common_player_info.csv' CSV HEADER
 \copy officials FROM '/var/lib/postgresql/nba/officials.csv' CSV HEADER
 \copy team_history FROM '/var/lib/postgresql/nba/team_history.csv' CSV HEADER
 \copy draft_history FROM '/var/lib/postgresql/nba/draft_history.csv' CSV HEADER
-\copy player FROM '/var/lib/postgresql/nba/player.csv' CSV HEADER
 \copy draft_combine_stats FROM '/var/lib/postgresql/nba/draft_combine_stats.csv' CSV HEADER
 END;
 
 GRANT ALL PRIVILEGES ON DATABASE nba TO data_user;
 GRANT ALL PRIVILEGES ON TABLE play_by_play TO data_user;
 GRANT ALL PRIVILEGES ON TABLE line_score TO data_user;
+GRANT ALL PRIVILEGES ON TABLE game TO data_user;
 GRANT ALL PRIVILEGES ON TABLE game_info TO data_user;
 GRANT ALL PRIVILEGES ON TABLE inactive_players TO data_user;
 GRANT ALL PRIVILEGES ON TABLE game_summary TO data_user;
