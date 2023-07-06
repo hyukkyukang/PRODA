@@ -1,6 +1,6 @@
 {
     "global_idx": 0,
-    "db": "postgres",
+    "db": "nba",
     "schema_name": "nba",
     "num_queries": 30,
     "output": "/root/proda/data/database/nba/result/nba_result_1.out",
