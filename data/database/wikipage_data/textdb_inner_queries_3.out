@@ -1,0 +1,101 @@
+SELECT DISTINCT N1_0_title_aka.region FROM title_aka AS N1_0_title_aka WHERE N1_0_title_aka.region NOT IN ('VN','GB') GROUP BY N1_0_title_aka.region HAVING COUNT(*) <= 71
+SELECT DISTINCT N1_1_title_aka.region, COUNT(*) FROM title_aka AS N1_1_title_aka WHERE N1_1_title_aka.region NOT IN ('VN','GB') GROUP BY N1_1_title_aka.region
+SELECT DISTINCT * FROM title_aka AS N1_2_title_aka WHERE (N1_2_title_aka.language NOT LIKE '%en%' OR N1_2_title_aka.region = 'PH')
+SELECT DISTINCT N1_3_title_aka.region FROM title_aka AS N1_3_title_aka WHERE N1_3_title_aka.title NOT LIKE '%Hetty%' GROUP BY N1_3_title_aka.region HAVING COUNT(*) < 71 ORDER BY N1_3_title_aka.region LIMIT 4
+SELECT DISTINCT N1_4_title_aka.region, COUNT(*) FROM title_aka AS N1_4_title_aka WHERE N1_4_title_aka.title NOT LIKE '%Hetty%' GROUP BY N1_4_title_aka.region
+SELECT DISTINCT N1_5_mediainfo.genres FROM mediainfo AS N1_5_mediainfo WHERE N1_5_mediainfo.title_type LIKE '%vSeries' GROUP BY N1_5_mediainfo.genres HAVING COUNT(*) < 8
+SELECT DISTINCT N1_6_mediainfo.genres, COUNT(*) FROM mediainfo AS N1_6_mediainfo WHERE N1_6_mediainfo.title_type LIKE '%vSeries' GROUP BY N1_6_mediainfo.genres
+SELECT DISTINCT COUNT(N1_7_movie.title_id) FROM movie AS N1_7_movie WHERE (N1_7_movie.budget = '181.275' OR N1_7_movie.budget LIKE '%1050000%')
+SELECT DISTINCT N1_8_title_aka.region FROM title_aka AS N1_8_title_aka WHERE (N1_8_title_aka.title != 'Ездачи в планината' AND N1_8_title_aka.region NOT LIKE '%PT%') GROUP BY N1_8_title_aka.region HAVING COUNT(*) <= 71
+SELECT DISTINCT N1_9_title_aka.region, COUNT(*) FROM title_aka AS N1_9_title_aka WHERE (N1_9_title_aka.title != 'Ездачи в планината' AND N1_9_title_aka.region NOT LIKE '%PT%') GROUP BY N1_9_title_aka.region
+SELECT DISTINCT N1_10_mediainfo.genres FROM mediainfo AS N1_10_mediainfo WHERE N1_10_mediainfo.runtime <= 91 GROUP BY N1_10_mediainfo.genres HAVING (COUNT(*) > 1 AND COUNT(*) <= 5)
+SELECT DISTINCT N1_11_mediainfo.genres, COUNT(*) FROM mediainfo AS N1_11_mediainfo WHERE N1_11_mediainfo.runtime <= 91 GROUP BY N1_11_mediainfo.genres
+SELECT DISTINCT N1_12_title_aka.language FROM title_aka AS N1_12_title_aka WHERE N1_12_title_aka.language NOT LIKE '%ja' GROUP BY N1_12_title_aka.language HAVING COUNT(*) > 205
+SELECT DISTINCT N1_13_title_aka.language, COUNT(*) FROM title_aka AS N1_13_title_aka WHERE N1_13_title_aka.language NOT LIKE '%ja' GROUP BY N1_13_title_aka.language
+SELECT DISTINCT COUNT(*) FROM ratings AS N1_14_ratings WHERE (N1_14_ratings.num_votes > 329 OR N1_14_ratings.average_rating > 5.7)
+SELECT DISTINCT N1_15_movie.gross FROM movie AS N1_15_movie WHERE (N1_15_movie.gross = '2300000.0' OR N1_15_movie.gross LIKE '416509.%')
+SELECT DISTINCT * FROM episode AS N1_16_episode WHERE (N1_16_episode.season_num < 4 OR N1_16_episode.season_num = 10)
+SELECT DISTINCT N1_17_title_aka.language FROM title_aka AS N1_17_title_aka WHERE N1_17_title_aka.language != 'en' GROUP BY N1_17_title_aka.language HAVING COUNT(*) >= 205 ORDER BY N1_17_title_aka.language LIMIT 1
+SELECT DISTINCT N1_18_title_aka.language, COUNT(*) FROM title_aka AS N1_18_title_aka WHERE N1_18_title_aka.language != 'en' GROUP BY N1_18_title_aka.language
+SELECT DISTINCT N1_19_mediainfo.genres FROM mediainfo AS N1_19_mediainfo WHERE (N1_19_mediainfo.title NOT IN ('Bulldog Drummond''s Secret Police','Places in the Heart','Diary of a Mad Housewife') OR N1_19_mediainfo.runtime > 95)
+SELECT DISTINCT N1_20_title_aka.region FROM title_aka AS N1_20_title_aka WHERE N1_20_title_aka.language NOT IN ('ja','sr','he') GROUP BY N1_20_title_aka.region HAVING (COUNT(*) > 16 AND COUNT(*) <= 32)
+SELECT DISTINCT N1_21_title_aka.region, COUNT(*) FROM title_aka AS N1_21_title_aka WHERE N1_21_title_aka.language NOT IN ('ja','sr','he') GROUP BY N1_21_title_aka.region
+SELECT DISTINCT * FROM person_info AS N1_22_person_info WHERE (N1_22_person_info.endyear <= 1989 OR N1_22_person_info.name NOT IN ('Marlon Brando','Burt Kennedy'))
+SELECT DISTINCT N1_23_title_aka.language FROM title_aka AS N1_23_title_aka WHERE N1_23_title_aka.language != 'he' GROUP BY N1_23_title_aka.language HAVING COUNT(*) <= 205
+SELECT DISTINCT N1_24_title_aka.language, COUNT(*) FROM title_aka AS N1_24_title_aka WHERE N1_24_title_aka.language != 'he' GROUP BY N1_24_title_aka.language
+SELECT DISTINCT N1_25_mediainfo.title_type FROM mediainfo AS N1_25_mediainfo WHERE (N1_25_mediainfo.title_type != 'tvSeries' AND N1_25_mediainfo.isadult = False) GROUP BY N1_25_mediainfo.title_type HAVING (COUNT(*) >= 10 AND COUNT(*) < 65)
+SELECT DISTINCT N1_26_mediainfo.title_type, COUNT(*) FROM mediainfo AS N1_26_mediainfo WHERE (N1_26_mediainfo.title_type != 'tvSeries' AND N1_26_mediainfo.isadult = False) GROUP BY N1_26_mediainfo.title_type
+SELECT DISTINCT N1_27_person_info.endyear FROM person_info AS N1_27_person_info WHERE (N1_27_person_info.startyear < 1978 OR N1_27_person_info.birthplace IN ('Tokyo','Birmingham, Michigan','San Antonio'))
+SELECT DISTINCT N1_28_title_aka.region FROM title_aka AS N1_28_title_aka WHERE N1_28_title_aka.region != 'IN' GROUP BY N1_28_title_aka.region HAVING COUNT(*) >= 71
+SELECT DISTINCT N1_29_title_aka.region, COUNT(*) FROM title_aka AS N1_29_title_aka WHERE N1_29_title_aka.region != 'IN' GROUP BY N1_29_title_aka.region
+SELECT DISTINCT N1_30_episode.season_num FROM episode AS N1_30_episode WHERE (N1_30_episode.episode_num != 10 OR N1_30_episode.season_num >= 5)
+SELECT DISTINCT N1_31_title_aka.region FROM title_aka AS N1_31_title_aka WHERE N1_31_title_aka.region NOT IN ('CN','FR','TR') GROUP BY N1_31_title_aka.region HAVING COUNT(*) <= 71
+SELECT DISTINCT N1_32_title_aka.region, COUNT(*) FROM title_aka AS N1_32_title_aka WHERE N1_32_title_aka.region NOT IN ('CN','FR','TR') GROUP BY N1_32_title_aka.region
+SELECT DISTINCT COUNT(*) FROM ratings AS N1_33_ratings WHERE ((N1_33_ratings.num_votes > 7192 AND N1_33_ratings.num_votes <= 18445) OR N1_33_ratings.average_rating = 6.8)
+SELECT DISTINCT N1_34_title_aka.region FROM title_aka AS N1_34_title_aka WHERE N1_34_title_aka.language IN ('en','ja') GROUP BY N1_34_title_aka.region HAVING COUNT(*) <= 32
+SELECT DISTINCT N1_35_title_aka.region, COUNT(*) FROM title_aka AS N1_35_title_aka WHERE N1_35_title_aka.language IN ('en','ja') GROUP BY N1_35_title_aka.region
+SELECT DISTINCT * FROM person_info AS N1_36_person_info WHERE (N1_36_person_info.father_name = 'Richard Matheson' OR N1_36_person_info.father_name = 'John Swinton of Kimmerghame')
+SELECT DISTINCT N1_37_title_aka.language FROM title_aka AS N1_37_title_aka WHERE N1_37_title_aka.language != 'bg' GROUP BY N1_37_title_aka.language HAVING (COUNT(*) >= 55 AND COUNT(*) < 205)
+SELECT DISTINCT N1_38_title_aka.language, COUNT(*) FROM title_aka AS N1_38_title_aka WHERE N1_38_title_aka.language != 'bg' GROUP BY N1_38_title_aka.language
+SELECT DISTINCT N1_39_ratings.num_votes FROM ratings AS N1_39_ratings WHERE (N1_39_ratings.num_votes <= 1943 OR N1_39_ratings.num_votes = 7894) ORDER BY N1_39_ratings.num_votes LIMIT 3
+SELECT DISTINCT * FROM title_aka AS N1_40_title_aka WHERE (N1_40_title_aka.region NOT IN ('ES','CO') OR N1_40_title_aka.title = 'No con mis hijas')
+SELECT DISTINCT COUNT(N1_41_person_info.abstract) FROM person_info AS N1_41_person_info WHERE (N1_41_person_info.startyear <= 1981 OR N1_41_person_info.nationality IN ('Philippines','Americans'))
+SELECT DISTINCT N1_42_title_aka.region FROM title_aka AS N1_42_title_aka WHERE N1_42_title_aka.title != '¡Adiós a Lenin!' GROUP BY N1_42_title_aka.region HAVING COUNT(*) >= 71
+SELECT DISTINCT N1_43_title_aka.region, COUNT(*) FROM title_aka AS N1_43_title_aka WHERE N1_43_title_aka.title != '¡Adiós a Lenin!' GROUP BY N1_43_title_aka.region
+SELECT DISTINCT N1_44_mediainfo.genres FROM mediainfo AS N1_44_mediainfo WHERE N1_44_mediainfo.runtime < 43 GROUP BY N1_44_mediainfo.genres HAVING (COUNT(*) >= 1 AND COUNT(*) <= 2) ORDER BY N1_44_mediainfo.genres LIMIT 5
+SELECT DISTINCT N1_45_mediainfo.genres, COUNT(*) FROM mediainfo AS N1_45_mediainfo WHERE N1_45_mediainfo.runtime < 43 GROUP BY N1_45_mediainfo.genres
+SELECT DISTINCT N1_46_title_aka.language FROM title_aka AS N1_46_title_aka WHERE N1_46_title_aka.language != 'ja' GROUP BY N1_46_title_aka.language HAVING COUNT(*) > 205
+SELECT DISTINCT N1_47_title_aka.language, COUNT(*) FROM title_aka AS N1_47_title_aka WHERE N1_47_title_aka.language != 'ja' GROUP BY N1_47_title_aka.language
+SELECT DISTINCT N1_48_mediainfo.genres FROM mediainfo AS N1_48_mediainfo WHERE N1_48_mediainfo.runtime < 120 GROUP BY N1_48_mediainfo.genres HAVING (COUNT(*) >= 1 AND COUNT(*) < 4)
+SELECT DISTINCT N1_49_mediainfo.genres, COUNT(*) FROM mediainfo AS N1_49_mediainfo WHERE N1_49_mediainfo.runtime < 120 GROUP BY N1_49_mediainfo.genres
+SELECT DISTINCT * FROM tv_series AS N1_50_tv_series WHERE (N1_50_tv_series.season_num > 4 OR N1_50_tv_series.completion_date = '2002-11-22')
+SELECT DISTINCT N1_51_movie.budget FROM movie AS N1_51_movie WHERE (N1_51_movie.abstract LIKE '%1951%' OR N1_51_movie.budget LIKE '%4.0E7')
+SELECT DISTINCT N1_52_title_aka.language FROM title_aka AS N1_52_title_aka WHERE (N1_52_title_aka.title LIKE 'A%' AND N1_52_title_aka.language NOT LIKE '%en') GROUP BY N1_52_title_aka.language HAVING (COUNT(*) > 1 AND COUNT(*) <= 5)
+SELECT DISTINCT N1_53_title_aka.language, COUNT(*) FROM title_aka AS N1_53_title_aka WHERE (N1_53_title_aka.title LIKE 'A%' AND N1_53_title_aka.language NOT LIKE '%en') GROUP BY N1_53_title_aka.language
+SELECT DISTINCT N1_54_title_aka.region FROM title_aka AS N1_54_title_aka WHERE N1_54_title_aka.title != 'As the World Turns' GROUP BY N1_54_title_aka.region HAVING COUNT(*) <= 71
+SELECT DISTINCT N1_55_title_aka.region, COUNT(*) FROM title_aka AS N1_55_title_aka WHERE N1_55_title_aka.title != 'As the World Turns' GROUP BY N1_55_title_aka.region
+SELECT DISTINCT * FROM title_aka AS N1_56_title_aka WHERE (N1_56_title_aka.region = 'GB' OR N1_56_title_aka.region NOT IN ('AR','AU','PL'))
+SELECT DISTINCT N1_57_title_aka.region FROM title_aka AS N1_57_title_aka WHERE N1_57_title_aka.region NOT IN ('ZA','US','SUHH') GROUP BY N1_57_title_aka.region HAVING COUNT(*) <= 71
+SELECT DISTINCT N1_58_title_aka.region, COUNT(*) FROM title_aka AS N1_58_title_aka WHERE N1_58_title_aka.region NOT IN ('ZA','US','SUHH') GROUP BY N1_58_title_aka.region
+SELECT DISTINCT N1_59_movie.title FROM movie AS N1_59_movie WHERE (N1_59_movie.gross = '416509.0' OR N1_59_movie.gross != '30471.0')
+SELECT DISTINCT N1_60_movie.budget FROM movie AS N1_60_movie WHERE (N1_60_movie.abstract NOT LIKE '%the%' OR N1_60_movie.budget = '5.5E7')
+SELECT DISTINCT N1_61_mediainfo.genres FROM mediainfo AS N1_61_mediainfo WHERE (N1_61_mediainfo.title_type IN ('movie','tvSeries','tvMovie') AND N1_61_mediainfo.runtime > 125) GROUP BY N1_61_mediainfo.genres HAVING (COUNT(*) > 1 AND COUNT(*) <= 4)
+SELECT DISTINCT N1_62_mediainfo.genres, COUNT(*) FROM mediainfo AS N1_62_mediainfo WHERE (N1_62_mediainfo.title_type IN ('movie','tvSeries','tvMovie') AND N1_62_mediainfo.runtime > 125) GROUP BY N1_62_mediainfo.genres
+SELECT DISTINCT N1_63_title_aka.region FROM title_aka AS N1_63_title_aka WHERE (N1_63_title_aka.region = 'FR' OR N1_63_title_aka.region LIKE 'MX%')
+SELECT DISTINCT N1_64_title_aka.language FROM title_aka AS N1_64_title_aka WHERE N1_64_title_aka.language != 'en' GROUP BY N1_64_title_aka.language HAVING COUNT(*) > 205
+SELECT DISTINCT N1_65_title_aka.language, COUNT(*) FROM title_aka AS N1_65_title_aka WHERE N1_65_title_aka.language != 'en' GROUP BY N1_65_title_aka.language
+SELECT DISTINCT N1_66_title_aka.region FROM title_aka AS N1_66_title_aka WHERE N1_66_title_aka.language = 'en' GROUP BY N1_66_title_aka.region HAVING COUNT(*) <= 32 ORDER BY N1_66_title_aka.region LIMIT 1
+SELECT DISTINCT N1_67_title_aka.region, COUNT(*) FROM title_aka AS N1_67_title_aka WHERE N1_67_title_aka.language = 'en' GROUP BY N1_67_title_aka.region
+SELECT DISTINCT N1_68_mediainfo.title FROM mediainfo AS N1_68_mediainfo WHERE (N1_68_mediainfo.title_type IN ('tvMovie','movie') OR N1_68_mediainfo.title_type NOT IN ('short','tvSeries'))
+SELECT DISTINCT N1_69_title_aka.region FROM title_aka AS N1_69_title_aka WHERE N1_69_title_aka.region NOT IN ('PE','HU','PT') GROUP BY N1_69_title_aka.region HAVING COUNT(*) > 71
+SELECT DISTINCT N1_70_title_aka.region, COUNT(*) FROM title_aka AS N1_70_title_aka WHERE N1_70_title_aka.region NOT IN ('PE','HU','PT') GROUP BY N1_70_title_aka.region
+SELECT DISTINCT N1_71_mediainfo.title_type FROM mediainfo AS N1_71_mediainfo WHERE N1_71_mediainfo.title != 'Farewell My Concubine' GROUP BY N1_71_mediainfo.title_type HAVING COUNT(*) < 19
+SELECT DISTINCT N1_72_mediainfo.title_type, COUNT(*) FROM mediainfo AS N1_72_mediainfo WHERE N1_72_mediainfo.title != 'Farewell My Concubine' GROUP BY N1_72_mediainfo.title_type
+SELECT DISTINCT N1_73_mediainfo.genres FROM mediainfo AS N1_73_mediainfo WHERE N1_73_mediainfo.title_type = 'movie' GROUP BY N1_73_mediainfo.genres HAVING (COUNT(*) >= 1 AND COUNT(*) < 3)
+SELECT DISTINCT N1_74_mediainfo.genres, COUNT(*) FROM mediainfo AS N1_74_mediainfo WHERE N1_74_mediainfo.title_type = 'movie' GROUP BY N1_74_mediainfo.genres
+SELECT DISTINCT N1_75_mediainfo.genres FROM mediainfo AS N1_75_mediainfo WHERE N1_75_mediainfo.title_type NOT LIKE '%movie%' GROUP BY N1_75_mediainfo.genres HAVING COUNT(*) < 2
+SELECT DISTINCT N1_76_mediainfo.genres, COUNT(*) FROM mediainfo AS N1_76_mediainfo WHERE N1_76_mediainfo.title_type NOT LIKE '%movie%' GROUP BY N1_76_mediainfo.genres
+SELECT DISTINCT N1_77_ratings.average_rating FROM ratings AS N1_77_ratings WHERE (N1_77_ratings.num_votes >= 16459 OR (N1_77_ratings.num_votes >= 12036 AND N1_77_ratings.num_votes < 14749))
+SELECT DISTINCT N1_78_mediainfo.genres FROM mediainfo AS N1_78_mediainfo WHERE N1_78_mediainfo.title_type = 'tvSeries' GROUP BY N1_78_mediainfo.genres HAVING COUNT(*) < 8
+SELECT DISTINCT N1_79_mediainfo.genres, COUNT(*) FROM mediainfo AS N1_79_mediainfo WHERE N1_79_mediainfo.title_type = 'tvSeries' GROUP BY N1_79_mediainfo.genres
+SELECT DISTINCT N1_80_mediainfo.title_type FROM mediainfo AS N1_80_mediainfo WHERE N1_80_mediainfo.title != 'High Sierra' GROUP BY N1_80_mediainfo.title_type HAVING (COUNT(*) >= 11 AND COUNT(*) < 65) ORDER BY N1_80_mediainfo.title_type LIMIT 5
+SELECT DISTINCT N1_81_mediainfo.title_type, COUNT(*) FROM mediainfo AS N1_81_mediainfo WHERE N1_81_mediainfo.title != 'High Sierra' GROUP BY N1_81_mediainfo.title_type
+SELECT DISTINCT N1_82_title_aka.region FROM title_aka AS N1_82_title_aka WHERE N1_82_title_aka.region NOT IN ('FR','TR','GB') GROUP BY N1_82_title_aka.region HAVING COUNT(*) >= 71
+SELECT DISTINCT N1_83_title_aka.region, COUNT(*) FROM title_aka AS N1_83_title_aka WHERE N1_83_title_aka.region NOT IN ('FR','TR','GB') GROUP BY N1_83_title_aka.region
+SELECT DISTINCT N1_84_title_aka.region FROM title_aka AS N1_84_title_aka WHERE N1_84_title_aka.region NOT LIKE '%PH%' GROUP BY N1_84_title_aka.region HAVING (COUNT(*) >= 3 AND COUNT(*) < 71)
+SELECT DISTINCT N1_85_title_aka.region, COUNT(*) FROM title_aka AS N1_85_title_aka WHERE N1_85_title_aka.region NOT LIKE '%PH%' GROUP BY N1_85_title_aka.region
+SELECT DISTINCT * FROM mediainfo AS N1_86_mediainfo WHERE (N1_86_mediainfo.isadult = False OR N1_86_mediainfo.title_type = 'tvMiniSeries')
+SELECT DISTINCT N1_87_mediainfo.title_id FROM mediainfo AS N1_87_mediainfo WHERE (N1_87_mediainfo.runtime > 100 OR N1_87_mediainfo.title = 'Wake Island')
+SELECT DISTINCT N1_88_tv_series.episode_num FROM tv_series AS N1_88_tv_series WHERE (N1_88_tv_series.abstract LIKE '%that%' OR N1_88_tv_series.season_num <= 7)
+SELECT DISTINCT N1_89_title_aka.region FROM title_aka AS N1_89_title_aka WHERE N1_89_title_aka.region NOT IN ('DK','PT','IT') GROUP BY N1_89_title_aka.region HAVING COUNT(*) >= 71
+SELECT DISTINCT N1_90_title_aka.region, COUNT(*) FROM title_aka AS N1_90_title_aka WHERE N1_90_title_aka.region NOT IN ('DK','PT','IT') GROUP BY N1_90_title_aka.region
+SELECT DISTINCT N1_91_title_aka.region FROM title_aka AS N1_91_title_aka WHERE (N1_91_title_aka.title != 'The People vs. Larry Flynt' AND N1_91_title_aka.region NOT LIKE 'SUHH%') GROUP BY N1_91_title_aka.region HAVING COUNT(*) <= 71
+SELECT DISTINCT N1_92_title_aka.region, COUNT(*) FROM title_aka AS N1_92_title_aka WHERE (N1_92_title_aka.title != 'The People vs. Larry Flynt' AND N1_92_title_aka.region NOT LIKE 'SUHH%') GROUP BY N1_92_title_aka.region
+SELECT DISTINCT N1_93_mediainfo.title_type FROM mediainfo AS N1_93_mediainfo WHERE N1_93_mediainfo.title_type NOT IN ('tvEpisode','movie','tvSeries') GROUP BY N1_93_mediainfo.title_type HAVING COUNT(*) >= 19 ORDER BY N1_93_mediainfo.title_type LIMIT 4
+SELECT DISTINCT N1_94_mediainfo.title_type, COUNT(*) FROM mediainfo AS N1_94_mediainfo WHERE N1_94_mediainfo.title_type NOT IN ('tvEpisode','movie','tvSeries') GROUP BY N1_94_mediainfo.title_type
+SELECT DISTINCT N1_95_title_aka.language FROM title_aka AS N1_95_title_aka WHERE N1_95_title_aka.language NOT LIKE '%fr%' GROUP BY N1_95_title_aka.language HAVING (COUNT(*) >= 8 AND COUNT(*) <= 205)
+SELECT DISTINCT N1_96_title_aka.language, COUNT(*) FROM title_aka AS N1_96_title_aka WHERE N1_96_title_aka.language NOT LIKE '%fr%' GROUP BY N1_96_title_aka.language
+SELECT DISTINCT COUNT(*) FROM mediainfo AS N1_97_mediainfo WHERE (N1_97_mediainfo.runtime = 22 OR N1_97_mediainfo.runtime > 90)
+SELECT DISTINCT * FROM tv_series AS N1_98_tv_series WHERE (N1_98_tv_series.title NOT LIKE '%Man%' OR N1_98_tv_series.title = 'Danger Man')
+SELECT DISTINCT N1_99_mediainfo.genres FROM mediainfo AS N1_99_mediainfo WHERE N1_99_mediainfo.title_type = 'movie' GROUP BY N1_99_mediainfo.genres HAVING (COUNT(*) > 1 AND COUNT(*) <= 17)
+SELECT DISTINCT N1_100_mediainfo.genres, COUNT(*) FROM mediainfo AS N1_100_mediainfo WHERE N1_100_mediainfo.title_type = 'movie' GROUP BY N1_100_mediainfo.genres
