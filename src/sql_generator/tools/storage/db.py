@@ -64,23 +64,22 @@ class PostgreSQLDatabase(DBConnector):
         sql = f"""
             SELECT COUNT(*)
             FROM
-                {table_name}
+                ( SELECT * FROM {table_name}
             """
         if additional_clauses is not None:
             sql += f""" {additional_clauses}"""
-        sql += "LIMIT 2;"
+        sql += "LIMIT 2 ) as T;"
         self.execute(sql)
         return (self.fetchall())[0][0]
 
     def check_distinct_value_exists(self, table_name: str, column_name: str, additional_clauses: str = None):
         sql = f"""
             SELECT COUNT(DISTINCT {column_name})
-            FROM
-                {table_name}
+            FROM ( SELECT * FROM {table_name}
             """
         if additional_clauses is not None:
             sql += f""" {additional_clauses}"""
-        sql += "LIMIT 2;"
+        sql += "LIMIT 2 ) as T;"
         self.execute(sql)
         return (self.fetchall())[0][0]
 
@@ -188,6 +187,7 @@ class PostgreSQLDatabase(DBConnector):
             view_sql += " CASCADE;"
         else:
             view_sql += ";"
+
         # logger.info(f"Drop view named {view_id} typed {type}")
         self.execute(view_sql)
         return

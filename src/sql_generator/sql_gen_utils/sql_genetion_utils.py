@@ -117,6 +117,11 @@ def get_view_name(type, args):
         db_name = args[0]
         sample_name = args[1]
         return (db_name + "__" + sample_name).lower()
+    elif type == "main_given_predicate":
+        db_name = args[0]
+        sample_name = args[1]
+        predicate_id = str(args[2])
+        return (db_name + "__" + sample_name + "__" + prdicate_id).lower()
     elif type == "where_generator":
         main_view_name = args[0]
         prefix = args[1]
@@ -1814,7 +1819,8 @@ def get_query_token(
 ):
     df_columns = []
     for table in all_table_set:
-        columns = data_manager.fetch_column_names(table)
+        columns = args.table_info[table]
+        # columns = data_manager.fetch_column_names(table)
         df_columns += [table + "." + column for column in columns]
 
     df_columns_not_null = []

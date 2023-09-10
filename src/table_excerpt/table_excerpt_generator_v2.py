@@ -107,18 +107,9 @@ def get_view_query(
     select_clause = f"""SELECT {select_col_view} """
 
     additional_conditions = ""
-    if obj["type"]["group"]:
-        group_col_view = [
-            group_col.replace(".", "__").replace(prefix, f"{inner_join_view_name}.") for group_col in group_columns
-        ]
-        group_not_null_condition = " AND ".join([f"""{group_col} IS NOT NULL""" for group_col in group_col_view])
 
     if where_condition is not None:
         additional_conditions = f""" WHERE {where_condition} """
-        if obj["type"]["group"]:
-            additional_conditions += f""" AND {group_not_null_condition} """
-    elif obj["type"]["group"]:
-        additional_conditions = f""" WHERE {group_not_null_condition} """
 
     if obj["type"]["group"]:
         # IF there is group by, it will return # of groups row
@@ -245,12 +236,10 @@ def get_view_ctids(
             group_col_alias = ", ".join([f"T.G{g_idx}" for g_idx in range(len(group_columns))])
             view_inner_sql_select = f"""{correlation_col_ref} AS Cc, {group_col_view_string}, array_agg(CTID) AS C2 {additional_inner_sql_select} {having_projection_str} """
         else:
-            # [TODO] Check if distinct needed
-
             if additional_condition is not None and obj["use_agg_sel"]:
-                view_inner_sql_select = f""" {distinct_cond} {correlation_col_ref} AS Cc, unnest(array_agg(CTID)) AS C1 {additional_inner_sql_select} {having_projection_str}"""
+                view_inner_sql_select = f""" {correlation_col_ref} AS Cc, unnest(array_agg(CTID)) AS C1 {additional_inner_sql_select} {having_projection_str}"""
             else:
-                view_inner_sql_select = f""" {distinct_cond} {correlation_col_ref} AS Cc, CTID AS C1 {additional_inner_sql_select} {having_projection_str}"""
+                view_inner_sql_select = f""" {correlation_col_ref} AS Cc, CTID AS C1 {additional_inner_sql_select} {having_projection_str}"""
 
         view_inner_sql = f"SELECT {view_inner_sql_select} FROM {inner_join_view_name}"
 
@@ -285,23 +274,7 @@ def get_view_ctids(
             view_sql = f"""SELECT {group_col_view_string}, array_agg(CTID) FROM {inner_join_view_name} """
             # IF there is group by, it will return # of groups row
         else:
-            proj_view = [
-                agg_col[1].replace(".", "__")
-                for agg_col in obj["agg_cols"]
-                if agg_col[0] == "NONE" and agg_col[1] != "*"
-            ]
-            if len(proj_view) == 0:
-                proj_view = []
-                for table in obj["tables"]:
-                    primary_keys = data_manager.get_primary_keys(table)
-                    proj_view += [f"{table}__{primary_key}" for primary_key in primary_keys]
-
-            if len(proj_view) > 0:
-                distinct_cond = f"""DISTINCT ON ({", ".join(proj_view)})"""
-            else:
-                assert False, f"We assume that there is at least on table having primary key"
-
-            view_sql = f"""SELECT {distinct_cond} CTID FROM {inner_join_view_name} """
+            view_sql = f"""SELECT CTID FROM {inner_join_view_name} """
             # IF there is no group by, it will return # of inner join view rows
 
         if additional_condition is not None:
@@ -715,7 +688,7 @@ def update_query_node_with_table_excerpt(
                         if sampling_ratio:
                             rand_per_group_size = int(len(ctid_array) * sampling_ratio)
                         else:
-                            rand_per_group_size = rng.randint(2, 4)
+                            rand_per_group_size = rng.randint(2, 5)
                         sample_ctids.extend(
                             rng.choice(ctid_array, size=min(rand_per_group_size, len(ctid_array)), replace=False)
                         )
@@ -735,7 +708,7 @@ def update_query_node_with_table_excerpt(
                     if sampling_ratio:
                         rand_size = int(len(ctid_array) * sampling_ratio)
                     else:
-                        rand_size = rng.randint(2, 4)
+                        rand_size = rng.randint(2, 5)
                     sample_ctids.extend(rng.choice(ctid_array, size=min(rand_size, len(ctid_array)), replace=False))
             else:
                 for cor_idx, ctids_for_each_correlation_val in enumerate(all_ctids):
@@ -752,7 +725,7 @@ def update_query_node_with_table_excerpt(
                     if sampling_ratio:
                         rand_size = int(len(ctid_array) * sampling_ratio)
                     else:
-                        rand_size = rng.randint(2, 4)
+                        rand_size = rng.randint(2, 5)
                     sample_ctids.extend(rng.choice(ctid_array, size=min(rand_size, len(ctid_array)), replace=False))
         else:
             if obj["type"]["group"]:
@@ -768,7 +741,7 @@ def update_query_node_with_table_excerpt(
                     if sampling_ratio:
                         rand_per_group_size = int(len(ctid_array) * sampling_ratio)
                     else:
-                        rand_per_group_size = rng.randint(2, 4)
+                        rand_per_group_size = rng.randint(2, 5)
                     sample_ctids.extend(
                         rng.choice(ctid_array, size=min(rand_per_group_size, len(ctid_array)), replace=False)
                     )
@@ -778,7 +751,7 @@ def update_query_node_with_table_excerpt(
                 if sampling_ratio:
                     rand_size = int(len(ctid_array) * sampling_ratio)
                 else:
-                    rand_size = rng.randint(3, 7)
+                    rand_size = rng.randint(4, 12)
                 sample_ctids = list(rng.choice(ctid_array, size=min(rand_size, len(ctid_array)), replace=False))
 
         return sample_ctids, sample_group_ids, sample_correl_ids
@@ -872,7 +845,8 @@ def update_query_node_with_table_excerpt(
             for dnf_idx, positive_ctids_raw in enumerate(positive_ctids_raws):
                 for idx, corval_idx in enumerate(sample_positive_correal_ids[dnf_idx]):
                     positive_sample_groupids.append(tuple([positive_ctids_raw[corval_idx][0]]))
-
+    
+    
     if obj["type"]["having"] or obj["type"]["aggregated_order"]:
         # Update current node and then just call the child node
         assert len(obj["childs"]) == 1
@@ -956,10 +930,6 @@ def update_query_node_with_table_excerpt(
             use_agg_sel=obj["use_agg_sel"],
             additional_group_col=additional_group_col,
         )
-        if len(grouping_sql_where_clause) > 0:
-            grouping_sql_where_clause = f""" ( {grouping_sql_where_clause} ) """
-            grouping_sql_additional_conditions = " AND " + grouping_sql_additional_conditions[6:]
-
         if correlation_column is None:
             grouping_sql = f"""SELECT DISTINCT {grouping_sql_select_clause} FROM {view_name} WHERE {grouping_sql_where_clause} {grouping_sql_additional_conditions}"""
             data_manager.execute(grouping_sql)
@@ -1077,10 +1047,6 @@ def update_query_node_with_table_excerpt(
             use_agg_sel=obj["use_agg_sel"],
             additional_group_col=additional_group_col,
         )
-        if len(having_sql_where_clause) > 0:
-            having_sql_where_clause = f""" ( {having_sql_where_clause} ) """
-            having_sql_additional_conditions = " AND " + having_sql_additional_conditions[6:]
-
         if correlation_column is None:
             having_sql = f"""SELECT DISTINCT {having_sql_select_clause} FROM {view_name} WHERE {having_sql_where_clause} {having_sql_additional_conditions}"""
             data_manager.execute(having_sql)
@@ -1210,7 +1176,7 @@ def update_query_node_with_table_excerpt(
         if data_manager.is_existing_view(negative_examples_view_name) and obj["type"]["where"]:
             has_negative_view = True
             conditions_for_negative_view = ""
-            negative_input_sql = f"""SELECT DISTINCT {select_col_string} FROM {negative_examples_view_name} {conditions_for_negative_view} LIMIT 5"""
+            negative_input_sql = f"""SELECT {select_col_string} FROM {negative_examples_view_name} {conditions_for_negative_view}"""
             data_manager.execute(negative_input_sql)
             negative_rows = [list(datum) for datum in data_manager.fetchall()]
             negative_rows_idxs = range(len(rows), len(rows) + len(negative_rows))
@@ -1319,32 +1285,20 @@ def update_query_node_with_table_excerpt(
             additional_group_col = correlation_column
         else:
             additional_group_col = None
-
+        _, output_sql_additional_conditions = get_view_query(
+            data_manager,
+            view_name,
+            obj,
+            prefix,
+            ignored=["order", "limit"],
+            use_agg_sel=obj["use_agg_sel"],
+            additional_group_col=additional_group_col,
+        )
         if correlation_column is None:
-            _, output_sql_additional_conditions = get_view_query(
-                data_manager,
-                view_name,
-                obj,
-                prefix,
-                use_agg_sel=obj["use_agg_sel"],
-                additional_group_col=additional_group_col,
-            )
-            if len(ctid_condition_string) > 0 and obj["type"]["group"]:
-                ctid_condition_string = f""" ( {ctid_condition_string} ) """
-                output_sql_additional_conditions = " AND " + output_sql_additional_conditions[6:]
             output_sql = f"""SELECT DISTINCT {output_sql_select_clause} FROM {view_name} WHERE {ctid_condition_string} {output_sql_additional_conditions}"""
             data_manager.execute(output_sql)
             result_tables = data_manager.fetchall()
         else:
-            _, output_sql_additional_conditions = get_view_query(
-                data_manager,
-                view_name,
-                obj,
-                prefix,
-                ignored=["order", "limit"],
-                use_agg_sel=obj["use_agg_sel"],
-                additional_group_col=additional_group_col,
-            )
             output_inner_sql = f"""SELECT {output_sql_select_clause} FROM {view_name} WHERE {ctid_condition_string} {output_sql_additional_conditions}"""
 
             output_sql = (

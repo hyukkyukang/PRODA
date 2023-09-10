@@ -20,11 +20,11 @@ from src.query_tree.query_tree import QueryTree, QueryBlock, BaseTable, get_glob
 import argparse
 
 TEMPLATE = {
-    "global_template_3": {
-        "text": "Write {BLOCK_NAME} in full sentences without mentioning the sub-blocks {SUB_BLOCK_NAMES}. ",
+    "global_template": {
+        "text": "Please write out a single interrogative sentence for {BLOCK_NAME} in detail by expanding the sub-blocks {SUB_BLOCK_NAMES} instead of using them directly.",
         "variables": ["{BLOCK_NAME}", "{SUB_BLOCK_NAMES}"],
     },
-    "global_template": {
+    "global_template_3": {
         "text": "Please write out a single interrogative sentence for {BLOCK_NAME} in detail without any explicit reference to {SUB_BLOCK_NAMES}.",
         "variables": ["{BLOCK_NAME}", "{SUB_BLOCK_NAMES}"],
     },
@@ -179,7 +179,7 @@ def translate_progressive(
             key = cur_block_name + child_name
             simplified_block_name = TEMPLATE["block_prefix"] + str(key_to_block_id[key])
             text = re.sub(child_name + "(?![0-9])", simplified_block_name, text)
-            text = text.replace(simplified_block_name+"_results", simplified_block_name+"'s results")
+            text = text.replace(simplified_block_name + "_results", simplified_block_name + "'s results")
 
         if parent_block_name:
             key = parent_block_name + cur_block_name
@@ -239,7 +239,7 @@ def translate_progressive(
         global_text = templatize(template["text"], template["variables"], variable_to_val)
 
     templatized_text = whole_text + global_text + "\n"
-    #templatized_text = global_text + whole_text + "\n"
+    # templatized_text = global_text + whole_text + "\n"
     if use_gpt:
         final_text = rewrite_sentence(templatized_text)  # 비싼 모델은 돈이 듭니다. 참고만 하세요.
     else:
@@ -255,12 +255,12 @@ if __name__ == "__main__":
         "--query_paths",
         nargs="+",
         default=[
-            "/root/proda/non-nested/result2.out",
-            "/root/proda/non-nested/result.out",
-            # "/root/proda/non-nested/result2.out",
+            "/root/proda/movie/result2-inner.out",
+            "/root/proda/movie/result.out",
+            "/root/proda/movie/result3.out",
         ],
     )
-    parser.add_argument("--output_path", type=str, default="/root/proda/translation-nested-result-fullsentence")
+    parser.add_argument("--output_path", type=str, default="/root/proda/translation-nested-result-fullsentence-nest2")
     args = parser.parse_args()
 
     query_objs = {}
@@ -281,7 +281,7 @@ if __name__ == "__main__":
     set_openai()
     with open(args.output_path, "w") as wf:
         for key, query_tree in query_trees:
-            if key.startswith("N2"):
+            if key.startswith("N3_"):
                 input_text, gpt_text = translate_progressive(
                     query_tree.root, key, query_objs, query_graphs, use_gpt=False
                 )

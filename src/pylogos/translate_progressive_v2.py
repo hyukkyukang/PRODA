@@ -309,9 +309,9 @@ if __name__ == "__main__":
         "--query_paths",
         nargs="+",
         default=[
-            "/root/proda/movie/result2-inner.out",
-            "/root/proda/movie/result.out",
-            "/root/proda/movie/result3.out",
+            # "/root/proda/movie/result2-inner.out",
+            "/root/proda/movie/result_test.out",
+            # "/root/proda/movie/result3.out",
         ],
     )
     parser.add_argument("--output_path", type=str, default="/root/proda/test")
@@ -335,9 +335,9 @@ if __name__ == "__main__":
     set_openai()
     with open(args.output_path, "w") as wf:
         for key, query_tree in query_trees:
-            if key.startswith("N1_26"):
+            if True:  # key.startswith("N1_16"):
                 input_text, final_text_obj = translate_progressive(
-                    query_tree.root, key, query_objs, query_graphs, use_gpt=True
+                    query_tree.root, key, query_objs, query_graphs, use_gpt=False
                 )
                 wf.write(f"""{final_text_obj[key]["raw_text"]}\n""")
                 print("GPT INPUT: {}".format(input_text))

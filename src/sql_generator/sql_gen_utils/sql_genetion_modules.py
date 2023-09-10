@@ -246,7 +246,7 @@ def non_nested_predicate_generator(args, rng, table_columns, data_manager, view_
         col = table_columns[tmp_col_idx]
         col_in_view = col.replace(".", "__")
 
-        sample_rows, sample_schema = data_manager.sample_rows(view_name, 100, is_virtual=True)
+        sample_rows, sample_schema = data_manager.sample_rows(view_name, 100)
         col_idx = -1
         for idx, col2 in enumerate(sample_schema):
             if col2 == col_in_view:
@@ -433,7 +433,7 @@ def having_generator(
     dnf_idx = -1
     having_original_view_name = get_view_name("having_generator", [args.fo_view_name, prefix, "origin", 0])
     data_manager.create_view(
-        args.logger, having_original_view_name, grouping_query_string, type="virtual", drop_if_exists=True
+        args.logger, having_original_view_name, grouping_query_string, type="materialized", drop_if_exists=True
     )
     view_names = [having_original_view_name]
 
@@ -462,7 +462,7 @@ def having_generator(
 
     if len(having_candidate_columns) == 0:
         for idx in range(len(view_names)):
-            data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="virtual")
+            data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="materialized")
         args.logger.warning("No candidate column for having; restart generation")
         raise Exception("Cannot generate having clause")
 
@@ -493,7 +493,7 @@ def having_generator(
     while cond_idx < num_predicate:
         if continue_cnt > 100:
             for idx in range(len(view_names)):
-                data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="virtual")
+                data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="materialized")
             args.logger.warning("Too many continue during having predicate generation")
             raise Exception("Too many continue during having predicate generation")
 
@@ -512,12 +512,14 @@ def having_generator(
                 else:
                     view_sql = f"""SELECT DISTINCT * FROM {having_original_view_name}"""
 
-                data_manager.create_view(args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True)
+                data_manager.create_view(
+                    args.logger, current_view_name, view_sql, type="materialized", drop_if_exists=True
+                )
                 view_names.append(current_view_name)
 
                 if data_manager.check_row_exists(current_view_name) <= 1:
                     for idx in range(len(view_names)):
-                        data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="virtual")
+                        data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="materialized")
                     args.logger.warning("Previous having conditions cover almost all rows; regenerate query")
                     raise Exception(
                         "[having generator] Previous having conditions cover almost all rows; regenerate query"
@@ -538,7 +540,9 @@ def having_generator(
                 view_sql_where = " AND ".join(clauses_view_predicates[-1])
                 view_sql = f"""SELECT DISTINCT * FROM {previous_view_name} WHERE {view_sql_where}"""
 
-                data_manager.create_view(args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True)
+                data_manager.create_view(
+                    args.logger, current_view_name, view_sql, type="materialized", drop_if_exists=True
+                )
                 view_names.append(current_view_name)
 
         updated_cond = False
@@ -576,14 +580,14 @@ def having_generator(
         assert agg_col_ref in having_original_view_column_names
         agg_col_idx = having_original_view_column_names.index(agg_col_ref)
 
-        sample_rows, sample_schema = data_manager.sample_rows(current_view_name, 100, is_virtual=True)
+        sample_rows, sample_schema = data_manager.sample_rows(current_view_name, 100)
         col_idx = agg_col_idx
         row_idx = 0
         # value in agg_col must not be null
         if len(sample_rows) <= 1:
             args.logger.warning("Generating a query is impossible; # of sampled rows is 0 or 1; restart generation")
             for idx in range(len(view_names)):
-                data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="virtual")
+                data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="materialized")
             raise Exception("")
 
         val = sample_rows[row_idx][col_idx]
@@ -812,7 +816,7 @@ def having_generator(
         cond_idx += 1
 
     for idx in range(len(view_names)):
-        data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="virtual")
+        data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="materialized")
     tree_predicates = restore_predicate_tree(tree_predicates, predicates)
 
     return tree_predicates, predicates_origin, tree_predicates_origin, used_tables
@@ -905,7 +909,7 @@ def where_generator(
     while cond_idx < num_predicates:
         if continue_cnt > 100:
             for idx in range(len(view_names)):
-                data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="virtual")
+                data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="materialized")
             args.logger.warning("Too many continue during where predicate generation")
             raise Exception("[where generator] Too many continue during where predicate generation")
 
@@ -929,13 +933,15 @@ def where_generator(
                     view_sql = f"""SELECT DISTINCT * FROM {original_view_name}"""
                 previous_clause_view_name = copy.deepcopy(current_view_name)
 
-                data_manager.create_view(args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True)
+                data_manager.create_view(
+                    args.logger, current_view_name, view_sql, type="materialized", drop_if_exists=True
+                )
                 view_names.append(current_view_name)
 
                 count_rows = data_manager.check_row_exists(current_view_name)
                 if count_rows <= 1:
                     for idx in range(len(view_names)):
-                        data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="virtual")
+                        data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="materialized")
 
                     args.logger.warning("Selection condition cover almost all rows; regenerate query")
                     raise Exception("[where generator] Selection condition cover almost all rows; regenerate query")
@@ -969,7 +975,9 @@ def where_generator(
                 view_sql_where = clauses_view_predicates[-1][-1]
                 view_sql = f"""SELECT DISTINCT * FROM {previous_view_name} WHERE {view_sql_where}"""
 
-                data_manager.create_view(args.logger, current_view_name, view_sql, type="virtual", drop_if_exists=True)
+                data_manager.create_view(
+                    args.logger, current_view_name, view_sql, type="materialized", drop_if_exists=True
+                )
                 view_names.append(current_view_name)
 
         updated_cond = False
@@ -1181,7 +1189,7 @@ def where_generator(
             nesting_position_origin = get_initial_nesting_positions(args)
 
     for idx in range(len(view_names)):
-        data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="virtual")
+        data_manager.drop_view(args.logger, view_names[len(view_names) - idx - 1], type="materialized")
 
     tree_predicates = restore_predicate_tree(tree_predicates, predicates)
 
@@ -1191,7 +1199,7 @@ def where_generator(
     view_sql_where = "(" + " OR ".join(where_clauses) + ")"
     final_view_name = get_view_name("where_generator", [original_view_name, prefix, "f", "f"])
     view_sql = f"""SELECT DISTINCT * FROM {original_view_name} WHERE {view_sql_where}"""
-    data_manager.create_view(args.logger, final_view_name, view_sql, type="virtual", drop_if_exists=True)
+    data_manager.create_view(args.logger, final_view_name, view_sql, type="materialized", drop_if_exists=True)
     where_view_predicate_string = view_sql_where
     # tighter_where_view_predicate_string = "(" + " AND ".join(where_clauses) + ")"
 
@@ -1281,7 +1289,7 @@ def nested_predicate_generator(
             return False, None, None, None, None, None, None, None, None
 
         if nesting_position == 1:
-            sample_rows, sample_schema = data_manager.sample_rows(view_name, 100, is_virtual=True)
+            sample_rows, sample_schema = data_manager.sample_rows(view_name, 100)
             col_idx = -1
             for idx, col2 in enumerate(sample_schema):
                 if col2 == col_in_view:
@@ -2439,7 +2447,8 @@ def create_inner_joined_view(
     n_inner_join_query_string = None
     inner_join_query_selects = []
     for table in necessary_tables:
-        columns = data_manager.fetch_column_names(table)
+        columns = args.table_info[table]
+        # columns = data_manager.fetch_column_names(table)
         col_refs = [f"{table}__{column}" for column in columns]
         inner_join_query_selects += col_refs
     inner_join_query_select_string = ", ".join(inner_join_query_selects)
@@ -2609,7 +2618,7 @@ def non_nested_query_generator(
     current_view_name = inner_join_view_name
 
     for view_name in view_names:
-        data_manager.drop_view(args.logger, view_name, type="virtual")
+        data_manager.drop_view(args.logger, view_name, type="materialized")
 
     if sql_type_dict["having"]:
         grouping_query_elements = get_grouping_query_elements(

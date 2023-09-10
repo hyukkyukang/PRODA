@@ -32,21 +32,36 @@ def check_sql_result(data_manager, sql):
     return False
 
 
-def create_full_outer_view(args, ip, port, user_id, user_pw, schema, SEED=1234):
-    args.logger.info("... start generating full outer joined view...")
+def connect_data_manager(ip, port, user_id, user_pw, schema):
     data_manager = PostgreSQLDatabase(user_id, user_pw, ip, port, schema["dataset"])
-    # <table name>___<column name>
 
-    view_name = sql_genetion_utils.get_view_name("main", [schema["dataset"], schema["use_cols"]])
+    table_info = {}
+    tables = schema["join_tables"]
+    for table in tables:
+        if "columns" in schema.keys() and table in schema["columns"].keys():
+            columns = schema["columns"][table]
+        else:
+            columns = data_manager.fetch_column_names(table)
+        table_info[table] = columns
+
+    return data_manager, table_info
+
+
+def create_full_outer_view(args, rng, data_manager, schema, SEED=1234):
+    args.logger.info("... start generating full outer joined view...")
+
+    if args.use_one_predicate:
+        view_name = sql_genetion_utils.get_view_name(
+            "main_given_predicate", [schema["dataset"], schema["use_cols"], rand_id]
+        )
+    else:
+        view_name = sql_genetion_utils.get_view_name("main", [schema["dataset"], schema["use_cols"]])
 
     select_columns = []
+    # <table name>___<column name>
     # tables = data_manager.fetch_table_names() ### DO NOT USE ALL TABLES IN DB
-    tables = schema["join_tables"]
-    table_info = {}
-    for table in tables:
-        columns = data_manager.fetch_column_names(table)
-        table_info[table] = columns
-        for column in columns:
+    for table in args.table_info.keys():
+        for column in args.table_info[table]:
             select_columns.append(f"{table}.{column} AS {table}__{column}")
     select_clause = ", ".join(select_columns)
 
@@ -91,18 +106,25 @@ def create_full_outer_view(args, ip, port, user_id, user_pw, schema, SEED=1234):
 
     full_outer_join_sql = f"""
             SELECT DISTINCT {select_clause}
-            FROM {from_clause};
+            FROM {from_clause}
         """
+    if args.use_one_predicate:
+        get_predicate_str_sql = f"""SELECT predicate FROM predicates_tmp WHERE id = {args.rand_id}"""
+        data_manager.execute(get_predicate_str_sql)
+        predicate = (data_manager.fetchall())[0][0]
+        full_outer_join_sql += f""" WHERE {predicate}; """
+    else:
+        full_outer_join_sql += ";"
 
     args.logger.info(f"View SQL: {full_outer_join_sql}")
 
     data_manager.create_view(args.logger, view_name, full_outer_join_sql, type="materialized", drop_if_exists=False)
     args.logger.info("... finished: generating full outer joined view...")
 
-    return data_manager, view_name, table_info
+    return view_name
 
 
-def run_generator(data_manager, schema, column_info, args, check_execution_result=True, log_step=1):
+def run_generator(data_manager, schema, column_info, args, rng, check_execution_result=True, log_step=1):
     all_table_set = set(schema["join_tables"])
     join_clause_list = schema["join_clauses"]
     join_keys = schema["join_keys"]
@@ -111,8 +133,6 @@ def run_generator(data_manager, schema, column_info, args, check_execution_resul
     for table, cols in join_keys.items():
         for col in cols:
             join_key_list.append(f"{table}.{col}")
-
-    rng = np.random.RandomState(args.seed)
 
     t1 = time.time()
     t2 = time.time()
@@ -147,11 +167,17 @@ def run_generator(data_manager, schema, column_info, args, check_execution_resul
     global_unique_query_idx = args.global_idx
     output_path = args.output
 
+    if args.use_one_predicate:
+        pred_ids = data_manager.fetch_distinct_values("predicates_tmp", "id")
+
     while num_success < args.num_queries:
         num_iter += 1
         if num_success == 0 and num_iter > 10000:
             args.logger.warning("This type might be cannot be generated..")
             break
+        if args.use_one_predicate:
+            args.rand_id = rng.choice(pred_ids)
+            args.fo_view_name = create_full_outer_view(args, rng, data_manager, schema)
 
         if sql_genetion_utils.DEBUG_ERROR:
             line, graph, obj = query_generator(
@@ -256,6 +282,11 @@ def lower_case_schema_data(schema):
 
     new_schema["join_root"] = schema["join_root"].lower()
 
+    if "columns" in schema.keys():
+        new_schema["columns"] = {}
+        for table in schema["columns"].keys():
+            new_schema["columns"][table.lower()] = [column.lower() for column in schema["columns"][table]]
+
     return new_schema
 
 
@@ -266,7 +297,11 @@ if __name__ == "__main__":
     filename = "src/sql_generator/configs/mubi_svod_platform_experiments.json"
     # argument
     parser = argparse.ArgumentParser()
-    parser.add_argument("--infile", type=str, default="src/sql_generator/configs/test_experiments_nested.json")
+    parser.add_argument(
+        "--infile",
+        type=str,
+        default="data/database/nba/non_nested_query_hyperparameter_guide_2.json",
+    )
     args = parser.parse_args()
     if args.infile:
         with open(args.infile, "rt") as f:
@@ -292,15 +327,22 @@ if __name__ == "__main__":
     SCHEMA = json.load(open(f"{args.data_dir}/{args.db}/schema.json"))
     schema = CaseInsensitiveDict(lower_case_schema_data(SCHEMA[args.schema_name]))
 
+    rng = np.random.RandomState(args.seed)
+
     IP = config["DB"]["IP"]
     port = config["DB"]["Port"]
     DBUserID = config["DB"]["data"]["UserID"]
     DBUserPW = config["DB"]["data"]["UserPW"]
-    data_manager, fo_view_name, table_info = create_full_outer_view(args, IP, port, DBUserID, DBUserPW, schema)
+
+    data_manager, table_info = connect_data_manager(IP, port, DBUserID, DBUserPW, schema)
     args.table_info = CaseInsensitiveDict(table_info)
-    args.fo_view_name = fo_view_name
+    if not args.use_one_predicate:
+        fo_view_name = create_full_outer_view(args, rng, data_manager, schema)
+        args.fo_view_name = fo_view_name
+    else:
+        args.fo_view_name = None
 
     COL_INFO = json.load(open(f"{args.data_dir}/{args.db}/dtype_dict.json"))
     column_info = COL_INFO[schema["dataset"]]
 
-    run_generator(data_manager, schema, column_info, args)
+    run_generator(data_manager, schema, column_info, args, rng)

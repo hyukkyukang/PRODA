@@ -1,6 +1,7 @@
 from typing import Any, List, Optional, Union
 from hkkang_utils import string as string_utils
 from decimal import Decimal
+import datetime
 
 
 def perform_join(table1, table2, key1_idx, key2_idx, join_type, empty_row1, empty_row2):
@@ -71,6 +72,8 @@ class DList(DType):
 class Cell:
     def __init__(self, value: Any, dtype=None):
         self.value = value
+        if (dtype is not None and dtype == "date") or type(value) == datetime.date or type(value) == datetime.datetime:
+            self.value = str(value)
         if dtype is not None:
             if dtype in ("int", "float", "number"):
                 self.dtype = DNumber()
@@ -86,13 +89,12 @@ class Cell:
         """Convert value into DType"""
         if type(value) in [int, float, Decimal]:
             return DNumber()
-        elif type(value) == str:
+        elif type(value) in [str, datetime.date, datetime.datetime]:
             return DString()
         elif type(value) == bool:
             return DBoolean()
         elif type(value) == list:
             return DList(Cell.to_dtype(value[0]))
-        raise ValueError(f"Cannot convert {type(value)} to dtype")
 
     @staticmethod
     def load_json(json_obj: dict):
@@ -276,7 +278,7 @@ class TableExcerpt:
         type_name = type_names[0]
         if type_name in ["int", "float", "number"]:
             return DNumber()
-        elif type_name in ["str", "string"]:
+        elif type_name in ["str", "string", "date"]:
             return DString()
         elif type_name in ["bool", "boolean"]:
             return DBoolean()
