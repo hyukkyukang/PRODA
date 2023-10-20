@@ -101,7 +101,7 @@ dtype_dict.json:
             },
         "foreign_keys": {
                 "$$table1$$": [],
-                "$$table2$$": [ ""$$fkey2_1$$", "$$fkey2_2$$" ],
+                "$$table2$$": [ "$$fkey2_1$$", "$$fkey2_2$$" ],
                 "...": [ "..." ]
             }
     }
