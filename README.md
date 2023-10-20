@@ -32,22 +32,24 @@ docker compose up -d
 Prerequisite: Note that SQL query is generated from a given database. To generate a SQL query, a PostgreSQL database, a schema information (schema.json and dtype_dict.json) of the database should be given.
 
 schema.json:
+[NOTE] Tables should be connected
+[NOTE] This should be pk-fk join
 ```json
 {
     "$$schema_name$$": {
-        "join_tables": [ # [NOTE] Tables should be connected
+        "join_tables": [ 
                 "$$table1$$",
                 "$$table2$$",
-                ...
+                "$$table3$$"
             ],
         "join_keys": [
                 "$$table1$$": [ "$$col1$$", "$$col2$$" ],
-                "$$table2$$": [ "$$col3$$", ...],
-                ...
+                "$$table2$$": [ "$$col3$$" ],
+                "$$table3$$": [ "$$col4$$" ]
             ],
         "join_clauses": [
-                "$$table1.col1$$"="$$table3.col2$$", # [NOTE] This should be pk-fk join
-                ...
+                "$$table1.col1$$"="$$table3.col4$$",
+                "$$table1.col2$$"="$$table2.col3$$",    
             ],
         "dataset": "$$db_name$$",
         "join_root": "$$table_name$$",
@@ -58,41 +60,46 @@ schema.json:
 ```
 
 dtype_dict.json:
+[NOTE] $$type$$ IN ["str", "date", "bool", "int", "float"]
 ```json
 {
     "$$db_name$$": {
         "dtype_dict": {
-                "$$table1.col1$$": "$$type1$$", # [NOTE] $$type$$ IN ["str", "date", "bool", "int", "float"]
+                "$$table1.col1$$": "$$type1$$", 
                 "$$table1.col2$$": "$$type2$$",
-                ... ,
-                "$$tablen.coln$$": "$$typen$$",
-                ...
+                "$$table1.col11$$": "$$type3$$",
+                "$$table2.col3$$": "$$type4$$",
+                "...": "..."
             }
         "hash_codes": [
                 "$$tablen.coln$$",
-                "$$tablem.colm$$"
+                "$$tablem.colm$$",
+                "..."
             ],
         "notes": [
                 "$$tablen.coln$$",
-                "$$tablem.colm$$"
+                "$$tablem.colm$$",
+                "..."
             ],
         "ids": [
                 "$$tablen.coln$$",
-                "$$tablem.colm$$"
+                "$$tablem.colm$$",
+                "..."
             ],
         "categories": [
                 "$$tablen.coln$$",
-                "$$tablem.colm$$"
+                "$$tablem.colm$$",
+                "..."
             ],
         "primary_keys": {
                 "$$table1$$": ["$$key1_1$$", "$$key1_2$$"],
                 "$$table2$$": ["$$key2_1$$"],
-                ...
+                "...": [ "..." ]
             },
         "foreign_keys": {
                 "$$table1$$": [],
                 "$$table2$$": [ ""$$fkey2_1$$", "$$fkey2_2$$" ],
-                ...
+                "...": [ "..." ]
             }
     }
 }
