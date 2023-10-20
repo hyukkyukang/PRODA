@@ -40,16 +40,19 @@ schema.json:
         "join_tables": [ 
                 "$$table1$$",
                 "$$table2$$",
-                "$$table3$$"
+                "$$table3$$",
+                "..."
             ],
         "join_keys": [
                 "$$table1$$": [ "$$col1$$", "$$col2$$" ],
                 "$$table2$$": [ "$$col3$$" ],
-                "$$table3$$": [ "$$col4$$" ]
+                "$$table3$$": [ "$$col4$$" ],
+                "..."
             ],
         "join_clauses": [
-                "$$table1.col1$$"="$$table3.col4$$",
-                "$$table1.col2$$"="$$table2.col3$$",    
+                "$$table1.col1$$=$$table3.col4$$",
+                "$$table1.col2$$=$$table2.col3$$",
+                "..."  
             ],
         "dataset": "$$db_name$$",
         "join_root": "$$table_name$$",
