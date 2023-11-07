@@ -121,7 +121,7 @@ def get_view_name(type, args):
         db_name = args[0]
         sample_name = args[1]
         predicate_id = str(args[2])
-        return (db_name + "__" + sample_name + "__" + prdicate_id).lower()
+        return (db_name + "__" + sample_name + "__" + predicate_id).lower()
     elif type == "where_generator":
         main_view_name = args[0]
         prefix = args[1]

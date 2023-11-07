@@ -32,28 +32,46 @@ def check_sql_result(data_manager, sql):
     return False
 
 
-def connect_data_manager(ip, port, user_id, user_pw, schema):
-    data_manager = PostgreSQLDatabase(user_id, user_pw, ip, port, schema["dataset"])
-
-    table_info = {}
-    tables = schema["join_tables"]
-    for table in tables:
-        if "columns" in schema.keys() and table in schema["columns"].keys():
-            columns = schema["columns"][table]
-        else:
-            columns = data_manager.fetch_column_names(table)
-        table_info[table] = columns
-
-    return data_manager, table_info
-
-
-def create_full_outer_view(args, rng, data_manager, schema, SEED=1234):
+def create_full_outer_view(args, rng, data_manager, schema, hist=None, column_info=None, SEED=1234):
     args.logger.info("... start generating full outer joined view...")
 
     if args.use_one_predicate:
-        view_name = sql_genetion_utils.get_view_name(
-            "main_given_predicate", [schema["dataset"], schema["use_cols"], rand_id]
-        )
+        # Choose predicate; categorical column
+        # If it is not used for inner query - no matter
+        # Outer query - Use the same fo view with inner query
+        # (Advanced, TODO) Group by, Aggregation, NOT EXISTS: Inner query should contain the predicate
+        if args.predicate_id:
+            view_name = sql_genetion_utils.get_view_name(
+                "main_given_predicate", [schema["dataset"], schema["use_cols"], args.predicate_id]
+            )
+            ###### This fo view should already exists
+        else:
+            global_column_idx = 0
+            candidate_columns = []
+            for table in args.table_info.keys():
+                if table not in hist.keys():
+                    global_column_idx += len(args.table_info[table])
+                    continue
+                for column in args.table_info[table]:
+                    hist[table][column] = [val for val in hist[table][column] if val[0] is not None]
+                    if column in hist[table].keys() and len(hist[table][column]) > 0:
+                        candidate_columns.append((table, column, global_column_idx))
+                    global_column_idx += 1
+            if len(candidate_columns) == 0:
+                args.logger.warning(
+                    "[WARNING] There is no candidate predicates which can be used for generating a full outer join view; start generating for all rows"
+                )
+                args.use_one_predicate = False
+                view_name = sql_genetion_utils.get_view_name("main", [schema["dataset"], schema["use_cols"]])
+            else:
+                chosen_col = candidate_columns[rng.choice(len(candidate_columns))]
+                chosen_val_idx = rng.randint(0, len(hist[chosen_col[0]][chosen_col[1]]))
+                chosen_val = hist[chosen_col[0]][chosen_col[1]][chosen_val_idx]
+
+                rand_id = f"c{chosen_col[2]}_v{chosen_val_idx}"
+                view_name = sql_genetion_utils.get_view_name(
+                    "main_given_predicate", [schema["dataset"], schema["use_cols"], rand_id]
+                )
     else:
         view_name = sql_genetion_utils.get_view_name("main", [schema["dataset"], schema["use_cols"]])
 
@@ -108,10 +126,24 @@ def create_full_outer_view(args, rng, data_manager, schema, SEED=1234):
             SELECT DISTINCT {select_clause}
             FROM {from_clause}
         """
-    if args.use_one_predicate:
-        get_predicate_str_sql = f"""SELECT predicate FROM predicates_tmp WHERE id = {args.rand_id}"""
-        data_manager.execute(get_predicate_str_sql)
-        predicate = (data_manager.fetchall())[0][0]
+    if args.use_one_predicate and not args.predicate_id:
+        pred_col_name = chosen_col[0] + "." + chosen_col[1]
+        predicate = ""
+        if len(chosen_val) == 2:  # point
+            pred_val = chosen_val[0]
+            if column_info["dtype_dict"][pred_col_name] in ("str"):
+                predicate = f"""{pred_col_name} = '{pred_val}' """
+            else:
+                predicate = f"{pred_col_name} = {pred_val}"
+        elif len(chosen_val) == 3:  # range
+            if column_info["dtype_dict"][pred_col_name] == "int":
+                pred_val_st = int(chosen_val[0])
+                pred_val_ta = int(chosen_val[0] + chosen_val[2])
+            else:
+                pred_val_st = chosen_val[0]
+                pred_val_ta = chosen_val[0] + chosen_val[2]
+            predicate = f"{pred_col_name} >= {pred_val_st} AND {pred_col_name} < {pred_val_ta}"
+
         full_outer_join_sql += f""" WHERE {predicate}; """
     else:
         full_outer_join_sql += ";"
@@ -167,17 +199,11 @@ def run_generator(data_manager, schema, column_info, args, rng, check_execution_
     global_unique_query_idx = args.global_idx
     output_path = args.output
 
-    if args.use_one_predicate:
-        pred_ids = data_manager.fetch_distinct_values("predicates_tmp", "id")
-
     while num_success < args.num_queries:
         num_iter += 1
         if num_success == 0 and num_iter > 10000:
             args.logger.warning("This type might be cannot be generated..")
             break
-        if args.use_one_predicate:
-            args.rand_id = rng.choice(pred_ids)
-            args.fo_view_name = create_full_outer_view(args, rng, data_manager, schema)
 
         if sql_genetion_utils.DEBUG_ERROR:
             line, graph, obj = query_generator(
@@ -269,27 +295,6 @@ def run_generator(data_manager, schema, column_info, args, rng, check_execution_
     args.logger.info(txt)
 
 
-def lower_case_schema_data(schema):
-    new_schema = {"dataset": schema["dataset"], "use_cols": schema["use_cols"]}
-
-    new_schema["join_tables"] = [table.lower() for table in schema["join_tables"]]
-
-    new_schema["join_keys"] = {}
-    for table in schema["join_keys"].keys():
-        new_schema["join_keys"][table.lower()] = [column.lower() for column in schema["join_keys"][table]]
-
-    new_schema["join_clauses"] = [clause.lower() for clause in schema["join_clauses"]]
-
-    new_schema["join_root"] = schema["join_root"].lower()
-
-    if "columns" in schema.keys():
-        new_schema["columns"] = {}
-        for table in schema["columns"].keys():
-            new_schema["columns"][table.lower()] = [column.lower() for column in schema["columns"][table]]
-
-    return new_schema
-
-
 if __name__ == "__main__":
     filename = "src/sql_generator/configs/test_experiments.json"
     filename = "src/sql_generator/configs/test_experiments_nested.json"
@@ -300,7 +305,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--infile",
         type=str,
-        default="data/database/nba/non_nested_query_hyperparameter_guide_2.json",
+        default="data/database/nba/non_nested_query_hyperparameter_guide_1.json",
     )
     args = parser.parse_args()
     if args.infile:
@@ -324,8 +329,8 @@ if __name__ == "__main__":
     args.logger.addHandler(consol_handler)
     args.logger.addHandler(file_handler)
 
-    SCHEMA = json.load(open(f"{args.data_dir}/{args.db}/schema.json"))
-    schema = CaseInsensitiveDict(lower_case_schema_data(SCHEMA[args.schema_name]))
+    SCHEMA = json.load(open(f"{args.data_dir}/{args.db}/schema_new.json"))
+    schema = CaseInsensitiveDict(utils.lower_case_schema_data(SCHEMA[args.schema_name]))
 
     rng = np.random.RandomState(args.seed)
 
@@ -334,15 +339,17 @@ if __name__ == "__main__":
     DBUserID = config["DB"]["data"]["UserID"]
     DBUserPW = config["DB"]["data"]["UserPW"]
 
-    data_manager, table_info = connect_data_manager(IP, port, DBUserID, DBUserPW, schema)
+    data_manager, table_info = utils.connect_data_manager(IP, port, DBUserID, DBUserPW, schema)
     args.table_info = CaseInsensitiveDict(table_info)
+
+    COL_INFO = json.load(open(f"{args.data_dir}/{args.db}/dtype_dict.json"))
+    column_info = COL_INFO[schema["dataset"]]
+
     if not args.use_one_predicate:
         fo_view_name = create_full_outer_view(args, rng, data_manager, schema)
         args.fo_view_name = fo_view_name
     else:
-        args.fo_view_name = None
-
-    COL_INFO = json.load(open(f"{args.data_dir}/{args.db}/dtype_dict.json"))
-    column_info = COL_INFO[schema["dataset"]]
+        hist = json.load(open(f"{args.data_dir}/{args.db}/selective_histogram.json"))
+        args.fo_view_name = create_full_outer_view(args, rng, data_manager, schema, hist=hist, column_info=column_info)
 
     run_generator(data_manager, schema, column_info, args, rng)

@@ -1,11 +1,14 @@
 {
-    "global_idx": 0,
+    "global_idx": 3000,
     "db": "nba",
-    "schema_name": "nba",
-    "num_queries": 30,
-    "output": "/root/proda/data/database/nba/result/nba_result_1.out",
+    "schema_name": "nba_5",
+    "num_queries": 15,
+    "output": "/root/proda/data/database/nba/result/nba_result_test.out",
     "sep": "#",
     "seed": 1234,
+    "use_one_predicate": true,
+    "predicate_id": null,
+    "__predicate_id_info__": "If you generate outer query, predicate id used in inner query should be given",
     "data_dir": "data/database",
     "log_path": "query_generator.log",
     "hyperparams":
