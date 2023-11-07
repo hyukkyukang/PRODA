@@ -29,7 +29,105 @@ docker compose up -d
 
 ## SQL Generation
 
-<!-- TODO: Need to add description for SQL generation -->
+Prerequisite: Note that SQL query is generated from a given database. To generate a SQL query, a PostgreSQL database, a schema information (schema.json and dtype_dict.json) of the database should be given.
+
+schema.json:
+[NOTE] Tables should be connected
+[NOTE] This should be pk-fk join
+```json
+{
+    "$$schema_name$$": {
+        "join_tables": [ 
+                "$$table1$$",
+                "$$table2$$",
+                "$$table3$$",
+                "..."
+            ],
+        "join_keys": [
+                "$$table1$$": [ "$$col1$$", "$$col2$$" ],
+                "$$table2$$": [ "$$col3$$" ],
+                "$$table3$$": [ "$$col4$$" ],
+                "..."
+            ],
+        "join_clauses": [
+                "$$table1.col1$$=$$table3.col4$$",
+                "$$table1.col2$$=$$table2.col3$$",
+                "..."  
+            ],
+        "dataset": "$$db_name$$",
+        "join_root": "$$table_name$$",
+        "join_how": "$$outer$$",
+        "use_cols": "$$schema_name$$"
+    }
+}
+```
+
+dtype_dict.json:
+[NOTE] $$type$$ IN ["str", "date", "bool", "int", "float"]
+```json
+{
+    "$$db_name$$": {
+        "dtype_dict": {
+                "$$table1.col1$$": "$$type1$$", 
+                "$$table1.col2$$": "$$type2$$",
+                "$$table1.col11$$": "$$type3$$",
+                "$$table2.col3$$": "$$type4$$",
+                "...": "..."
+            }
+        "hash_codes": [
+                "$$tablen.coln$$",
+                "$$tablem.colm$$",
+                "..."
+            ],
+        "notes": [
+                "$$tablen.coln$$",
+                "$$tablem.colm$$",
+                "..."
+            ],
+        "ids": [
+                "$$tablen.coln$$",
+                "$$tablem.colm$$",
+                "..."
+            ],
+        "categories": [
+                "$$tablen.coln$$",
+                "$$tablem.colm$$",
+                "..."
+            ],
+        "primary_keys": {
+                "$$table1$$": ["$$key1_1$$", "$$key1_2$$"],
+                "$$table2$$": ["$$key2_1$$"],
+                "...": [ "..." ]
+            },
+        "foreign_keys": {
+                "$$table1$$": [],
+                "$$table2$$": [ "$$fkey2_1$$", "$$fkey2_2$$" ],
+                "...": [ "..." ]
+            }
+    }
+}
+```
+
+We also require a configuration file for running SQL generator. Please see any example in data/database/{dbname}/non_nested_query_hyperparameter_guide_1.json
+```json
+ {
+    "global_idx": 31, 
+    "db": "postgres",
+    "schema_name": "fifa_23_complete_player_2",
+    "num_queries": 30,
+    "output": "/root/proda/data/database/fifa_23_complete_player/result/fifa_23_complete_player_non_nested_result_2.out",
+    "sep": "#",
+    "seed": 1234,
+    ....
+}
+```
+
+
+Run SQL generator:
+```bash
+python3 query_generator_v3.py --infile data/database/{dbname}/{configuration_file}.json
+```
+
 
 ## NL Generation
 
