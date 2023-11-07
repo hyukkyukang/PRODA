@@ -1,0 +1,21 @@
+{
+    "idx": 1,
+    "db": "nba",
+    "num_schemas": 30,
+    "output": "/root/proda/data/database/nba/result/schema_new.json",
+    "sep": "#",
+    "data_dir": "data/database",
+    "selectivity_max": 0.0008,
+    "selectivity_min": 0.0001,
+    "rows_min": 100000,
+    "seed": 1234,
+    "hyperparams":
+    {
+        "num_join_max": 3,
+        "num_join_min": 1,
+        "prob_join": 0.5,
+        "num_column_max": 4,
+        "num_column_min": 1,
+        "__num_column_info__": "sampled number of columns for each tables"
+    }
+}

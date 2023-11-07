@@ -4,6 +4,43 @@ import ast
 from collections import defaultdict
 import csv
 import pickle
+from src.sql_generator.tools.storage.db import PostgreSQLDatabase
+
+
+def connect_data_manager(ip, port, user_id, user_pw, schema):
+    data_manager = PostgreSQLDatabase(user_id, user_pw, ip, port, schema["dataset"])
+
+    table_info = {}
+    tables = schema["join_tables"]
+    for table in tables:
+        if "columns" in schema.keys() and table in schema["columns"].keys():
+            columns = schema["columns"][table]
+        else:
+            columns = data_manager.fetch_column_names(table)
+        table_info[table] = columns
+
+    return data_manager, table_info
+
+
+def lower_case_schema_data(schema):
+    new_schema = {"dataset": schema["dataset"], "use_cols": schema["use_cols"]}
+
+    new_schema["join_tables"] = [table.lower() for table in schema["join_tables"]]
+
+    new_schema["join_keys"] = {}
+    for table in schema["join_keys"].keys():
+        new_schema["join_keys"][table.lower()] = [column.lower() for column in schema["join_keys"][table]]
+
+    new_schema["join_clauses"] = [clause.lower() for clause in schema["join_clauses"]]
+
+    new_schema["join_root"] = schema["join_root"].lower()
+
+    if "columns" in schema.keys():
+        new_schema["columns"] = {}
+        for table in schema["columns"].keys():
+            new_schema["columns"][table.lower()] = [column.lower() for column in schema["columns"][table]]
+
+    return new_schema
 
 
 def write_graphs(writer, graphs):

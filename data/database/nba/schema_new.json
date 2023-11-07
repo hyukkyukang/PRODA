@@ -1,0 +1,37 @@
+{
+   "nba_5": {
+      "dataset": "nba",
+      "join_how": "outer",
+      "use_cols": "nba_5",
+      "join_root": "team_details",
+      "join_tables": [
+         "team_details",
+         "team"
+      ],
+      "join_clauses": [
+         "team.id=team_details.team_id"
+      ],
+      "join_keys": {
+         "team_details": [
+            "team_id"
+         ],
+         "team": [
+            "id"
+         ]
+      },
+      "columns": {
+         "team_details": [
+            "team_id",
+            "instagram",
+            "arenacapacity",
+            "owner"
+         ],
+         "team": [
+            "id",
+            "year_founded",
+            "abbreviation",
+            "city"
+         ]
+      }
+   }
+}
