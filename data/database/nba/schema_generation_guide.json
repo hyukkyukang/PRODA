@@ -1,5 +1,6 @@
 {
-    "idx": 1,
+    "idx": 5,
+    "__idx_info__": "Used for determining a schema name (i.e., schema_name or use_cols): {db}_{idx}",
     "db": "nba",
     "num_schemas": 30,
     "output": "/root/proda/data/database/nba/result/schema_new.json",
@@ -7,15 +8,19 @@
     "data_dir": "data/database",
     "selectivity_max": 0.0008,
     "selectivity_min": 0.0001,
+    "__selectivity_info__": "Selectivity threshold of added predicates (used in find_selective_predicates.py)",
     "rows_min": 100000,
+    "__rows_min_info__": "The lower threshold of the number of rows in the table to which a predicate can be added (used in find_selective_predicates.py)",
     "seed": 1234,
     "hyperparams":
     {
-        "num_join_max": 3,
-        "num_join_min": 1,
+        "num_join_max": 4,
+        "num_join_min": 2,
+        "__num_join_info__": "the number of sampled joins",
         "prob_join": 0.5,
+        "__prob_join_info__": "distribution of probability of # join",
         "num_column_max": 4,
         "num_column_min": 1,
-        "__num_column_info__": "sampled number of columns for each tables"
+        "__num_column_info__": "the number of sampled columns for each tables"
     }
 }
