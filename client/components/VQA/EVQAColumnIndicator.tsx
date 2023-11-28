@@ -9,7 +9,7 @@ import { getHeaderDescription } from "./utils";
 
 export const EVQAColumnIndicator: ColumnIndicatorComponent = ({ column, label, selected, selectedPoint, active, onSelect, activate }) => {
     const { setX, setY, setoperatorDescription, setIsActive } = React.useContext(HoveringDescriptionContext);
-    const description = React.useMemo(() => (label ? getHeaderDescription(label as unknown as IEVQATableHeader) : ""), [label]);
+    const description = React.useMemo(() => (label ? getHeaderDescription(label as unknown as IEVQATableHeader, column) : ""), [label]);
 
     // column is the id
     const handleClick = React.useCallback(

@@ -13,6 +13,7 @@ const overview: JSX.Element = (
     <React.Fragment>
         <h1> Introduction </h1>
         <Typography>
+            <b>The task you need to perform is to understand the provided EVQA block, verify its natural language description, and then submit it after rephrasing.</b>
             This page provides an overview of our task, which aims to assess users' ability to understand Excel-like Visual Query Abstraction (EVQA) and verify
             whether the final sentence accurately describes its operation. We will now explain the structure of our data collection page and how the task is
             performed. As shown in the below snapshot, the page is divided into three sections: instructions at the top, the EVQA block in the center, and the

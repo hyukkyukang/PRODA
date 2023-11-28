@@ -287,10 +287,15 @@ export const getCellDescription = (expressions: Function[]): string => {
     return filteredDescriptions.join("\n");
 };
 
-export const getHeaderDescription = (header: IEVQATableHeader): string => {
+export const getHeaderDescription = (header: IEVQATableHeader, column: number): string => {
     const descriptions: Array<string | undefined> = [];
     if (header.isToProject) {
-        descriptions.push("Highlighted header indicates that the corresponding column has been chosen to be displayed in the output.");
+        if (column==0){
+            descriptions.push("If the table name is highlighted, when rephrasing the natural language description, instead of explicitly mentioning all the column names, write it implicitly as 'all columns'.");
+        }
+        else{
+            descriptions.push("Highlighted header indicates that the corresponding column has been chosen to be displayed in the output.");
+        }
     }
     header.aggFuncs.forEach((aggFunc) => {
         const aggFuncStr = aggFunctions[aggFunc];

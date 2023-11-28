@@ -168,7 +168,7 @@ const exampleDescription: JSX.Element = (
         <h2>Result:</h2>
         <TableExcerpt queryResult={exampleResult2} />
         <h1>Example 3 </h1>
-        <p>If EVQA highlights the table name, it means that every columns will be shown in the result</p>
+        <p>If EVQA highlights the table name, it means that every columns will be shown in the result. In such cases, when rephrasing the natural language description, instead of explicitly listing all the column names, write it implicitly as 'all columns'.</p>
         <EVQATables evqaRoot={exampleEQVA3} editable={false} />
         <h2>Result:</h2>
         <TableExcerpt queryResult={exampleResult3} />

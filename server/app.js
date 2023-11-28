@@ -59,7 +59,7 @@ app.post("/fetchTask", async function (req, res) {
         taskSetData = await func.getTaskSet(workerID, taskSetID, isSkip);
     } else {
         // Check if worker has already been assigned a task
-        if (workerID !== "" && workerID in workerTaskMapping) {
+        if (workerID !== "" && workerID in workerTaskMapping && false) {
             // TODO: Need to check if the task is still available
             // Return the same task
             const taskSetID = workerTaskMapping[workerID];

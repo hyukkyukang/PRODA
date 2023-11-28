@@ -286,7 +286,7 @@ function logWorkerAnswer(logData) {
     const is_correct = logData.answer.isCorrect === undefined ? null : logData.answer.isCorrect;
     const nl = logData.answer.nl.replace(/'/g, "\\'");
     const sql_query1 = `INSERT INTO ${collectionDBCollectionTableName} VALUES(DEFAULT, ${task_set_id}, ${task_id}, E'${user_id}', ${is_correct}, E'${nl}', DEFAULT);`;
-    queryDB(collectionDBName, collectionDBUserID, collectionDBUserPW, sql_query1);
+    // queryDB(collectionDBName, collectionDBUserID, collectionDBUserPW, sql_query1);
     // Change the is_solving column to false in the table task_set, where the column id is same as the variable task_set_id
     const sql_query2 = `UPDATE ${collectionDBTaskSetTableName} SET is_solving=false WHERE id=${task_set_id};`;
     queryDB(collectionDBName, collectionDBUserID, collectionDBUserPW, sql_query2);

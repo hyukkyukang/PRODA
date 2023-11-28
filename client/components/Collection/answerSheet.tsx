@@ -124,12 +124,14 @@ const firstInstruction = (
         </ol>
     </span>
 );
-const instructionAskingRephrase = <span>Paraphrase the given question into another English question that has the same meaning.</span>;
+const instructionAskingRephrase = <span>Paraphrase the given question into another English question that has the same meaning.<br />If the table name is highlighted, instead of explicitly mentioning every column name, write as 'all columns' (e.g., instead of 'list column_name_1 and column_name_2 from table_name', write 'list all columns from table_name').</span>;
 const instructionAskingRevise = (
     <span>
         Modify the question to form a sentence that carries the correct meaning of EVQA blocks.
         <br />
         Please do not list what the errors are, just fix it.
+        <br />
+        If the table name is highlighted, instead of explicitly mentioning every column name, write as 'all columns' (e.g., instead of 'list column_name_1 and column_name_2 from table_name', write 'list all columns from table_name').
     </span>
 );
 const skipButtonText = "Not sure, skip this task";
